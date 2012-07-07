@@ -19,6 +19,8 @@ apply from: file('gradle/check.gradle')
 apply plugin: 'idea'
 
 subprojects {
+    apply plugin: 'idea'
+
     // Closure to configure all the POM with extra info, common to all projects
     pom {
         project {
@@ -39,6 +41,8 @@ subprojects {
 
     dependencies {
         compile     'javax.inject:javax.inject:1'
+        compile     'com.google.guava:guava:11.0.1'
+        compile     'org.slf4j:slf4j-api:1.6.3'
         testCompile 'org.testng:testng:6.1.1'
         testCompile 'org.mockito:mockito-core:1.8.5'
     }
@@ -46,6 +50,14 @@ subprojects {
 
 project(':governator-core') {
     dependencies {
-        compile     'javax.inject:javax.inject:1'
+        compile     'com.sun.jersey:jersey-bundle:1.1.4'
+    }
+}
+
+project(':governator-guice') {
+    dependencies {
+        compile     project(":governator-core")
+        compile     'com.google.inject:guice:3.0'
+        compile     'com.google.inject:guice-multibindings:3.0'
     }
 }
