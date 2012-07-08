@@ -16,26 +16,34 @@
 
 package com.netflix.governator.inject.guice;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
-import com.google.inject.Singleton;
 import com.netflix.governator.inject.ClasspathScanner;
-import java.util.Set;
+import java.util.Collection;
 
 public class GuiceAutoBindModule extends AbstractModule
 {
-    private final AutoBindModes mode;
+    private final Collection<Class<?>> ignoreClasses;
 
-    public GuiceAutoBindModule(AutoBindModes mode)
+    public GuiceAutoBindModule()
     {
-        this.mode = mode;
+        this(Lists.<Class<?>>newArrayList());
+    }
+
+    public GuiceAutoBindModule(Collection<Class<?>> ignoreClasses)
+    {
+        Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
+
+        this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
     }
 
     @Override
     protected void configure()
     {
-        ClasspathScanner        scanner = new ClasspathScanner(Singleton.class);
-        Set<Class<?>>           classes = (mode == AutoBindModes.ALL) ? scanner.getAll() : scanner.getAutoBindSingletons();
-        for ( Class<?> clazz : classes )
+        ClasspathScanner        scanner = new ClasspathScanner(ClasspathScanner.getDefaultAnnotations(), ignoreClasses);
+        for ( Class<?> clazz : scanner.get() )
         {
             binder().bind(clazz).asEagerSingleton();
         }

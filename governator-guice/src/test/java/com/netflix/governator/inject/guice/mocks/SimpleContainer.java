@@ -14,22 +14,23 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.assets;
+package com.netflix.governator.inject.guice.mocks;
 
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import com.netflix.governator.inject.AutoBindSingleton;
+import org.testng.Assert;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-@Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-@Target(java.lang.annotation.ElementType.TYPE)
-public @interface RequiredAsset
+@AutoBindSingleton
+public class SimpleContainer
 {
-    /**
-     * @return the name of the asset
-     */
-    String[]  arguments() default {};
+    public final SimpleSingleton       simpleObject;
 
-    String    name();
-
-    Class<? extends AssetLoader>    loader();
+    @Inject
+    public SimpleContainer(SimpleSingleton simpleObject)
+    {
+        this.simpleObject = simpleObject;
+        Assert.assertEquals(simpleObject.startCount.get(), 1);
+        Assert.assertEquals(simpleObject.finishCount.get(), 0);
+    }
 }

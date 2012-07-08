@@ -66,7 +66,6 @@ public class LifecycleManager implements Closeable
         CLOSED
     }
 
-    @Inject
     public LifecycleManager()
     {
         this(new AssetLoaderManager());

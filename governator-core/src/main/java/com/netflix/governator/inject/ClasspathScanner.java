@@ -16,16 +16,16 @@
 
 package com.netflix.governator.inject;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.netflix.governator.assets.AssetLoaderManager;
-import com.netflix.governator.lifecycle.LifecycleManager;
 import com.sun.jersey.server.impl.container.config.AnnotatedClassScanner;
 import javax.inject.Singleton;
 import java.io.File;
-import java.util.Arrays;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -33,8 +33,28 @@ public class ClasspathScanner
 {
     private final Set<Class<?>> classes;
 
-    public ClasspathScanner(Class... additionalAnnotations)
+    public static List<Class<? extends Annotation>> getDefaultAnnotations()
     {
+        List<Class<? extends Annotation>>   annotations = Lists.newArrayList();
+        annotations.add(AutoBindSingleton.class);
+        return annotations;
+    }
+
+    public ClasspathScanner()
+    {
+        this(getDefaultAnnotations(), Lists.<Class<?>>newArrayList());
+    }
+
+    public ClasspathScanner(Collection<Class<? extends Annotation>> annotations)
+    {
+        this(annotations, Lists.<Class<?>>newArrayList());
+    }
+
+    public ClasspathScanner(Collection<Class<? extends Annotation>> annotations, final Collection<Class<?>> ignoreClasses)
+    {
+        Preconditions.checkNotNull(annotations, "additionalAnnotations cannot be null");
+        Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
+
         /*
             Based on com.sun.jersey.api.core.ClasspathResourceConfig
          */
@@ -47,13 +67,6 @@ public class ClasspathScanner
             roots[i] = new File(paths[i]);
         }
 
-        if ( additionalAnnotations == null )
-        {
-            additionalAnnotations = new Class[0];
-        }
-
-        List<Class>           annotations = Lists.newArrayList(Arrays.asList((Class)Singleton.class, (Class)AutoBindSingleton.class));
-        annotations.addAll(Arrays.asList(additionalAnnotations));
         AnnotatedClassScanner scanner = new AnnotatedClassScanner(annotations.toArray(new Class[annotations.size()]));
         scanner.scan(roots);
 
@@ -65,32 +78,15 @@ public class ClasspathScanner
                 @Override
                 public boolean apply(Class<?> clazz)
                 {
-                    return (clazz != LifecycleManager.class) && (clazz != AssetLoaderManager.class);
+                    return !ignoreClasses.contains(clazz);
                 }
             }
         );
         classes = ImmutableSet.copyOf(filtered);
     }
 
-    public Set<Class<?>> getAll()
+    public Set<Class<?>> get()
     {
         return classes;
-    }
-
-    public Set<Class<?>> getAutoBindSingletons()
-    {
-        Iterable<Class<?>> filtered = Iterables.filter
-            (
-                classes,
-                new Predicate<Class<?>>()
-                {
-                    @Override
-                    public boolean apply(Class<?> clazz)
-                    {
-                        return clazz.isAnnotationPresent(AutoBindSingleton.class);
-                    }
-                }
-            );
-        return ImmutableSet.copyOf(filtered);
     }
 }

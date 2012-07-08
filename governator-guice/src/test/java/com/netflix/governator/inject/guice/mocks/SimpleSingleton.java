@@ -17,16 +17,16 @@
 package com.netflix.governator.inject.guice.mocks;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import com.netflix.governator.inject.AutoBindSingleton;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Singleton
+@AutoBindSingleton
 public class SimpleSingleton
 {
-    public final AtomicInteger startCount = new AtomicInteger(0);
-    public final AtomicInteger      finishCount = new AtomicInteger(0);
+    public final AtomicInteger  startCount = new AtomicInteger(0);
+    public final AtomicInteger  finishCount = new AtomicInteger(0);
 
     @Inject
     public SimpleSingleton()

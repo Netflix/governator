@@ -32,7 +32,6 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.assets.AssetLoaderManager;
 import com.netflix.governator.assets.RequiredAsset;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
@@ -40,13 +39,16 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class LifecycleModule implements Module
 {
-    private final List<Object> injectedInstances = Lists.newArrayList();
-    private final AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>(null);
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
+    private final LifecycleManager lifecycleManager;
+
+    public LifecycleModule(LifecycleManager lifecycleManager)
+    {
+        this.lifecycleManager = lifecycleManager;
+    }
 
     @Override
     public void configure(Binder binder)
@@ -69,21 +71,13 @@ public class LifecycleModule implements Module
                         {
                             if ( isLifeCycleClass(obj.getClass()) )
                             {
-                                LifecycleManager manager = lifecycleManagerRef.get();
-                                if ( manager != null )
+                                try
                                 {
-                                    try
-                                    {
-                                        manager.add(obj);
-                                    }
-                                    catch ( Exception e )
-                                    {
-                                        throw new Error(e);
-                                    }
+                                    lifecycleManager.add(obj);
                                 }
-                                else
+                                catch ( Exception e )
                                 {
-                                    injectedInstances.add(obj);
+                                    throw new Error(e);
                                 }
                             }
                         }
@@ -95,15 +89,9 @@ public class LifecycleModule implements Module
 
     @Provides
     @Singleton
-    public LifecycleManager getLifecycleManager(AssetLoaderManager assetLoaderManager) throws Exception
+    public LifecycleManager getLifecycleManager() throws Exception
     {
-        LifecycleManager manager = new LifecycleManager(assetLoaderManager);
-        lifecycleManagerRef.set(manager);
-        for ( Object obj : injectedInstances )
-        {
-            manager.add(obj);
-        }
-        return manager;
+        return lifecycleManager;
     }
 
     private boolean isLifeCycleClass(Class<?> clazz)

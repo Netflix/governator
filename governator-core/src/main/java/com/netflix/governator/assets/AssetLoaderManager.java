@@ -68,31 +68,21 @@ public class AssetLoaderManager
     public boolean     loadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset   requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
+        RequiredAssets  requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);
+
         if ( requiredAsset != null )
         {
-            String          key = makeKey(requiredAsset.loader(), requiredAsset.name());
-
-            AssetLoader     loader = getLoader(requiredAsset.loader());
-            if ( loader != null )
+            internalLoadAsset(requiredAsset);
+        }
+        if ( requiredAssets != null )
+        {
+            for ( RequiredAsset asset : requiredAssets.value() )
             {
-                AssetHolder     newAssetHolder = new AssetHolder();
-                AssetHolder     oldAssetHolder = assetStates.putIfAbsent(key, newAssetHolder);
-                AssetHolder     useAssetHolder = (oldAssetHolder != null) ? oldAssetHolder : newAssetHolder;
-                synchronized(useAssetHolder)
-                {
-                    if ( !useAssetHolder.isLoaded )
-                    {
-                        log.debug(String.format("Loading assets using loader %s for asset \"%s\" with arguments: %s", requiredAsset.loader(), requiredAsset.name(), Arrays.toString(requiredAsset.arguments())));
-
-                        loader.loadAsset(requiredAsset.name(), requiredAsset.arguments());
-                        useAssetHolder.isLoaded = true;
-                    }
-                    useAssetHolder.useCount.incrementAndGet();
-                }
+                internalLoadAsset(asset);
             }
         }
 
-        return (requiredAsset != null);
+        return (requiredAsset != null) || (requiredAssets != null);
     }
 
     public void     unloadAssetsFor(Object obj) throws Exception
@@ -125,6 +115,30 @@ public class AssetLoaderManager
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void internalLoadAsset(RequiredAsset requiredAsset) throws Exception
+    {
+        String          key = makeKey(requiredAsset.loader(), requiredAsset.name());
+
+        AssetLoader loader = getLoader(requiredAsset.loader());
+        if ( loader != null )
+        {
+            AssetHolder newAssetHolder = new AssetHolder();
+            AssetHolder oldAssetHolder = assetStates.putIfAbsent(key, newAssetHolder);
+            AssetHolder useAssetHolder = (oldAssetHolder != null) ? oldAssetHolder : newAssetHolder;
+            synchronized(useAssetHolder)
+            {
+                if ( !useAssetHolder.isLoaded )
+                {
+                    log.debug(String.format("Loading assets using loader %s for asset \"%s\" with arguments: %s", requiredAsset.loader(), requiredAsset.name(), Arrays.toString(requiredAsset.arguments())));
+
+                    loader.loadAsset(requiredAsset.name(), requiredAsset.arguments());
+                    useAssetHolder.isLoaded = true;
+                }
+                useAssetHolder.useCount.incrementAndGet();
             }
         }
     }

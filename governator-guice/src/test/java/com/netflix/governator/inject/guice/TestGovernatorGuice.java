@@ -16,10 +16,9 @@
 
 package com.netflix.governator.inject.guice;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.governator.assets.AssetLoaderManager;
+import com.netflix.governator.inject.guice.mocks.SimpleContainer;
 import com.netflix.governator.inject.guice.mocks.SimpleSingleton;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import org.testng.Assert;
@@ -30,21 +29,13 @@ public class TestGovernatorGuice
     @Test
     public void     testSimpleSingleton() throws Exception
     {
+        LifecycleManager        manager = new LifecycleManager();
         Injector injector = Guice.createInjector
         (
-            new AbstractModule()
-            {
-                @Override
-                protected void configure()
-                {
-                    binder().bind(AssetLoaderManager.class).toInstance(new AssetLoaderManager());
-                }
-            },
-            new LifecycleModule(),
-            new GuiceAutoBindModule(AutoBindModes.ALL)
+            new LifecycleModule(manager),
+            new GuiceAutoBindModule()
         );
 
-        LifecycleManager    manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 
         SimpleSingleton     instance = injector.getInstance(SimpleSingleton.class);
@@ -56,5 +47,28 @@ public class TestGovernatorGuice
 
         Assert.assertEquals(instance.startCount.get(), 1);
         Assert.assertEquals(instance.finishCount.get(), 1);
+    }
+
+    @Test
+    public void     testInjectedIntoAnother() throws Exception
+    {
+        LifecycleManager        manager = new LifecycleManager();
+        Injector injector = Guice.createInjector
+        (
+            new LifecycleModule(manager),
+            new GuiceAutoBindModule()
+        );
+
+        manager.start();
+
+        SimpleContainer     instance = injector.getInstance(SimpleContainer.class);
+
+        Assert.assertEquals(instance.simpleObject.startCount.get(), 1);
+        Assert.assertEquals(instance.simpleObject.finishCount.get(), 0);
+
+        manager.close();
+
+        Assert.assertEquals(instance.simpleObject.startCount.get(), 1);
+        Assert.assertEquals(instance.simpleObject.finishCount.get(), 1);
     }
 }
