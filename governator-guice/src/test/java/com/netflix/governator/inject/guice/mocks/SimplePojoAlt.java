@@ -16,20 +16,27 @@
 
 package com.netflix.governator.inject.guice.mocks;
 
-import com.netflix.governator.inject.AutoBindSingleton;
-import org.testng.Assert;
-import javax.inject.Inject;
+import com.google.inject.Inject;
 
-@AutoBindSingleton
-public class SimpleContainer
+public class SimplePojoAlt
 {
-    public final SimpleSingleton       simpleObject;
+    private final long      l;
+    private final double    d;
 
     @Inject
-    public SimpleContainer(SimpleSingleton simpleObject)
+    public SimplePojoAlt(long l, double d)
     {
-        this.simpleObject = simpleObject;
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
+        this.l = l;
+        this.d = d;
+    }
+
+    public long getL()
+    {
+        return l;
+    }
+
+    public double getD()
+    {
+        return d;
     }
 }

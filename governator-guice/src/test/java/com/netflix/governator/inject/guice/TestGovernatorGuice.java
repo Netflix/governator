@@ -16,9 +16,14 @@
 
 package com.netflix.governator.inject.guice;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.governator.inject.guice.mocks.SimpleContainer;
+import com.netflix.governator.inject.guice.mocks.SimplePojo;
+import com.netflix.governator.inject.guice.mocks.SimplePojoAlt;
+import com.netflix.governator.inject.guice.mocks.SimpleProvider;
+import com.netflix.governator.inject.guice.mocks.SimpleProviderAlt;
 import com.netflix.governator.inject.guice.mocks.SimpleSingleton;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import org.testng.Assert;
@@ -26,6 +31,31 @@ import org.testng.annotations.Test;
 
 public class TestGovernatorGuice
 {
+    @Test
+    public void     testSimpleProvider() throws Exception
+    {
+        Injector                injector = Guice.createInjector
+        (
+            new AbstractModule()
+            {
+                @Override
+                protected void configure()
+                {
+                    GuiceAutoBindModule.bindProvider(binder(), SimpleProvider.class);
+                    GuiceAutoBindModule.bindProvider(binder(), SimpleProviderAlt.class);
+                }
+            }
+        );
+
+        SimplePojo      pojo = injector.getInstance(SimplePojo.class);
+        Assert.assertEquals(pojo.getI(), 1);
+        Assert.assertEquals(pojo.getS(), "one");
+
+        SimplePojoAlt   pojoAlt = injector.getInstance(SimplePojoAlt.class);
+        Assert.assertEquals(pojoAlt.getL(), 3);
+        Assert.assertEquals(pojoAlt.getD(), 4.5);
+    }
+
     @Test
     public void     testSimpleSingleton() throws Exception
     {

@@ -20,6 +20,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Provider;
 import com.netflix.governator.inject.ClasspathScanner;
 import java.util.Collection;
 
@@ -39,13 +43,55 @@ public class GuiceAutoBindModule extends AbstractModule
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
     }
 
+    public static void      bindProvider(Binder binder, Class<? extends javax.inject.Provider> clazz)
+    {
+        internalBindProvider(binder, clazz);
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     protected void configure()
     {
         ClasspathScanner        scanner = new ClasspathScanner(ClasspathScanner.getDefaultAnnotations(), ignoreClasses);
-        for ( Class<?> clazz : scanner.get() )
+        for ( final Class<?> clazz : scanner.get() )
         {
             binder().bind(clazz).asEagerSingleton();
+
+            if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
+            {
+                internalBindProvider(binder(), clazz);
+            }
         }
+    }
+
+    private static void internalBindProvider(Binder binder, final Class<?> clazz)
+    {
+        Class<?> providedType;
+        try
+        {
+            providedType = clazz.getMethod("get").getReturnType();
+        }
+        catch ( NoSuchMethodException e )
+        {
+            throw new RuntimeException(e);
+        }
+
+        binder
+            .bind(providedType)
+            .toProvider
+                (
+                    new Provider()
+                    {
+                        @Inject
+                        private Injector       injector;
+
+                        @Override
+                        public Object get()
+                        {
+                            javax.inject.Provider provider = (javax.inject.Provider)injector.getInstance(clazz);   // cast is safe due to isAssignableFrom() check above
+                            return provider.get();
+                        }
+                    }
+                );
     }
 }

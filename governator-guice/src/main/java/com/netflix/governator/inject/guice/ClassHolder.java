@@ -14,22 +14,19 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.inject.guice.mocks;
+package com.netflix.governator.inject.guice;
 
-import com.netflix.governator.inject.AutoBindSingleton;
-import org.testng.Assert;
-import javax.inject.Inject;
+import com.google.inject.BindingAnnotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-@AutoBindSingleton
-public class SimpleContainer
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Retention(RUNTIME)
+@Target(ElementType.FIELD)
+@BindingAnnotation
+public @interface ClassHolder
 {
-    public final SimpleSingleton       simpleObject;
-
-    @Inject
-    public SimpleContainer(SimpleSingleton simpleObject)
-    {
-        this.simpleObject = simpleObject;
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
-    }
+    Class<?>        clazz();
 }

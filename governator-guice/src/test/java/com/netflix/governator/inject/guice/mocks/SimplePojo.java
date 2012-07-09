@@ -14,10 +14,29 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.inject.guice;
+package com.netflix.governator.inject.guice.mocks;
 
-public enum AutoBindModes
+import com.google.inject.Inject;
+
+public class SimplePojo
 {
-    ALL,
-    AUTO_BIND_ONLY
+    private final String    s;
+    private final int       i;
+
+    @Inject
+    public SimplePojo(String s, int i)
+    {
+        this.s = s;
+        this.i = i;
+    }
+
+    public String getS()
+    {
+        return s;
+    }
+
+    public int getI()
+    {
+        return i;
+    }
 }

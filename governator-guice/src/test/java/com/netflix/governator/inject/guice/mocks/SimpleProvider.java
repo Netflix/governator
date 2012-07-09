@@ -17,19 +17,14 @@
 package com.netflix.governator.inject.guice.mocks;
 
 import com.netflix.governator.inject.AutoBindSingleton;
-import org.testng.Assert;
-import javax.inject.Inject;
+import javax.inject.Provider;
 
 @AutoBindSingleton
-public class SimpleContainer
+public class SimpleProvider implements Provider<SimplePojo>
 {
-    public final SimpleSingleton       simpleObject;
-
-    @Inject
-    public SimpleContainer(SimpleSingleton simpleObject)
+    @Override
+    public SimplePojo get()
     {
-        this.simpleObject = simpleObject;
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
+        return new SimplePojo("one", 1);
     }
 }
