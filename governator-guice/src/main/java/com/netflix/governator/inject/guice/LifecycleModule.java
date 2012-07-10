@@ -21,7 +21,6 @@
 
 package com.netflix.governator.inject.guice;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
 import com.google.inject.Module;
@@ -37,13 +36,17 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.List;
 import java.util.Map;
 
 public class LifecycleModule implements Module
 {
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
+
+    public LifecycleModule()
+    {
+        this(new LifecycleManager());
+    }
 
     public LifecycleModule(LifecycleManager lifecycleManager)
     {

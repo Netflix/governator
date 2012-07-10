@@ -17,12 +17,19 @@
 package com.netflix.governator.inject.guice.mocks;
 
 import com.google.inject.Inject;
+import com.netflix.governator.assets.RequiredAsset;
 import com.netflix.governator.inject.AutoBindSingleton;
+import org.testng.Assert;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @AutoBindSingleton
+@RequiredAsset
+(
+    name = "test",
+    loader = SimpleAssetLoader.class
+)
 public class SimpleSingleton
 {
     public final AtomicInteger  startCount = new AtomicInteger(0);
@@ -37,6 +44,7 @@ public class SimpleSingleton
     @PostConstruct
     public void     start() throws InterruptedException
     {
+        Assert.assertTrue(SimpleAssetLoader.loadAssetCount.get() > 0);
         startCount.incrementAndGet();
     }
 

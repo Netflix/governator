@@ -1,5 +1,5 @@
 // Establish version and status
-ext.releaseVersion = '0.0.1'
+ext.releaseVersion = '0.0.2'
 ext.githubProjectName = 'governator'
 
 buildscript {
@@ -13,7 +13,7 @@ allprojects {
 //apply from: file('gradle/release.gradle') // Not fully tested
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/maven.gradle')
-apply from: file('gradle/check.gradle')
+//apply from: file('gradle/check.gradle')
 //apply from: file('gradle/license.gradle') // Waiting for re-release
 
 apply plugin: 'idea'

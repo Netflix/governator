@@ -19,6 +19,7 @@ package com.netflix.governator.inject.guice;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.governator.inject.guice.mocks.SimpleAssetLoader;
 import com.netflix.governator.inject.guice.mocks.SimpleContainer;
 import com.netflix.governator.inject.guice.mocks.SimplePojo;
 import com.netflix.governator.inject.guice.mocks.SimplePojoAlt;
@@ -31,6 +32,25 @@ import org.testng.annotations.Test;
 
 public class TestGovernatorGuice
 {
+    @Test
+    public void     testSimpleAssetLoader() throws Exception
+    {
+        Injector injector = Guice.createInjector
+        (
+            new LifecycleModule(),
+            new GuiceAutoBindModule()
+        );
+
+        LifecycleManager        manager = injector.getInstance(LifecycleManager.class);
+        manager.start();
+
+        SimpleAssetLoader       assetLoader = injector.getInstance(SimpleAssetLoader.class);
+        Assert.assertEquals(assetLoader.setupCount.get(), 1);
+        Assert.assertEquals(assetLoader.loadAssetCount.get(), 1);
+        Assert.assertEquals(assetLoader.tearDownCount.get(), 0);
+        Assert.assertEquals(assetLoader.unloadAssetCount.get(), 0);
+    }
+
     @Test
     public void     testSimpleProvider() throws Exception
     {
@@ -59,13 +79,13 @@ public class TestGovernatorGuice
     @Test
     public void     testSimpleSingleton() throws Exception
     {
-        LifecycleManager        manager = new LifecycleManager();
         Injector injector = Guice.createInjector
         (
-            new LifecycleModule(manager),
+            new LifecycleModule(),
             new GuiceAutoBindModule()
         );
 
+        LifecycleManager        manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 
         SimpleSingleton     instance = injector.getInstance(SimpleSingleton.class);
@@ -82,13 +102,13 @@ public class TestGovernatorGuice
     @Test
     public void     testInjectedIntoAnother() throws Exception
     {
-        LifecycleManager        manager = new LifecycleManager();
         Injector injector = Guice.createInjector
         (
-            new LifecycleModule(manager),
+            new LifecycleModule(),
             new GuiceAutoBindModule()
         );
 
+        LifecycleManager        manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 
         SimpleContainer     instance = injector.getInstance(SimpleContainer.class);
