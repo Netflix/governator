@@ -25,13 +25,13 @@ public class SimpleAssetLoader implements AssetLoader
     public final AtomicInteger  unloadedCount = new AtomicInteger(0);
 
     @Override
-    public void loadAsset(String name, String[] args) throws Exception
+    public void loadAsset(String name) throws Exception
     {
         loadedCount.incrementAndGet();
     }
 
     @Override
-    public void unloadAsset(String name, String[] args) throws Exception
+    public void unloadAsset(String name) throws Exception
     {
         unloadedCount.incrementAndGet();
     }
