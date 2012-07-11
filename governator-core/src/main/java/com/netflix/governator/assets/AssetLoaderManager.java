@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,39 +30,40 @@ import java.util.concurrent.atomic.AtomicLong;
 @Singleton
 public class AssetLoaderManager
 {
-    private final Logger            log = LoggerFactory.getLogger(getClass());
-    private final ConcurrentMap<String, AssetHolder> assetStates = Maps.newConcurrentMap();
-    private final ConcurrentMap<Class<? extends AssetLoader>, AssetLoaderHolder> loaders = Maps.newConcurrentMap();
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final ConcurrentMap<AssetLoaderBinding, AssetLoader> loaders;
+    private final ConcurrentMap<AssetLoaderBinding, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
 
-    private static class AssetLoaderHolder
+    private static class AssetLoaderMetadata
     {
         @GuardedBy("synchronization")
-        AssetLoader        loader;
+        boolean             isLoaded;
+
+        final AtomicLong    useCount = new AtomicLong(0);
     }
 
-    private static class AssetHolder
+    private static class BindingAndLoader
     {
-        @GuardedBy("synchronization")
-        boolean         isLoaded;
+        final AssetLoaderBinding binding;
+        final AssetLoader                               loader;
 
-        final AtomicLong useCount = new AtomicLong(0);
+        private BindingAndLoader(AssetLoaderBinding binding, AssetLoader loader)
+        {
+            this.binding = binding;
+            this.loader = loader;
+        }
+    }
+
+    public AssetLoaderManager()
+    {
+        this.loaders = Maps.newConcurrentMap();
     }
 
     @Inject
-    public AssetLoaderManager()
+    public AssetLoaderManager(Map<AssetLoaderBinding, AssetLoader> loaders)
     {
-        // NOP
-    }
-
-    public void     addLoader(AssetLoader loader)
-    {
-        log.debug("Adding loader: " + loader.getClass().getName());
-
-        AssetLoaderHolder   holder = getHolder(loader.getClass());
-        synchronized(holder)
-        {
-            holder.loader = loader;
-        }
+        this();
+        this.loaders.putAll(loaders);
     }
 
     public boolean     loadAssetsFor(Object obj) throws Exception
@@ -90,28 +91,26 @@ public class AssetLoaderManager
         RequiredAsset   requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
         if ( requiredAsset != null )
         {
-            String          key = makeKey(requiredAsset.loader(), requiredAsset.name());
-
-            AssetLoader     loader = getLoader(requiredAsset.loader());
-            if ( loader != null )
+            BindingAndLoader                    bindingAndLoader = getBindingAndLoader(requiredAsset);
+            if ( bindingAndLoader != null )
             {
-                AssetHolder assetHolder = assetStates.get(key);
-                if ( assetHolder != null )
+                AssetLoaderMetadata loaderMetadata = metadata.get(bindingAndLoader.binding);
+                if ( loaderMetadata != null )
                 {
-                    synchronized(assetHolder)
+                    synchronized(loaderMetadata)
                     {
-                        long newCount = assetHolder.useCount.decrementAndGet();
+                        long newCount = loaderMetadata.useCount.decrementAndGet();
                         if ( newCount <= 0 )
                         {
-                            log.debug(String.format("Unloading assets using loader %s for asset \"%s\" with arguments: %s", requiredAsset.loader(), requiredAsset.name(), Arrays.toString(requiredAsset.arguments())));
+                            log.debug(String.format("Unloading required asset named \"%s\" using loader \"%s\"", requiredAsset.name(), requiredAsset.loader().getName()));
                             if ( newCount < 0 )
                             {
-                                log.error(String.format("Use count has gone negative (%d) for loader: %s with name: %s", newCount, requiredAsset.loader(), requiredAsset.name()));
-                                assetHolder.useCount.set(0);
+                                log.debug(String.format("Use count has gone negative for required asset named \"%s\" using loader \"%s\"", requiredAsset.name(), requiredAsset.loader().getName()));
+                                loaderMetadata.useCount.set(0);
                             }
 
-                            loader.unloadAsset(requiredAsset.name(), requiredAsset.arguments());
-                            assetHolder.isLoaded = false;
+                            bindingAndLoader.loader.unloadAsset(requiredAsset.name());
+                            loaderMetadata.isLoaded = false;
                         }
                     }
                 }
@@ -121,58 +120,47 @@ public class AssetLoaderManager
 
     private void internalLoadAsset(RequiredAsset requiredAsset) throws Exception
     {
-        String          key = makeKey(requiredAsset.loader(), requiredAsset.name());
-
-        AssetLoader loader = getLoader(requiredAsset.loader());
-        if ( loader != null )
+        BindingAndLoader        bindingAndLoader = getBindingAndLoader(requiredAsset);
+        if ( bindingAndLoader == null )
         {
-            AssetHolder newAssetHolder = new AssetHolder();
-            AssetHolder oldAssetHolder = assetStates.putIfAbsent(key, newAssetHolder);
-            AssetHolder useAssetHolder = (oldAssetHolder != null) ? oldAssetHolder : newAssetHolder;
-            synchronized(useAssetHolder)
-            {
-                if ( !useAssetHolder.isLoaded )
-                {
-                    log.debug(String.format("Loading assets using loader %s for asset \"%s\" with arguments: %s", requiredAsset.loader(), requiredAsset.name(), Arrays.toString(requiredAsset.arguments())));
+            log.error(String.format("No loader found for required asset named \"%s\" using loader \"%s\"", requiredAsset.name(), requiredAsset.loader().getName()));
+            return;
+        }
 
-                    loader.loadAsset(requiredAsset.name(), requiredAsset.arguments());
-                    useAssetHolder.isLoaded = true;
-                }
-                useAssetHolder.useCount.incrementAndGet();
+        AssetLoaderMetadata newAssetLoaderMetadata = new AssetLoaderMetadata();
+        AssetLoaderMetadata oldAssetLoaderMetadata = metadata.putIfAbsent(bindingAndLoader.binding, newAssetLoaderMetadata);
+        AssetLoaderMetadata useAssetLoaderMetadata = (oldAssetLoaderMetadata != null) ? oldAssetLoaderMetadata : newAssetLoaderMetadata;
+        synchronized(useAssetLoaderMetadata)
+        {
+            if ( !useAssetLoaderMetadata.isLoaded )
+            {
+                log.debug(String.format("Loading required asset named \"%s\" using loader \"%s\"", requiredAsset.name(), requiredAsset.loader().getName()));
+
+                bindingAndLoader.loader.loadAsset(requiredAsset.name());
+                useAssetLoaderMetadata.isLoaded = true;
             }
+            useAssetLoaderMetadata.useCount.incrementAndGet();
         }
     }
 
-    private AssetLoader getLoader(Class<? extends AssetLoader> loaderClass)
+    private BindingAndLoader getBindingAndLoader(RequiredAsset requiredAsset) throws IllegalAccessException, InstantiationException
     {
-        AssetLoaderHolder   holder = getHolder(loaderClass);
-        synchronized(holder)
+        AssetLoaderBinding     binding = new AssetLoaderBinding(requiredAsset.loader(), requiredAsset.name());
+        AssetLoader            loader = loaders.get(binding);
+        if ( loader == null )
         {
-            if ( holder.loader == null )
+            AssetLoaderBinding     defaultBinding = new AssetLoaderBinding(requiredAsset.loader(), AssetLoaderBinding.DEFAULT_BINDING_NAME);
+            AssetLoader            defaultLoader = loaders.get(binding);
+            if ( defaultLoader == null )
             {
-                log.warn(String.format("No loader registered for %s. Allocating new loader.", loaderClass.getName()));
-                try
-                {
-                    holder.loader = loaderClass.newInstance();
-                }
-                catch ( Throwable e )
-                {
-                    log.error(String.format("Could not allocate loader %s.", loaderClass.getName()), e);
-                }
+                log.debug(String.format("No loader specified for name \"%s\" loader-class \"%s\". Creating a default.", requiredAsset.name(), requiredAsset.loader().getName()));
+
+                AssetLoader newLoader = requiredAsset.loader().newInstance();
+                AssetLoader oldLoader = loaders.putIfAbsent(defaultBinding, newLoader);
+                defaultLoader = (oldLoader != null) ? oldLoader : newLoader;
             }
-            return holder.loader;
+            return new BindingAndLoader(defaultBinding, defaultLoader);
         }
-    }
-
-    private AssetLoaderHolder getHolder(Class<? extends AssetLoader> loaderClass)
-    {
-        AssetLoaderHolder   newHolder = new AssetLoaderHolder();
-        AssetLoaderHolder   oldHolder = loaders.putIfAbsent(loaderClass, newHolder);
-        return (oldHolder != null) ? oldHolder : newHolder;
-    }
-
-    private static String       makeKey(Class<? extends AssetLoader> loaderClass, String assetName)
-    {
-        return loaderClass.getName() + "\t" + assetName;
+        return new BindingAndLoader(binding, loader);
     }
 }

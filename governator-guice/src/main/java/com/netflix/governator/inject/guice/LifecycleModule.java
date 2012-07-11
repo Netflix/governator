@@ -31,6 +31,7 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.assets.AssetLoaderManager;
 import com.netflix.governator.assets.RequiredAsset;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
@@ -43,18 +44,18 @@ public class LifecycleModule implements Module
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
 
-    public LifecycleModule()
+    public LifecycleModule(AssetLoaderManager assetLoaderManager)
     {
-        this(new LifecycleManager());
+        lifecycleManager = new LifecycleManager(assetLoaderManager);
     }
 
-    public LifecycleModule(LifecycleManager lifecycleManager)
+    public LifecycleModule()
     {
-        this.lifecycleManager = lifecycleManager;
+        lifecycleManager = new LifecycleManager();
     }
 
     @Override
-    public void configure(Binder binder)
+    public void configure(final Binder binder)
     {
         binder.requireExplicitBindings();
         binder.disableCircularProxies();
@@ -67,24 +68,27 @@ public class LifecycleModule implements Module
                 @Override
                 public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
                 {
-                    encounter.register(new InjectionListener<T>()
-                    {
-                        @Override
-                        public void afterInjection(T obj)
+                    encounter.register
+                    (
+                        new InjectionListener<T>()
                         {
-                            if ( isLifeCycleClass(obj.getClass()) )
+                            @Override
+                            public void afterInjection(T obj)
                             {
-                                try
+                                if ( isLifeCycleClass(obj.getClass()) )
                                 {
-                                    lifecycleManager.add(obj);
-                                }
-                                catch ( Exception e )
-                                {
-                                    throw new Error(e);
+                                    try
+                                    {
+                                        lifecycleManager.add(obj);
+                                    }
+                                    catch ( Exception e )
+                                    {
+                                        throw new Error(e);
+                                    }
                                 }
                             }
                         }
-                    });
+                    );
                 }
             }
         );
@@ -92,9 +96,16 @@ public class LifecycleModule implements Module
 
     @Provides
     @Singleton
-    public LifecycleManager getLifecycleManager() throws Exception
+    public LifecycleManager getLifecycleManager()
     {
         return lifecycleManager;
+    }
+
+    @Provides
+    @Singleton
+    public AssetLoaderManager getAssetLoaderManager()
+    {
+        return lifecycleManager.getAssetLoaderManager();
     }
 
     private boolean isLifeCycleClass(Class<?> clazz)

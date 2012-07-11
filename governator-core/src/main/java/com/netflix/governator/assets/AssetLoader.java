@@ -18,7 +18,7 @@ package com.netflix.governator.assets;
 
 public interface AssetLoader
 {
-    public void     loadAsset(String name, String[] args) throws Exception;
+    public void     loadAsset(String name) throws Exception;
 
-    public void     unloadAsset(String name, String[] args) throws Exception;
+    public void     unloadAsset(String name) throws Exception;
 }

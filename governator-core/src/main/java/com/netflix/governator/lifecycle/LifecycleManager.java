@@ -19,7 +19,6 @@ package com.netflix.governator.lifecycle;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoaderManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +44,8 @@ public class LifecycleManager implements Closeable
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Map<Object, LifecycleState> objectStates = Maps.newConcurrentMap();
     private final List<PreDestroyRecord> preDestroyRecords = new CopyOnWriteArrayList<PreDestroyRecord>();
-    private final AssetLoaderManager assetLoaderManager;
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
+    private final AssetLoaderManager assetLoaderManager;
 
     private static class PreDestroyRecord
     {
@@ -67,15 +66,20 @@ public class LifecycleManager implements Closeable
         CLOSED
     }
 
-    @Inject
     public LifecycleManager()
     {
-        this(new AssetLoaderManager());
+        this.assetLoaderManager = new AssetLoaderManager();
     }
 
+    @Inject
     public LifecycleManager(AssetLoaderManager assetLoaderManager)
     {
         this.assetLoaderManager = assetLoaderManager;
+    }
+
+    public AssetLoaderManager getAssetLoaderManager()
+    {
+        return assetLoaderManager;
     }
 
     public void add(Object... objects) throws Exception
@@ -92,11 +96,6 @@ public class LifecycleManager implements Closeable
 
         if ( getState(obj) == LifecycleState.LATENT )
         {
-            if ( AssetLoader.class.isAssignableFrom(obj.getClass()) )
-            {
-                assetLoaderManager.addLoader((AssetLoader)obj);
-            }
-
             objectStates.put(obj, LifecycleState.POST_CONSTRUCTING);
             try
             {

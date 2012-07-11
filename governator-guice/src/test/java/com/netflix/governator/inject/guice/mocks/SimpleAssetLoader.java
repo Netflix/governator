@@ -17,41 +17,21 @@
 package com.netflix.governator.inject.guice.mocks;
 
 import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.inject.AutoBindSingleton;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@AutoBindSingleton
 public class SimpleAssetLoader implements AssetLoader
 {
-    public final AtomicInteger      setupCount = new AtomicInteger(0);
-    public final AtomicInteger      tearDownCount = new AtomicInteger(0);
     public static final AtomicInteger      loadAssetCount = new AtomicInteger(0);
     public static final AtomicInteger      unloadAssetCount = new AtomicInteger(0);
 
-    @PostConstruct
-    public void     setup()
-    {
-        loadAssetCount.set(0);
-        unloadAssetCount.set(0);
-        setupCount.incrementAndGet();
-    }
-
-    @PreDestroy
-    public void     tearDown()
-    {
-        tearDownCount.incrementAndGet();
-    }
-
     @Override
-    public void loadAsset(String name, String[] args) throws Exception
+    public void loadAsset(String name) throws Exception
     {
         loadAssetCount.incrementAndGet();
     }
 
     @Override
-    public void unloadAsset(String name, String[] args) throws Exception
+    public void unloadAsset(String name) throws Exception
     {
         unloadAssetCount.incrementAndGet();
     }

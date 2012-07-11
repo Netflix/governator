@@ -1,5 +1,5 @@
 // Establish version and status
-ext.releaseVersion = '0.0.2'
+ext.releaseVersion = '0.0.3'
 ext.githubProjectName = 'governator'
 
 buildscript {
@@ -58,6 +58,5 @@ project(':governator-guice') {
     dependencies {
         compile     project(":governator-core")
         compile     'com.google.inject:guice:3.0'
-        compile     'com.google.inject:guice-multibindings:3.0'
     }
 }
