@@ -61,37 +61,40 @@ public class LifecycleModule implements Module
         binder.disableCircularProxies();
 
         binder.bindListener
-        (
-            Matchers.any(),
-            new TypeListener()
-            {
-                @Override
-                public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
+            (
+                Matchers.any(),
+                new TypeListener()
                 {
-                    encounter.register
-                    (
-                        new InjectionListener<T>()
-                        {
-                            @Override
-                            public void afterInjection(T obj)
-                            {
-                                if ( isLifeCycleClass(obj.getClass()) )
+                    @Override
+                    public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
+                    {
+                        encounter.register
+                            (
+                                new InjectionListener<T>()
                                 {
-                                    try
+                                    @Override
+                                    public void afterInjection(T obj)
                                     {
-                                        lifecycleManager.add(obj);
-                                    }
-                                    catch ( Exception e )
-                                    {
-                                        throw new Error(e);
+                                        Class<?> clazz = obj.getClass();
+                                        LifecycleMethods methods = getLifecycleMethods(clazz);
+
+                                        if ( isLifeCycleClass(clazz, methods) )
+                                        {
+                                            try
+                                            {
+                                                lifecycleManager.add(obj, methods);
+                                            }
+                                            catch ( Exception e )
+                                            {
+                                                throw new Error(e);
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                        }
-                    );
+                            );
+                    }
                 }
-            }
-        );
+            );
     }
 
     @Provides
@@ -108,19 +111,25 @@ public class LifecycleModule implements Module
         return lifecycleManager.getAssetLoaderManager();
     }
 
-    private boolean isLifeCycleClass(Class<?> clazz)
+    private LifecycleMethods getLifecycleMethods(Class<?> clazz)
     {
-        if ( clazz.isAnnotationPresent(RequiredAsset.class) )
-        {
-            return true;
-        }
-
         LifecycleMethods methods = lifecycleMethods.get(clazz);
         if ( methods == null )
         {
             methods = new LifecycleMethods(clazz);
             lifecycleMethods.put(clazz, methods);
         }
+        return methods;
+    }
+
+    private boolean isLifeCycleClass(Class<?> clazz, LifecycleMethods methods)
+    {
+        //noinspection SimplifiableIfStatement
+        if ( clazz.isAnnotationPresent(RequiredAsset.class) )
+        {
+            return true;
+        }
+
         return methods.hasFor(PostConstruct.class) || methods.hasFor(PreDestroy.class);
     }
 }

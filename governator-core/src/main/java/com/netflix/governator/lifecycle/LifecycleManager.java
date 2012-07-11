@@ -92,6 +92,11 @@ public class LifecycleManager implements Closeable
 
     public synchronized void add(Object obj) throws Exception
     {
+        add(obj, new LifecycleMethods(obj.getClass()));
+    }
+
+    public synchronized void add(Object obj, LifecycleMethods methods) throws Exception
+    {
         Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
 
         if ( getState(obj) == LifecycleState.LATENT )
@@ -99,7 +104,7 @@ public class LifecycleManager implements Closeable
             objectStates.put(obj, LifecycleState.POST_CONSTRUCTING);
             try
             {
-                startInstance(obj);
+                startInstance(obj, methods);
             }
             catch ( Exception e )
             {
@@ -140,13 +145,12 @@ public class LifecycleManager implements Closeable
         }
     }
 
-    private void startInstance(Object obj) throws Exception
+    private void startInstance(Object obj, LifecycleMethods methods) throws Exception
     {
         log.debug("Starting %s", obj.getClass().getName());
 
         boolean             hasAssets = assetLoaderManager.loadAssetsFor(obj);
 
-        LifecycleMethods    methods = new LifecycleMethods(obj.getClass());
         for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
         {
             log.debug("\t%s()", postConstruct.getName());
