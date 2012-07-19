@@ -20,6 +20,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netflix.governator.assets.AssetLoaderManager;
+import com.netflix.governator.configuration.Configuration;
+import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.configuration.SystemConfigurationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -28,6 +31,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +50,7 @@ public class LifecycleManager implements Closeable
     private final List<PreDestroyRecord> preDestroyRecords = new CopyOnWriteArrayList<PreDestroyRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final AssetLoaderManager assetLoaderManager;
+    private final ConfigurationProvider configurationProvider;
 
     private static class PreDestroyRecord
     {
@@ -69,12 +74,14 @@ public class LifecycleManager implements Closeable
     public LifecycleManager()
     {
         this.assetLoaderManager = new AssetLoaderManager();
+        this.configurationProvider = new SystemConfigurationProvider();
     }
 
     @Inject
-    public LifecycleManager(AssetLoaderManager assetLoaderManager)
+    public LifecycleManager(AssetLoaderManager assetLoaderManager, ConfigurationProvider configurationProvider)
     {
         this.assetLoaderManager = assetLoaderManager;
+        this.configurationProvider = configurationProvider;
     }
 
     public AssetLoaderManager getAssetLoaderManager()
@@ -151,6 +158,11 @@ public class LifecycleManager implements Closeable
 
         boolean             hasAssets = assetLoaderManager.loadAssetsFor(obj);
 
+        for ( Field configurationField : methods.fieldsFor(Configuration.class) )
+        {
+            assignConfiguration(obj, configurationField);
+        }
+
         for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
         {
             log.debug("\t%s()", postConstruct.getName());
@@ -194,6 +206,48 @@ public class LifecycleManager implements Closeable
                 {
                     log.error("Couldn't stop lifecycle managed instance", e);
                 }
+            }
+        }
+    }
+
+    private void assignConfiguration(Object obj, Field field) throws Exception
+    {
+        Configuration       configuration = field.getAnnotation(Configuration.class);
+        if ( configurationProvider.has(configuration.value()) )
+        {
+            if ( field.getType() == String.class )
+            {
+                String  value = configurationProvider.getString(configuration.value());
+                log.debug("String %s = \"%s\"", field.getName(), value);
+                field.set(obj, value);
+            }
+            else if ( (field.getType() == Boolean.class) || (field.getType() == Boolean.TYPE) )
+            {
+                boolean  value = configurationProvider.getBoolean(configuration.value());
+                log.debug("boolean %s = %s", field.getName(), Boolean.toString(value));
+                field.set(obj, value);
+            }
+            else if ( (field.getType() == Integer.class) || (field.getType() == Integer.TYPE) )
+            {
+                int  value = configurationProvider.getInteger(configuration.value());
+                log.debug("int %s = %d", field.getName(), value);
+                field.set(obj, value);
+            }
+            else if ( (field.getType() == Long.class) || (field.getType() == Long.TYPE) )
+            {
+                long  value = configurationProvider.getLong(configuration.value());
+                log.debug("int %s = %d", field.getName(), value);
+                field.set(obj, value);
+            }
+            else if ( (field.getType() == Double.class) || (field.getType() == Double.TYPE) )
+            {
+                double  value = configurationProvider.getDouble(configuration.value());
+                log.debug("int %s = %f", field.getName(), value);
+                field.set(obj, value);
+            }
+            else
+            {
+                log.error("Field type not supported: " + field.getType());
             }
         }
     }

@@ -33,6 +33,7 @@ import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.assets.AssetLoaderManager;
 import com.netflix.governator.assets.RequiredAsset;
+import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import javax.annotation.PostConstruct;
@@ -44,9 +45,9 @@ public class LifecycleModule implements Module
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
 
-    public LifecycleModule(AssetLoaderManager assetLoaderManager)
+    public LifecycleModule(AssetLoaderManager assetLoaderManager, ConfigurationProvider configurationProvider)
     {
-        lifecycleManager = new LifecycleManager(assetLoaderManager);
+        lifecycleManager = new LifecycleManager(assetLoaderManager, configurationProvider);
     }
 
     public LifecycleModule()
@@ -57,44 +58,41 @@ public class LifecycleModule implements Module
     @Override
     public void configure(final Binder binder)
     {
-        binder.requireExplicitBindings();
-        binder.disableCircularProxies();
-
         binder.bindListener
-            (
-                Matchers.any(),
-                new TypeListener()
+        (
+            Matchers.any(),
+            new TypeListener()
+            {
+                @Override
+                public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
                 {
-                    @Override
-                    public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
-                    {
-                        encounter.register
-                            (
-                                new InjectionListener<T>()
+                    encounter.register
+                        (
+                            new InjectionListener<T>()
+                            {
+                                @Override
+                                public void afterInjection(T obj)
                                 {
-                                    @Override
-                                    public void afterInjection(T obj)
-                                    {
-                                        Class<?> clazz = obj.getClass();
-                                        LifecycleMethods methods = getLifecycleMethods(clazz);
+                                    Class<?> clazz = obj.getClass();
+                                    LifecycleMethods methods = getLifecycleMethods(clazz);
 
-                                        if ( isLifeCycleClass(clazz, methods) )
+                                    if ( isLifeCycleClass(clazz, methods) )
+                                    {
+                                        try
                                         {
-                                            try
-                                            {
-                                                lifecycleManager.add(obj, methods);
-                                            }
-                                            catch ( Exception e )
-                                            {
-                                                throw new Error(e);
-                                            }
+                                            lifecycleManager.add(obj, methods);
+                                        }
+                                        catch ( Exception e )
+                                        {
+                                            throw new Error(e);
                                         }
                                     }
                                 }
-                            );
-                    }
+                            }
+                        );
                 }
-            );
+            }
+        );
     }
 
     @Provides

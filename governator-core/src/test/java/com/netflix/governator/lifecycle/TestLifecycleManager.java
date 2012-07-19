@@ -20,17 +20,66 @@ import com.google.common.collect.Maps;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoaderBinding;
 import com.netflix.governator.assets.AssetLoaderManager;
+import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
+import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
 import com.netflix.governator.lifecycle.mocks.SimpleAssetLoader;
 import com.netflix.governator.lifecycle.mocks.SimpleContainer;
 import com.netflix.governator.lifecycle.mocks.SimpleHasAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleObject;
+import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Map;
 
 public class TestLifecycleManager
 {
+    @Test
+    public void     testConfigSubclass() throws Exception
+    {
+        LifecycleManager    manager = new LifecycleManager();
+        manager.start();
+
+        System.setProperty("test.b", "true");
+        System.setProperty("test.i", "100");
+        System.setProperty("test.l", "200");
+        System.setProperty("test.d", "300.4");
+        System.setProperty("test.s", "a is a");
+        System.setProperty("test.main", "2468");
+
+        SubclassedObjectWithConfig  obj = new SubclassedObjectWithConfig();
+        manager.add(obj);
+
+        Assert.assertEquals(obj.aBool, true);
+        Assert.assertEquals(obj.anInt, 100);
+        Assert.assertEquals(obj.aLong, 200);
+        Assert.assertEquals(obj.aDouble, 300.4);
+        Assert.assertEquals(obj.aString, "a is a");
+        Assert.assertEquals(obj.mainInt, 2468);
+    }
+
+    @Test
+    public void     testConfig() throws Exception
+    {
+        LifecycleManager    manager = new LifecycleManager();
+        manager.start();
+
+        System.setProperty("test.b", "true");
+        System.setProperty("test.i", "100");
+        System.setProperty("test.l", "200");
+        System.setProperty("test.d", "300.4");
+        System.setProperty("test.s", "a is a");
+
+        ObjectWithConfig    obj = new ObjectWithConfig();
+        manager.add(obj);
+
+        Assert.assertEquals(obj.aBool, true);
+        Assert.assertEquals(obj.anInt, 100);
+        Assert.assertEquals(obj.aLong, 200);
+        Assert.assertEquals(obj.aDouble, 300.4);
+        Assert.assertEquals(obj.aString, "a is a");
+    }
+
     @Test
     public void     testSimple() throws Exception
     {
@@ -91,7 +140,7 @@ public class TestLifecycleManager
         loaders.put(new AssetLoaderBinding(SimpleAssetLoader.class, "foo"), simpleAssetLoader);
         AssetLoaderManager assetLoaderManager = new AssetLoaderManager(loaders);
 
-        LifecycleManager    manager = new LifecycleManager(assetLoaderManager);
+        LifecycleManager    manager = new LifecycleManager(assetLoaderManager, new SystemConfigurationProvider());
         manager.start();
 
         SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
@@ -122,7 +171,7 @@ public class TestLifecycleManager
         loaders.put(new AssetLoaderBinding(SimpleAssetLoader.class, "foo"), simpleAssetLoader);
         AssetLoaderManager assetLoaderManager = new AssetLoaderManager(loaders);
 
-        LifecycleManager    manager = new LifecycleManager(assetLoaderManager);
+        LifecycleManager    manager = new LifecycleManager(assetLoaderManager, new SystemConfigurationProvider());
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
         manager.start();
 

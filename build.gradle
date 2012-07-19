@@ -1,5 +1,5 @@
 // Establish version and status
-ext.releaseVersion = '0.0.4'
+ext.releaseVersion = '0.0.6'
 ext.githubProjectName = 'governator'
 
 buildscript {

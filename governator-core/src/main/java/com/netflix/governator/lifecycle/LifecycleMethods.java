@@ -24,9 +24,11 @@ package com.netflix.governator.lifecycle;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.netflix.governator.configuration.Configuration;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,16 +37,29 @@ import java.util.Set;
 public class LifecycleMethods
 {
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
+    private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
 
     public LifecycleMethods(Class<?> clazz)
     {
-        addLifeCycleMethods(clazz, new HashSet<String>(), new HashSet<String>());
+        addLifeCycleMethods(clazz, new HashSet<String>(), new HashSet<String>(), new HashSet<String>());
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     public boolean hasFor(Class<? extends Annotation> annotation)
     {
         Collection<Method> methods = methodMap.get(annotation);
-        return (methods != null) && (methods.size() > 0);
+        if ( (methods != null) && (methods.size() > 0) )
+        {
+            return true;
+        }
+
+        Collection<Field> fields = fieldMap.get(annotation);
+        if ( (fields != null) && (fields.size() > 0) )
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public Collection<Method> methodsFor(Class<? extends Annotation> annotation)
@@ -53,14 +68,33 @@ public class LifecycleMethods
         return (methods != null) ? methods : Lists.<Method>newArrayList();
     }
 
-    private void addLifeCycleMethods(Class<?> clazz, Set<String> usedConstructNames, Set<String> usedDestroyNames)
+    public Collection<Field> fieldsFor(Class<? extends Annotation> annotation)
     {
-        if (clazz == null) {
+        Collection<Field> fields = fieldMap.get(annotation);
+        return (fields != null) ? fields : Lists.<Field>newArrayList();
+    }
+
+    private void addLifeCycleMethods(Class<?> clazz, Set<String> usedConstructNames, Set<String> usedDestroyNames, Set<String> usedFieldNames)
+    {
+        if ( clazz == null )
+        {
             return;
         }
 
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.isSynthetic() || method.isBridge()) {
+        for ( Field field : clazz.getDeclaredFields() )
+        {
+            if ( field.isSynthetic() )
+            {
+                continue;
+            }
+
+            processField(field, Configuration.class, usedFieldNames);
+        }
+
+        for ( Method method : clazz.getDeclaredMethods() )
+        {
+            if ( method.isSynthetic() || method.isBridge() )
+            {
                 continue;
             }
 
@@ -68,17 +102,34 @@ public class LifecycleMethods
             processMethod(method, PreDestroy.class, usedDestroyNames);
         }
 
-        addLifeCycleMethods(clazz.getSuperclass(), usedConstructNames, usedDestroyNames);
-        for (Class<?> face : clazz.getInterfaces()) {
-            addLifeCycleMethods(face, usedConstructNames, usedDestroyNames);
+        addLifeCycleMethods(clazz.getSuperclass(), usedConstructNames, usedDestroyNames, usedFieldNames);
+        for ( Class<?> face : clazz.getInterfaces() )
+        {
+            addLifeCycleMethods(face, usedConstructNames, usedDestroyNames, usedFieldNames);
+        }
+    }
+
+    private void processField(Field field, Class<Configuration> annotationClass, Set<String> usedSet)
+    {
+        if ( field.isAnnotationPresent(annotationClass) )
+        {
+            if ( !usedSet.contains(field.getName()) )
+            {
+                field.setAccessible(true);
+                usedSet.add(field.getName());
+                fieldMap.put(annotationClass, field);
+            }
         }
     }
 
     private void processMethod(Method method, Class<? extends Annotation> annotationClass, Set<String> usedSet)
     {
-        if (method.isAnnotationPresent(annotationClass)) {
-            if (!usedSet.contains(method.getName())) {
-                if (method.getParameterTypes().length != 0) {
+        if ( method.isAnnotationPresent(annotationClass) )
+        {
+            if ( !usedSet.contains(method.getName()) )
+            {
+                if ( method.getParameterTypes().length != 0 )
+                {
                     throw new UnsupportedOperationException(String.format("@PostConstruct/@PreDestroy methods cannot have arguments: %s", method.getDeclaringClass().getName() + "." + method.getName() + "(...)"));
                 }
 

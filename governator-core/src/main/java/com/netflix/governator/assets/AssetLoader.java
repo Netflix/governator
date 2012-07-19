@@ -21,4 +21,6 @@ public interface AssetLoader
     public void     loadAsset(String name) throws Exception;
 
     public void     unloadAsset(String name) throws Exception;
+
+    public<T> T     getValue(Class<T> clazz) throws Exception;
 }

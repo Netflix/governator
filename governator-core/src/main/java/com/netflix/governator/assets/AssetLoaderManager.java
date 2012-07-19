@@ -66,6 +66,12 @@ public class AssetLoaderManager
         this.loaders.putAll(loaders);
     }
 
+    public AssetLoader  getLoader(AssetLoaderBinding binding) throws Exception
+    {
+        BindingAndLoader    bindingAndLoader = getBindingAndLoader(binding);
+        return bindingAndLoader.loader;
+    }
+
     public boolean     loadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset   requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
@@ -145,17 +151,21 @@ public class AssetLoaderManager
 
     private BindingAndLoader getBindingAndLoader(RequiredAsset requiredAsset) throws IllegalAccessException, InstantiationException
     {
-        AssetLoaderBinding     binding = new AssetLoaderBinding(requiredAsset.loader(), requiredAsset.name());
+        return getBindingAndLoader(new AssetLoaderBinding(requiredAsset.loader(), requiredAsset.name()));
+    }
+
+    private BindingAndLoader getBindingAndLoader(AssetLoaderBinding binding) throws IllegalAccessException, InstantiationException
+    {
         AssetLoader            loader = loaders.get(binding);
         if ( loader == null )
         {
-            AssetLoaderBinding     defaultBinding = new AssetLoaderBinding(requiredAsset.loader(), AssetLoaderBinding.DEFAULT_BINDING_NAME);
+            AssetLoaderBinding     defaultBinding = new AssetLoaderBinding(binding.getLoaderClass(), AssetLoaderBinding.DEFAULT_BINDING_NAME);
             AssetLoader            defaultLoader = loaders.get(binding);
             if ( defaultLoader == null )
             {
-                log.debug(String.format("No loader specified for name \"%s\" loader-class \"%s\". Creating a default.", requiredAsset.name(), requiredAsset.loader().getName()));
+                log.debug(String.format("No loader specified for name \"%s\" loader-class \"%s\". Creating a default.", binding.getName(), binding.getLoaderClass().getName()));
 
-                AssetLoader newLoader = requiredAsset.loader().newInstance();
+                AssetLoader newLoader = binding.getLoaderClass().newInstance();
                 AssetLoader oldLoader = loaders.putIfAbsent(defaultBinding, newLoader);
                 defaultLoader = (oldLoader != null) ? oldLoader : newLoader;
             }
