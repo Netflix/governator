@@ -32,7 +32,7 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.assets.AssetLoaderManager;
-import com.netflix.governator.assets.RequiredAsset;
+import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;

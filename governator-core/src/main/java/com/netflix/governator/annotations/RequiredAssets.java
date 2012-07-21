@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.assets;
+package com.netflix.governator.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -23,9 +23,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target(java.lang.annotation.ElementType.TYPE)
-public @interface RequiredAsset
+public @interface RequiredAssets
 {
-    String    name();
-
-    Class<? extends AssetLoader>    loader();
+    RequiredAsset[]     value();
 }

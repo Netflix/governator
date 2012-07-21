@@ -1,6 +1,6 @@
 package com.netflix.governator.lifecycle.mocks;
 
-import com.netflix.governator.configuration.Configuration;
+import com.netflix.governator.annotations.Configuration;
 
 public class SubclassedObjectWithConfig extends ObjectWithConfig
 {

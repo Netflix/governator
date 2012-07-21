@@ -16,7 +16,7 @@
 
 package com.netflix.governator.inject.guice.mocks;
 
-import com.netflix.governator.inject.AutoBindSingleton;
+import com.netflix.governator.annotations.AutoBindSingleton;
 import javax.inject.Provider;
 
 @AutoBindSingleton

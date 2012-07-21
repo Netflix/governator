@@ -14,13 +14,14 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.inject;
+package com.netflix.governator.lifecycle;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.netflix.governator.annotations.AutoBindSingleton;
 import com.sun.jersey.server.impl.container.config.AnnotatedClassScanner;
 import java.io.File;
 import java.lang.annotation.Annotation;

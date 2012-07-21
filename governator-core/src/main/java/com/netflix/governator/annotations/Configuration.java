@@ -1,4 +1,4 @@
-package com.netflix.governator.warming;
+package com.netflix.governator.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface CoolDown
+public @interface Configuration
 {
-    boolean canBeParallel() default false;
+    String      value();
 }

@@ -24,7 +24,7 @@ import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
-import com.netflix.governator.inject.ClasspathScanner;
+import com.netflix.governator.lifecycle.ClasspathScanner;
 import java.util.Collection;
 
 public class GuiceAutoBindModule extends AbstractModule

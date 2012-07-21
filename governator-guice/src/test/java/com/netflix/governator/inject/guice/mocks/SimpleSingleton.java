@@ -17,8 +17,8 @@
 package com.netflix.governator.inject.guice.mocks;
 
 import com.google.inject.Inject;
-import com.netflix.governator.assets.RequiredAsset;
-import com.netflix.governator.inject.AutoBindSingleton;
+import com.netflix.governator.annotations.RequiredAsset;
+import com.netflix.governator.annotations.AutoBindSingleton;
 import org.testng.Assert;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;

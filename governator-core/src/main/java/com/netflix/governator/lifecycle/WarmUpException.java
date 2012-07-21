@@ -1,4 +1,4 @@
-package com.netflix.governator.warming;
+package com.netflix.governator.lifecycle;
 
 public class WarmUpException extends Exception
 {

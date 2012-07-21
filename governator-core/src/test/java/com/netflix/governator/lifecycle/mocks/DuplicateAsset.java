@@ -16,7 +16,7 @@
 
 package com.netflix.governator.lifecycle.mocks;
 
-import com.netflix.governator.assets.RequiredAsset;
+import com.netflix.governator.annotations.RequiredAsset;
 
 @RequiredAsset
 (

@@ -1,4 +1,4 @@
-package com.netflix.governator.warming;
+package com.netflix.governator.lifecycle;
 
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;

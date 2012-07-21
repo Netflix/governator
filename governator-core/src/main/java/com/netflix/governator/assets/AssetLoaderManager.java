@@ -17,6 +17,8 @@
 package com.netflix.governator.assets;
 
 import com.google.common.collect.Maps;
+import com.netflix.governator.annotations.RequiredAsset;
+import com.netflix.governator.annotations.RequiredAssets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
@@ -74,8 +76,8 @@ public class AssetLoaderManager
 
     public boolean     loadAssetsFor(Object obj) throws Exception
     {
-        RequiredAsset   requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
-        RequiredAssets  requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);
+        RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
+        RequiredAssets requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);
 
         if ( requiredAsset != null )
         {
