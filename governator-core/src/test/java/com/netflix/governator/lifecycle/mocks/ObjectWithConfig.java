@@ -1,6 +1,7 @@
 package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.configuration.Configuration;
+import java.util.Date;
 
 public class ObjectWithConfig
 {
@@ -18,4 +19,7 @@ public class ObjectWithConfig
 
     @Configuration("test.s")
     public String    aString = "test";
+
+    @Configuration("test.dt")
+    public Date     aDate = null;
 }

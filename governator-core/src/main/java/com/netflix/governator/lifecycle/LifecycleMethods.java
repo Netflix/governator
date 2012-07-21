@@ -22,26 +22,35 @@
 package com.netflix.governator.lifecycle;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.netflix.governator.configuration.Configuration;
+import com.netflix.governator.warming.CoolDown;
+import com.netflix.governator.warming.WarmUp;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 public class LifecycleMethods
 {
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
 
+    private static final Collection<Class<? extends Annotation>>    methodAnnotations = ImmutableSet.of
+    (
+        PostConstruct.class,
+        PreDestroy.class,
+        WarmUp.class,
+        CoolDown.class
+    );
+
     public LifecycleMethods(Class<?> clazz)
     {
-        addLifeCycleMethods(clazz, new HashSet<String>(), new HashSet<String>(), new HashSet<String>());
+        addLifeCycleMethods(clazz, ArrayListMultimap.<Class<? extends Annotation>, String>create());
     }
 
     @SuppressWarnings("RedundantIfStatement")
@@ -74,7 +83,7 @@ public class LifecycleMethods
         return (fields != null) ? fields : Lists.<Field>newArrayList();
     }
 
-    private void addLifeCycleMethods(Class<?> clazz, Set<String> usedConstructNames, Set<String> usedDestroyNames, Set<String> usedFieldNames)
+    private void addLifeCycleMethods(Class<?> clazz, Multimap<Class<? extends Annotation>, String> usedNames)
     {
         if ( clazz == null )
         {
@@ -88,7 +97,7 @@ public class LifecycleMethods
                 continue;
             }
 
-            processField(field, Configuration.class, usedFieldNames);
+            processField(field, Configuration.class, usedNames);
         }
 
         for ( Method method : clazz.getDeclaredMethods() )
@@ -98,35 +107,37 @@ public class LifecycleMethods
                 continue;
             }
 
-            processMethod(method, PostConstruct.class, usedConstructNames);
-            processMethod(method, PreDestroy.class, usedDestroyNames);
+            for ( Class<? extends Annotation> annotationClass : methodAnnotations )
+            {
+                processMethod(method, annotationClass, usedNames);
+            }
         }
 
-        addLifeCycleMethods(clazz.getSuperclass(), usedConstructNames, usedDestroyNames, usedFieldNames);
+        addLifeCycleMethods(clazz.getSuperclass(), usedNames);
         for ( Class<?> face : clazz.getInterfaces() )
         {
-            addLifeCycleMethods(face, usedConstructNames, usedDestroyNames, usedFieldNames);
+            addLifeCycleMethods(face, usedNames);
         }
     }
 
-    private void processField(Field field, Class<Configuration> annotationClass, Set<String> usedSet)
+    private void processField(Field field, Class<? extends Annotation> annotationClass, Multimap<Class<? extends Annotation>, String> usedNames)
     {
         if ( field.isAnnotationPresent(annotationClass) )
         {
-            if ( !usedSet.contains(field.getName()) )
+            if ( !usedNames.get(annotationClass).contains(field.getName()) )
             {
                 field.setAccessible(true);
-                usedSet.add(field.getName());
+                usedNames.put(annotationClass, field.getName());
                 fieldMap.put(annotationClass, field);
             }
         }
     }
 
-    private void processMethod(Method method, Class<? extends Annotation> annotationClass, Set<String> usedSet)
+    private void processMethod(Method method, Class<? extends Annotation> annotationClass, Multimap<Class<? extends Annotation>, String> usedNames)
     {
         if ( method.isAnnotationPresent(annotationClass) )
         {
-            if ( !usedSet.contains(method.getName()) )
+            if ( !usedNames.get(annotationClass).contains(method.getName()) )
             {
                 if ( method.getParameterTypes().length != 0 )
                 {
@@ -134,7 +145,7 @@ public class LifecycleMethods
                 }
 
                 method.setAccessible(true);
-                usedSet.add(method.getName());
+                usedNames.put(annotationClass, method.getName());
                 methodMap.put(annotationClass, method);
             }
         }

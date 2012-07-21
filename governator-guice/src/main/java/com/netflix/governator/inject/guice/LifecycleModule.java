@@ -67,29 +67,29 @@ public class LifecycleModule implements Module
                 public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
                 {
                     encounter.register
-                        (
-                            new InjectionListener<T>()
+                    (
+                        new InjectionListener<T>()
+                        {
+                            @Override
+                            public void afterInjection(T obj)
                             {
-                                @Override
-                                public void afterInjection(T obj)
-                                {
-                                    Class<?> clazz = obj.getClass();
-                                    LifecycleMethods methods = getLifecycleMethods(clazz);
+                                Class<?> clazz = obj.getClass();
+                                LifecycleMethods methods = getLifecycleMethods(clazz);
 
-                                    if ( isLifeCycleClass(clazz, methods) )
+                                if ( isLifeCycleClass(clazz, methods) )
+                                {
+                                    try
                                     {
-                                        try
-                                        {
-                                            lifecycleManager.add(obj, methods);
-                                        }
-                                        catch ( Exception e )
-                                        {
-                                            throw new Error(e);
-                                        }
+                                        lifecycleManager.add(obj, methods);
+                                    }
+                                    catch ( Exception e )
+                                    {
+                                        throw new Error(e);
                                     }
                                 }
                             }
-                        );
+                        }
+                    );
                 }
             }
         );

@@ -20,6 +20,8 @@ public enum LifecycleState
 {
     LATENT,
     POST_CONSTRUCTING,
+    WARMING_UP,
     ACTIVE,
+    COOLING_DOWN,
     PRE_DESTROYING
 }

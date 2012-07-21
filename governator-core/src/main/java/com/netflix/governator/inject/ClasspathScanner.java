@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.sun.jersey.server.impl.container.config.AnnotatedClassScanner;
-import javax.inject.Singleton;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.Collection;

@@ -35,52 +35,6 @@ import java.util.Map;
 public class TestLifecycleManager
 {
     @Test
-    public void     testConfigSubclass() throws Exception
-    {
-        LifecycleManager    manager = new LifecycleManager();
-        manager.start();
-
-        System.setProperty("test.b", "true");
-        System.setProperty("test.i", "100");
-        System.setProperty("test.l", "200");
-        System.setProperty("test.d", "300.4");
-        System.setProperty("test.s", "a is a");
-        System.setProperty("test.main", "2468");
-
-        SubclassedObjectWithConfig  obj = new SubclassedObjectWithConfig();
-        manager.add(obj);
-
-        Assert.assertEquals(obj.aBool, true);
-        Assert.assertEquals(obj.anInt, 100);
-        Assert.assertEquals(obj.aLong, 200);
-        Assert.assertEquals(obj.aDouble, 300.4);
-        Assert.assertEquals(obj.aString, "a is a");
-        Assert.assertEquals(obj.mainInt, 2468);
-    }
-
-    @Test
-    public void     testConfig() throws Exception
-    {
-        LifecycleManager    manager = new LifecycleManager();
-        manager.start();
-
-        System.setProperty("test.b", "true");
-        System.setProperty("test.i", "100");
-        System.setProperty("test.l", "200");
-        System.setProperty("test.d", "300.4");
-        System.setProperty("test.s", "a is a");
-
-        ObjectWithConfig    obj = new ObjectWithConfig();
-        manager.add(obj);
-
-        Assert.assertEquals(obj.aBool, true);
-        Assert.assertEquals(obj.anInt, 100);
-        Assert.assertEquals(obj.aLong, 200);
-        Assert.assertEquals(obj.aDouble, 300.4);
-        Assert.assertEquals(obj.aString, "a is a");
-    }
-
-    @Test
     public void     testSimple() throws Exception
     {
         LifecycleManager    manager = new LifecycleManager();

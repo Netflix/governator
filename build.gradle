@@ -1,5 +1,5 @@
 // Establish version and status
-ext.releaseVersion = '0.0.6'
+ext.releaseVersion = '0.0.7'
 ext.githubProjectName = 'governator'
 
 buildscript {
@@ -51,6 +51,7 @@ subprojects {
 project(':governator-core') {
     dependencies {
         compile     'com.sun.jersey:jersey-bundle:1.1.4'
+        compile     'org.hibernate:hibernate-validator:4.1.0.Final'
     }
 }
 

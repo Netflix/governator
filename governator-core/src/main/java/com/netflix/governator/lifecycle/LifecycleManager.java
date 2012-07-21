@@ -23,19 +23,26 @@ import com.netflix.governator.assets.AssetLoaderManager;
 import com.netflix.governator.configuration.Configuration;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
+import com.netflix.governator.warming.CoolDown;
+import com.netflix.governator.warming.WarmUp;
+import com.netflix.governator.warming.WarmUpManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.xml.bind.DatatypeConverter;
 import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,21 +53,62 @@ import java.util.concurrent.atomic.AtomicReference;
 public class LifecycleManager implements Closeable
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Map<Object, LifecycleState> objectStates = Maps.newConcurrentMap();
-    private final List<PreDestroyRecord> preDestroyRecords = new CopyOnWriteArrayList<PreDestroyRecord>();
+    private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
+    private final List<InvokeRecord> invokings = new CopyOnWriteArrayList<InvokeRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final AssetLoaderManager assetLoaderManager;
     private final ConfigurationProvider configurationProvider;
 
-    private static class PreDestroyRecord
+    /**
+     * Lifecycle managed objects have to be referenced via Object identity not equals()
+     */
+    private static class StateKey
+    {
+        final Object        obj;
+
+        private StateKey(Object obj)
+        {
+            this.obj = obj;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return System.identityHashCode(obj);
+        }
+
+        @SuppressWarnings("SimplifiableIfStatement")
+        @Override
+        public boolean equals(Object o)
+        {
+            if ( this == o )
+            {
+                return true;
+            }
+            if ( o == null || getClass() != o.getClass() )
+            {
+                return false;
+            }
+
+            return hashCode() == o.hashCode();
+        }
+    }
+
+    private static class InvokeRecord
     {
         final Object                obj;
         final Collection<Method>    preDestroyMethods;
+        final Collection<Method>    warmUpMethods;
+        final Collection<Method>    coolDownMethods;
+        final boolean               hasAssets;
 
-        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
+        private InvokeRecord(Object obj, Collection<Method> preDestroyMethods, Collection<Method> warmUpMethods, Collection<Method> coolDownMethods, boolean hasAssets)
         {
             this.obj = obj;
             this.preDestroyMethods = preDestroyMethods;
+            this.warmUpMethods = warmUpMethods;
+            this.coolDownMethods = coolDownMethods;
+            this.hasAssets = hasAssets;
         }
     }
 
@@ -106,25 +154,30 @@ public class LifecycleManager implements Closeable
     {
         Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
 
-        if ( getState(obj) == LifecycleState.LATENT )
+        StateKey        key = new StateKey(obj);
+        if ( getState(key) == LifecycleState.LATENT )
         {
-            objectStates.put(obj, LifecycleState.POST_CONSTRUCTING);
+            objectStates.put(key, LifecycleState.POST_CONSTRUCTING);
             try
             {
                 startInstance(obj, methods);
             }
             catch ( Exception e )
             {
-                objectStates.remove(obj);
+                objectStates.remove(key);
                 throw e;
             }
-            objectStates.put(obj, LifecycleState.ACTIVE);
+            objectStates.put(key, LifecycleState.ACTIVE);
+        }
+        else
+        {
+            log.warn(String.format("Object already completed lifecycle. class: %s - ID: %d", obj.getClass().getName(), System.identityHashCode(obj)));
         }
     }
 
     public synchronized LifecycleState getState(Object obj)
     {
-        LifecycleState state = objectStates.get(obj);
+        LifecycleState state = objectStates.get(new StateKey(obj));
         return (state != null) ? state : LifecycleState.LATENT;
     }
 
@@ -132,23 +185,84 @@ public class LifecycleManager implements Closeable
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
 
-        // currently a NOP
+        doWarmingCooling(true);
+        for ( InvokeRecord record : invokings )
+        {
+            if ( record.warmUpMethods.size() > 0 )
+            {
+
+            }
+        }
     }
 
     @Override
-    public synchronized void close() throws IOException
+    public synchronized void close()
     {
         if ( state.compareAndSet(State.STARTED, State.CLOSED) )
         {
             try
             {
+                doWarmingCooling(false);
+            }
+            catch ( Exception e )
+            {
+                log.error("While cooling down instances", e);
+            }
+
+            try
+            {
                 stopInstances();
+            }
+            catch ( Exception e )
+            {
+                log.error("While stopping instances", e);
             }
             finally
             {
-                preDestroyRecords.clear();
+                invokings.clear();
                 objectStates.clear();
             }
+        }
+    }
+
+    private void doWarmingCooling(boolean warm) throws Exception
+    {
+        WarmUpManager       manager = new WarmUpManager();
+
+        List<InvokeRecord> list = warm ? invokings : getReversed(invokings);
+        for ( InvokeRecord record : list )
+        {
+            if ( warm && (record.warmUpMethods.size() > 0) )
+            {
+                log.debug("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+                objectStates.put(new StateKey(record.obj), LifecycleState.WARMING_UP);
+
+                for ( Method m : record.warmUpMethods )
+                {
+                    WarmUp    warmUp = m.getAnnotation(WarmUp.class);
+                    manager.add(record.obj, m, warmUp.canBeParallel());
+                }
+            }
+            else if ( !warm && (record.coolDownMethods.size() > 0) )
+            {
+                log.debug("Cooling down %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+                objectStates.put(new StateKey(record.obj), LifecycleState.COOLING_DOWN);
+
+                for ( Method m : record.coolDownMethods )
+                {
+                    CoolDown    coolDown = m.getAnnotation(CoolDown.class);
+                    manager.add(record.obj, m, coolDown.canBeParallel());
+                }
+            }
+        }
+
+        if ( warm )
+        {
+            manager.runAll();
+        }
+        else
+        {
+            manager.runAll(true, 0, null);  // TODO
         }
     }
 
@@ -170,31 +284,33 @@ public class LifecycleManager implements Closeable
         }
 
         Collection<Method>      preDestroyMethods = methods.methodsFor(PreDestroy.class);
-        if ( hasAssets || (preDestroyMethods.size() > 0) )
+        Collection<Method>      warmUpMethods = methods.methodsFor(WarmUp.class);
+        Collection<Method>      coolDownMethods = methods.methodsFor(CoolDown.class);
+        if ( hasAssets || (preDestroyMethods.size() > 0) || (warmUpMethods.size() > 0) || (coolDownMethods.size() > 0) )
         {
-            preDestroyRecords.add(new PreDestroyRecord(obj, preDestroyMethods));
+            invokings.add(new InvokeRecord(obj, preDestroyMethods, warmUpMethods, coolDownMethods, hasAssets));
         }
     }
 
-    private void stopInstances()
+    private void stopInstances() throws Exception
     {
-        List<PreDestroyRecord> reversed = Lists.newArrayList(preDestroyRecords);
-        Collections.reverse(reversed);
-
-        for ( PreDestroyRecord record : reversed )
+        for ( InvokeRecord record : getReversed(invokings) )
         {
-            objectStates.put(record.obj, LifecycleState.PRE_DESTROYING);
-
-            try
+            if ( record.hasAssets )
             {
-                assetLoaderManager.unloadAssetsFor(record.obj);
-            }
-            catch ( Throwable e )
-            {
-                log.error("Couldn't unload assets lifecycle managed instance of type: " + record.obj.getClass().getName(), e);
+                try
+                {
+                    assetLoaderManager.unloadAssetsFor(record.obj);
+                }
+                catch ( Throwable e )
+                {
+                    log.error("Couldn't unload assets lifecycle managed instance of type: " + record.obj.getClass().getName(), e);
+                }
             }
 
-            log.debug("Stopping %s", record.obj.getClass().getName());
+            log.debug("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+            objectStates.put(new StateKey(record.obj), LifecycleState.PRE_DESTROYING);
+
             for ( Method preDestroy : record.preDestroyMethods )
             {
                 log.debug("\t%s()", preDestroy.getName());
@@ -207,42 +323,85 @@ public class LifecycleManager implements Closeable
                     log.error("Couldn't stop lifecycle managed instance", e);
                 }
             }
+
+            objectStates.remove(new StateKey(record.obj));
         }
+    }
+
+    private List<InvokeRecord> getReversed(List<InvokeRecord> records)
+    {
+        List<InvokeRecord> reversed = Lists.newArrayList(records);
+        Collections.reverse(reversed);
+        return reversed;
+    }
+
+    private Date parseDate(String value)
+    {
+        DateFormat  formatter = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+        formatter.setLenient(false);
+
+        try
+        {
+            return formatter.parse(value);
+        }
+        catch( ParseException e )
+        {
+            // ignore
+        }
+
+        try
+        {
+            return DatatypeConverter.parseDateTime(value).getTime();
+        }
+        catch ( IllegalArgumentException e )
+        {
+            // ignore
+        }
+
+        return null;
     }
 
     private void assignConfiguration(Object obj, Field field) throws Exception
     {
         Configuration       configuration = field.getAnnotation(Configuration.class);
-        if ( configurationProvider.has(configuration.value()) )
+        String              configurationName = configuration.value();
+
+        if ( configurationProvider.has(configurationName) )
         {
-            if ( field.getType() == String.class )
+            if ( String.class.isAssignableFrom(field.getType()) )
             {
-                String  value = configurationProvider.getString(configuration.value());
+                String  value = configurationProvider.getString(configurationName);
                 log.debug("String %s = \"%s\"", field.getName(), value);
                 field.set(obj, value);
             }
-            else if ( (field.getType() == Boolean.class) || (field.getType() == Boolean.TYPE) )
+            else if ( Boolean.class.isAssignableFrom(field.getType()) || Boolean.TYPE.isAssignableFrom(field.getType()) )
             {
-                boolean  value = configurationProvider.getBoolean(configuration.value());
+                boolean  value = configurationProvider.getBoolean(configurationName);
                 log.debug("boolean %s = %s", field.getName(), Boolean.toString(value));
                 field.set(obj, value);
             }
-            else if ( (field.getType() == Integer.class) || (field.getType() == Integer.TYPE) )
+            else if ( Integer.class.isAssignableFrom(field.getType()) || Integer.TYPE.isAssignableFrom(field.getType()) )
             {
-                int  value = configurationProvider.getInteger(configuration.value());
+                int  value = configurationProvider.getInteger(configurationName);
                 log.debug("int %s = %d", field.getName(), value);
                 field.set(obj, value);
             }
-            else if ( (field.getType() == Long.class) || (field.getType() == Long.TYPE) )
+            else if ( Long.class.isAssignableFrom(field.getType()) || Long.TYPE.isAssignableFrom(field.getType()) )
             {
-                long  value = configurationProvider.getLong(configuration.value());
-                log.debug("int %s = %d", field.getName(), value);
+                long  value = configurationProvider.getLong(configurationName);
+                log.debug("long %s = %d", field.getName(), value);
                 field.set(obj, value);
             }
-            else if ( (field.getType() == Double.class) || (field.getType() == Double.TYPE) )
+            else if ( Double.class.isAssignableFrom(field.getType()) || Double.TYPE.isAssignableFrom(field.getType()) )
             {
-                double  value = configurationProvider.getDouble(configuration.value());
-                log.debug("int %s = %f", field.getName(), value);
+                double  value = configurationProvider.getDouble(configurationName);
+                log.debug("double %s = %f", field.getName(), value);
+                field.set(obj, value);
+            }
+            else if ( Date.class.isAssignableFrom(field.getType()) )
+            {
+                Date  value = parseDate(configurationProvider.getString(configurationName));
+                log.debug("Date %s = %f", field.getName(), value);
                 field.set(obj, value);
             }
             else
