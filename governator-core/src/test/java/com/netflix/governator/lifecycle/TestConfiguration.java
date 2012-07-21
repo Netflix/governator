@@ -27,7 +27,6 @@ public class TestConfiguration
     public void     testConfigSubclass() throws Exception
     {
         LifecycleManager    manager = new LifecycleManager();
-        manager.start();
 
         System.setProperty("test.b", "true");
         System.setProperty("test.i", "100");
@@ -38,6 +37,7 @@ public class TestConfiguration
 
         SubclassedObjectWithConfig  obj = new SubclassedObjectWithConfig();
         manager.add(obj);
+        manager.start();
 
         Assert.assertEquals(obj.aBool, true);
         Assert.assertEquals(obj.anInt, 100);

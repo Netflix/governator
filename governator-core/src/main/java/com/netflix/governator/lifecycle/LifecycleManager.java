@@ -16,7 +16,10 @@
 
 package com.netflix.governator.lifecycle;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netflix.governator.assets.AssetLoaderManager;
@@ -32,6 +35,11 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.ConstraintViolation;
+import javax.validation.Path;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.xml.bind.DatatypeConverter;
 import java.io.Closeable;
 import java.lang.reflect.Field;
@@ -44,6 +52,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -185,14 +194,9 @@ public class LifecycleManager implements Closeable
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
 
-        doWarmingCooling(true);
-        for ( InvokeRecord record : invokings )
-        {
-            if ( record.warmUpMethods.size() > 0 )
-            {
+        validate();
 
-            }
-        }
+        doWarmingCooling(true); // TODO - set to active after warming
     }
 
     @Override
@@ -409,5 +413,51 @@ public class LifecycleManager implements Closeable
                 log.error("Field type not supported: " + field.getType());
             }
         }
+    }
+
+    private void        validate() throws ValidationException
+    {
+        ValidationException exception = null;
+        ValidatorFactory    factory = Validation.buildDefaultValidatorFactory();
+        Validator           validator = factory.getValidator();
+        for ( StateKey key : objectStates.keySet() )
+        {
+            Set<ConstraintViolation<Object>> violations = validator.validate(key.obj);
+            for ( ConstraintViolation<Object> violation : violations )
+            {
+                String      path = getPath(violation);
+                String      message = String.format("%s - %s.%s = %s", violation.getMessage(), key.obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
+                if ( exception == null )
+                {
+                    exception = new ValidationException(message);
+                }
+                else
+                {
+                    exception = new ValidationException(message, exception);
+                }
+            }
+        }
+
+        if ( exception != null )
+        {
+            throw exception;
+        }
+    }
+
+    private String getPath(ConstraintViolation<Object> violation)
+    {
+        Iterable<String> transformed = Iterables.transform
+        (
+            violation.getPropertyPath(),
+            new Function<Path.Node, String>()
+            {
+                @Override
+                public String apply(Path.Node node)
+                {
+                    return node.getName();
+                }
+            }
+        );
+        return Joiner.on(".").join(transformed);
     }
 }

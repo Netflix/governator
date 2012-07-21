@@ -1,6 +1,7 @@
 package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.configuration.Configuration;
+import javax.validation.constraints.Min;
 import java.util.Date;
 
 public class ObjectWithConfig
@@ -12,6 +13,7 @@ public class ObjectWithConfig
     public int       anInt = 1;
 
     @Configuration("test.l")
+    @Min(10000)
     public long      aLong = 2;
 
     @Configuration("test.d")
