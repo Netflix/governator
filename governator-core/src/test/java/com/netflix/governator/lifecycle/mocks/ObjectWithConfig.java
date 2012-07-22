@@ -13,7 +13,6 @@ public class ObjectWithConfig
     public int       anInt = 1;
 
     @Configuration("test.l")
-    @Min(10000)
     public long      aLong = 2;
 
     @Configuration("test.d")

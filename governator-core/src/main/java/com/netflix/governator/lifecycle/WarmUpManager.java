@@ -3,6 +3,7 @@ package com.netflix.governator.lifecycle;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -15,6 +16,8 @@ public class WarmUpManager
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final List<List<Work>> parallelQueues = Lists.newArrayList();
     private final List<Work> foregroundQueue = Lists.newArrayList();
+    private final LifecycleManager lifecycleManager;
+    private final LifecycleState endState;
 
     private int     nextIndex = 0;  // 0 is reserved
 
@@ -30,8 +33,11 @@ public class WarmUpManager
         }
     }
 
-    public WarmUpManager()
+    public WarmUpManager(LifecycleManager lifecycleManager, LifecycleState endState)
     {
+        this.lifecycleManager = lifecycleManager;
+        this.endState = endState;
+
         int     nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2); // leave an extra thread for other stuff and one for the foreground
         for ( int i = 0; i < nThreads; ++i )
         {
@@ -80,7 +86,7 @@ public class WarmUpManager
         {
             try
             {
-                work.method.invoke(work.obj);
+                doWork(work);
             }
             catch ( Throwable e )
             {
@@ -102,6 +108,12 @@ public class WarmUpManager
         }
     }
 
+    private void doWork(Work work) throws IllegalAccessException, InvocationTargetException
+    {
+        work.method.invoke(work.obj);
+        lifecycleManager.setState(work.obj, endState);
+    }
+
     private void startParallel(ExecutorService service)
     {
         for ( final List<Work> queue : parallelQueues )
@@ -117,7 +129,7 @@ public class WarmUpManager
                         {
                             try
                             {
-                                work.method.invoke(work.obj);
+                                doWork(work);
                             }
                             catch ( Throwable e )
                             {

@@ -195,7 +195,7 @@ public class LifecycleManager implements Closeable
 
         validate();
 
-        doWarmingCooling(true); // TODO - set to active after warming
+        doWarmUp();
     }
 
     @Override
@@ -205,7 +205,7 @@ public class LifecycleManager implements Closeable
         {
             try
             {
-                doWarmingCooling(false);
+                doCoolDown();
             }
             catch ( Exception e )
             {
@@ -228,28 +228,21 @@ public class LifecycleManager implements Closeable
         }
     }
 
-    private void doWarmingCooling(boolean warm) throws Exception
+    LifecycleState setState(Object obj, LifecycleState state)
     {
-        WarmUpManager       manager = new WarmUpManager();
+        return objectStates.put(new StateKey(obj), state);
+    }
 
-        List<InvokeRecord> list = warm ? invokings : getReversed(invokings);
-        for ( InvokeRecord record : list )
+    private void doCoolDown() throws Exception
+    {
+        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.PRE_DESTROYING);
+
+        for ( InvokeRecord record : getReversed(invokings) )
         {
-            if ( warm && (record.warmUpMethods.size() > 0) )
+            if ( record.coolDownMethods.size() > 0 )
             {
-                log.debug("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
-                objectStates.put(new StateKey(record.obj), LifecycleState.WARMING_UP);
-
-                for ( Method m : record.warmUpMethods )
-                {
-                    WarmUp    warmUp = m.getAnnotation(WarmUp.class);
-                    manager.add(record.obj, m, warmUp.canBeParallel());
-                }
-            }
-            else if ( !warm && (record.coolDownMethods.size() > 0) )
-            {
+                setState(record.obj, LifecycleState.COOLING_DOWN);
                 log.debug("Cooling down %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
-                objectStates.put(new StateKey(record.obj), LifecycleState.COOLING_DOWN);
 
                 for ( Method m : record.coolDownMethods )
                 {
@@ -259,14 +252,34 @@ public class LifecycleManager implements Closeable
             }
         }
 
-        if ( warm )
+        manager.runAll(true, 0, null);  // TODO
+    }
+
+    private void doWarmUp() throws Exception
+    {
+        for ( StateKey key : objectStates.keySet() )
         {
-            manager.runAll();
+            objectStates.put(key, LifecycleState.ACTIVE);
         }
-        else
+
+        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.ACTIVE);
+
+        for ( InvokeRecord record : invokings )
         {
-            manager.runAll(true, 0, null);  // TODO
+            if ( record.warmUpMethods.size() > 0 )
+            {
+                setState(record.obj, LifecycleState.WARMING_UP);
+                log.debug("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+
+                for ( Method m : record.warmUpMethods )
+                {
+                    WarmUp    warmUp = m.getAnnotation(WarmUp.class);
+                    manager.add(record.obj, m, warmUp.canBeParallel());
+                }
+            }
         }
+
+        manager.runAll();
     }
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
@@ -312,7 +325,7 @@ public class LifecycleManager implements Closeable
             }
 
             log.debug("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
-            objectStates.put(new StateKey(record.obj), LifecycleState.PRE_DESTROYING);
+            setState(record.obj, LifecycleState.PRE_DESTROYING);
 
             for ( Method preDestroy : record.preDestroyMethods )
             {
