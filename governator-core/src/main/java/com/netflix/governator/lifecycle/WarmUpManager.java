@@ -33,12 +33,11 @@ public class WarmUpManager
         }
     }
 
-    public WarmUpManager(LifecycleManager lifecycleManager, LifecycleState endState)
+    public WarmUpManager(LifecycleManager lifecycleManager, LifecycleState endState, int nThreads)
     {
         this.lifecycleManager = lifecycleManager;
         this.endState = endState;
 
-        int     nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2); // leave an extra thread for other stuff and one for the foreground
         for ( int i = 0; i < nThreads; ++i )
         {
             parallelQueues.add(Lists.<Work>newArrayList());

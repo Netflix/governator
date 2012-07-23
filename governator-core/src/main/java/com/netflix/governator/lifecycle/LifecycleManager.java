@@ -16,6 +16,7 @@
 
 package com.netflix.governator.lifecycle;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -228,6 +229,12 @@ public class LifecycleManager implements Closeable
         }
     }
 
+    @VisibleForTesting
+    protected int getWarmUpThreadQty()
+    {
+        return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+    }
+
     LifecycleState setState(Object obj, LifecycleState state)
     {
         return objectStates.put(new StateKey(obj), state);
@@ -235,7 +242,7 @@ public class LifecycleManager implements Closeable
 
     private void doCoolDown() throws Exception
     {
-        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.PRE_DESTROYING);
+        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.PRE_DESTROYING, getWarmUpThreadQty());
 
         for ( InvokeRecord record : getReversed(invokings) )
         {
@@ -262,7 +269,7 @@ public class LifecycleManager implements Closeable
             objectStates.put(key, LifecycleState.ACTIVE);
         }
 
-        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.ACTIVE);
+        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.ACTIVE, getWarmUpThreadQty());
 
         for ( InvokeRecord record : invokings )
         {

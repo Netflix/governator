@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target(ElementType.METHOD)
 public @interface WarmUp
 {
     boolean canBeParallel() default false;
