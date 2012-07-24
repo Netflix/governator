@@ -18,11 +18,7 @@ package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.annotations.RequiredAsset;
 
-@RequiredAsset
-(
-    loader = SimpleAssetLoader.class,
-    name = "foo"
-)
+@RequiredAsset("foo")
 public class DuplicateAsset extends SimpleObject
 {
 }

@@ -20,15 +20,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.netflix.governator.assets.AssetLoaderManager;
 import com.netflix.governator.annotations.Configuration;
-import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
+import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.configuration.SystemConfigurationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -65,8 +65,9 @@ public class LifecycleManager implements Closeable
     private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
     private final List<InvokeRecord> invokings = new CopyOnWriteArrayList<InvokeRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
-    private final AssetLoaderManager assetLoaderManager;
     private final ConfigurationProvider configurationProvider;
+    private final Collection<AssetLoader> assetLoaders;
+    private final AssetLoading assetLoading = new AssetLoading();
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -130,20 +131,15 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this.assetLoaderManager = new AssetLoaderManager();
+        this.assetLoaders = ImmutableSet.of();
         this.configurationProvider = new SystemConfigurationProvider();
     }
 
     @Inject
-    public LifecycleManager(AssetLoaderManager assetLoaderManager, ConfigurationProvider configurationProvider)
+    public LifecycleManager(Set<AssetLoader> assetLoaders, ConfigurationProvider configurationProvider)
     {
-        this.assetLoaderManager = assetLoaderManager;
+        this.assetLoaders = ImmutableSet.copyOf(assetLoaders);
         this.configurationProvider = configurationProvider;
-    }
-
-    public AssetLoaderManager getAssetLoaderManager()
-    {
-        return assetLoaderManager;
     }
 
     public void add(Object... objects) throws Exception
@@ -293,7 +289,7 @@ public class LifecycleManager implements Closeable
     {
         log.debug("Starting %s", obj.getClass().getName());
 
-        boolean             hasAssets = assetLoaderManager.loadAssetsFor(obj);
+        boolean             hasAssets = assetLoading.loadAssetsFor(obj, assetLoaders);
 
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {
@@ -323,7 +319,7 @@ public class LifecycleManager implements Closeable
             {
                 try
                 {
-                    assetLoaderManager.unloadAssetsFor(record.obj);
+                    assetLoading.unloadAssetsFor(record.obj);
                 }
                 catch ( Throwable e )
                 {

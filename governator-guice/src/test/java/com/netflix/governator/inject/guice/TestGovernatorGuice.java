@@ -19,6 +19,7 @@ package com.netflix.governator.inject.guice;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.inject.guice.mocks.SimpleContainer;
 import com.netflix.governator.inject.guice.mocks.SimplePojo;
 import com.netflix.governator.inject.guice.mocks.SimplePojoAlt;
@@ -59,13 +60,13 @@ public class TestGovernatorGuice
     @Test
     public void     testSimpleSingleton() throws Exception
     {
+        LifecycleManager    manager = LifecycleManagerInjector.getLifecycleManager(new SystemConfigurationProvider());
         Injector injector = Guice.createInjector
         (
-            new LifecycleModule(),
+            new LifecycleModule(manager),
             new GuiceAutoBindModule()
         );
 
-        LifecycleManager        manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 
         SimpleSingleton     instance = injector.getInstance(SimpleSingleton.class);
@@ -82,13 +83,13 @@ public class TestGovernatorGuice
     @Test
     public void     testInjectedIntoAnother() throws Exception
     {
+        LifecycleManager    manager = LifecycleManagerInjector.getLifecycleManager(new SystemConfigurationProvider());
         Injector injector = Guice.createInjector
         (
-            new LifecycleModule(),
+            new LifecycleModule(manager),
             new GuiceAutoBindModule()
         );
 
-        LifecycleManager        manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 
         SimpleContainer     instance = injector.getInstance(SimpleContainer.class);

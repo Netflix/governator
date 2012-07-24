@@ -16,13 +16,19 @@
 
 package com.netflix.governator.lifecycle.mocks;
 
-import com.netflix.governator.assets.AssetLoader;
+import com.netflix.governator.lifecycle.AssetLoader;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SimpleAssetLoader implements AssetLoader
 {
     public final AtomicInteger  loadedCount = new AtomicInteger(0);
     public final AtomicInteger  unloadedCount = new AtomicInteger(0);
+
+    @Override
+    public boolean appliesTo(Object obj, String name)
+    {
+        return true;
+    }
 
     @Override
     public void loadAsset(String name) throws Exception

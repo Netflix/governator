@@ -25,11 +25,7 @@ import javax.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @AutoBindSingleton
-@RequiredAsset
-(
-    name = "test",
-    loader = SimpleAssetLoader.class
-)
+@RequiredAsset("test")
 public class SimpleSingleton
 {
     public final AtomicInteger  startCount = new AtomicInteger(0);

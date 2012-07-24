@@ -16,21 +16,15 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.collect.Maps;
-import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.assets.AssetLoaderBinding;
-import com.netflix.governator.assets.AssetLoaderManager;
+import com.google.common.collect.Sets;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
-import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
 import com.netflix.governator.lifecycle.mocks.SimpleAssetLoader;
 import com.netflix.governator.lifecycle.mocks.SimpleContainer;
 import com.netflix.governator.lifecycle.mocks.SimpleHasAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleObject;
-import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import java.util.Map;
 
 public class TestLifecycleManager
 {
@@ -90,11 +84,8 @@ public class TestLifecycleManager
     public void     testSimpleAsset() throws Exception
     {
         SimpleAssetLoader   simpleAssetLoader = new SimpleAssetLoader();
-        Map<AssetLoaderBinding, AssetLoader> loaders = Maps.newHashMap();
-        loaders.put(new AssetLoaderBinding(SimpleAssetLoader.class, "foo"), simpleAssetLoader);
-        AssetLoaderManager assetLoaderManager = new AssetLoaderManager(loaders);
 
-        LifecycleManager    manager = new LifecycleManager(assetLoaderManager, new SystemConfigurationProvider());
+        LifecycleManager    manager = new LifecycleManager(Sets.<AssetLoader>newHashSet(simpleAssetLoader), new SystemConfigurationProvider());
         manager.start();
 
         SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
@@ -121,11 +112,8 @@ public class TestLifecycleManager
     public void     testDuplicateAsset() throws Exception
     {
         SimpleAssetLoader   simpleAssetLoader = new SimpleAssetLoader();
-        Map<AssetLoaderBinding, AssetLoader> loaders = Maps.newHashMap();
-        loaders.put(new AssetLoaderBinding(SimpleAssetLoader.class, "foo"), simpleAssetLoader);
-        AssetLoaderManager assetLoaderManager = new AssetLoaderManager(loaders);
 
-        LifecycleManager    manager = new LifecycleManager(assetLoaderManager, new SystemConfigurationProvider());
+        LifecycleManager    manager = new LifecycleManager(Sets.<AssetLoader>newHashSet(simpleAssetLoader), new SystemConfigurationProvider());
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
         manager.start();
 

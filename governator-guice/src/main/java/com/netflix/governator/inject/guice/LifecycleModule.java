@@ -31,9 +31,7 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.assets.AssetLoaderManager;
 import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import javax.annotation.PostConstruct;
@@ -45,9 +43,9 @@ public class LifecycleModule implements Module
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
 
-    public LifecycleModule(AssetLoaderManager assetLoaderManager, ConfigurationProvider configurationProvider)
+    public LifecycleModule(LifecycleManager lifecycleManager)
     {
-        lifecycleManager = new LifecycleManager(assetLoaderManager, configurationProvider);
+        this.lifecycleManager = lifecycleManager;
     }
 
     public LifecycleModule()
@@ -100,13 +98,6 @@ public class LifecycleModule implements Module
     public LifecycleManager getLifecycleManager()
     {
         return lifecycleManager;
-    }
-
-    @Provides
-    @Singleton
-    public AssetLoaderManager getAssetLoaderManager()
-    {
-        return lifecycleManager.getAssetLoaderManager();
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)

@@ -16,7 +16,6 @@
 
 package com.netflix.governator.annotations;
 
-import com.netflix.governator.assets.AssetLoader;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -26,7 +25,5 @@ import java.lang.annotation.Target;
 @Target(java.lang.annotation.ElementType.TYPE)
 public @interface RequiredAsset
 {
-    String    name();
-
-    Class<? extends AssetLoader>    loader();
+    String      value();
 }

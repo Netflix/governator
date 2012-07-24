@@ -14,10 +14,12 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.assets;
+package com.netflix.governator.lifecycle;
 
 public interface AssetLoader
 {
+    public boolean  appliesTo(Object obj, String name);
+
     public void     loadAsset(String name) throws Exception;
 
     public void     unloadAsset(String name) throws Exception;

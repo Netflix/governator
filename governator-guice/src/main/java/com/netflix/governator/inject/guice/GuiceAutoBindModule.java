@@ -30,14 +30,26 @@ import java.util.Collection;
 public class GuiceAutoBindModule extends AbstractModule
 {
     private final Collection<Class<?>> ignoreClasses;
+    private final LifecycleManagerInjector lifecycleManagerInjector;
 
     public GuiceAutoBindModule()
     {
-        this(Lists.<Class<?>>newArrayList());
+        this(null, Lists.<Class<?>>newArrayList());
+    }
+
+    public GuiceAutoBindModule(LifecycleManagerInjector lifecycleManagerInjector)
+    {
+        this(lifecycleManagerInjector, Lists.<Class<?>>newArrayList());
     }
 
     public GuiceAutoBindModule(Collection<Class<?>> ignoreClasses)
     {
+        this(null, ignoreClasses);
+    }
+
+    public GuiceAutoBindModule(LifecycleManagerInjector lifecycleManagerInjector, Collection<Class<?>> ignoreClasses)
+    {
+        this.lifecycleManagerInjector = lifecycleManagerInjector;
         Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
 
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -52,9 +64,14 @@ public class GuiceAutoBindModule extends AbstractModule
     @Override
     protected void configure()
     {
-        ClasspathScanner        scanner = new ClasspathScanner(ClasspathScanner.getDefaultAnnotations(), ignoreClasses);
+        ClasspathScanner        scanner = (lifecycleManagerInjector != null) ? lifecycleManagerInjector.getScanner() : new ClasspathScanner(ClasspathScanner.getDefaultAnnotations(), ignoreClasses);
         for ( final Class<?> clazz : scanner.get() )
         {
+            if ( ignoreClasses.contains(clazz) )
+            {
+                continue;
+            }
+
             binder().bind(clazz).asEagerSingleton();
 
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
