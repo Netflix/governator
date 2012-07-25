@@ -24,8 +24,6 @@ package com.netflix.governator.inject.guice;
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
@@ -38,19 +36,14 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Map;
 
-public class LifecycleModule implements Module
+class LifecycleModule implements Module
 {
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
 
-    public LifecycleModule(LifecycleManager lifecycleManager)
+    LifecycleModule(LifecycleManager lifecycleManager)
     {
         this.lifecycleManager = lifecycleManager;
-    }
-
-    public LifecycleModule()
-    {
-        lifecycleManager = new LifecycleManager();
     }
 
     @Override
@@ -91,13 +84,6 @@ public class LifecycleModule implements Module
                 }
             }
         );
-    }
-
-    @Provides
-    @Singleton
-    public LifecycleManager getLifecycleManager()
-    {
-        return lifecycleManager;
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)
