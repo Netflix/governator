@@ -41,8 +41,8 @@ public class TestGovernatorGuice
                 @Override
                 protected void configure()
                 {
-                    GuiceAutoBindModule.bindProvider(binder(), SimpleProvider.class);
-                    GuiceAutoBindModule.bindProvider(binder(), SimpleProviderAlt.class);
+                    ProviderBinderUtil.bind(binder(), SimpleProvider.class);
+                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class);
                 }
             }
         );
