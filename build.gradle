@@ -1,5 +1,5 @@
 // Establish version and status
-ext.releaseVersion = '0.0.7'
+ext.releaseVersion = '0.0.8'
 ext.githubProjectName = 'governator'
 
 buildscript {
@@ -60,5 +60,13 @@ project(':governator-guice') {
         compile     project(":governator-core")
         compile     'com.google.inject:guice:3.0'
         compile     'com.google.inject.extensions:guice-multibindings:3.0'
+    }
+}
+
+project(':governator-spring') {
+    dependencies {
+        compile     project(":governator-core")
+        compile     'org.springframework:spring-beans:3.0.5.RELEASE'
+        compile     'org.springframework:spring-context:3.0.5.RELEASE'
     }
 }

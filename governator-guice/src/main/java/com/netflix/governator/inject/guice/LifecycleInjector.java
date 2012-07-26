@@ -25,6 +25,7 @@ public class LifecycleInjector
     private final List<Module> modules;
     private final Collection<Class<?>> ignoreClasses;
     private final Collection<Class<?>> parentClasses = Lists.newArrayList();
+    private final boolean ignoreAllClasses;
 
     public static Builder builder()
     {
@@ -36,35 +37,47 @@ public class LifecycleInjector
         private ConfigurationProvider provider;
         private List<Module> modules = Lists.newArrayList();
         private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
+        private boolean ignoreAllClasses = false;
 
-        public Builder configurationProvider(ConfigurationProvider provider)
+        public Builder usingConfigurationProvider(ConfigurationProvider provider)
         {
             this.provider = provider;
             return this;
         }
 
-        public Builder modules(Module... modules)
+        public Builder withModules(Module... modules)
         {
             this.modules = ImmutableList.copyOf(modules);
             return this;
         }
 
-        public Builder modules(Iterable<? extends Module> modules)
+        public Builder withModules(Iterable<? extends Module> modules)
         {
             this.modules = ImmutableList.copyOf(modules);
             return this;
         }
 
-        public Builder ignoreAutoBindClasses(Collection<Class<?>> ignoreClasses)
+        public Builder ignoringAutoBindClasses(Collection<Class<?>> ignoreClasses)
         {
             this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
+            return this;
+        }
+
+        public Builder ignoringAllAutoBindClasses()
+        {
+            this.ignoreAllClasses = true;
             return this;
         }
 
         public LifecycleInjector build()
         {
             ConfigurationProvider localProvider = (provider != null) ? provider : new SystemConfigurationProvider();
-            return new LifecycleInjector(localProvider, modules, ignoreClasses);
+            return new LifecycleInjector(localProvider, modules, ignoreClasses, ignoreAllClasses);
+        }
+
+        public Injector createInjector()
+        {
+            return build().createInjector();
         }
 
         private Builder()
@@ -74,18 +87,23 @@ public class LifecycleInjector
 
     public Injector createInjector()
     {
-        Collection<Class<?>>    localIgnoreClasses = Lists.newArrayList(ignoreClasses);
-        localIgnoreClasses.addAll(parentClasses);
-        localIgnoreClasses.addAll(parentClasses);
-
         List<Module>            localModules = Lists.newArrayList(modules);
-        localModules.add(new GuiceAutoBindModule(scanner, localIgnoreClasses));
+
+        if ( !ignoreAllClasses )
+        {
+            Collection<Class<?>>    localIgnoreClasses = Lists.newArrayList(ignoreClasses);
+            localIgnoreClasses.addAll(parentClasses);
+            localIgnoreClasses.addAll(parentClasses);
+            localModules.add(new GuiceAutoBindModule(scanner, localIgnoreClasses));
+        }
+
         localModules.add(new LifecycleModule(injector.getInstance(LifecycleManager.class)));
         return injector.createChildInjector(localModules);
     }
 
-    private LifecycleInjector(final ConfigurationProvider provider, final List<Module> modules, Collection<Class<?>> ignoreClasses)
+    private LifecycleInjector(final ConfigurationProvider provider, final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses)
     {
+        this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);

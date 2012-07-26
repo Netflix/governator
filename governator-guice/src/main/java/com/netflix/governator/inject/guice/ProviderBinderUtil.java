@@ -31,7 +31,7 @@ public class ProviderBinderUtil
                     @Override
                     public Object get()
                     {
-                        Provider provider = injector.getInstance(clazz);   // cast is safe due to isAssignableFrom() check above
+                        Provider provider = injector.getInstance(clazz);
                         return provider.get();
                     }
                 }
