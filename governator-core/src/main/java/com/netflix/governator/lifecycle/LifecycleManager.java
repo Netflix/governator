@@ -66,8 +66,7 @@ public class LifecycleManager implements Closeable
     private final List<InvokeRecord> invokings = new CopyOnWriteArrayList<InvokeRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationProvider configurationProvider;
-    private final Collection<AssetLoader> assetLoaders;
-    private final AssetLoading assetLoading = new AssetLoading();
+    private final AssetLoading assetLoading;
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -131,15 +130,14 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this.assetLoaders = ImmutableSet.of();
-        this.configurationProvider = new SystemConfigurationProvider();
+        this(ImmutableSet.<AssetLoader>of(), new SystemConfigurationProvider());
     }
 
     @Inject
     public LifecycleManager(Set<AssetLoader> assetLoaders, ConfigurationProvider configurationProvider)
     {
-        this.assetLoaders = ImmutableSet.copyOf(assetLoaders);
         this.configurationProvider = configurationProvider;
+        this.assetLoading = new AssetLoading(assetLoaders);
     }
 
     public void add(Object... objects) throws Exception
@@ -289,7 +287,7 @@ public class LifecycleManager implements Closeable
     {
         log.debug("Starting %s", obj.getClass().getName());
 
-        boolean             hasAssets = assetLoading.loadAssetsFor(obj, assetLoaders);
+        boolean             hasAssets = assetLoading.loadAssetsFor(obj);
 
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {

@@ -38,6 +38,7 @@ public class LifecycleInjector
         private List<Module> modules = Lists.newArrayList();
         private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
         private boolean ignoreAllClasses = false;
+        private LifecycleModule lifecycleModule = null;
 
         public Builder usingConfigurationProvider(ConfigurationProvider provider)
         {
@@ -57,6 +58,12 @@ public class LifecycleInjector
             return this;
         }
 
+        public Builder withAssetLoaderModule(LifecycleModule module)
+        {
+            this.lifecycleModule = module;
+            return this;
+        }
+
         public Builder ignoringAutoBindClasses(Collection<Class<?>> ignoreClasses)
         {
             this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -72,7 +79,7 @@ public class LifecycleInjector
         public LifecycleInjector build()
         {
             ConfigurationProvider localProvider = (provider != null) ? provider : new SystemConfigurationProvider();
-            return new LifecycleInjector(localProvider, modules, ignoreClasses, ignoreAllClasses);
+            return new LifecycleInjector(localProvider, modules, ignoreClasses, ignoreAllClasses, lifecycleModule);
         }
 
         public Injector createInjector()
@@ -94,21 +101,22 @@ public class LifecycleInjector
             Collection<Class<?>>    localIgnoreClasses = Lists.newArrayList(ignoreClasses);
             localIgnoreClasses.addAll(parentClasses);
             localIgnoreClasses.addAll(parentClasses);
-            localModules.add(new GuiceAutoBindModule(scanner, localIgnoreClasses));
+            localModules.add(new InternalAutoBindModule(scanner, localIgnoreClasses));
         }
 
-        localModules.add(new LifecycleModule(injector.getInstance(LifecycleManager.class)));
+        localModules.add(new InternalLifecycleModule(injector.getInstance(LifecycleManager.class)));
         return injector.createChildInjector(localModules);
     }
 
-    private LifecycleInjector(final ConfigurationProvider provider, final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses)
+    private LifecycleInjector(final ConfigurationProvider provider, final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, final LifecycleModule lifecycleModule)
     {
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
+        this.modules = ImmutableList.copyOf(modules);
+
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
         scanner = new ClasspathScanner(annotations);
-        this.modules = ImmutableList.copyOf(modules);
 
         injector = Guice.createInjector
         (
@@ -117,7 +125,16 @@ public class LifecycleInjector
                 @Override
                 protected void configure()
                 {
-                    binder().bind(ConfigurationProvider.class).toInstance(provider);
+                    if ( provider != null )
+                    {
+                        binder().bind(ConfigurationProvider.class).toInstance(provider);
+                    }
+
+                    if ( lifecycleModule != null )
+                    {
+                        lifecycleModule.configure(new LifecycleBinder(binder()));
+                    }
+
                     bindLoaders(binder());
                     binder().bind(LifecycleManager.class).asEagerSingleton();
                 }
@@ -128,10 +145,6 @@ public class LifecycleInjector
     private void bindLoaders(Binder binder)
     {
         Multibinder<AssetLoader> multibinder = Multibinder.newSetBinder(binder, AssetLoader.class);
-
-        List<Class<? extends Annotation>> annotations = Lists.newArrayList();
-        annotations.add(AutoBindSingleton.class);
-        ClasspathScanner scanner = new ClasspathScanner(annotations);
         for ( Class<?> clazz : scanner.get() )
         {
             if ( AssetLoader.class.isAssignableFrom(clazz) )

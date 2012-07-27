@@ -17,20 +17,16 @@
 package com.netflix.governator.inject.guice.mocks;
 
 import com.netflix.governator.annotations.AutoBindSingleton;
+import com.netflix.governator.annotations.DefaultAssetLoader;
 import com.netflix.governator.lifecycle.AssetLoader;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @AutoBindSingleton
+@DefaultAssetLoader
 public class SimpleAssetLoader implements AssetLoader
 {
     public static final AtomicInteger      loadAssetCount = new AtomicInteger(0);
     public static final AtomicInteger      unloadAssetCount = new AtomicInteger(0);
-
-    @Override
-    public boolean appliesTo(Object obj, String name)
-    {
-        return true;
-    }
 
     @Override
     public void loadAsset(String name) throws Exception

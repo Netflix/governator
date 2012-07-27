@@ -23,12 +23,12 @@ import com.netflix.governator.lifecycle.ClasspathScanner;
 import java.util.Collection;
 import java.util.List;
 
-class GuiceAutoBindModule extends AbstractModule
+class InternalAutoBindModule extends AbstractModule
 {
     private final List<Class<?>> ignoreClasses;
     private final ClasspathScanner classpathScanner;
 
-    GuiceAutoBindModule(ClasspathScanner classpathScanner, Collection<Class<?>> ignoreClasses)
+    InternalAutoBindModule(ClasspathScanner classpathScanner, Collection<Class<?>> ignoreClasses)
     {
         this.classpathScanner = classpathScanner;
         Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
