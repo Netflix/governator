@@ -82,6 +82,33 @@ public class TestLifecycleManager
     }
 
     @Test
+    public void     testOverrideAssetLoader() throws Exception
+    {
+        SimpleAssetLoader               overrideAssetLoader = new SimpleAssetLoader();
+        SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
+        HashMap<String, AssetLoader>    map = Maps.newHashMap();
+        map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        map.put("foo", overrideAssetLoader);
+        LifecycleManager                manager = new LifecycleManager(map, new SystemConfigurationProvider());
+
+        manager.add(new SimpleHasAsset());
+
+        manager.start();
+
+        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 0);
+        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 0);
+        Assert.assertEquals(overrideAssetLoader.loadedCount.get(), 1);
+        Assert.assertEquals(overrideAssetLoader.unloadedCount.get(), 0);
+
+        manager.close();
+
+        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 0);
+        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 0);
+        Assert.assertEquals(overrideAssetLoader.loadedCount.get(), 1);
+        Assert.assertEquals(overrideAssetLoader.unloadedCount.get(), 1);
+    }
+
+    @Test
     public void     testSimpleAsset() throws Exception
     {
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
