@@ -16,11 +16,9 @@
 
 package com.netflix.governator.lifecycle.mocks;
 
-import com.netflix.governator.annotations.DefaultAssetLoader;
 import com.netflix.governator.lifecycle.AssetLoader;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@DefaultAssetLoader
 public class SimpleAssetLoader implements AssetLoader
 {
     public final AtomicInteger  loadedCount = new AtomicInteger(0);

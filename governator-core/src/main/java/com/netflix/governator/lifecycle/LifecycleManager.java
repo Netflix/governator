@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -67,6 +68,8 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationProvider configurationProvider;
     private final AssetLoading assetLoading;
+
+    public static final String      DEFAULT_ASSET_LOADER_VALUE = "";
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -130,11 +133,11 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(ImmutableSet.<AssetLoader>of(), new SystemConfigurationProvider());
+        this(ImmutableMap.<String, AssetLoader>of(), new SystemConfigurationProvider());
     }
 
     @Inject
-    public LifecycleManager(Set<AssetLoader> assetLoaders, ConfigurationProvider configurationProvider)
+    public LifecycleManager(Map<String, AssetLoader> assetLoaders, ConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
         this.assetLoading = new AssetLoading(assetLoaders);

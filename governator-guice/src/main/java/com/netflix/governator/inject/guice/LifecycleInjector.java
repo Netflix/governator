@@ -7,10 +7,9 @@ import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.multibindings.Multibinder;
+import com.google.inject.multibindings.MapBinder;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.AssetLoader;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -34,15 +33,14 @@ public class LifecycleInjector
 
     public static class Builder
     {
-        private ConfigurationProvider provider;
         private List<Module> modules = Lists.newArrayList();
         private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
         private boolean ignoreAllClasses = false;
-        private LifecycleModule lifecycleModule = null;
+        private BootstrapModule bootstrapModule = null;
 
-        public Builder usingConfigurationProvider(ConfigurationProvider provider)
+        public Builder withBootstrapModule(BootstrapModule module)
         {
-            this.provider = provider;
+            this.bootstrapModule = module;
             return this;
         }
 
@@ -55,12 +53,6 @@ public class LifecycleInjector
         public Builder withModules(Iterable<? extends Module> modules)
         {
             this.modules = ImmutableList.copyOf(modules);
-            return this;
-        }
-
-        public Builder withAssetLoaderModule(LifecycleModule module)
-        {
-            this.lifecycleModule = module;
             return this;
         }
 
@@ -78,8 +70,7 @@ public class LifecycleInjector
 
         public LifecycleInjector build()
         {
-            ConfigurationProvider localProvider = (provider != null) ? provider : new SystemConfigurationProvider();
-            return new LifecycleInjector(localProvider, modules, ignoreClasses, ignoreAllClasses, lifecycleModule);
+            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule);
         }
 
         public Injector createInjector()
@@ -108,7 +99,7 @@ public class LifecycleInjector
         return injector.createChildInjector(localModules);
     }
 
-    private LifecycleInjector(final ConfigurationProvider provider, final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, final LifecycleModule lifecycleModule)
+    private LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, final BootstrapModule bootstrapModule)
     {
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -125,14 +116,9 @@ public class LifecycleInjector
                 @Override
                 protected void configure()
                 {
-                    if ( provider != null )
+                    if ( bootstrapModule != null )
                     {
-                        binder().bind(ConfigurationProvider.class).toInstance(provider);
-                    }
-
-                    if ( lifecycleModule != null )
-                    {
-                        lifecycleModule.configure(new LifecycleBinder(binder()));
+                        bootstrapModule.configure(binder(), new RequiredAssetBinder(binder()));
                     }
 
                     bindLoaders(binder());
@@ -144,19 +130,21 @@ public class LifecycleInjector
 
     private void bindLoaders(Binder binder)
     {
-        Multibinder<AssetLoader> multibinder = Multibinder.newSetBinder(binder, AssetLoader.class);
         for ( Class<?> clazz : scanner.get() )
         {
             if ( AssetLoader.class.isAssignableFrom(clazz) )
             {
+                MapBinder<String, AssetLoader>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetLoader.class);
                 @SuppressWarnings("unchecked")
                 Class<? extends AssetLoader>    assetLoaderClass = (Class<? extends AssetLoader>)clazz;
-                multibinder.addBinding().to(assetLoaderClass);
+                mapBinder.addBinding(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE).to(assetLoaderClass);
                 parentClasses.add(clazz);
             }
             else if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
             {
-                binder.bind(clazz).asEagerSingleton();
+                @SuppressWarnings("unchecked")
+                Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
+                binder.bind(ConfigurationProvider.class).to(configurationProviderClass);
                 parentClasses.add(clazz);
             }
         }

@@ -16,7 +16,7 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleAssetLoader;
@@ -25,6 +25,7 @@ import com.netflix.governator.lifecycle.mocks.SimpleHasAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import java.util.HashMap;
 
 public class TestLifecycleManager
 {
@@ -83,9 +84,10 @@ public class TestLifecycleManager
     @Test
     public void     testSimpleAsset() throws Exception
     {
-        SimpleAssetLoader   simpleAssetLoader = new SimpleAssetLoader();
-
-        LifecycleManager    manager = new LifecycleManager(Sets.<AssetLoader>newHashSet(simpleAssetLoader), new SystemConfigurationProvider());
+        SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
+        HashMap<String, AssetLoader>    map = Maps.newHashMap();
+        map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        LifecycleManager    manager = new LifecycleManager(map, new SystemConfigurationProvider());
         manager.start();
 
         SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
@@ -111,9 +113,10 @@ public class TestLifecycleManager
     @Test
     public void     testDuplicateAsset() throws Exception
     {
-        SimpleAssetLoader   simpleAssetLoader = new SimpleAssetLoader();
-
-        LifecycleManager    manager = new LifecycleManager(Sets.<AssetLoader>newHashSet(simpleAssetLoader), new SystemConfigurationProvider());
+        SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
+        HashMap<String, AssetLoader>    map = Maps.newHashMap();
+        map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        LifecycleManager    manager = new LifecycleManager(map, new SystemConfigurationProvider());
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
         manager.start();
 
