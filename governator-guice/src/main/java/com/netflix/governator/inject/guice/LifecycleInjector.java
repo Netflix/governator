@@ -7,13 +7,15 @@ import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.multibindings.MapBinder;
 import com.netflix.governator.annotations.AutoBindSingleton;
+import com.netflix.governator.annotations.RequiredAsset;
+import com.netflix.governator.annotations.RequiredAssets;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.AssetLoader;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,6 +27,7 @@ public class LifecycleInjector
     private final Collection<Class<?>> ignoreClasses;
     private final Collection<Class<?>> parentClasses = Lists.newArrayList();
     private final boolean ignoreAllClasses;
+    private final LifecycleManager lifecycleManager;
 
     public static Builder builder()
     {
@@ -35,6 +38,7 @@ public class LifecycleInjector
     {
         private List<Module> modules = Lists.newArrayList();
         private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
+        private Collection<String> basePackages = Lists.newArrayList("com", "org");
         private boolean ignoreAllClasses = false;
         private BootstrapModule bootstrapModule = null;
 
@@ -68,9 +72,20 @@ public class LifecycleInjector
             return this;
         }
 
+        public Builder usingBasePackages(String... basePackages)
+        {
+            return usingBasePackages(Arrays.asList(basePackages));
+        }
+
+        public Builder usingBasePackages(Collection<String> basePackages)
+        {
+            this.basePackages = Lists.newArrayList(basePackages);
+            return this;
+        }
+
         public LifecycleInjector build()
         {
-            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule);
+            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, basePackages);
         }
 
         public Injector createInjector()
@@ -81,6 +96,23 @@ public class LifecycleInjector
         private Builder()
         {
         }
+    }
+
+    public LifecycleManager getLifecycleManager()
+    {
+        return lifecycleManager;
+    }
+
+    public Injector createChildInjector(Module... modules)
+    {
+        return createChildInjector(Arrays.asList(modules));
+    }
+
+    public Injector createChildInjector(Collection<Module> modules)
+    {
+        List<Module>            localModules = Lists.newArrayList(modules);
+        localModules.add(new InternalLifecycleModule(lifecycleManager));
+        return injector.createChildInjector(localModules);
     }
 
     public Injector createInjector()
@@ -95,11 +127,10 @@ public class LifecycleInjector
             localModules.add(new InternalAutoBindModule(scanner, localIgnoreClasses));
         }
 
-        localModules.add(new InternalLifecycleModule(injector.getInstance(LifecycleManager.class)));
-        return injector.createChildInjector(localModules);
+        return createChildInjector(localModules);
     }
 
-    private LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, final BootstrapModule bootstrapModule)
+    private LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, final BootstrapModule bootstrapModule, Collection<String> basePackages)
     {
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -107,7 +138,9 @@ public class LifecycleInjector
 
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
-        scanner = new ClasspathScanner(annotations);
+        annotations.add(RequiredAsset.class);
+        annotations.add(RequiredAssets.class);
+        scanner = new ClasspathScanner(basePackages, annotations);
 
         injector = Guice.createInjector
         (
@@ -126,27 +159,52 @@ public class LifecycleInjector
                 }
             }
         );
+        lifecycleManager = injector.getInstance(LifecycleManager.class);
     }
 
     private void bindLoaders(Binder binder)
     {
         for ( Class<?> clazz : scanner.get() )
         {
-            if ( AssetLoader.class.isAssignableFrom(clazz) )
+            if ( clazz.isAnnotationPresent(RequiredAsset.class) )
             {
-                MapBinder<String, AssetLoader>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetLoader.class);
-                @SuppressWarnings("unchecked")
-                Class<? extends AssetLoader>    assetLoaderClass = (Class<? extends AssetLoader>)clazz;
-                mapBinder.addBinding(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE).to(assetLoaderClass);
-                parentClasses.add(clazz);
+                RequiredAsset       requiredAsset = clazz.getAnnotation(RequiredAsset.class);
+                bindRequiredAsset(binder, requiredAsset);
             }
-            else if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
+            else if ( clazz.isAnnotationPresent(RequiredAssets.class) )
             {
-                @SuppressWarnings("unchecked")
-                Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
-                binder.bind(ConfigurationProvider.class).to(configurationProviderClass);
-                parentClasses.add(clazz);
+                RequiredAssets       requiredAssets = clazz.getAnnotation(RequiredAssets.class);
+                for ( RequiredAsset requiredAsset : requiredAssets.value() )
+                {
+                    bindRequiredAsset(binder, requiredAsset);
+                }
             }
+
+            if ( clazz.isAnnotationPresent(AutoBindSingleton.class) )
+            {
+                if ( AssetLoader.class.isAssignableFrom(clazz) )
+                {
+                    @SuppressWarnings("unchecked")
+                    Class<? extends AssetLoader>    assetLoaderClass = (Class<? extends AssetLoader>)clazz;
+                    RequiredAssetBinder.bindRequiredAsset(binder, LifecycleManager.DEFAULT_ASSET_LOADER_VALUE).to(assetLoaderClass);
+                    parentClasses.add(clazz);
+                }
+                else if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
+                {
+                    @SuppressWarnings("unchecked")
+                    Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
+                    binder.bind(ConfigurationProvider.class).to(configurationProviderClass);
+                    parentClasses.add(clazz);
+                }
+            }
+        }
+    }
+
+    private void bindRequiredAsset(Binder binder, RequiredAsset requiredAsset)
+    {
+        if ( requiredAsset.loader() != AssetLoader.class )
+        {
+            RequiredAssetBinder.bindRequiredAsset(binder, requiredAsset.value()).to(requiredAsset.loader());
         }
     }
 }

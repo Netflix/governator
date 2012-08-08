@@ -74,6 +74,7 @@ public class TestGovernatorGuice
                     }
                 }
             )
+            .usingBasePackages("com.netflix")
             .createInjector();
         LifecycleManager    manager = injector.getInstance(LifecycleManager.class);
         manager.start();
@@ -104,6 +105,7 @@ public class TestGovernatorGuice
                     }
                 }
             )
+            .usingBasePackages("com.netflix")
             .createInjector();
         LifecycleManager    manager = injector.getInstance(LifecycleManager.class);
         manager.start();
