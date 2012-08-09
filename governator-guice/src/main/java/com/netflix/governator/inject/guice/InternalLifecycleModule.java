@@ -24,6 +24,8 @@ package com.netflix.governator.inject.guice;
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
 import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
@@ -84,6 +86,13 @@ class InternalLifecycleModule implements Module
                 }
             }
         );
+    }
+
+    @Provides
+    @Singleton
+    public LifecycleManager     getLifecycleManager()
+    {
+        return lifecycleManager;
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)
