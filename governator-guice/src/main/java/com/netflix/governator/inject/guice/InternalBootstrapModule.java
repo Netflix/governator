@@ -5,6 +5,8 @@ import com.google.inject.Binder;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
+import com.netflix.governator.assets.AssetParameters;
+import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.lifecycle.ClasspathScanner;
@@ -24,6 +26,10 @@ class InternalBootstrapModule extends AbstractModule
     @Override
     protected void configure()
     {
+        // make some dummy bindings to get the maps created - this way users aren't required to have mappings
+        RequiredAssetBinder.bindRequiredAsset(binder(), InternalAutoBindModule.class.getName()).toInstance(new DummyAssetLoader());
+        RequiredAssetBinder.bindRequestAssetParameters(binder(), InternalAutoBindModule.class.getName()).toInstance(new AssetParameters());
+
         if ( bootstrapModule != null )
         {
             bootstrapModule.configure(binder(), new RequiredAssetBinder(binder()));
@@ -74,6 +80,25 @@ class InternalBootstrapModule extends AbstractModule
         if ( requiredAsset.loader() != AssetLoader.class )
         {
             RequiredAssetBinder.bindRequiredAsset(binder, requiredAsset.value()).to(requiredAsset.loader());
+        }
+    }
+
+    private static class DummyAssetLoader implements AssetLoader
+    {
+        @Override
+        public void loadAsset(String name, AssetParametersView parameters) throws Exception
+        {
+        }
+
+        @Override
+        public void unloadAsset(String name, AssetParametersView parameters) throws Exception
+        {
+        }
+
+        @Override
+        public <T> T getValue(Class<T> clazz, AssetParametersView parameters) throws Exception
+        {
+            return null;
         }
     }
 }

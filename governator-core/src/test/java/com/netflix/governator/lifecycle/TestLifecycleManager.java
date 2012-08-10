@@ -18,8 +18,8 @@ package com.netflix.governator.lifecycle;
 
 import com.google.common.collect.Maps;
 import com.netflix.governator.assets.AssetLoader;
+import com.netflix.governator.assets.AssetParameters;
 import com.netflix.governator.assets.GenericParameterType;
-import com.netflix.governator.assets.RequiredAssetParameters;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
 import com.netflix.governator.lifecycle.mocks.ParameterizedAssetLoader;
@@ -94,7 +94,7 @@ public class TestLifecycleManager
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
         map.put("foo", overrideAssetLoader);
-        LifecycleManager                manager = new LifecycleManager(map, new RequiredAssetParameters(), new SystemConfigurationProvider());
+        LifecycleManager                manager = new LifecycleManager(map, Maps.<String, AssetParameters>newHashMap(), new SystemConfigurationProvider());
 
         manager.add(new SimpleHasAsset());
 
@@ -119,7 +119,7 @@ public class TestLifecycleManager
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        LifecycleManager    manager = new LifecycleManager(map, new RequiredAssetParameters(), new SystemConfigurationProvider());
+        LifecycleManager    manager = new LifecycleManager(map, Maps.<String, AssetParameters>newHashMap(), new SystemConfigurationProvider());
         manager.start();
 
         SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
@@ -148,7 +148,7 @@ public class TestLifecycleManager
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        LifecycleManager    manager = new LifecycleManager(map, new RequiredAssetParameters(), new SystemConfigurationProvider());
+        LifecycleManager    manager = new LifecycleManager(map, Maps.<String, AssetParameters>newHashMap(), new SystemConfigurationProvider());
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
         manager.start();
 
@@ -168,14 +168,17 @@ public class TestLifecycleManager
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put("foo", loader);
 
-        RequiredAssetParameters         assetParameters = new RequiredAssetParameters();
+        AssetParameters assetParameters = new AssetParameters();
         Map<String, String>             parameter = Maps.newHashMap();
         parameter.put("one", "1");
         parameter.put("two", "2");
         parameter.put("three", "3");
-        assetParameters.set("foo", new GenericParameterType<Map<String, String>>(){}, parameter);
-        LifecycleManager                manager = new LifecycleManager(map, assetParameters, new SystemConfigurationProvider());
+        assetParameters.set(new GenericParameterType<Map<String, String>>(){}, parameter);
+
+        Map<String, AssetParameters>    parametersMaps = Maps.newHashMap();
+        parametersMaps.put("foo", assetParameters);
+        LifecycleManager                manager = new LifecycleManager(map, parametersMaps, new SystemConfigurationProvider());
         manager.add(new SimpleHasAsset());
-        // assertions are in RequiredAssetParameters
+        // assertions are in AssetParameters
     }
 }

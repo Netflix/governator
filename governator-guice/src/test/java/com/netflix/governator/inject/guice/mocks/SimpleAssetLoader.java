@@ -18,7 +18,7 @@ package com.netflix.governator.inject.guice.mocks;
 
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.assets.RequiredAssetParametersView;
+import com.netflix.governator.assets.AssetParametersView;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @AutoBindSingleton
@@ -28,19 +28,19 @@ public class SimpleAssetLoader implements AssetLoader
     public static final AtomicInteger      unloadAssetCount = new AtomicInteger(0);
 
     @Override
-    public void loadAsset(String name, RequiredAssetParametersView parameters) throws Exception
+    public void loadAsset(String name, AssetParametersView parameters) throws Exception
     {
         loadAssetCount.incrementAndGet();
     }
 
     @Override
-    public void unloadAsset(String name, RequiredAssetParametersView parameters) throws Exception
+    public void unloadAsset(String name, AssetParametersView parameters) throws Exception
     {
         unloadAssetCount.incrementAndGet();
     }
 
     @Override
-    public <T> T getValue(Class<T> clazz, RequiredAssetParametersView parameters) throws Exception
+    public <T> T getValue(Class<T> clazz, AssetParametersView parameters) throws Exception
     {
         return null;
     }

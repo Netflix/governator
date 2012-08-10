@@ -29,7 +29,7 @@ import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoading;
-import com.netflix.governator.assets.RequiredAssetParameters;
+import com.netflix.governator.assets.AssetParameters;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import org.slf4j.Logger;
@@ -135,14 +135,14 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(ImmutableMap.<String, AssetLoader>of(), new RequiredAssetParameters(), new SystemConfigurationProvider());
+        this(ImmutableMap.<String, AssetLoader>of(), ImmutableMap.<String, AssetParameters>of(), new SystemConfigurationProvider());
     }
 
     @Inject
-    public LifecycleManager(Map<String, AssetLoader> assetLoaders, RequiredAssetParameters requiredAssetParameters, ConfigurationProvider configurationProvider)
+    public LifecycleManager(Map<String, AssetLoader> assetLoaders, Map<String, AssetParameters> assetParameters, ConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
-        this.assetLoading = new AssetLoading(assetLoaders, requiredAssetParameters);
+        this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
     }
 
     public void add(Object... objects) throws Exception

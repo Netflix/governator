@@ -35,7 +35,9 @@ public class AssetLoading
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
     private final Map<String, AssetLoader> assetLoaders;
-    private final RequiredAssetParameters parameters;
+    private final Map<String, AssetParameters> parameters;
+
+    private static final AssetParameters        nullParameters = new AssetParameters();
 
     private static class AssetLoaderMetadata
     {
@@ -51,7 +53,7 @@ public class AssetLoading
         }
     }
 
-    public AssetLoading(Map<String, AssetLoader> assetLoaders, RequiredAssetParameters parameters)
+    public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParameters> parameters)
     {
         this.parameters = parameters;
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
@@ -112,7 +114,7 @@ public class AssetLoading
                         loaderMetadata.useCount.set(0);
                     }
 
-                    loaderMetadata.loader.unloadAsset(requiredAsset.value(), parameters.getView(requiredAsset.value()));
+                    loaderMetadata.loader.unloadAsset(requiredAsset.value(), getParameters(requiredAsset.value()));
                     loaderMetadata.isLoaded = false;
                 }
             }
@@ -137,10 +139,16 @@ public class AssetLoading
             {
                 log.debug(String.format("Loading required asset named \"%s\"", requiredAsset.value()));
 
-                loader.loadAsset(requiredAsset.value(), parameters.getView(requiredAsset.value()));
+                loader.loadAsset(requiredAsset.value(), getParameters(requiredAsset.value()));
                 useAssetLoaderMetadata.isLoaded = true;
             }
             useAssetLoaderMetadata.useCount.incrementAndGet();
         }
+    }
+
+    private AssetParametersView getParameters(String value)
+    {
+        AssetParameters assetParameters = parameters.get(value);
+        return (assetParameters != null) ? assetParameters : nullParameters;
     }
 }

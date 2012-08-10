@@ -1,15 +1,15 @@
 package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.assets.AssetLoader;
+import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.assets.GenericParameterType;
-import com.netflix.governator.assets.RequiredAssetParametersView;
 import org.testng.Assert;
 import java.util.Map;
 
 public class ParameterizedAssetLoader implements AssetLoader
 {
     @Override
-    public void loadAsset(String name, RequiredAssetParametersView parameters) throws Exception
+    public void loadAsset(String name, AssetParametersView parameters) throws Exception
     {
         Map<String, String>                 map = parameters.get(new GenericParameterType<Map<String, String>>(){});
         Assert.assertNotNull(map);
@@ -19,12 +19,12 @@ public class ParameterizedAssetLoader implements AssetLoader
     }
 
     @Override
-    public void unloadAsset(String name, RequiredAssetParametersView parameters) throws Exception
+    public void unloadAsset(String name, AssetParametersView parameters) throws Exception
     {
     }
 
     @Override
-    public <T> T getValue(Class<T> clazz, RequiredAssetParametersView parameters) throws Exception
+    public <T> T getValue(Class<T> clazz, AssetParametersView parameters) throws Exception
     {
         return null;
     }

@@ -18,9 +18,9 @@ package com.netflix.governator.assets;
 
 public interface AssetLoader
 {
-    public void     loadAsset(String name, RequiredAssetParametersView parameters) throws Exception;
+    public void     loadAsset(String name, AssetParametersView parameters) throws Exception;
 
-    public void     unloadAsset(String name, RequiredAssetParametersView parameters) throws Exception;
+    public void     unloadAsset(String name, AssetParametersView parameters) throws Exception;
 
-    public<T> T     getValue(Class<T> clazz, RequiredAssetParametersView parameters) throws Exception;
+    public<T> T     getValue(Class<T> clazz, AssetParametersView parameters) throws Exception;
 }

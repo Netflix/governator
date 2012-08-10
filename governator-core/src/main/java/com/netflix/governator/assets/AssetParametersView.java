@@ -1,6 +1,6 @@
 package com.netflix.governator.assets;
 
-public interface RequiredAssetParametersView
+public interface AssetParametersView
 {
     public<T> T        get(Class<T> parameterClass);
 
