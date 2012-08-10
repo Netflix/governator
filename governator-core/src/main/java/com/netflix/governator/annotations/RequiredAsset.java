@@ -16,7 +16,7 @@
 
 package com.netflix.governator.annotations;
 
-import com.netflix.governator.lifecycle.AssetLoader;
+import com.netflix.governator.assets.AssetLoader;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

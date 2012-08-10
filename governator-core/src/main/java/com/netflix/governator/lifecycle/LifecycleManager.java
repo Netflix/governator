@@ -21,13 +21,15 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
+import com.netflix.governator.assets.AssetLoader;
+import com.netflix.governator.assets.AssetLoading;
+import com.netflix.governator.assets.RequiredAssetParameters;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import org.slf4j.Logger;
@@ -133,14 +135,14 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(ImmutableMap.<String, AssetLoader>of(), new SystemConfigurationProvider());
+        this(ImmutableMap.<String, AssetLoader>of(), new RequiredAssetParameters(), new SystemConfigurationProvider());
     }
 
     @Inject
-    public LifecycleManager(Map<String, AssetLoader> assetLoaders, ConfigurationProvider configurationProvider)
+    public LifecycleManager(Map<String, AssetLoader> assetLoaders, RequiredAssetParameters requiredAssetParameters, ConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
-        this.assetLoading = new AssetLoading(assetLoaders);
+        this.assetLoading = new AssetLoading(assetLoaders, requiredAssetParameters);
     }
 
     public void add(Object... objects) throws Exception

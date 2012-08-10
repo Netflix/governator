@@ -16,7 +16,8 @@
 
 package com.netflix.governator.lifecycle.mocks;
 
-import com.netflix.governator.lifecycle.AssetLoader;
+import com.netflix.governator.assets.AssetLoader;
+import com.netflix.governator.assets.RequiredAssetParametersView;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SimpleAssetLoader implements AssetLoader
@@ -25,19 +26,19 @@ public class SimpleAssetLoader implements AssetLoader
     public final AtomicInteger  unloadedCount = new AtomicInteger(0);
 
     @Override
-    public void loadAsset(String name) throws Exception
+    public void loadAsset(String name, RequiredAssetParametersView parameters) throws Exception
     {
         loadedCount.incrementAndGet();
     }
 
     @Override
-    public void unloadAsset(String name) throws Exception
+    public void unloadAsset(String name, RequiredAssetParametersView parameters) throws Exception
     {
         unloadedCount.incrementAndGet();
     }
 
     @Override
-    public <T> T getValue(Class<T> clazz) throws Exception
+    public <T> T getValue(Class<T> clazz, RequiredAssetParametersView parameters) throws Exception
     {
         return null;
     }

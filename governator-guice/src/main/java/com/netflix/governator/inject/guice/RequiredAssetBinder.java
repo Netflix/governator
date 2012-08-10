@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Binder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.multibindings.MapBinder;
-import com.netflix.governator.lifecycle.AssetLoader;
+import com.netflix.governator.assets.AssetLoader;
 
 public class RequiredAssetBinder
 {

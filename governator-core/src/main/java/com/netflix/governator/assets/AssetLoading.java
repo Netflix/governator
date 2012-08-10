@@ -14,13 +14,14 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.lifecycle;
+package com.netflix.governator.assets;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
+import com.netflix.governator.lifecycle.LifecycleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
@@ -29,11 +30,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-class AssetLoading
+public class AssetLoading
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
     private final Map<String, AssetLoader> assetLoaders;
+    private final RequiredAssetParameters parameters;
 
     private static class AssetLoaderMetadata
     {
@@ -49,8 +51,9 @@ class AssetLoading
         }
     }
 
-    AssetLoading(Map<String, AssetLoader> assetLoaders)
+    public AssetLoading(Map<String, AssetLoader> assetLoaders, RequiredAssetParameters parameters)
     {
+        this.parameters = parameters;
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
     }
 
@@ -109,7 +112,7 @@ class AssetLoading
                         loaderMetadata.useCount.set(0);
                     }
 
-                    loaderMetadata.loader.unloadAsset(requiredAsset.value());
+                    loaderMetadata.loader.unloadAsset(requiredAsset.value(), parameters.getView(requiredAsset.value()));
                     loaderMetadata.isLoaded = false;
                 }
             }
@@ -134,7 +137,7 @@ class AssetLoading
             {
                 log.debug(String.format("Loading required asset named \"%s\"", requiredAsset.value()));
 
-                loader.loadAsset(requiredAsset.value());
+                loader.loadAsset(requiredAsset.value(), parameters.getView(requiredAsset.value()));
                 useAssetLoaderMetadata.isLoaded = true;
             }
             useAssetLoaderMetadata.useCount.incrementAndGet();

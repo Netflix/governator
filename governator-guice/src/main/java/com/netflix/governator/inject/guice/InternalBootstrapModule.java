@@ -6,7 +6,7 @@ import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
 import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.lifecycle.AssetLoader;
+import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
 
