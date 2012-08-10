@@ -38,10 +38,4 @@ public class SimpleAssetLoader implements AssetLoader
     {
         unloadAssetCount.incrementAndGet();
     }
-
-    @Override
-    public <T> T getValue(Class<T> clazz, AssetParametersView parameters) throws Exception
-    {
-        return null;
-    }
 }

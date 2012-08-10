@@ -22,10 +22,4 @@ public class ParameterizedAssetLoader implements AssetLoader
     public void unloadAsset(String name, AssetParametersView parameters) throws Exception
     {
     }
-
-    @Override
-    public <T> T getValue(Class<T> clazz, AssetParametersView parameters) throws Exception
-    {
-        return null;
-    }
 }

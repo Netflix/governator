@@ -35,7 +35,7 @@ public class AssetLoading
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
     private final Map<String, AssetLoader> assetLoaders;
-    private final Map<String, AssetParameters> parameters;
+    private final Map<String, AssetParametersView> parameters;
 
     private static final AssetParameters        nullParameters = new AssetParameters();
 
@@ -53,7 +53,7 @@ public class AssetLoading
         }
     }
 
-    public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParameters> parameters)
+    public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> parameters)
     {
         this.parameters = parameters;
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
@@ -148,7 +148,7 @@ public class AssetLoading
 
     private AssetParametersView getParameters(String value)
     {
-        AssetParameters assetParameters = parameters.get(value);
+        AssetParametersView assetParameters = parameters.get(value);
         return (assetParameters != null) ? assetParameters : nullParameters;
     }
 }

@@ -6,6 +6,7 @@ import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.multibindings.MapBinder;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetParameters;
+import com.netflix.governator.assets.AssetParametersView;
 
 public class RequiredAssetBinder
 {
@@ -18,10 +19,10 @@ public class RequiredAssetBinder
         return mapBinder.addBinding(requiredAssetValue);
     }
 
-    public static LinkedBindingBuilder<AssetParameters> bindRequestAssetParameters(Binder binder, String requiredAssetValue)
+    public static LinkedBindingBuilder<AssetParametersView> bindRequestAssetParameters(Binder binder, String requiredAssetValue)
     {
         requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
-        MapBinder<String, AssetParameters>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetParameters.class);
+        MapBinder<String, AssetParametersView>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetParametersView.class);
         return mapBinder.addBinding(requiredAssetValue);
     }
 
@@ -30,7 +31,7 @@ public class RequiredAssetBinder
         return bindRequiredAsset(binder, requiredAssetValue);
     }
 
-    public LinkedBindingBuilder<AssetParameters> bindRequestAssetParameters(String requiredAssetValue)
+    public LinkedBindingBuilder<AssetParametersView> bindRequestAssetParameters(String requiredAssetValue)
     {
         return bindRequestAssetParameters(binder, requiredAssetValue);
     }

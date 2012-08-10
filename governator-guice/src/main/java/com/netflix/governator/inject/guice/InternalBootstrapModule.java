@@ -17,6 +17,8 @@ class InternalBootstrapModule extends AbstractModule
     private final ClasspathScanner scanner;
     private final BootstrapModule bootstrapModule;
 
+    private static final String DUMMY_NAME = "__" + InternalAutoBindModule.class.getName() + "__";
+
     public InternalBootstrapModule(ClasspathScanner scanner, BootstrapModule bootstrapModule)
     {
         this.scanner = scanner;
@@ -27,8 +29,8 @@ class InternalBootstrapModule extends AbstractModule
     protected void configure()
     {
         // make some dummy bindings to get the maps created - this way users aren't required to have mappings
-        RequiredAssetBinder.bindRequiredAsset(binder(), InternalAutoBindModule.class.getName()).toInstance(new DummyAssetLoader());
-        RequiredAssetBinder.bindRequestAssetParameters(binder(), InternalAutoBindModule.class.getName()).toInstance(new AssetParameters());
+        RequiredAssetBinder.bindRequiredAsset(binder(), DUMMY_NAME).toInstance(new DummyAssetLoader());
+        RequiredAssetBinder.bindRequestAssetParameters(binder(), DUMMY_NAME).toInstance(new AssetParameters());
 
         if ( bootstrapModule != null )
         {
@@ -93,12 +95,6 @@ class InternalBootstrapModule extends AbstractModule
         @Override
         public void unloadAsset(String name, AssetParametersView parameters) throws Exception
         {
-        }
-
-        @Override
-        public <T> T getValue(Class<T> clazz, AssetParametersView parameters) throws Exception
-        {
-            return null;
         }
     }
 }
