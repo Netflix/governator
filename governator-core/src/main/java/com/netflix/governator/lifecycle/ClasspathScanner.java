@@ -23,11 +23,9 @@ import com.google.common.collect.Sets;
 import org.apache.xbean.finder.AnnotationFinder;
 import org.apache.xbean.finder.archive.Archive;
 import org.apache.xbean.finder.archive.CompositeArchive;
-import org.apache.xbean.finder.archive.FileArchive;
 import org.apache.xbean.finder.archive.JarArchive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URL;
@@ -43,13 +41,7 @@ public class ClasspathScanner
 
     public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations)
     {
-        this(basePackages, annotations, Lists.<Class<?>>newArrayList());
-    }
-
-    public ClasspathScanner(final Collection<String> basePackages, final Collection<Class<? extends Annotation>> annotations, final Collection<Class<?>> ignoreClasses)
-    {
         Preconditions.checkNotNull(annotations, "additionalAnnotations cannot be null");
-        Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
 
         log.debug("Starting classpath scanning...");
 
@@ -62,8 +54,6 @@ public class ClasspathScanner
         {
             doScanning(basePackages, annotations, store);
         }
-
-        store.removeAll(ignoreClasses);
 
         classes = ImmutableSet.copyOf(store);
         log.debug("Classpath scanning done");

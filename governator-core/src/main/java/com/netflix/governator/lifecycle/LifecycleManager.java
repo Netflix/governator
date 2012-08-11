@@ -146,6 +146,16 @@ public class LifecycleManager implements Closeable
         this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
     }
 
+    public Map<String, AssetLoader> getAssetLoaders()
+    {
+        return assetLoading.getAssetLoaders();
+    }
+
+    public Map<String, AssetParametersView> getParameters()
+    {
+        return assetLoading.getParameters();
+    }
+
     public void add(Object... objects) throws Exception
     {
         for ( Object obj : objects )

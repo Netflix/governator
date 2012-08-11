@@ -32,6 +32,8 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.annotations.RequiredAsset;
+import com.netflix.governator.assets.AssetLoader;
+import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import javax.annotation.PostConstruct;
@@ -93,6 +95,20 @@ class InternalLifecycleModule implements Module
     public LifecycleManager     getLifecycleManager()
     {
         return lifecycleManager;
+    }
+
+    @Provides
+    @Singleton
+    public Map<String, AssetLoader> getAssetLoaders()
+    {
+        return lifecycleManager.getAssetLoaders();
+    }
+
+    @Provides
+    @Singleton
+    public Map<String, AssetParametersView> getParameters()
+    {
+        return lifecycleManager.getParameters();
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)

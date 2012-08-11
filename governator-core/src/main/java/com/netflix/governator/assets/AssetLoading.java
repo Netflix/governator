@@ -55,8 +55,18 @@ public class AssetLoading
 
     public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> parameters)
     {
-        this.parameters = parameters;
+        this.parameters = ImmutableMap.copyOf(parameters);
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
+    }
+
+    public Map<String, AssetLoader> getAssetLoaders()
+    {
+        return assetLoaders;
+    }
+
+    public Map<String, AssetParametersView> getParameters()
+    {
+        return parameters;
     }
 
     public boolean     loadAssetsFor(Object obj) throws Exception
