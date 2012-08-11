@@ -12,14 +12,15 @@ public abstract class GenericParameterType<T>
         this.type = getSuperclassTypeParameter(getClass());
     }
 
-    public T getValue() // exists only to keep this generic
-    {
-        return null;
-    }
-
     public Type getType()
     {
         return type;
+    }
+
+    public T cast(Object obj)
+    {
+        //noinspection unchecked
+        return (T)obj;
     }
 
     // copied from javax.ws.rs.core.GenericEntity

@@ -2,6 +2,8 @@ package com.netflix.governator.inject.guice;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
@@ -39,6 +41,13 @@ class InternalBootstrapModule extends AbstractModule
 
         bindLoaders(binder());
         binder().bind(LifecycleManager.class).asEagerSingleton();
+    }
+
+    @Provides
+    @Singleton
+    public ClasspathScanner getClasspathScanner()
+    {
+        return scanner;
     }
 
     private void bindLoaders(Binder binder)

@@ -36,6 +36,7 @@ public class LifecycleInjector
         private Collection<String> basePackages = Lists.newArrayList("com", "org");
         private boolean ignoreAllClasses = false;
         private BootstrapModule bootstrapModule = null;
+        private ClasspathScanner scanner = null;
 
         public Builder withBootstrapModule(BootstrapModule module)
         {
@@ -78,9 +79,15 @@ public class LifecycleInjector
             return this;
         }
 
+        public Builder usingClasspathScanner(ClasspathScanner scanner)
+        {
+            this.scanner = scanner;
+            return this;
+        }
+
         public LifecycleInjector build()
         {
-            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, basePackages);
+            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages);
         }
 
         public Injector createInjector()
@@ -91,6 +98,15 @@ public class LifecycleInjector
         private Builder()
         {
         }
+    }
+
+    public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)
+    {
+        List<Class<? extends Annotation>> annotations = Lists.newArrayList();
+        annotations.add(AutoBindSingleton.class);
+        annotations.add(RequiredAsset.class);
+        annotations.add(RequiredAssets.class);
+        return new ClasspathScanner(basePackages, annotations);
     }
 
     public LifecycleManager getLifecycleManager()
@@ -123,17 +139,12 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    private LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, Collection<String> basePackages)
+    private LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages)
     {
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
-
-        List<Class<? extends Annotation>> annotations = Lists.newArrayList();
-        annotations.add(AutoBindSingleton.class);
-        annotations.add(RequiredAsset.class);
-        annotations.add(RequiredAssets.class);
-        scanner = new ClasspathScanner(basePackages, annotations);
+        this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
 
         Injector        injector = Guice.createInjector(new InternalBootstrapModule(scanner, bootstrapModule));
         lifecycleManager = injector.getInstance(LifecycleManager.class);

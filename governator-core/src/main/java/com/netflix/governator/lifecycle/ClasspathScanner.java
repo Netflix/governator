@@ -54,13 +54,30 @@ public class ClasspathScanner
         log.debug("Starting classpath scanning...");
 
         final Set<Class<?>>     store = Sets.newHashSet();
+        if ( basePackages.size() == 0 )
+        {
+            log.warn("No base packages specified - no classpath scanning will be done");
+        }
+        else
+        {
+            doScanning(basePackages, annotations, store);
+        }
+
+        store.removeAll(ignoreClasses);
+
+        classes = ImmutableSet.copyOf(store);
+        log.debug("Classpath scanning done");
+    }
+
+    private void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> store)
+    {
         try
         {
-            List<Archive>       archives = Lists.newArrayList();
+            List<Archive> archives = Lists.newArrayList();
             ClassLoader         contextClassLoader = Thread.currentThread().getContextClassLoader();
             for ( String basePackage : basePackages )
             {
-                Enumeration<URL>    resources = contextClassLoader.getResources(basePackage.replace(".", "/"));
+                Enumeration<URL> resources = contextClassLoader.getResources(basePackage.replace(".", "/"));
                 while ( resources.hasMoreElements() )
                 {
                     URL thisUrl = resources.nextElement();
@@ -73,8 +90,8 @@ public class ClasspathScanner
                         archives.add(new GovernatorFileArchive(contextClassLoader, thisUrl, basePackage));
                     }
                 }
-                CompositeArchive    compositeArchive = new CompositeArchive(archives);
-                AnnotationFinder    annotationFinder = new AnnotationFinder(compositeArchive);
+                CompositeArchive compositeArchive = new CompositeArchive(archives);
+                AnnotationFinder annotationFinder = new AnnotationFinder(compositeArchive);
                 for ( Class<? extends Annotation> annotation : annotations )
                 {
                     store.addAll(annotationFinder.findAnnotatedClasses(annotation));
@@ -85,10 +102,6 @@ public class ClasspathScanner
         {
             throw new RuntimeException(e);
         }
-        store.removeAll(ignoreClasses);
-
-        classes = ImmutableSet.copyOf(store);
-        log.debug("Classpath scanning done");
     }
 
     private boolean isJarURL(URL url)

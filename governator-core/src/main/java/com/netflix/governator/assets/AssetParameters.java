@@ -37,8 +37,7 @@ public class AssetParameters implements AssetParametersView
     public<T> T        get(GenericParameterType<T> key)
     {
         Object      value = internalGet(key.getType());
-        //noinspection unchecked
-        return (T)value;
+        return key.cast(value);
     }
 
     @Override
