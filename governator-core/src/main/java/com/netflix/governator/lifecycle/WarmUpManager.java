@@ -9,13 +9,11 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class WarmUpManager
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final List<List<Work>> parallelQueues = Lists.newArrayList();
-    private final List<Work> foregroundQueue = Lists.newArrayList();
     private final LifecycleManager lifecycleManager;
     private final LifecycleState endState;
 
@@ -44,67 +42,17 @@ public class WarmUpManager
         }
     }
 
-    public void     add(Object obj, Method method, boolean canBeParallel)
+    public void     add(Object obj, Method method)
     {
-        Work work = new Work(obj, method);
-        if ( canBeParallel )
-        {
-            int             index = nextIndex++ % parallelQueues.size();
-            parallelQueues.get(index).add(work);
-        }
-        else
-        {
-            foregroundQueue.add(work);
-        }
+        Work        work = new Work(obj, method);
+        int         index = nextIndex++ % parallelQueues.size();
+        parallelQueues.get(index).add(work);
     }
 
     public void     runAll() throws Exception
     {
-        runAll(false, 0, null);
-    }
-
-    public void     runAll(boolean waitForParallel, long maxWait, TimeUnit unit) throws Exception
-    {
         ExecutorService service = Executors.newFixedThreadPool(parallelQueues.size());
         startParallel(service);
-        startForeground();
-
-        if ( waitForParallel )
-        {
-            if ( !service.awaitTermination(maxWait, unit) )
-            {
-                log.warn("Parallel tasks timed out");
-            }
-        }
-    }
-
-    private void startForeground() throws WarmUpException
-    {
-        Throwable       exceptionChain = null;
-        for ( Work work : foregroundQueue )
-        {
-            try
-            {
-                doWork(work);
-            }
-            catch ( Throwable e )
-            {
-                log.error("WarmUp failure", e);
-                if ( exceptionChain == null )
-                {
-                    exceptionChain = e;
-                }
-                else
-                {
-                    exceptionChain = new Throwable(exceptionChain);
-                }
-            }
-        }
-
-        if ( exceptionChain != null )
-        {
-            throw new WarmUpException(exceptionChain);
-        }
     }
 
     private void doWork(Work work) throws IllegalAccessException, InvocationTargetException

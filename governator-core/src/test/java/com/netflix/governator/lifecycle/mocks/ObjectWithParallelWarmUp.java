@@ -9,13 +9,13 @@ public class ObjectWithParallelWarmUp
     public static final AtomicInteger      warmUpCount = new AtomicInteger(0);
     public static final AtomicInteger      coolDownCount = new AtomicInteger(0);
 
-    @WarmUp(canBeParallel = true)
+    @WarmUp
     public void     warm()
     {
         warmUpCount.incrementAndGet();
     }
 
-    @CoolDown(canBeParallel = true)
+    @CoolDown
     public void     cool()
     {
         coolDownCount.incrementAndGet();

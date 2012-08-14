@@ -32,8 +32,8 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetParametersView;
+import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import javax.annotation.PostConstruct;
@@ -44,10 +44,12 @@ class InternalLifecycleModule implements Module
 {
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
+    private final LifecycleListener lifecycleListener;
 
-    InternalLifecycleModule(LifecycleManager lifecycleManager)
+    InternalLifecycleModule(LifecycleManager lifecycleManager, LifecycleListener lifecycleListener)
     {
         this.lifecycleManager = lifecycleManager;
+        this.lifecycleListener = lifecycleListener;
     }
 
     @Override
@@ -68,6 +70,11 @@ class InternalLifecycleModule implements Module
                             @Override
                             public void afterInjection(T obj)
                             {
+                                if ( lifecycleListener != null )
+                                {
+                                    lifecycleListener.objectInjected(obj);
+                                }
+
                                 Class<?> clazz = obj.getClass();
                                 LifecycleMethods methods = getLifecycleMethods(clazz);
 
@@ -99,14 +106,7 @@ class InternalLifecycleModule implements Module
 
     @Provides
     @Singleton
-    public Map<String, AssetLoader> getAssetLoaders()
-    {
-        return lifecycleManager.getAssetLoaders();
-    }
-
-    @Provides
-    @Singleton
-    public Map<String, AssetParametersView> getParameters()
+    public Map<String, AssetParametersView> getAssetParameters()
     {
         return lifecycleManager.getParameters();
     }

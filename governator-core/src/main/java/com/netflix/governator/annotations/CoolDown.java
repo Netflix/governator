@@ -10,5 +10,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface CoolDown
 {
-    boolean canBeParallel() default false;
 }

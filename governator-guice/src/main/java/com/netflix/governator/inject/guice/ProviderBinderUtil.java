@@ -19,8 +19,7 @@ public class ProviderBinderUtil
             throw new RuntimeException(e);
         }
 
-        binder
-            .bind(providedType)
+        binder.bind(providedType)
             .toProvider
             (
                 new com.google.inject.Provider()

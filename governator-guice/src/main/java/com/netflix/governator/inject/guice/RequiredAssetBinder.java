@@ -5,7 +5,6 @@ import com.google.inject.Binder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.multibindings.MapBinder;
 import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.assets.AssetParameters;
 import com.netflix.governator.assets.AssetParametersView;
 
 public class RequiredAssetBinder

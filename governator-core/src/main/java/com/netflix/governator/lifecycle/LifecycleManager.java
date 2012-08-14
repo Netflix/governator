@@ -29,7 +29,6 @@ import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoading;
-import com.netflix.governator.assets.AssetParameters;
 import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
@@ -263,13 +262,12 @@ public class LifecycleManager implements Closeable
 
                 for ( Method m : record.coolDownMethods )
                 {
-                    CoolDown    coolDown = m.getAnnotation(CoolDown.class);
-                    manager.add(record.obj, m, coolDown.canBeParallel());
+                    manager.add(record.obj, m);
                 }
             }
         }
 
-        manager.runAll(true, 0, null);  // TODO
+        manager.runAll();
     }
 
     private void doWarmUp() throws Exception
@@ -290,8 +288,7 @@ public class LifecycleManager implements Closeable
 
                 for ( Method m : record.warmUpMethods )
                 {
-                    WarmUp    warmUp = m.getAnnotation(WarmUp.class);
-                    manager.add(record.obj, m, warmUp.canBeParallel());
+                    manager.add(record.obj, m);
                 }
             }
         }

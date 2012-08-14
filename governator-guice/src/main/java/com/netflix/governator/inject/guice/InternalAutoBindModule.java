@@ -19,8 +19,6 @@ package com.netflix.governator.inject.guice;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
-import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import java.util.Collection;
 import java.util.List;
@@ -49,11 +47,13 @@ class InternalAutoBindModule extends AbstractModule
                 continue;
             }
 
-            binder().bind(clazz).asEagerSingleton();
-
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
             {
-                ProviderBinderUtil.bind(binder(), (Class <? extends javax.inject.Provider>)clazz);
+                ProviderBinderUtil.bind(binder(), (Class<? extends javax.inject.Provider>)clazz);
+            }
+            else
+            {
+                binder().bind(clazz).asEagerSingleton();
             }
         }
     }
