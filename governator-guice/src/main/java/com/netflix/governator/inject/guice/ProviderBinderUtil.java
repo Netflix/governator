@@ -5,9 +5,9 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import javax.inject.Provider;
 
-public class ProviderBinderUtil
+class ProviderBinderUtil
 {
-    public static void      bind(Binder binder, final Class<? extends Provider> clazz)
+    static void      bind(Binder binder, final Class<? extends Provider> clazz)
     {
         Class<?> providedType;
         try

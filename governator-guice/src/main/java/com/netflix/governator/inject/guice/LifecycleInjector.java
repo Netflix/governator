@@ -9,6 +9,7 @@ import com.google.inject.Module;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
+import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -17,6 +18,27 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * <p>
+ *     When using Governator, do NOT create a Guice injector manually. Instead, use a LifecycleInjector to create a Guice injector.
+ * </p>
+ *
+ * <p>
+ *     Governator uses a two pass binding. The bootstrap binding injects:
+ *     <li>{@link RequiredAsset}</li>
+ *     <li>{@link RequiredAssets}</li>
+ *     <li>{@link AssetLoader}</li>
+ *     <li>{@link LifecycleManager}</li>
+ *     <li>Any application defined bootstrap instances</li>
+ *     <br/>
+ *     The main binding injects everything else.
+ * </p>
+ *
+ * <p>
+ *     The bootstrap binding occurs when the LifecycleInjector is created. The main binding
+ *     occurs when {@link #createInjector()} is called.
+ * </p>
+ */
 public class LifecycleInjector
 {
     private final ClasspathScanner scanner;
@@ -26,100 +48,23 @@ public class LifecycleInjector
     private final LifecycleManager lifecycleManager;
     private final LifecycleListener lifecycleListener;
 
-    public static Builder builder()
+    /**
+     * Create a new LifecycleInjector builder
+     *
+     * @return builder
+     */
+    public static LifecycleInjectorBuilder builder()
     {
-        return new BuilderImpl();
+        return new LifecycleInjectorBuilderImpl();
     }
 
-    public static class BuilderImpl implements Builder
-    {
-        private List<Module> modules = Lists.newArrayList();
-        private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
-        private Collection<String> basePackages = Lists.newArrayList("com", "org");
-        private boolean ignoreAllClasses = false;
-        private BootstrapModule bootstrapModule = null;
-        private ClasspathScanner scanner = null;
-        private LifecycleListener lifecycleListener = null;
-
-        @Override
-        public Builder withBootstrapModule(BootstrapModule module)
-        {
-            this.bootstrapModule = module;
-            return this;
-        }
-
-        @Override
-        public Builder withModules(Module... modules)
-        {
-            this.modules = ImmutableList.copyOf(modules);
-            return this;
-        }
-
-        @Override
-        public Builder withModules(Iterable<? extends Module> modules)
-        {
-            this.modules = ImmutableList.copyOf(modules);
-            return this;
-        }
-
-        @Override
-        public Builder ignoringAutoBindClasses(Collection<Class<?>> ignoreClasses)
-        {
-            this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
-            return this;
-        }
-
-        @Override
-        public Builder ignoringAllAutoBindClasses()
-        {
-            this.ignoreAllClasses = true;
-            return this;
-        }
-
-        @Override
-        public Builder usingBasePackages(String... basePackages)
-        {
-            return usingBasePackages(Arrays.asList(basePackages));
-        }
-
-        @Override
-        public Builder usingBasePackages(Collection<String> basePackages)
-        {
-            this.basePackages = Lists.newArrayList(basePackages);
-            return this;
-        }
-
-        @Override
-        public Builder usingClasspathScanner(ClasspathScanner scanner)
-        {
-            this.scanner = scanner;
-            return this;
-        }
-
-        @Override
-        public Builder withLifecycleListener(LifecycleListener lifecycleListener)
-        {
-            this.lifecycleListener = lifecycleListener;
-            return this;
-        }
-
-        @Override
-        public LifecycleInjector build()
-        {
-            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, lifecycleListener);
-        }
-
-        @Override
-        public Injector createInjector()
-        {
-            return build().createInjector();
-        }
-
-        private BuilderImpl()
-        {
-        }
-    }
-
+    /**
+     * If you need early access to the CLASSPATH scanner. For performance reasons, you should
+     * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
+     *
+     * @param basePackages packages to recursively scan
+     * @return scanner
+     */
     public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)
     {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
@@ -129,16 +74,33 @@ public class LifecycleInjector
         return new ClasspathScanner(basePackages, annotations);
     }
 
+    /**
+     * Return the internally created lifecycle manager
+     *
+     * @return manager
+     */
     public LifecycleManager getLifecycleManager()
     {
         return lifecycleManager;
     }
 
+    /**
+     * Create an injector that is a child of the bootstrap bindings only
+     *
+     * @param modules binding modules
+     * @return injector
+     */
     public Injector createChildInjector(Module... modules)
     {
         return createChildInjector(Arrays.asList(modules));
     }
 
+    /**
+     * Create an injector that is a child of the bootstrap bindings only
+     *
+     * @param modules binding modules
+     * @return injector
+     */
     public Injector createChildInjector(Collection<Module> modules)
     {
         List<Module>            localModules = Lists.newArrayList(modules);
@@ -146,6 +108,11 @@ public class LifecycleInjector
         return Guice.createInjector(localModules);
     }
 
+    /**
+     * Create the main injector
+     *
+     * @return injector
+     */
     public Injector createInjector()
     {
         List<Module>            localModules = Lists.newArrayList(modules);
@@ -159,7 +126,7 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    private LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener)
+    LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener)
     {
         this.ignoreAllClasses = ignoreAllClasses;
         this.lifecycleListener = lifecycleListener;
