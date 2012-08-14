@@ -2,10 +2,16 @@ package com.netflix.governator.configuration;
 
 import java.util.Properties;
 
+/**
+ * ConfigurationProvider backed by a {#link Properties}
+ */
 public class PropertiesConfigurationProvider implements ConfigurationProvider
 {
     private Properties properties;
 
+    /**
+     * @param properties the properties
+     */
     public PropertiesConfigurationProvider(Properties properties)
     {
         this.properties = properties;

@@ -16,12 +16,48 @@
 
 package com.netflix.governator.lifecycle;
 
+/**
+ * Possible states for a managed object
+ */
 public enum LifecycleState
 {
+    /**
+     * Not managed, unknown, etc.
+     */
     LATENT,
+
+    /**
+     * Loading required assets
+     */
+    LOADING_ASSETS,
+
+    /**
+     * Assigning configuration values
+     */
+    SETTING_CONFIGURATION,
+
+    /**
+     * Calling PostConstruct methods
+     */
     POST_CONSTRUCTING,
+
+    /**
+     * Calling warm-up methods
+     */
     WARMING_UP,
+
+    /**
+     * Completely ready for use
+     */
     ACTIVE,
+
+    /**
+     * Calling cool down methods
+     */
     COOLING_DOWN,
+
+    /**
+     * Calling PreDestroy methods (state will change to LATENT after this)
+     */
     PRE_DESTROYING
 }

@@ -16,9 +16,28 @@
 
 package com.netflix.governator.assets;
 
+import com.netflix.governator.annotations.RequiredAsset;
+
+/**
+ * Abstraction for loading classes annotated with {@link RequiredAsset}
+ */
 public interface AssetLoader
 {
+    /**
+     * Called to load the named asset
+     *
+     * @param name name of the asset
+     * @param parameters any parameters bound to the asset
+     * @throws Exception errors
+     */
     public void     loadAsset(String name, AssetParametersView parameters) throws Exception;
 
+    /**
+     * Called to unload the named asset
+     *
+     * @param name name of the asset
+     * @param parameters any parameters bound to the asset
+     * @throws Exception errors
+     */
     public void     unloadAsset(String name, AssetParametersView parameters) throws Exception;
 }

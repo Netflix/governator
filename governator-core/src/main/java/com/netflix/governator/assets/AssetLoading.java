@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Used internally to manage asset loading
+ */
 @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 public class AssetLoading
 {
@@ -53,22 +56,39 @@ public class AssetLoading
         }
     }
 
+    /**
+     * @param assetLoaders map of asset names to loaders
+     * @param parameters map of asset names to parameters
+     */
     public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> parameters)
     {
         this.parameters = ImmutableMap.copyOf(parameters);
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
     }
 
+    /**
+     * @return return the asset loader map
+     */
     public Map<String, AssetLoader> getAssetLoaders()
     {
         return assetLoaders;
     }
 
+    /**
+     * @return return the parameters map
+     */
     public Map<String, AssetParametersView> getParameters()
     {
         return parameters;
     }
 
+    /**
+     * Load the assets (if any) for the given object
+     *
+     * @param obj object to load
+     * @return true if the object has assets
+     * @throws Exception errors
+     */
     public boolean     loadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
@@ -89,6 +109,12 @@ public class AssetLoading
         return (requiredAsset != null) || (requiredAssets != null);
     }
 
+    /**
+     * Unload the assets (if any) for the given object
+     *
+     * @param obj object to unload
+     * @throws Exception errors
+     */
     public void     unloadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);

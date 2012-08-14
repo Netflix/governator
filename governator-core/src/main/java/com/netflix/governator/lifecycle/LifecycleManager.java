@@ -61,6 +61,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 // TODO - should the methods really be synchronized? Maybe just sync on the object being added
 
+/**
+ * Main instance management container
+ */
 @Singleton
 public class LifecycleManager implements Closeable
 {
@@ -70,6 +73,8 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationProvider configurationProvider;
     private final AssetLoading assetLoading;
+
+    private volatile LifecycleListener listener = null;
 
     public static final String      DEFAULT_ASSET_LOADER_VALUE = "";
 
@@ -145,6 +150,11 @@ public class LifecycleManager implements Closeable
         this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
     }
 
+    public void setListener(LifecycleListener listener)
+    {
+        this.listener = listener;
+    }
+
     public Map<String, AssetLoader> getAssetLoaders()
     {
         return assetLoading.getAssetLoaders();
@@ -155,6 +165,12 @@ public class LifecycleManager implements Closeable
         return assetLoading.getParameters();
     }
 
+    /**
+     * Add the objects to the container. Their assets will be loaded, post construct methods called, etc.
+     *
+     * @param objects objects to add
+     * @throws Exception errors
+     */
     public void add(Object... objects) throws Exception
     {
         for ( Object obj : objects )
@@ -163,11 +179,25 @@ public class LifecycleManager implements Closeable
         }
     }
 
+    /**
+     * Add the object to the container. Its assets will be loaded, post construct methods called, etc.
+     *
+     * @param obj object to add
+     * @throws Exception errors
+     */
     public synchronized void add(Object obj) throws Exception
     {
         add(obj, new LifecycleMethods(obj.getClass()));
     }
 
+    /**
+     * Add the object to the container. Its assets will be loaded, post construct methods called, etc.
+     * This version helps performance when the lifecycle methods have already been calculated
+     *
+     * @param obj object to add
+     * @param methods calculated lifecycle methods
+     * @throws Exception errors
+     */
     public synchronized void add(Object obj, LifecycleMethods methods) throws Exception
     {
         Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
@@ -175,7 +205,6 @@ public class LifecycleManager implements Closeable
         StateKey        key = new StateKey(obj);
         if ( getState(key) == LifecycleState.LATENT )
         {
-            objectStates.put(key, LifecycleState.POST_CONSTRUCTING);
             try
             {
                 startInstance(obj, methods);
@@ -193,12 +222,23 @@ public class LifecycleManager implements Closeable
         }
     }
 
+    /**
+     * Return the current state of the given object or LATENT if unknown
+     *
+     * @param obj object to check
+     * @return state
+     */
     public synchronized LifecycleState getState(Object obj)
     {
         LifecycleState state = objectStates.get(new StateKey(obj));
         return (state != null) ? state : LifecycleState.LATENT;
     }
 
+    /**
+     * The manager MUST be started
+     *
+     * @throws Exception errors
+     */
     public void start() throws Exception
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
@@ -238,15 +278,19 @@ public class LifecycleManager implements Closeable
         }
     }
 
+    void setState(Object obj, LifecycleState state)
+    {
+        objectStates.put(new StateKey(obj), state);
+        if ( listener != null )
+        {
+            listener.stateChanged(obj, state);
+        }
+    }
+
     @VisibleForTesting
     protected int getWarmUpThreadQty()
     {
         return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
-    }
-
-    LifecycleState setState(Object obj, LifecycleState state)
-    {
-        return objectStates.put(new StateKey(obj), state);
     }
 
     private void doCoolDown() throws Exception
@@ -300,13 +344,16 @@ public class LifecycleManager implements Closeable
     {
         log.debug("Starting %s", obj.getClass().getName());
 
+        setState(obj, LifecycleState.LOADING_ASSETS);
         boolean             hasAssets = assetLoading.loadAssetsFor(obj);
 
+        setState(obj, LifecycleState.SETTING_CONFIGURATION);
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {
             assignConfiguration(obj, configurationField);
         }
 
+        setState(obj, LifecycleState.POST_CONSTRUCTING);
         for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
         {
             log.debug("\t%s()", postConstruct.getName());

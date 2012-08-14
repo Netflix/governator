@@ -35,6 +35,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 
+/**
+ * Used internally to hold the methods important to the LifecycleManager
+ */
 public class LifecycleMethods
 {
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();

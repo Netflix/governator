@@ -34,11 +34,18 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Utility to find annotated classes
+ */
 public class ClasspathScanner
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
     private final Set<Class<?>> classes;
 
+    /**
+     * @param basePackages list of packages to search (recursively)
+     * @param annotations class annotations to search for
+     */
     public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations)
     {
         Preconditions.checkNotNull(annotations, "additionalAnnotations cannot be null");
@@ -57,6 +64,14 @@ public class ClasspathScanner
 
         classes = ImmutableSet.copyOf(store);
         log.debug("Classpath scanning done");
+    }
+
+    /**
+     * @return the found classes
+     */
+    public Set<Class<?>> get()
+    {
+        return classes;
     }
 
     private void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> store)
@@ -98,10 +113,5 @@ public class ClasspathScanner
     {
         String protocol = url.getProtocol();
         return "zip".equals(protocol) || "jar".equals(protocol);
-    }
-
-    public Set<Class<?>> get()
-    {
-        return classes;
     }
 }

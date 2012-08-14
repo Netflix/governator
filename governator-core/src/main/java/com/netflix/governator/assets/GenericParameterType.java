@@ -3,6 +3,10 @@ package com.netflix.governator.assets;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+/**
+ * Method for specified a generic key for {@link AssetParameters}. See
+ * {@link AssetParameters#set(GenericParameterType, Object)} and {@link AssetParameters#get(GenericParameterType)}.
+ */
 public abstract class GenericParameterType<T>
 {
     private final Type type;

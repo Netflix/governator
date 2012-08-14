@@ -13,25 +13,19 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @version $Rev$ $Date$
+ * My workaround until https://issues.apache.org/jira/browse/XBEAN-207 is fixed
  */
-public class GovernatorFileArchive implements Archive
+class GovernatorFileArchive implements Archive
 {
     private final ClassLoader loader;
     private final File dir;
     private final String basePackage;
     private List<String> list;
 
-    public GovernatorFileArchive(ClassLoader loader, URL url, String basePackage) {
+    GovernatorFileArchive(ClassLoader loader, URL url, String basePackage) {
         this.loader = loader;
         this.basePackage = basePackage;
         this.dir = toFile(url);
-    }
-
-    public GovernatorFileArchive(ClassLoader loader, File dir, String basePackage) {
-        this.loader = loader;
-        this.dir = dir;
-        this.basePackage = basePackage;
     }
 
     public File getDir() {

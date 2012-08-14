@@ -1,5 +1,8 @@
 package com.netflix.governator.configuration;
 
+/**
+ * ConfigurationProvider backed by the system properties
+ */
 public class SystemConfigurationProvider implements ConfigurationProvider
 {
     @Override

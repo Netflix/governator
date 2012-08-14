@@ -10,7 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class WarmUpManager
+class WarmUpManager
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final List<List<Work>> parallelQueues = Lists.newArrayList();
@@ -31,7 +31,7 @@ public class WarmUpManager
         }
     }
 
-    public WarmUpManager(LifecycleManager lifecycleManager, LifecycleState endState, int nThreads)
+    WarmUpManager(LifecycleManager lifecycleManager, LifecycleState endState, int nThreads)
     {
         this.lifecycleManager = lifecycleManager;
         this.endState = endState;
@@ -42,14 +42,14 @@ public class WarmUpManager
         }
     }
 
-    public void     add(Object obj, Method method)
+    void     add(Object obj, Method method)
     {
         Work        work = new Work(obj, method);
         int         index = nextIndex++ % parallelQueues.size();
         parallelQueues.get(index).add(work);
     }
 
-    public void     runAll() throws Exception
+    void     runAll() throws Exception
     {
         ExecutorService service = Executors.newFixedThreadPool(parallelQueues.size());
         startParallel(service);
