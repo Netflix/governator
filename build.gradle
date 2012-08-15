@@ -1,6 +1,6 @@
-// Establish version and status
 ext.releaseVersion = '0.0.27'
 ext.githubProjectName = 'governator'
+group = "com.netflix.${githubProjectName}" // TEMPLATE: Set to organization of project
 
 buildscript {
     repositories { mavenCentral() }
@@ -18,49 +18,32 @@ apply from: file('gradle/maven.gradle')
 
 apply plugin: 'idea'
 
-subprojects {
-    apply plugin: 'idea'
-
-    // Closure to configure all the POM with extra info, common to all projects
-    pom {
-        project {
-            url "https://github.com/Netflix/${rootProject.githubProjectName}"
-            scm {
-                connection "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-                url "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-                developerConnection "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-            }
-            issueManagement {
-                system 'github'
-                url "https://github.com/Netflix/${rootProject.githubProjectName}/issues"
-            }
+// Closure to configure all the POM with extra info, common to all projects
+pom {
+    project {
+        url "https://github.com/Netflix/${githubProjectName}"
+        scm {
+            connection "scm:git:git@github.com:Netflix/${githubProjectName}.git"
+            url "scm:git:git@github.com:Netflix/${githubProjectName}.git"
+            developerConnection "scm:git:git@github.com:Netflix/${githubProjectName}.git"
+        }
+        issueManagement {
+            system 'github'
+            url "https://github.com/Netflix/${githubProjectName}/issues"
         }
     }
-
-    group = "com.netflix.${githubProjectName}" // TEMPLATE: Set to organization of project
-
-    dependencies {
-        compile     'javax.inject:javax.inject:1'
-        compile     'com.google.guava:guava:11.0.1'
-        compile     'org.slf4j:slf4j-api:1.6.3'
-        testCompile 'org.testng:testng:6.1.1'
-        testCompile 'org.mockito:mockito-core:1.8.5'
-    }
 }
 
-project(':governator-core') {
-    dependencies {
-        compile     'org.hibernate:hibernate-validator:4.1.0.Final'
-        compile     'org.apache.xbean:xbean-finder:3.11.1'
-        compile     'org.apache.xbean:xbean-bundleutils:3.11.1'
-        compile     'asm:asm-all:3.2'
-    }
-}
-
-project(':governator-guice') {
-    dependencies {
-        compile     project(":governator-core")
-        compile     'com.google.inject:guice:3.0'
-        compile     'com.google.inject.extensions:guice-multibindings:3.0'
-    }
+dependencies {
+    compile     'javax.inject:javax.inject:1'
+    compile     'com.google.guava:guava:11.0.1'
+    compile     'org.slf4j:slf4j-api:1.6.3'
+    compile     'org.hibernate:hibernate-validator:4.1.0.Final'
+    compile     'org.apache.xbean:xbean-finder:3.11.1'
+    compile     'org.apache.xbean:xbean-bundleutils:3.11.1'
+    compile     'asm:asm-all:3.2'
+    compile     'com.google.inject:guice:3.0'
+    compile     'com.google.inject.extensions:guice-multibindings:3.0'
+    testCompile 'org.testng:testng:6.1.1'
+    testCompile 'org.mockito:mockito-core:1.8.5'
 }
