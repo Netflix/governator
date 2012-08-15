@@ -16,6 +16,7 @@
 
 package com.netflix.governator.inject.guice;
 
+import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Guice;
@@ -23,18 +24,68 @@ import com.google.inject.Injector;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.inject.guice.mocks.SimpleContainer;
+import com.netflix.governator.inject.guice.mocks.SimpleEagerSingleton;
 import com.netflix.governator.inject.guice.mocks.SimplePojo;
 import com.netflix.governator.inject.guice.mocks.SimplePojoAlt;
 import com.netflix.governator.inject.guice.mocks.SimpleProvider;
 import com.netflix.governator.inject.guice.mocks.SimpleProviderAlt;
 import com.netflix.governator.inject.guice.mocks.SimpleSingleton;
 import com.netflix.governator.lifecycle.AutoBindSingletonMode;
+import com.netflix.governator.lifecycle.FilteredLifecycleListener;
+import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.lifecycle.LifecycleState;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import java.util.List;
 
 public class TestGovernatorGuice
 {
+    @Test
+    public void     testAutoBindSingletonMode() throws Exception
+    {
+        final String PACKAGES = "com.netflix.governator.inject.guice.mocks";
+
+        final List<Object>  objects = Lists.newArrayList();
+        LifecycleListener   listener = new LifecycleListener()
+        {
+            @Override
+            public void objectInjected(Object obj)
+            {
+                objects.add(obj);
+            }
+
+            @Override
+            public void stateChanged(Object obj, LifecycleState newState)
+            {
+            }
+        };
+        Injector    injector = LifecycleInjector
+            .builder()
+            .withBootstrapModule
+             (
+                 new BootstrapModule()
+                 {
+                     @Override
+                     public void configure(Binder binder, RequiredAssetBinder requiredAssetBinder)
+                     {
+                         binder.bind(ConfigurationProvider.class).to(SystemConfigurationProvider.class).asEagerSingleton();
+                     }
+                 }
+             )
+            .usingBasePackages(PACKAGES)
+            .withLifecycleListener(new FilteredLifecycleListener(listener, PACKAGES))
+            .createInjector();
+
+        Assert.assertEquals(objects.size(), 1);
+        SimpleEagerSingleton    obj = injector.getInstance(SimpleEagerSingleton.class);
+        Assert.assertSame(obj, objects.get(0));
+
+        SimpleSingleton         obj2 = injector.getInstance(SimpleSingleton.class);
+        Assert.assertEquals(objects.size(), 2);
+        Assert.assertSame(obj2, objects.get(1));
+    }
+
     @Test
     public void     testSimpleProvider() throws Exception
     {

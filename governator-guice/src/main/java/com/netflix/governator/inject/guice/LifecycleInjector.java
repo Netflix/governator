@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
@@ -105,7 +106,7 @@ public class LifecycleInjector
     {
         List<Module>            localModules = Lists.newArrayList(modules);
         localModules.add(new InternalLifecycleModule(lifecycleManager, lifecycleListener));
-        return Guice.createInjector(localModules);
+        return Guice.createInjector(Stage.PRODUCTION, localModules);
     }
 
     /**
