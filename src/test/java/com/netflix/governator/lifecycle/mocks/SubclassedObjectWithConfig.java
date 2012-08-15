@@ -4,6 +4,6 @@ import com.netflix.governator.annotations.Configuration;
 
 public class SubclassedObjectWithConfig extends ObjectWithConfig
 {
-    @Configuration("test.main")
+    @Configuration(value = "test.main", documentation = "This is the mainInt")
     public int      mainInt;
 }

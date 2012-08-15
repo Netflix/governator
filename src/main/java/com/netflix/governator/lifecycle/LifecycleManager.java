@@ -30,6 +30,7 @@ import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoading;
 import com.netflix.governator.assets.AssetParametersView;
+import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import org.slf4j.Logger;
@@ -73,6 +74,7 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationProvider configurationProvider;
     private final AssetLoading assetLoading;
+    private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
 
     private volatile LifecycleListener listener = null;
 
@@ -246,6 +248,9 @@ public class LifecycleManager implements Closeable
         validate();
 
         doWarmUp();
+
+        configurationDocumentation.output(log);
+        configurationDocumentation.clear();
     }
 
     @Override
@@ -302,7 +307,7 @@ public class LifecycleManager implements Closeable
             if ( record.coolDownMethods.size() > 0 )
             {
                 setState(record.obj, LifecycleState.COOLING_DOWN);
-                log.debug("Cooling down %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+                log.debug(String.format("Cooling down %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
 
                 for ( Method m : record.coolDownMethods )
                 {
@@ -328,7 +333,7 @@ public class LifecycleManager implements Closeable
             if ( record.warmUpMethods.size() > 0 )
             {
                 setState(record.obj, LifecycleState.WARMING_UP);
-                log.debug("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+                log.debug(String.format("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
 
                 for ( Method m : record.warmUpMethods )
                 {
@@ -342,7 +347,7 @@ public class LifecycleManager implements Closeable
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
     {
-        log.debug("Starting %s", obj.getClass().getName());
+        log.debug(String.format("Starting %s", obj.getClass().getName()));
 
         setState(obj, LifecycleState.LOADING_ASSETS);
         boolean             hasAssets = assetLoading.loadAssetsFor(obj);
@@ -356,7 +361,7 @@ public class LifecycleManager implements Closeable
         setState(obj, LifecycleState.POST_CONSTRUCTING);
         for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
         {
-            log.debug("\t%s()", postConstruct.getName());
+            log.debug(String.format("\t%s()", postConstruct.getName()));
             postConstruct.invoke(obj);
         }
 
@@ -385,12 +390,12 @@ public class LifecycleManager implements Closeable
                 }
             }
 
-            log.debug("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj));
+            log.debug(String.format("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
             setState(record.obj, LifecycleState.PRE_DESTROYING);
 
             for ( Method preDestroy : record.preDestroyMethods )
             {
-                log.debug("\t%s()", preDestroy.getName());
+                log.debug(String.format("\t%s()", preDestroy.getName()));
                 try
                 {
                     preDestroy.invoke(record.obj);
@@ -443,48 +448,47 @@ public class LifecycleManager implements Closeable
         Configuration       configuration = field.getAnnotation(Configuration.class);
         String              configurationName = configuration.value();
 
-        if ( configurationProvider.has(configurationName) )
+        Object      value = null;
+
+        boolean has = configurationProvider.has(configurationName);
+        if ( has )
         {
             if ( String.class.isAssignableFrom(field.getType()) )
             {
-                String  value = configurationProvider.getString(configurationName);
-                log.debug("String %s = \"%s\"", field.getName(), value);
-                field.set(obj, value);
+                value = configurationProvider.getString(configurationName);
             }
             else if ( Boolean.class.isAssignableFrom(field.getType()) || Boolean.TYPE.isAssignableFrom(field.getType()) )
             {
-                boolean  value = configurationProvider.getBoolean(configurationName);
-                log.debug("boolean %s = %s", field.getName(), Boolean.toString(value));
-                field.set(obj, value);
+                value = configurationProvider.getBoolean(configurationName);
             }
             else if ( Integer.class.isAssignableFrom(field.getType()) || Integer.TYPE.isAssignableFrom(field.getType()) )
             {
-                int  value = configurationProvider.getInteger(configurationName);
-                log.debug("int %s = %d", field.getName(), value);
-                field.set(obj, value);
+                value = configurationProvider.getInteger(configurationName);
             }
             else if ( Long.class.isAssignableFrom(field.getType()) || Long.TYPE.isAssignableFrom(field.getType()) )
             {
-                long  value = configurationProvider.getLong(configurationName);
-                log.debug("long %s = %d", field.getName(), value);
-                field.set(obj, value);
+                value = configurationProvider.getLong(configurationName);
             }
             else if ( Double.class.isAssignableFrom(field.getType()) || Double.TYPE.isAssignableFrom(field.getType()) )
             {
-                double  value = configurationProvider.getDouble(configurationName);
-                log.debug("double %s = %f", field.getName(), value);
-                field.set(obj, value);
+                value = configurationProvider.getDouble(configurationName);
             }
             else if ( Date.class.isAssignableFrom(field.getType()) )
             {
-                Date  value = parseDate(configurationProvider.getString(configurationName));
-                log.debug("Date %s = %f", field.getName(), value);
-                field.set(obj, value);
+                value = parseDate(configurationProvider.getString(configurationName));
             }
             else
             {
                 log.error("Field type not supported: " + field.getType());
+                field = null;
             }
+        }
+
+        if ( field != null )
+        {
+            String  defaultValue = String.valueOf(field.get(obj));
+            field.set(obj, value);
+            configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, String.valueOf(value), configuration.documentation());
         }
     }
 

@@ -6,7 +6,7 @@ import java.util.Date;
 
 public class ObjectWithConfig
 {
-    @Configuration("test.b")
+    @Configuration(value = "test.b", documentation = "this is a boolean")
     public boolean   aBool = false;
 
     @Configuration("test.i")

@@ -51,7 +51,6 @@ public class TestConfiguration
     public void     testConfig() throws Exception
     {
         LifecycleManager    manager = new LifecycleManager();
-        manager.start();
 
         System.setProperty("test.b", "true");
         System.setProperty("test.i", "100");
@@ -62,6 +61,7 @@ public class TestConfiguration
 
         ObjectWithConfig    obj = new ObjectWithConfig();
         manager.add(obj);
+        manager.start();
 
         Assert.assertEquals(obj.aBool, true);
         Assert.assertEquals(obj.anInt, 100);

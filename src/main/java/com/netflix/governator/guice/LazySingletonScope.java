@@ -5,8 +5,15 @@ import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
 
+/**
+ * A Guice {@link Scope} that enables lazy singletons
+ */
 public class LazySingletonScope
 {
+    /**
+     * Returns the scope
+     * @return scope
+     */
     public static Scope get()
     {
         return instance;
@@ -14,7 +21,7 @@ public class LazySingletonScope
 
     /**
      * A singleton that will never be eager, in contrast to
-     * {@link Scopes#SINGLETON}, which Guice eagerly creates sometimes.
+     * {@link Scopes#SINGLETON} which Guice eagerly creates when in PRODUCTION stage.
      */
     private static final Scope instance = new Scope()
     {
