@@ -19,4 +19,9 @@ public @interface Configuration
      * @return name/key of the config to assign
      */
     String      value();
+
+    /**
+     * @return user displayable description of this configuration
+     */
+    String      documentation() default "";
 }

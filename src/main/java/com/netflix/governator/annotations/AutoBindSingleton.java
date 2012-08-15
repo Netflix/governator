@@ -22,8 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Marks a class as a singleton. Governator will auto-bind and auto-create it
- * via the IoC container in use
+ * Marks a class as a singleton. Governator will auto-bind and auto-create it.
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)

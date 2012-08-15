@@ -14,7 +14,7 @@ public interface ConfigurationProvider
      * @param name configuration name
      * @return true/false
      */
-    boolean     has(String name);
+    public boolean     has(String name);
 
     /**
      * Return the given configuration as a boolean
@@ -22,7 +22,7 @@ public interface ConfigurationProvider
      * @param name configuration name
      * @return value
      */
-    boolean     getBoolean(String name);
+    public boolean     getBoolean(String name);
 
     /**
      * Return the given configuration as an integer
@@ -30,7 +30,7 @@ public interface ConfigurationProvider
      * @param name configuration name
      * @return value
      */
-    int         getInteger(String name);
+    public int         getInteger(String name);
 
     /**
      * Return the given configuration as a long
@@ -38,7 +38,7 @@ public interface ConfigurationProvider
      * @param name configuration name
      * @return value
      */
-    long        getLong(String name);
+    public long        getLong(String name);
 
     /**
      * Return the given configuration as a double
@@ -46,7 +46,7 @@ public interface ConfigurationProvider
      * @param name configuration name
      * @return value
      */
-    double      getDouble(String name);
+    public double      getDouble(String name);
 
     /**
      * Return the given configuration as a string
@@ -54,5 +54,5 @@ public interface ConfigurationProvider
      * @param name configuration name
      * @return value
      */
-    String      getString(String name);
+    public String      getString(String name);
 }

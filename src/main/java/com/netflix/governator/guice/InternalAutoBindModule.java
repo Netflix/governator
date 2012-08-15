@@ -61,14 +61,7 @@ class InternalAutoBindModule extends AbstractModule
             }
             else
             {
-                if ( mode == AutoBindSingletonMode.LAZY )
-                {
-                    binder().bind(clazz).in(LazySingletonScope.get());
-                }
-                else
-                {
-                    binder().bind(clazz).asEagerSingleton();
-                }
+                binder().bind(clazz).in(mode.getScope());
             }
         }
     }

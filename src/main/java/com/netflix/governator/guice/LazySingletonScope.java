@@ -5,9 +5,9 @@ import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
 
-class LazySingletonScope
+public class LazySingletonScope
 {
-    static Scope get()
+    public static Scope get()
     {
         return instance;
     }
