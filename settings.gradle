@@ -1,1 +1,1 @@
-include 'governator-core', 'governator-guice', 'governator-spring'
+include 'governator-core', 'governator-guice'

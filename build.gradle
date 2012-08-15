@@ -64,11 +64,3 @@ project(':governator-guice') {
         compile     'com.google.inject.extensions:guice-multibindings:3.0'
     }
 }
-
-project(':governator-spring') {
-    dependencies {
-        compile     project(":governator-core")
-        compile     'org.springframework:spring-beans:3.0.5.RELEASE'
-        compile     'org.springframework:spring-context:3.0.5.RELEASE'
-    }
-}

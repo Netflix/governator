@@ -80,7 +80,7 @@ class InternalBootstrapModule extends AbstractModule
                 {
                     @SuppressWarnings("unchecked")
                     Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
-                    binder.bind(ConfigurationProvider.class).to(configurationProviderClass);
+                    binder.bind(ConfigurationProvider.class).to(configurationProviderClass).asEagerSingleton();
                 }
             }
         }

@@ -16,6 +16,7 @@
 
 package com.netflix.governator.annotations;
 
+import com.netflix.governator.lifecycle.AutoBindSingletonMode;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -29,4 +30,5 @@ import java.lang.annotation.Target;
 @Target(java.lang.annotation.ElementType.TYPE)
 public @interface AutoBindSingleton
 {
+    AutoBindSingletonMode   value() default AutoBindSingletonMode.LAZY;
 }

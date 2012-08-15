@@ -28,6 +28,7 @@ import com.netflix.governator.inject.guice.mocks.SimplePojoAlt;
 import com.netflix.governator.inject.guice.mocks.SimpleProvider;
 import com.netflix.governator.inject.guice.mocks.SimpleProviderAlt;
 import com.netflix.governator.inject.guice.mocks.SimpleSingleton;
+import com.netflix.governator.lifecycle.AutoBindSingletonMode;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -44,8 +45,8 @@ public class TestGovernatorGuice
                 @Override
                 protected void configure()
                 {
-                    ProviderBinderUtil.bind(binder(), SimpleProvider.class);
-                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class);
+                    ProviderBinderUtil.bind(binder(), SimpleProvider.class, AutoBindSingletonMode.EAGER);
+                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class, AutoBindSingletonMode.EAGER);
                 }
             }
         );
