@@ -32,7 +32,7 @@ class InternalBootstrapModule extends AbstractModule
     {
         // make some dummy bindings to get the maps created - this way users aren't required to have mappings
         RequiredAssetBinder.bindRequiredAsset(binder(), DUMMY_NAME).toInstance(new DummyAssetLoader());
-        RequiredAssetBinder.bindRequestAssetParameters(binder(), DUMMY_NAME).toInstance(new AssetParameters());
+        RequiredAssetBinder.bindRequiredAssetParameters(binder(), DUMMY_NAME).toInstance(new AssetParameters());
 
         if ( bootstrapModule != null )
         {

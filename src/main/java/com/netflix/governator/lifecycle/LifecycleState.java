@@ -59,5 +59,10 @@ public enum LifecycleState
     /**
      * Calling PreDestroy methods (state will change to LATENT after this)
      */
-    PRE_DESTROYING
+    PRE_DESTROYING,
+
+    /**
+     * There was an exception during warm-up/cool-down for this object
+     */
+    ERROR
 }
