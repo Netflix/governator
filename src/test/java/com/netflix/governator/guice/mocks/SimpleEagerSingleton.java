@@ -19,13 +19,13 @@ package com.netflix.governator.guice.mocks;
 import com.google.inject.Inject;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.lifecycle.AutoBindSingletonMode;
+import com.netflix.governator.guice.SingletonMode;
 import org.testng.Assert;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@AutoBindSingleton(AutoBindSingletonMode.EAGER)
+@AutoBindSingleton(SingletonMode.EAGER)
 @RequiredAsset("test")
 public class SimpleEagerSingleton
 {

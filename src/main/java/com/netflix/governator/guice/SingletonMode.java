@@ -1,14 +1,13 @@
-package com.netflix.governator.lifecycle;
+package com.netflix.governator.guice;
 
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.guice.LazySingletonScope;
 
 /**
  * Controls how {@link AutoBindSingleton}'s are bound
  */
-public enum AutoBindSingletonMode
+public enum SingletonMode
 {
     /**
      * Bind as a lazy singleton. The object will be instantiated only when referenced.

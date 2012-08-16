@@ -3,12 +3,11 @@ package com.netflix.governator.guice;
 import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.netflix.governator.lifecycle.AutoBindSingletonMode;
 import javax.inject.Provider;
 
 class ProviderBinderUtil
 {
-    static void      bind(Binder binder, final Class<? extends Provider> clazz, AutoBindSingletonMode mode)
+    static void      bind(Binder binder, final Class<? extends Provider> clazz, SingletonMode mode)
     {
         Class<?> providedType;
         try

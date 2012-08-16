@@ -30,7 +30,6 @@ import com.netflix.governator.guice.mocks.SimplePojoAlt;
 import com.netflix.governator.guice.mocks.SimpleProvider;
 import com.netflix.governator.guice.mocks.SimpleProviderAlt;
 import com.netflix.governator.guice.mocks.SimpleSingleton;
-import com.netflix.governator.lifecycle.AutoBindSingletonMode;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -96,8 +95,8 @@ public class TestGovernatorGuice
                 @Override
                 protected void configure()
                 {
-                    ProviderBinderUtil.bind(binder(), SimpleProvider.class, AutoBindSingletonMode.EAGER);
-                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class, AutoBindSingletonMode.EAGER);
+                    ProviderBinderUtil.bind(binder(), SimpleProvider.class, SingletonMode.EAGER);
+                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class, SingletonMode.EAGER);
                 }
             }
         );

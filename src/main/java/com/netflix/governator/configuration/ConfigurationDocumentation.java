@@ -37,6 +37,11 @@ public class ConfigurationDocumentation
 
     public void     output(Logger log)
     {
+        if ( entries.size() == 0 )
+        {
+            return;
+        }
+
         ColumnPrinter printer = build();
 
         log.debug("Configuration Details");
@@ -53,6 +58,11 @@ public class ConfigurationDocumentation
 
     public void     output(PrintWriter out)
     {
+        if ( entries.size() == 0 )
+        {
+            return;
+        }
+
         ColumnPrinter printer = build();
 
         out.println("Configuration Details");

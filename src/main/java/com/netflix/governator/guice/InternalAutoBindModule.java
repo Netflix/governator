@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.lifecycle.AutoBindSingletonMode;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import java.util.Collection;
 import java.util.List;
@@ -49,7 +48,7 @@ class InternalAutoBindModule extends AbstractModule
                 continue;
             }
 
-            AutoBindSingletonMode       mode = AutoBindSingletonMode.LAZY;
+            SingletonMode mode = SingletonMode.LAZY;
             if ( clazz.isAnnotationPresent(AutoBindSingleton.class) )
             {
                 mode = clazz.getAnnotation(AutoBindSingleton.class).value();
