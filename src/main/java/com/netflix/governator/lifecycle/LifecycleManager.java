@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
@@ -65,7 +64,6 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Main instance management container
  */
-@Singleton
 public class LifecycleManager implements Closeable
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -152,16 +150,21 @@ public class LifecycleManager implements Closeable
         this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
     }
 
+    /**
+     * Set the lifecycle listener
+     *
+     * @param listener the listener
+     */
     public void setListener(LifecycleListener listener)
     {
         this.listener = listener;
     }
 
-    public Map<String, AssetLoader> getAssetLoaders()
-    {
-        return assetLoading.getAssetLoaders();
-    }
-
+    /**
+     * Return the injected asset parameters
+     *
+     * @return parameters
+     */
     public Map<String, AssetParametersView> getParameters()
     {
         return assetLoading.getParameters();
