@@ -17,16 +17,9 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
 {
     private List<Module> modules = Lists.newArrayList();
     private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
-    private Collection<String> basePackages = Lists.newArrayList("com", "org");
+    private Collection<String> basePackages = Lists.newArrayList();
     private boolean ignoreAllClasses = false;
-    private BootstrapModule bootstrapModule = new BootstrapModule()
-    {
-        @Override
-        public void configure(Binder binder, RequiredAssetBinder assetLoaderBinder)
-        {
-            binder.bind(ConfigurationProvider.class).to(SystemConfigurationProvider.class).asEagerSingleton();
-        }
-    };
+    private BootstrapModule bootstrapModule = null;
     private ClasspathScanner scanner = null;
     private LifecycleListener lifecycleListener = null;
 

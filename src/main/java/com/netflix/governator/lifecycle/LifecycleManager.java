@@ -30,6 +30,7 @@ import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoading;
 import com.netflix.governator.assets.AssetParametersView;
+import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
@@ -142,11 +143,11 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(ImmutableMap.<String, AssetLoader>of(), ImmutableMap.<String, AssetParametersView>of(), new SystemConfigurationProvider());
+        this(ImmutableMap.<String, AssetLoader>of(), ImmutableMap.<String, AssetParametersView>of(), new CompositeConfigurationProvider(new SystemConfigurationProvider()));
     }
 
     @Inject
-    public LifecycleManager(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> assetParameters, ConfigurationProvider configurationProvider)
+    public LifecycleManager(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> assetParameters, CompositeConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
         this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
@@ -505,8 +506,17 @@ public class LifecycleManager implements Closeable
         if ( field != null )
         {
             String  defaultValue = String.valueOf(field.get(obj));
-            field.set(obj, value);
-            configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, String.valueOf(value), configuration.documentation());
+            String  documentationValue;
+            if ( has )
+            {
+                field.set(obj, value);
+                documentationValue = String.valueOf(value);
+            }
+            else
+            {
+                documentationValue = "";
+            }
+            configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
         }
     }
 

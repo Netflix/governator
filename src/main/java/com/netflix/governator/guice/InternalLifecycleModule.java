@@ -31,7 +31,10 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.annotations.Configuration;
+import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.RequiredAsset;
+import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -130,6 +133,6 @@ class InternalLifecycleModule implements Module
             return true;
         }
 
-        return methods.hasFor(PostConstruct.class) || methods.hasFor(PreDestroy.class);
+        return methods.hasLifecycleAnnotations();
     }
 }

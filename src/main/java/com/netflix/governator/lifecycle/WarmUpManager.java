@@ -111,6 +111,7 @@ class WarmUpManager
                     catch ( InterruptedException e )
                     {
                         Thread.currentThread().interrupt();
+                        service.shutdownNow();
                         throw e;
                     }
                     catch ( TimeoutException e )
