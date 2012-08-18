@@ -18,11 +18,8 @@ package com.netflix.governator.guice;
 
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
-import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.guice.mocks.SimpleContainer;
 import com.netflix.governator.guice.mocks.SimpleEagerSingleton;
 import com.netflix.governator.guice.mocks.SimplePojo;
@@ -61,17 +58,6 @@ public class TestGovernatorGuice
         };
         Injector    injector = LifecycleInjector
             .builder()
-            .withBootstrapModule
-             (
-                 new BootstrapModule()
-                 {
-                     @Override
-                     public void configure(Binder binder, RequiredAssetBinder requiredAssetBinder)
-                     {
-                         binder.bind(ConfigurationProvider.class).to(SystemConfigurationProvider.class).asEagerSingleton();
-                     }
-                 }
-             )
             .usingBasePackages(PACKAGES)
             .withLifecycleListener(new FilteredLifecycleListener(listener, PACKAGES))
             .createInjector();
@@ -113,20 +99,7 @@ public class TestGovernatorGuice
     @Test
     public void     testSimpleSingleton() throws Exception
     {
-        Injector            injector = LifecycleInjector.builder()
-            .withBootstrapModule
-            (
-                new BootstrapModule()
-                {
-                    @Override
-                    public void configure(Binder binder, RequiredAssetBinder assetLoaderBinder)
-                    {
-                        binder.bind(ConfigurationProvider.class).to(SystemConfigurationProvider.class).asEagerSingleton();
-                    }
-                }
-            )
-            .usingBasePackages(PACKAGES)
-            .createInjector();
+        Injector            injector = LifecycleInjector.builder().usingBasePackages(PACKAGES).createInjector();
         LifecycleManager    manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 
@@ -144,20 +117,7 @@ public class TestGovernatorGuice
     @Test
     public void     testInjectedIntoAnother() throws Exception
     {
-        Injector            injector = LifecycleInjector.builder()
-            .withBootstrapModule
-            (
-                new BootstrapModule()
-                {
-                    @Override
-                    public void configure(Binder binder, RequiredAssetBinder assetLoaderBinder)
-                    {
-                        binder.bind(ConfigurationProvider.class).to(SystemConfigurationProvider.class).asEagerSingleton();
-                    }
-                }
-            )
-            .usingBasePackages(PACKAGES)
-            .createInjector();
+        Injector            injector = LifecycleInjector.builder().usingBasePackages(PACKAGES).createInjector();
         LifecycleManager    manager = injector.getInstance(LifecycleManager.class);
         manager.start();
 

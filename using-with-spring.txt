@@ -1,0 +1,27 @@
+Governator can be used in a Spring project in the following way:
+
+* Create a LifeCycleListener that has access to your ApplicationContext
+
+        LifecycleListener   lifecycleListener = new LifecycleListener()
+        {
+            @Override
+            public void objectInjected(Object obj)
+            {
+                // context is an ApplicationContext
+                context.getBeanFactory().registerSingleton(obj.getClass().getName(), obj);
+            }
+
+            @Override
+            public void stateChanged(Object obj, LifecycleState newState)
+            {
+            }
+        };
+
+* Include the listener when creating the LifecycleInjector:
+
+    .withLifecycleListener(new FilteredLifecycleListener(lifecycleListener, yourPackages))
+
+* You can then access Governator managed objects via:
+
+    MyClass     m = context.getBeanFactory().getBean(MyClass.class);
+

@@ -21,7 +21,7 @@ import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetParameters;
 import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.assets.GenericParameterType;
-import com.netflix.governator.configuration.SystemConfigurationProvider;
+import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
 import com.netflix.governator.lifecycle.mocks.ParameterizedAssetLoader;
 import com.netflix.governator.lifecycle.mocks.SimpleAssetLoader;
@@ -30,11 +30,44 @@ import com.netflix.governator.lifecycle.mocks.SimpleHasAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import javax.validation.constraints.Min;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TestLifecycleManager
 {
+    @Test
+    public void     testValidation() throws Exception
+    {
+        Object          goodObj = new Object()
+        {
+            @Min(1)
+            private int     a = 10;
+        };
+
+        Object          badObj = new Object()
+        {
+            @Min(1)
+            private int     a = 0;
+        };
+
+        LifecycleManager    manager = new LifecycleManager();
+        manager.add(goodObj);
+        manager.start();
+
+        manager = new LifecycleManager();
+        manager.add(badObj);
+        try
+        {
+            manager.start();
+            Assert.fail();
+        }
+        catch ( ValidationException e )
+        {
+            // correct
+        }
+    }
+
     @Test
     public void     testSimple() throws Exception
     {
@@ -95,7 +128,7 @@ public class TestLifecycleManager
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
         map.put("foo", overrideAssetLoader);
-        LifecycleManager                manager = new LifecycleManager(map, Maps.<String, AssetParametersView>newHashMap(), new SystemConfigurationProvider());
+        LifecycleManager                manager = new LifecycleManager(map, Maps.<String, AssetParametersView>newHashMap(), new CompositeConfigurationProvider());
 
         manager.add(new SimpleHasAsset());
 
@@ -120,7 +153,7 @@ public class TestLifecycleManager
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        LifecycleManager    manager = new LifecycleManager(map, Maps.<String, AssetParametersView>newHashMap(), new SystemConfigurationProvider());
+        LifecycleManager    manager = new LifecycleManager(map, Maps.<String, AssetParametersView>newHashMap(), new CompositeConfigurationProvider());
         manager.start();
 
         SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
@@ -149,7 +182,7 @@ public class TestLifecycleManager
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
         map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        LifecycleManager    manager = new LifecycleManager(map, Maps.<String, AssetParametersView>newHashMap(), new SystemConfigurationProvider());
+        LifecycleManager    manager = new LifecycleManager(map, Maps.<String, AssetParametersView>newHashMap(), new CompositeConfigurationProvider());
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
         manager.start();
 
@@ -178,7 +211,7 @@ public class TestLifecycleManager
 
         Map<String, AssetParametersView>    parametersMaps = Maps.newHashMap();
         parametersMaps.put("foo", assetParameters);
-        LifecycleManager                manager = new LifecycleManager(map, parametersMaps, new SystemConfigurationProvider());
+        LifecycleManager                manager = new LifecycleManager(map, parametersMaps, new CompositeConfigurationProvider());
         manager.add(new SimpleHasAsset());
         // assertions are in AssetParameters
     }

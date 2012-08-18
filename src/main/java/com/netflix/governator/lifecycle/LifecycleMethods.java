@@ -30,6 +30,7 @@ import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.validation.Constraint;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -42,6 +43,8 @@ public class LifecycleMethods
 {
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
+
+    private boolean hasValidations = false;
 
     private static final Collection<Class<? extends Annotation>>    methodAnnotations = ImmutableSet.of
     (
@@ -56,22 +59,9 @@ public class LifecycleMethods
         addLifeCycleMethods(clazz, ArrayListMultimap.<Class<? extends Annotation>, String>create());
     }
 
-    @SuppressWarnings("RedundantIfStatement")
-    public boolean hasFor(Class<? extends Annotation> annotation)
+    public boolean      hasLifecycleAnnotations()
     {
-        Collection<Method> methods = methodMap.get(annotation);
-        if ( (methods != null) && (methods.size() > 0) )
-        {
-            return true;
-        }
-
-        Collection<Field> fields = fieldMap.get(annotation);
-        if ( (fields != null) && (fields.size() > 0) )
-        {
-            return true;
-        }
-
-        return false;
+        return hasValidations || (methodMap.size() > 0) || (fieldMap.size() > 0);
     }
 
     public Collection<Method> methodsFor(Class<? extends Annotation> annotation)
@@ -100,6 +90,11 @@ public class LifecycleMethods
                 continue;
             }
 
+            if ( !hasValidations )
+            {
+                checkForValidations(field);
+            }
+
             processField(field, Configuration.class, usedNames);
         }
 
@@ -120,6 +115,18 @@ public class LifecycleMethods
         for ( Class<?> face : clazz.getInterfaces() )
         {
             addLifeCycleMethods(face, usedNames);
+        }
+    }
+
+    private void checkForValidations(Field field)
+    {
+        for ( Annotation annotation : field.getDeclaredAnnotations() )
+        {
+            if ( annotation.annotationType().isAnnotationPresent(Constraint.class) )
+            {
+                hasValidations = true;
+                break;
+            }
         }
     }
 
