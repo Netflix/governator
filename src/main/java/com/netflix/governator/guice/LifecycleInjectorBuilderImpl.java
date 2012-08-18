@@ -2,8 +2,11 @@ package com.netflix.governator.guice;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import java.util.Arrays;
@@ -14,7 +17,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
 {
     private List<Module> modules = Lists.newArrayList();
     private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
-    private Collection<String> basePackages = Lists.newArrayList("com", "org");
+    private Collection<String> basePackages = Lists.newArrayList();
     private boolean ignoreAllClasses = false;
     private BootstrapModule bootstrapModule = null;
     private ClasspathScanner scanner = null;

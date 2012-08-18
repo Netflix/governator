@@ -30,6 +30,7 @@ import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoading;
 import com.netflix.governator.assets.AssetParametersView;
+import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
@@ -38,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
@@ -58,6 +58,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 // TODO - should the methods really be synchronized? Maybe just sync on the object being added
@@ -65,7 +66,6 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Main instance management container
  */
-@Singleton
 public class LifecycleManager implements Closeable
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -76,6 +76,7 @@ public class LifecycleManager implements Closeable
     private final AssetLoading assetLoading;
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
 
+    private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
     private volatile LifecycleListener listener = null;
 
     public static final String      DEFAULT_ASSET_LOADER_VALUE = "";
@@ -142,26 +143,41 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(ImmutableMap.<String, AssetLoader>of(), ImmutableMap.<String, AssetParametersView>of(), new SystemConfigurationProvider());
+        this(ImmutableMap.<String, AssetLoader>of(), ImmutableMap.<String, AssetParametersView>of(), new CompositeConfigurationProvider(new SystemConfigurationProvider()));
     }
 
     @Inject
-    public LifecycleManager(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> assetParameters, ConfigurationProvider configurationProvider)
+    public LifecycleManager(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> assetParameters, CompositeConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
         this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
     }
 
+    /**
+     * Set the lifecycle listener
+     *
+     * @param listener the listener
+     */
     public void setListener(LifecycleListener listener)
     {
         this.listener = listener;
     }
 
-    public Map<String, AssetLoader> getAssetLoaders()
+    /**
+     * Set the maximum time to wait for cool downs to complete. The default is 1 minute
+     *
+     * @param maxCoolDownMs max cool down in milliseconds
+     */
+    public void setMaxCoolDownMs(long maxCoolDownMs)
     {
-        return assetLoading.getAssetLoaders();
+        this.maxCoolDownMs = maxCoolDownMs;
     }
 
+    /**
+     * Return the injected asset parameters
+     *
+     * @return parameters
+     */
     public Map<String, AssetParametersView> getParameters()
     {
         return assetLoading.getParameters();
@@ -316,7 +332,10 @@ public class LifecycleManager implements Closeable
             }
         }
 
-        manager.runAll();
+        if ( !manager.runAllAndWait(maxCoolDownMs, TimeUnit.MILLISECONDS) )
+        {
+            log.error("Some cool down methods did not complete before the timeout of " + maxCoolDownMs + " ms");
+        }
     }
 
     private void doWarmUp() throws Exception
@@ -487,8 +506,17 @@ public class LifecycleManager implements Closeable
         if ( field != null )
         {
             String  defaultValue = String.valueOf(field.get(obj));
-            field.set(obj, value);
-            configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, String.valueOf(value), configuration.documentation());
+            String  documentationValue;
+            if ( has )
+            {
+                field.set(obj, value);
+                documentationValue = String.valueOf(value);
+            }
+            else
+            {
+                documentationValue = "";
+            }
+            configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
         }
     }
 
