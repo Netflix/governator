@@ -41,7 +41,7 @@ public class TestInjectedConfiguration
                     @Override
                     public void configure(BootstrapBinder binder)
                     {
-                        binder.bindConfigurationProviderTo(new PropertiesConfigurationProvider(properties));
+                        binder.bindConfigurationProvider().toInstance(new PropertiesConfigurationProvider(properties));
                     }
                 }
             )

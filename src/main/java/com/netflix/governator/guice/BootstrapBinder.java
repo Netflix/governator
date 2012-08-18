@@ -20,9 +20,7 @@ import com.google.inject.spi.Message;
 import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.assets.AssetParameters;
 import com.netflix.governator.assets.AssetParametersView;
-import com.netflix.governator.assets.GenericParameterType;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.slf4j.Logger;
@@ -193,78 +191,14 @@ public class BootstrapBinder implements Binder
     /**
      * Begin binding a required asset name/value to a loader
      *
-     * @param binder Guice binder
-     * @param requiredAssetValue asset name/value
-     * @return binder
-     */
-    public static LinkedBindingBuilder<AssetLoader> bindRequiredAsset(Binder binder, String requiredAssetValue)
-    {
-        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
-        MapBinder<String, AssetLoader>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetLoader.class);
-        return mapBinder.addBinding(requiredAssetValue);
-    }
-
-    /**
-     * Begin binding a required asset name/value to an asset parameter
-     *
-     * @param binder Guice binder
-     * @param requiredAssetValue asset name/value
-     * @return binder
-     */
-    public static LinkedBindingBuilder<AssetParametersView> bindRequiredAssetParameters(Binder binder, String requiredAssetValue)
-    {
-        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
-        MapBinder<String, AssetParametersView>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetParametersView.class);
-        return mapBinder.addBinding(requiredAssetValue);
-    }
-
-    /**
-     * Convenience method to set a single parameter value for an asset
-     *
-     * @param binder Guice binder
-     * @param requiredAssetValue asset name/value
-     * @param key key for the parameter
-     * @param value parameter value
-     */
-    public static<T> void setRequiredAssetParameter(Binder binder, String requiredAssetValue, Class<T> key, T value)
-    {
-        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
-        key = Preconditions.checkNotNull(key, "key cannot be null");
-        value = Preconditions.checkNotNull(value, "value cannot be null");
-
-        AssetParameters parameters = new AssetParameters();
-        parameters.set(key, value);
-        bindRequiredAssetParameters(binder, requiredAssetValue).toInstance(parameters);
-    }
-
-    /**
-     * Convenience method to set a single parameter value for an asset
-     *
-     * @param binder Guice binder
-     * @param requiredAssetValue asset name/value
-     * @param key key for the parameter
-     * @param value parameter value
-     */
-    public static<T> void setRequiredAssetParameter(Binder binder, String requiredAssetValue, GenericParameterType<T> key, T value)
-    {
-        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
-        key = Preconditions.checkNotNull(key, "key cannot be null");
-        value = Preconditions.checkNotNull(value, "value cannot be null");
-
-        AssetParameters parameters = new AssetParameters();
-        parameters.set(key, value);
-        bindRequiredAssetParameters(binder, requiredAssetValue).toInstance(parameters);
-    }
-
-    /**
-     * Begin binding a required asset name/value to a loader
-     *
      * @param requiredAssetValue asset name/value
      * @return binder
      */
     public LinkedBindingBuilder<AssetLoader> bindRequiredAsset(String requiredAssetValue)
     {
-        return bindRequiredAsset(binder, requiredAssetValue);
+        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
+        MapBinder<String, AssetLoader>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetLoader.class);
+        return mapBinder.addBinding(requiredAssetValue);
     }
 
     /**
@@ -275,46 +209,38 @@ public class BootstrapBinder implements Binder
      */
     public LinkedBindingBuilder<AssetParametersView> bindRequiredAssetParameters(String requiredAssetValue)
     {
-        return bindRequiredAssetParameters(binder, requiredAssetValue);
+        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
+        MapBinder<String, AssetParametersView>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetParametersView.class);
+        return mapBinder.addBinding(requiredAssetValue);
     }
 
     /**
-     * Convenience method to set a single parameter value for an asset
+     * Use this to bind {@link ConfigurationProvider}s. Do NOT use standard Guice binding.
      *
-     * @param requiredAssetValue asset name/value
-     * @param key key for the parameter
-     * @param value parameter value
+     * @return configuration binding builder
      */
-    public<T> void setRequiredAssetParameter(String requiredAssetValue, Class<T> key, T value)
+    public ConfigurationProviderBuilder bindConfigurationProvider()
     {
-        setRequiredAssetParameter(binder, requiredAssetValue, key, value);
-    }
+        return new ConfigurationProviderBuilder()
+        {
+            @Override
+            public void to(Class<? extends ConfigurationProvider> implementation)
+            {
+                configurationProviderBindings.add(new ConfigurationProviderBinding(implementation, null, null));
+            }
 
-    /**
-     * Convenience method to set a single parameter value for an asset
-     *
-     * @param requiredAssetValue asset name/value
-     * @param key key for the parameter
-     * @param value parameter value
-     */
-    public<T> void setRequiredAssetParameter(String requiredAssetValue, GenericParameterType<T> key, T value)
-    {
-        setRequiredAssetParameter(binder, requiredAssetValue, key, value);
-    }
+            @Override
+            public void toInstance(ConfigurationProvider implementation)
+            {
+                configurationProviderBindings.add(new ConfigurationProviderBinding(null, implementation, null));
+            }
 
-    public void bindConfigurationProviderTo(Class<? extends ConfigurationProvider> clazz)
-    {
-        configurationProviderBindings.add(new ConfigurationProviderBinding(clazz, null, null));
-    }
-
-    public void bindConfigurationProviderTo(ConfigurationProvider instance)
-    {
-        configurationProviderBindings.add(new ConfigurationProviderBinding(null, instance, null));
-    }
-
-    public void bindConfigurationProviderTo(Provider<? extends ConfigurationProvider> provider)
-    {
-        configurationProviderBindings.add(new ConfigurationProviderBinding(null, null, provider));
+            @Override
+            public void toProvider(Provider<? extends ConfigurationProvider> implementation)
+            {
+                configurationProviderBindings.add(new ConfigurationProviderBinding(null, null, implementation));
+            }
+        };
     }
 
     BootstrapBinder(Binder binder)
