@@ -17,36 +17,16 @@
 package com.netflix.governator.guice.mocks;
 
 import com.google.inject.Inject;
-import com.netflix.governator.annotations.AutoBindSingleton;
+import com.google.inject.Singleton;
 import com.netflix.governator.annotations.RequiredAsset;
-import org.testng.Assert;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.concurrent.atomic.AtomicInteger;
 
-@AutoBindSingleton
+@Singleton
 @RequiredAsset("test")
-public class SimpleEagerSingleton
+public class UnreferencedSingleton
 {
-    public final AtomicInteger  startCount = new AtomicInteger(0);
-    public final AtomicInteger  finishCount = new AtomicInteger(0);
-
     @Inject
-    public SimpleEagerSingleton()
+    public UnreferencedSingleton()
     {
         // NOP
-    }
-
-    @PostConstruct
-    public void     start() throws InterruptedException
-    {
-        Assert.assertTrue(SimpleAssetLoader.loadAssetCount.get() > 0);
-        startCount.incrementAndGet();
-    }
-
-    @PreDestroy
-    public void     finish() throws InterruptedException
-    {
-        finishCount.incrementAndGet();
     }
 }
