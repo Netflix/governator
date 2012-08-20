@@ -1,5 +1,6 @@
 package com.netflix.governator.guice;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -48,6 +49,7 @@ public class LifecycleInjector
     private final boolean ignoreAllClasses;
     private final LifecycleManager lifecycleManager;
     private final LifecycleListener lifecycleListener;
+    private final Stage stage;
 
     /**
      * Create a new LifecycleInjector builder
@@ -106,7 +108,7 @@ public class LifecycleInjector
     {
         List<Module>            localModules = Lists.newArrayList(modules);
         localModules.add(new InternalLifecycleModule(lifecycleManager, lifecycleListener));
-        return Guice.createInjector(Stage.PRODUCTION, localModules);
+        return Guice.createInjector(stage, localModules);
     }
 
     /**
@@ -127,10 +129,11 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener)
+    LifecycleInjector(final List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener, Stage stage)
     {
         this.ignoreAllClasses = ignoreAllClasses;
         this.lifecycleListener = lifecycleListener;
+        this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
