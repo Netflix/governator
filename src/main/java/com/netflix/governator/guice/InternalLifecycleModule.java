@@ -31,16 +31,10 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.annotations.Configuration;
-import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.annotations.WarmUp;
-import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Map;
 
 class InternalLifecycleModule implements Module
@@ -105,13 +99,6 @@ class InternalLifecycleModule implements Module
     public LifecycleManager     getLifecycleManager()
     {
         return lifecycleManager;
-    }
-
-    @Provides
-    @Singleton
-    public Map<String, AssetParametersView> getAssetParameters()
-    {
-        return lifecycleManager.getParameters();
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)

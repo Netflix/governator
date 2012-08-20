@@ -24,7 +24,7 @@ public class PropertyFileAssetLoader implements AssetLoader
     }
 
     @Override
-    public void loadAsset(String name, AssetParametersView parameters) throws Exception
+    public void loadAsset(String name) throws Exception
     {
         URL             url = Resources.getResource(name);
 
@@ -44,7 +44,7 @@ public class PropertyFileAssetLoader implements AssetLoader
     }
 
     @Override
-    public void unloadAsset(String name, AssetParametersView parameters) throws Exception
+    public void unloadAsset(String name) throws Exception
     {
     }
 }

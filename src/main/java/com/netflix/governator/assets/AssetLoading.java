@@ -38,9 +38,6 @@ public class AssetLoading
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
     private final Map<String, AssetLoader> assetLoaders;
-    private final Map<String, AssetParametersView> parameters;
-
-    private static final AssetParameters        nullParameters = new AssetParameters();
 
     private static class AssetLoaderMetadata
     {
@@ -58,28 +55,11 @@ public class AssetLoading
 
     /**
      * @param assetLoaders map of asset names to loaders
-     * @param parameters map of asset names to parameters
+     *
      */
-    public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> parameters)
+    public AssetLoading(Map<String, AssetLoader> assetLoaders)
     {
-        this.parameters = ImmutableMap.copyOf(parameters);
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
-    }
-
-    /**
-     * @return return the asset loader map
-     */
-    public Map<String, AssetLoader> getAssetLoaders()
-    {
-        return assetLoaders;
-    }
-
-    /**
-     * @return return the parameters map
-     */
-    public Map<String, AssetParametersView> getParameters()
-    {
-        return parameters;
     }
 
     /**
@@ -150,7 +130,7 @@ public class AssetLoading
                         loaderMetadata.useCount.set(0);
                     }
 
-                    loaderMetadata.loader.unloadAsset(requiredAsset.value(), getParameters(requiredAsset.value()));
+                    loaderMetadata.loader.unloadAsset(requiredAsset.value());
                     loaderMetadata.isLoaded = false;
                 }
             }
@@ -175,16 +155,10 @@ public class AssetLoading
             {
                 log.debug(String.format("Loading required asset named \"%s\"", requiredAsset.value()));
 
-                loader.loadAsset(requiredAsset.value(), getParameters(requiredAsset.value()));
+                loader.loadAsset(requiredAsset.value());
                 useAssetLoaderMetadata.isLoaded = true;
             }
             useAssetLoaderMetadata.useCount.incrementAndGet();
         }
-    }
-
-    private AssetParametersView getParameters(String value)
-    {
-        AssetParametersView assetParameters = parameters.get(value);
-        return (assetParameters != null) ? assetParameters : nullParameters;
     }
 }

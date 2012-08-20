@@ -1,7 +1,6 @@
 package com.netflix.governator.guice.mocks;
 
 import com.netflix.governator.annotations.Configuration;
-import javax.validation.constraints.Min;
 
 public class ObjectWithConfig
 {

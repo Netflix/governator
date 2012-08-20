@@ -1,7 +1,5 @@
 package com.netflix.governator.guice;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.MembersInjector;
@@ -16,6 +14,7 @@ import com.google.inject.binder.AnnotatedConstantBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.matcher.Matcher;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.Message;
 import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
@@ -27,13 +26,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.List;
 
 public class BootstrapBinder implements Binder
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Binder binder;
-    private final List<ConfigurationProviderBinding> configurationProviderBindings = Lists.newArrayList();
 
     @Override
     public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors)
@@ -191,27 +188,38 @@ public class BootstrapBinder implements Binder
     /**
      * Begin binding a required asset name/value to a loader
      *
-     * @param requiredAssetValue asset name/value
+     * @param assetName asset name/value
      * @return binder
      */
-    public LinkedBindingBuilder<AssetLoader> bindRequiredAsset(String requiredAssetValue)
+    public LinkedBindingBuilder<AssetLoader> bindAssetLoader(String assetName)
     {
-        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
         MapBinder<String, AssetLoader>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetLoader.class);
-        return mapBinder.addBinding(requiredAssetValue);
+        return mapBinder.addBinding(assetName);
     }
 
     /**
-     * Begin binding a required asset name/value to an asset parameter
+     * Begin binding a required asset name/type to an asset parameter
      *
-     * @param requiredAssetValue asset name/value
+     * @param assetName the name/value of the asset
+     * @param type the value type
      * @return binder
      */
-    public LinkedBindingBuilder<AssetParametersView> bindRequiredAssetParameters(String requiredAssetValue)
+    public<T> LinkedBindingBuilder<T> bindAssetParameter(String assetName, TypeLiteral<T> type)
     {
-        requiredAssetValue = Preconditions.checkNotNull(requiredAssetValue, "requiredAssetValue cannot be null");
-        MapBinder<String, AssetParametersView>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetParametersView.class);
-        return mapBinder.addBinding(requiredAssetValue);
+        MapBinder<String, T>  mapBinder = MapBinder.newMapBinder(binder, TypeLiteral.get(String.class), type);
+        return mapBinder.addBinding(assetName);
+    }
+
+    /**
+     * Begin binding a required asset name/type to an asset parameter
+     *
+     * @param assetName the name/value of the asset
+     * @param type the value type
+     * @return binder
+     */
+    public<T> LinkedBindingBuilder<T> bindAssetParameter(String assetName, Class<T> type)
+    {
+        return bindAssetParameter(assetName, TypeLiteral.get(type));
     }
 
     /**
@@ -219,38 +227,14 @@ public class BootstrapBinder implements Binder
      *
      * @return configuration binding builder
      */
-    public ConfigurationProviderBuilder bindConfigurationProvider()
+    public LinkedBindingBuilder<ConfigurationProvider> bindConfigurationProvider()
     {
-        return new ConfigurationProviderBuilder()
-        {
-            @Override
-            public void to(Class<? extends ConfigurationProvider> implementation)
-            {
-                configurationProviderBindings.add(new ConfigurationProviderBinding(implementation, null, null));
-            }
-
-            @Override
-            public void toInstance(ConfigurationProvider implementation)
-            {
-                configurationProviderBindings.add(new ConfigurationProviderBinding(null, implementation, null));
-            }
-
-            @Override
-            public void toProvider(Provider<? extends ConfigurationProvider> implementation)
-            {
-                configurationProviderBindings.add(new ConfigurationProviderBinding(null, null, implementation));
-            }
-        };
+        return Multibinder.newSetBinder(binder, ConfigurationProvider.class).addBinding();
     }
 
     BootstrapBinder(Binder binder)
     {
         this.binder = binder;
-    }
-
-    List<ConfigurationProviderBinding> getConfigurationProviderBindings()
-    {
-        return configurationProviderBindings;
     }
 
     private<T> void    warnOnSpecialized(Class<T> clazz)

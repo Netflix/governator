@@ -29,7 +29,6 @@ import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.assets.AssetLoading;
-import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -143,14 +142,14 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(ImmutableMap.<String, AssetLoader>of(), ImmutableMap.<String, AssetParametersView>of(), new CompositeConfigurationProvider(new SystemConfigurationProvider()));
+        this(ImmutableMap.<String, AssetLoader>of(), new CompositeConfigurationProvider(new SystemConfigurationProvider()));
     }
 
     @Inject
-    public LifecycleManager(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> assetParameters, CompositeConfigurationProvider configurationProvider)
+    public LifecycleManager(Map<String, AssetLoader> assetLoaders, CompositeConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
-        this.assetLoading = new AssetLoading(assetLoaders, assetParameters);
+        this.assetLoading = new AssetLoading(assetLoaders);
     }
 
     /**
@@ -171,16 +170,6 @@ public class LifecycleManager implements Closeable
     public void setMaxCoolDownMs(long maxCoolDownMs)
     {
         this.maxCoolDownMs = maxCoolDownMs;
-    }
-
-    /**
-     * Return the injected asset parameters
-     *
-     * @return parameters
-     */
-    public Map<String, AssetParametersView> getParameters()
-    {
-        return assetLoading.getParameters();
     }
 
     /**
