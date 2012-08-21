@@ -198,6 +198,16 @@ public class BootstrapBinder implements Binder
     }
 
     /**
+     * Begin binding the default asset loader
+     *
+     * @return binder
+     */
+    public LinkedBindingBuilder<AssetLoader> bindDefaultAssetLoader()
+    {
+        return binder.bind(AssetLoader.class);
+    }
+
+    /**
      * Begin binding a required asset name/type to an asset parameter
      *
      * @param assetName the name/value of the asset

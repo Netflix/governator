@@ -16,9 +16,9 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.inject.Injector;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
 import com.netflix.governator.assets.AssetLoader;
@@ -38,6 +38,8 @@ class AssetLoading
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
     private final Map<String, AssetLoader> assetLoaders;
+    private final Injector injector;
+    private final AssetLoader defaultAssetLoader;
 
     private static class AssetLoaderMetadata
     {
@@ -54,11 +56,14 @@ class AssetLoading
     }
 
     /**
+     * @param injector the Guice injector or null
+     * @param defaultAssetLoader the default asset loader or null
      * @param assetLoaders map of asset names to loaders
-     *
      */
-    AssetLoading(Map<String, AssetLoader> assetLoaders)
+    AssetLoading(Injector injector, AssetLoader defaultAssetLoader, Map<String, AssetLoader> assetLoaders)
     {
+        this.injector = injector;
+        this.defaultAssetLoader = defaultAssetLoader;
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
     }
 
@@ -137,13 +142,19 @@ class AssetLoading
         }
     }
 
-    private void internalLoadAsset(final RequiredAsset requiredAsset) throws Exception
+    private void internalLoadAsset(RequiredAsset requiredAsset) throws Exception
     {
         AssetLoader             loader = assetLoaders.get(requiredAsset.value());
         if ( loader == null )
         {
-            loader = assetLoaders.get(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE);
-            loader = Preconditions.checkNotNull(loader, "No mapped loader found and no default loader for: " + requiredAsset.value());
+            if ( (requiredAsset.loader() == AssetLoader.class) && (defaultAssetLoader != null) )
+            {
+                loader = defaultAssetLoader;
+            }
+            else
+            {
+                loader = injector.getInstance(requiredAsset.loader());
+            }
         }
 
         AssetLoaderMetadata newAssetLoaderMetadata = new AssetLoaderMetadata(loader);

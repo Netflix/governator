@@ -24,6 +24,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
@@ -72,8 +73,6 @@ public class LifecycleManager implements Closeable
 
     private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
     private volatile LifecycleListener listener = null;
-
-    public static final String      DEFAULT_ASSET_LOADER_VALUE = "";
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -137,13 +136,18 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(new LifecycleManagerArguments());
+        this(null, new LifecycleManagerArguments());
+    }
+
+    public LifecycleManager(LifecycleManagerArguments arguments)
+    {
+        this(null, arguments);
     }
 
     @Inject
-    public LifecycleManager(LifecycleManagerArguments arguments)
+    public LifecycleManager(Injector injector, LifecycleManagerArguments arguments)
     {
-        assetLoading = new AssetLoading(arguments.getAssetLoaders());
+        assetLoading = new AssetLoading(injector, arguments.getDefaultAssetLoader(), arguments.getAssetLoaders());
         configurationProvider = arguments.getConfigurationProvider();
     }
 

@@ -85,7 +85,7 @@ class InternalBootstrapModule extends AbstractModule
                 {
                     @SuppressWarnings("unchecked")
                     Class<? extends AssetLoader>    assetLoaderClass = (Class<? extends AssetLoader>)clazz;
-                    binder.bindAssetLoader(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE).to(assetLoaderClass);
+                    binder.bindDefaultAssetLoader().to(assetLoaderClass);
                 }
                 else if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
                 {

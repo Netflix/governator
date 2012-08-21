@@ -13,6 +13,9 @@ public class LifecycleManagerArguments
     @Inject(optional = true)
     private LifecycleConfigurationProviders configurationProvider = new LifecycleConfigurationProviders();
 
+    @Inject(optional = true)
+    private AssetLoader defaultAssetLoader = null;
+
     @Inject
     public LifecycleManagerArguments()
     {
@@ -26,5 +29,15 @@ public class LifecycleManagerArguments
     public LifecycleConfigurationProviders getConfigurationProvider()
     {
         return configurationProvider;
+    }
+
+    public AssetLoader getDefaultAssetLoader()
+    {
+        return defaultAssetLoader;
+    }
+
+    public void setDefaultAssetLoader(AssetLoader defaultAssetLoader)
+    {
+        this.defaultAssetLoader = defaultAssetLoader;
     }
 }
