@@ -17,14 +17,14 @@
 package com.netflix.governator.guice.mocks;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.annotations.AutoBindSingleton;
 import org.testng.Assert;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@AutoBindSingleton
+@Singleton
 @RequiredAsset("test")
 public class SimpleSingleton
 {

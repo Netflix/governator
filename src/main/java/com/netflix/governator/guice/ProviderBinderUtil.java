@@ -4,10 +4,11 @@ import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import javax.inject.Provider;
+import com.google.inject.Scope;
 
 class ProviderBinderUtil
 {
-    static void      bind(Binder binder, final Class<? extends Provider> clazz, SingletonMode mode)
+    static void      bind(Binder binder, final Class<? extends Provider> clazz, Scope scope)
     {
         Class<?> providedType;
         try
@@ -35,7 +36,7 @@ class ProviderBinderUtil
                     }
                 }
             )
-            .in(mode.getScope());
+            .in(scope);
     }
     private ProviderBinderUtil()
     {

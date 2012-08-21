@@ -7,7 +7,7 @@ import java.util.Properties;
  */
 public class PropertiesConfigurationProvider implements ConfigurationProvider
 {
-    private Properties properties;
+    private final Properties properties;
 
     /**
      * @param properties the properties

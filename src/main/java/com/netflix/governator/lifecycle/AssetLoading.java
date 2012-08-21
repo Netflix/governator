@@ -14,14 +14,14 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.assets;
+package com.netflix.governator.lifecycle;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.inject.Injector;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
-import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.assets.AssetLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
@@ -33,14 +33,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * Used internally to manage asset loading
  */
 @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-public class AssetLoading
+class AssetLoading
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
     private final Map<String, AssetLoader> assetLoaders;
-    private final Map<String, AssetParametersView> parameters;
-
-    private static final AssetParameters        nullParameters = new AssetParameters();
+    private final Injector injector;
+    private final AssetLoader defaultAssetLoader;
 
     private static class AssetLoaderMetadata
     {
@@ -57,29 +56,15 @@ public class AssetLoading
     }
 
     /**
+     * @param injector the Guice injector or null
+     * @param defaultAssetLoader the default asset loader or null
      * @param assetLoaders map of asset names to loaders
-     * @param parameters map of asset names to parameters
      */
-    public AssetLoading(Map<String, AssetLoader> assetLoaders, Map<String, AssetParametersView> parameters)
+    AssetLoading(Injector injector, AssetLoader defaultAssetLoader, Map<String, AssetLoader> assetLoaders)
     {
-        this.parameters = ImmutableMap.copyOf(parameters);
+        this.injector = injector;
+        this.defaultAssetLoader = defaultAssetLoader;
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
-    }
-
-    /**
-     * @return return the asset loader map
-     */
-    public Map<String, AssetLoader> getAssetLoaders()
-    {
-        return assetLoaders;
-    }
-
-    /**
-     * @return return the parameters map
-     */
-    public Map<String, AssetParametersView> getParameters()
-    {
-        return parameters;
     }
 
     /**
@@ -89,7 +74,7 @@ public class AssetLoading
      * @return true if the object has assets
      * @throws Exception errors
      */
-    public boolean     loadAssetsFor(Object obj) throws Exception
+    boolean     loadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
         RequiredAssets requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);
@@ -115,7 +100,7 @@ public class AssetLoading
      * @param obj object to unload
      * @throws Exception errors
      */
-    public void     unloadAssetsFor(Object obj) throws Exception
+    void     unloadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
         RequiredAssets requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);
@@ -150,20 +135,26 @@ public class AssetLoading
                         loaderMetadata.useCount.set(0);
                     }
 
-                    loaderMetadata.loader.unloadAsset(requiredAsset.value(), getParameters(requiredAsset.value()));
+                    loaderMetadata.loader.unloadAsset(requiredAsset.value());
                     loaderMetadata.isLoaded = false;
                 }
             }
         }
     }
 
-    private void internalLoadAsset(final RequiredAsset requiredAsset) throws Exception
+    private void internalLoadAsset(RequiredAsset requiredAsset) throws Exception
     {
         AssetLoader             loader = assetLoaders.get(requiredAsset.value());
         if ( loader == null )
         {
-            loader = assetLoaders.get(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE);
-            loader = Preconditions.checkNotNull(loader, "No mapped loader found and no default loader for: " + requiredAsset.value());
+            if ( (requiredAsset.loader() == AssetLoader.class) && (defaultAssetLoader != null) )
+            {
+                loader = defaultAssetLoader;
+            }
+            else
+            {
+                loader = injector.getInstance(requiredAsset.loader());
+            }
         }
 
         AssetLoaderMetadata newAssetLoaderMetadata = new AssetLoaderMetadata(loader);
@@ -175,16 +166,10 @@ public class AssetLoading
             {
                 log.debug(String.format("Loading required asset named \"%s\"", requiredAsset.value()));
 
-                loader.loadAsset(requiredAsset.value(), getParameters(requiredAsset.value()));
+                loader.loadAsset(requiredAsset.value());
                 useAssetLoaderMetadata.isLoaded = true;
             }
             useAssetLoaderMetadata.useCount.incrementAndGet();
         }
-    }
-
-    private AssetParametersView getParameters(String value)
-    {
-        AssetParametersView assetParameters = parameters.get(value);
-        return (assetParameters != null) ? assetParameters : nullParameters;
     }
 }

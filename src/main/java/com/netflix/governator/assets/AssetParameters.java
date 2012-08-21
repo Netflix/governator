@@ -2,6 +2,7 @@ package com.netflix.governator.assets;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.inject.TypeLiteral;
 import javax.inject.Inject;
 import java.util.Map;
 
@@ -32,13 +33,13 @@ public class AssetParameters implements AssetParametersView
      * Set a parameter using a generic key. E.g.:<br/><br/>
      * <code>
      *     List&lt;String&gt; list = ...;<br/>
-     *     parameters.set(new GenericParameterType&lt;List&lt;String&gt;&gt;(){}, list);<br/>
+     *     parameters.set(new TypeLiteral&lt;List&lt;String&gt;&gt;(){}, list);<br/>
      * </code>
      *
      * @param key parameter key
      * @param parameter value
      */
-    public<T> void     set(GenericParameterType<T> key, T parameter)
+    public<T> void     set(TypeLiteral<? extends T> key, T parameter)
     {
         internalSet(key.getType(), parameter);
     }
@@ -66,10 +67,11 @@ public class AssetParameters implements AssetParametersView
      * {@inheritDoc}
      */
     @Override
-    public<T> T        get(GenericParameterType<T> key)
+    public<T> T        get(TypeLiteral<? extends T> key)
     {
         Object      value = internalGet(key.getType());
-        return key.cast(value);
+        //noinspection unchecked
+        return (T)value;
     }
 
     private Object        internalGet(Object key)

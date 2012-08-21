@@ -2,6 +2,7 @@ package com.netflix.governator.configuration;
 
 import com.google.common.collect.Lists;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -25,7 +26,7 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     /**
      * @param providers ordered providers
      */
-    public CompositeConfigurationProvider(List<ConfigurationProvider> providers)
+    public CompositeConfigurationProvider(Collection<ConfigurationProvider> providers)
     {
         this.providers = new CopyOnWriteArrayList<ConfigurationProvider>(providers);
     }
@@ -33,6 +34,11 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     public void add(ConfigurationProvider configurationProvider)
     {
         providers.add(configurationProvider);
+    }
+
+    public void addAll(Collection<ConfigurationProvider> configurationProviders)
+    {
+        providers.addAll(configurationProviders);
     }
 
     @Override
