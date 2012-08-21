@@ -27,7 +27,6 @@ import com.google.inject.Inject;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
-import com.netflix.governator.assets.AssetLoading;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import org.slf4j.Logger;
@@ -144,8 +143,8 @@ public class LifecycleManager implements Closeable
     @Inject
     public LifecycleManager(LifecycleManagerArguments arguments)
     {
-        assetLoading = new AssetLoading(arguments.assetLoaders);
-        configurationProvider = arguments.configurationProvider;
+        assetLoading = new AssetLoading(arguments.getAssetLoaders());
+        configurationProvider = arguments.getConfigurationProvider();
     }
 
     /**

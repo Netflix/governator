@@ -14,14 +14,14 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.assets;
+package com.netflix.governator.lifecycle;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
-import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.assets.AssetLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Used internally to manage asset loading
  */
 @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-public class AssetLoading
+class AssetLoading
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<RequiredAsset, AssetLoaderMetadata> metadata = Maps.newConcurrentMap();
@@ -57,7 +57,7 @@ public class AssetLoading
      * @param assetLoaders map of asset names to loaders
      *
      */
-    public AssetLoading(Map<String, AssetLoader> assetLoaders)
+    AssetLoading(Map<String, AssetLoader> assetLoaders)
     {
         this.assetLoaders = ImmutableMap.copyOf(assetLoaders);
     }
@@ -69,7 +69,7 @@ public class AssetLoading
      * @return true if the object has assets
      * @throws Exception errors
      */
-    public boolean     loadAssetsFor(Object obj) throws Exception
+    boolean     loadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
         RequiredAssets requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);
@@ -95,7 +95,7 @@ public class AssetLoading
      * @param obj object to unload
      * @throws Exception errors
      */
-    public void     unloadAssetsFor(Object obj) throws Exception
+    void     unloadAssetsFor(Object obj) throws Exception
     {
         RequiredAsset requiredAsset = obj.getClass().getAnnotation(RequiredAsset.class);
         RequiredAssets requiredAssets = obj.getClass().getAnnotation(RequiredAssets.class);

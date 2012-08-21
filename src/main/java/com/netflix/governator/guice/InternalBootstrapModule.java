@@ -33,7 +33,7 @@ class InternalBootstrapModule extends AbstractModule
         }
     }
 
-    public InternalBootstrapModule(ClasspathScanner scanner, BootstrapModule bootstrapModule)
+    InternalBootstrapModule(ClasspathScanner scanner, BootstrapModule bootstrapModule)
     {
         this.scanner = scanner;
         this.bootstrapModule = bootstrapModule;

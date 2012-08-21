@@ -5,11 +5,26 @@ import com.google.inject.Inject;
 import com.netflix.governator.assets.AssetLoader;
 import java.util.Map;
 
-class LifecycleManagerArguments
+public class LifecycleManagerArguments
 {
     @Inject(optional = true)
-    Map<String, AssetLoader> assetLoaders = Maps.newHashMap();
+    private Map<String, AssetLoader> assetLoaders = Maps.newHashMap();
 
     @Inject(optional = true)
-    LifecycleConfigurationProviders configurationProvider = new LifecycleConfigurationProviders();
+    private LifecycleConfigurationProviders configurationProvider = new LifecycleConfigurationProviders();
+
+    @Inject
+    public LifecycleManagerArguments()
+    {
+    }
+
+    public Map<String, AssetLoader> getAssetLoaders()
+    {
+        return assetLoaders;
+    }
+
+    public LifecycleConfigurationProviders getConfigurationProvider()
+    {
+        return configurationProvider;
+    }
 }

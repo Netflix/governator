@@ -37,7 +37,7 @@ public class TestConfiguration
         properties.setProperty("test.main", "2468");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.configurationProvider.add(new PropertiesConfigurationProvider(properties));
+        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager    manager = new LifecycleManager(arguments);
 
@@ -65,7 +65,7 @@ public class TestConfiguration
         properties.setProperty("test.dt", "1964-10-06");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.configurationProvider.add(new PropertiesConfigurationProvider(properties));
+        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager            manager = new LifecycleManager(arguments);
 

@@ -122,8 +122,8 @@ public class TestLifecycleManager
         SimpleAssetLoader               overrideAssetLoader = new SimpleAssetLoader();
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
-        arguments.assetLoaders.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        arguments.assetLoaders.put("foo", overrideAssetLoader);
+        arguments.getAssetLoaders().put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        arguments.getAssetLoaders().put("foo", overrideAssetLoader);
         LifecycleManager                manager = new LifecycleManager(arguments);
 
         manager.add(new SimpleHasAsset());
@@ -148,7 +148,7 @@ public class TestLifecycleManager
     {
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
-        arguments.assetLoaders.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        arguments.getAssetLoaders().put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
         LifecycleManager                manager = new LifecycleManager(arguments);
         manager.start();
 
@@ -177,7 +177,7 @@ public class TestLifecycleManager
     {
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
-        arguments.assetLoaders.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        arguments.getAssetLoaders().put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
 
         LifecycleManager                manager = new LifecycleManager(arguments);
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
