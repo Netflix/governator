@@ -27,11 +27,6 @@ public enum LifecycleState
     LATENT,
 
     /**
-     * Loading required assets
-     */
-    LOADING_ASSETS,
-
-    /**
      * Assigning configuration values
      */
     SETTING_CONFIGURATION,

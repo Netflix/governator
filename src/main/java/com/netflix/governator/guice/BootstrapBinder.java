@@ -13,13 +13,10 @@ import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.AnnotatedConstantBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.matcher.Matcher;
-import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.Message;
 import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.assets.AssetParametersView;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.slf4j.Logger;
@@ -186,53 +183,6 @@ public class BootstrapBinder implements Binder
     }
 
     /**
-     * Begin binding a required asset name/value to a loader
-     *
-     * @param assetName asset name/value
-     * @return binder
-     */
-    public LinkedBindingBuilder<AssetLoader> bindAssetLoader(String assetName)
-    {
-        MapBinder<String, AssetLoader>  mapBinder = MapBinder.newMapBinder(binder, String.class, AssetLoader.class);
-        return mapBinder.addBinding(assetName);
-    }
-
-    /**
-     * Begin binding the default asset loader
-     *
-     * @return binder
-     */
-    public LinkedBindingBuilder<AssetLoader> bindDefaultAssetLoader()
-    {
-        return binder.bind(AssetLoader.class);
-    }
-
-    /**
-     * Begin binding a required asset name/type to an asset parameter
-     *
-     * @param assetName the name/value of the asset
-     * @param type the value type
-     * @return binder
-     */
-    public<T> LinkedBindingBuilder<T> bindAssetParameter(String assetName, TypeLiteral<T> type)
-    {
-        MapBinder<String, T>  mapBinder = MapBinder.newMapBinder(binder, TypeLiteral.get(String.class), type);
-        return mapBinder.addBinding(assetName);
-    }
-
-    /**
-     * Begin binding a required asset name/type to an asset parameter
-     *
-     * @param assetName the name/value of the asset
-     * @param type the value type
-     * @return binder
-     */
-    public<T> LinkedBindingBuilder<T> bindAssetParameter(String assetName, Class<T> type)
-    {
-        return bindAssetParameter(assetName, TypeLiteral.get(type));
-    }
-
-    /**
      * Use this to bind {@link ConfigurationProvider}s. Do NOT use standard Guice binding.
      *
      * @return configuration binding builder
@@ -249,7 +199,7 @@ public class BootstrapBinder implements Binder
 
     private<T> void    warnOnSpecialized(Class<T> clazz)
     {
-        if ( AssetLoader.class.isAssignableFrom(clazz) || AssetParametersView.class.isAssignableFrom(clazz) || ConfigurationProvider.class.isAssignableFrom(clazz) )
+        if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
         {
             log.warn("You should use the specialized binding methods for AssetLoaders, AssetParameters and ConfigurationProviders");
         }

@@ -2,29 +2,13 @@ package com.netflix.governator.guice;
 
 import com.google.inject.Injector;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
-import com.netflix.governator.guice.mocks.AssetLoadingMock;
 import com.netflix.governator.guice.mocks.ObjectWithConfig;
-import com.netflix.governator.lifecycle.LifecycleManager;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Properties;
 
 public class TestInjectedConfiguration
 {
-    @Test
-    public void     testPropertyLoadingViaAsset() throws Exception
-    {
-        Injector            injector = LifecycleInjector.builder().usingBasePackages("com.netflix.governator.guice.mocks").createInjector();
-
-        AssetLoadingMock    mock = injector.getInstance(AssetLoadingMock.class);
-        Assert.assertEquals(mock.anInt, 10);
-        Assert.assertEquals(mock.aDouble, 20.3);
-        Assert.assertEquals(mock.aString, "Who is John Galt?");
-        Assert.assertEquals(mock.shouldBeDefault, "default");
-
-        injector.getInstance(LifecycleManager.class).start();
-    }
-
     @Test
     public void     testConfigurationProvider() throws Exception
     {

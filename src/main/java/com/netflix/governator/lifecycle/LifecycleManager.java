@@ -24,7 +24,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.WarmUp;
@@ -68,7 +67,6 @@ public class LifecycleManager implements Closeable
     private final List<InvokeRecord> invokings = new CopyOnWriteArrayList<InvokeRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
-    private final AssetLoading assetLoading;
     private final ConfigurationProvider configurationProvider;
 
     private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
@@ -115,15 +113,13 @@ public class LifecycleManager implements Closeable
         final Collection<Method>    preDestroyMethods;
         final Collection<Method>    warmUpMethods;
         final Collection<Method>    coolDownMethods;
-        final boolean               hasAssets;
 
-        private InvokeRecord(Object obj, Collection<Method> preDestroyMethods, Collection<Method> warmUpMethods, Collection<Method> coolDownMethods, boolean hasAssets)
+        private InvokeRecord(Object obj, Collection<Method> preDestroyMethods, Collection<Method> warmUpMethods, Collection<Method> coolDownMethods)
         {
             this.obj = obj;
             this.preDestroyMethods = preDestroyMethods;
             this.warmUpMethods = warmUpMethods;
             this.coolDownMethods = coolDownMethods;
-            this.hasAssets = hasAssets;
         }
     }
 
@@ -136,18 +132,12 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(null, new LifecycleManagerArguments());
-    }
-
-    public LifecycleManager(LifecycleManagerArguments arguments)
-    {
-        this(null, arguments);
+        this(new LifecycleManagerArguments());
     }
 
     @Inject
-    public LifecycleManager(Injector injector, LifecycleManagerArguments arguments)
+    public LifecycleManager(LifecycleManagerArguments arguments)
     {
-        assetLoading = new AssetLoading(injector, arguments.getDefaultAssetLoader(), arguments.getAssetLoaders());
         configurationProvider = arguments.getConfigurationProvider();
     }
 
@@ -356,10 +346,6 @@ public class LifecycleManager implements Closeable
     {
         log.debug(String.format("Starting %s", obj.getClass().getName()));
 
-        setState(obj, LifecycleState.LOADING_ASSETS);
-
-        boolean             hasAssets = assetLoading.loadAssetsFor(obj);
-
         setState(obj, LifecycleState.SETTING_CONFIGURATION);
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {
@@ -376,9 +362,9 @@ public class LifecycleManager implements Closeable
         Collection<Method>      preDestroyMethods = methods.methodsFor(PreDestroy.class);
         Collection<Method>      warmUpMethods = methods.methodsFor(WarmUp.class);
         Collection<Method>      coolDownMethods = methods.methodsFor(CoolDown.class);
-        if ( hasAssets || (preDestroyMethods.size() > 0) || (warmUpMethods.size() > 0) || (coolDownMethods.size() > 0) )
+        if ( (preDestroyMethods.size() > 0) || (warmUpMethods.size() > 0) || (coolDownMethods.size() > 0) )
         {
-            invokings.add(new InvokeRecord(obj, preDestroyMethods, warmUpMethods, coolDownMethods, hasAssets));
+            invokings.add(new InvokeRecord(obj, preDestroyMethods, warmUpMethods, coolDownMethods));
         }
     }
 
@@ -386,18 +372,6 @@ public class LifecycleManager implements Closeable
     {
         for ( InvokeRecord record : getReversed(invokings) )
         {
-            if ( record.hasAssets )
-            {
-                try
-                {
-                    assetLoading.unloadAssetsFor(record.obj);
-                }
-                catch ( Throwable e )
-                {
-                    log.error("Couldn't unload assets lifecycle managed instance of type: " + record.obj.getClass().getName(), e);
-                }
-            }
-
             log.debug(String.format("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
             setState(record.obj, LifecycleState.PRE_DESTROYING);
 

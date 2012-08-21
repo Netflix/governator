@@ -9,9 +9,6 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.annotations.RequiredAssets;
-import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -27,9 +24,6 @@ import java.util.List;
  *
  * <p>
  *     Governator uses a two pass binding. The bootstrap binding injects:
- *     <li>{@link RequiredAsset}</li>
- *     <li>{@link RequiredAssets}</li>
- *     <li>{@link AssetLoader}</li>
  *     <li>{@link LifecycleManager}</li>
  *     <li>Any application defined bootstrap instances</li>
  *     <br/>
@@ -72,8 +66,6 @@ public class LifecycleInjector
     {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
-        annotations.add(RequiredAsset.class);
-        annotations.add(RequiredAssets.class);
         return new ClasspathScanner(basePackages, annotations);
     }
 
