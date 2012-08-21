@@ -18,7 +18,6 @@ package com.netflix.governator.lifecycle;
 
 import com.google.common.collect.Maps;
 import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleAssetLoader;
 import com.netflix.governator.lifecycle.mocks.SimpleContainer;
@@ -119,12 +118,13 @@ public class TestLifecycleManager
     @Test
     public void     testOverrideAssetLoader() throws Exception
     {
+        LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
         SimpleAssetLoader               overrideAssetLoader = new SimpleAssetLoader();
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
         HashMap<String, AssetLoader>    map = Maps.newHashMap();
-        map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        map.put("foo", overrideAssetLoader);
-        LifecycleManager                manager = new LifecycleManager(map, new CompositeConfigurationProvider());
+        arguments.assetLoaders.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        arguments.assetLoaders.put("foo", overrideAssetLoader);
+        LifecycleManager                manager = new LifecycleManager(arguments);
 
         manager.add(new SimpleHasAsset());
 
@@ -147,9 +147,9 @@ public class TestLifecycleManager
     public void     testSimpleAsset() throws Exception
     {
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
-        HashMap<String, AssetLoader>    map = Maps.newHashMap();
-        map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        LifecycleManager    manager = new LifecycleManager(map, new CompositeConfigurationProvider());
+        LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
+        arguments.assetLoaders.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+        LifecycleManager                manager = new LifecycleManager(arguments);
         manager.start();
 
         SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
@@ -176,9 +176,10 @@ public class TestLifecycleManager
     public void     testDuplicateAsset() throws Exception
     {
         SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
-        HashMap<String, AssetLoader>    map = Maps.newHashMap();
-        map.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
-        LifecycleManager    manager = new LifecycleManager(map, new CompositeConfigurationProvider());
+        LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
+        arguments.assetLoaders.put(LifecycleManager.DEFAULT_ASSET_LOADER_VALUE, simpleAssetLoader);
+
+        LifecycleManager                manager = new LifecycleManager(arguments);
         manager.add(new SimpleHasAsset(), new DuplicateAsset());
         manager.start();
 

@@ -1,28 +1,37 @@
 package com.netflix.governator.guice;
 
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.annotations.RequiredAssets;
 import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleManager;
-import java.util.Properties;
 import java.util.Set;
 
 class InternalBootstrapModule extends AbstractModule
 {
     private final ClasspathScanner scanner;
     private final BootstrapModule bootstrapModule;
-    private final CompositeConfigurationProvider configurationProvider = new CompositeConfigurationProvider();
 
-    private static final String DUMMY_NAME = "__" + InternalAutoBindModule.class.getName() + "__";
-    private static final PropertiesConfigurationProvider dummyConfigurationProvider = new PropertiesConfigurationProvider(new Properties());
+    private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
+    {
+        @Inject(optional = true)
+        private Set<ConfigurationProvider> configurationProviders = Sets.newHashSet();
+
+        @Override
+        public LifecycleConfigurationProviders get()
+        {
+            return new LifecycleConfigurationProviders(configurationProviders);
+        }
+    }
 
     public InternalBootstrapModule(ClasspathScanner scanner, BootstrapModule bootstrapModule)
     {
@@ -35,10 +44,6 @@ class InternalBootstrapModule extends AbstractModule
     {
         BootstrapBinder         bootstrapBinder = new BootstrapBinder(binder());
 
-        // make some dummy bindings to get the maps created - this way users aren't required to have mappings
-        bootstrapBinder.bindConfigurationProvider().toInstance(dummyConfigurationProvider);
-        bootstrapBinder.bindAssetLoader(DUMMY_NAME).toInstance(new DummyAssetLoader());
-
         if ( bootstrapModule != null )
         {
             bootstrapModule.configure(bootstrapBinder);
@@ -46,20 +51,7 @@ class InternalBootstrapModule extends AbstractModule
 
         bindLoaders(bootstrapBinder);
         binder().bind(LifecycleManager.class).asEagerSingleton();
-    }
-
-    @Provides
-    @Singleton
-    public CompositeConfigurationProvider getCompositeConfigurationProvider(Set<ConfigurationProvider> configurationProviders)
-    {
-        for ( ConfigurationProvider provider : configurationProviders )
-        {
-            if ( provider != dummyConfigurationProvider )
-            {
-                configurationProvider.add(provider);
-            }
-        }
-        return configurationProvider;
+        binder().bind(LifecycleConfigurationProviders.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
     }
 
     @Provides
@@ -110,19 +102,6 @@ class InternalBootstrapModule extends AbstractModule
         if ( requiredAsset.loader() != AssetLoader.class )
         {
             binder.bindAssetLoader(requiredAsset.value()).to(requiredAsset.loader());
-        }
-    }
-
-    private static class DummyAssetLoader implements AssetLoader
-    {
-        @Override
-        public void loadAsset(String name) throws Exception
-        {
-        }
-
-        @Override
-        public void unloadAsset(String name) throws Exception
-        {
         }
     }
 }

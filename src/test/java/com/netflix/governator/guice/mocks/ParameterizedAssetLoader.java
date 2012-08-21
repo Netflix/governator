@@ -1,20 +1,27 @@
 package com.netflix.governator.guice.mocks;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.governator.assets.AssetLoader;
 import org.testng.Assert;
+import java.util.List;
 import java.util.Map;
 
 public class ParameterizedAssetLoader implements AssetLoader
 {
-    private final Map<String, String> parameters;
-    private final Map<String, Map<String, Integer>> integerMap;
+    @Inject
+    private Map<String, String> parameters = Maps.newHashMap();
 
     @Inject
-    public ParameterizedAssetLoader(Map<String, String> parameters, Map<String, Map<String, Integer>> integerMap)
+    private Map<String, Map<String, Integer>> integerMap = Maps.newHashMap();
+
+    @Inject(optional = true)
+    private Map<String, List<String>> stringMap = Maps.newHashMap();
+
+    @Inject
+    public ParameterizedAssetLoader()
     {
-        this.parameters = parameters;
-        this.integerMap = integerMap;
     }
 
     @Override

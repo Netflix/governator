@@ -16,24 +16,30 @@
 
 package com.netflix.governator.lifecycle;
 
+import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
 import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import java.util.Properties;
 
 public class TestConfiguration
 {
     @Test
     public void     testConfigSubclass() throws Exception
     {
-        LifecycleManager    manager = new LifecycleManager();
+        Properties properties = new Properties();
+        properties.setProperty("test.b", "true");
+        properties.setProperty("test.i", "100");
+        properties.setProperty("test.l", "200");
+        properties.setProperty("test.d", "300.4");
+        properties.setProperty("test.s", "a is a");
+        properties.setProperty("test.main", "2468");
 
-        System.setProperty("test.b", "true");
-        System.setProperty("test.i", "100");
-        System.setProperty("test.l", "200");
-        System.setProperty("test.d", "300.4");
-        System.setProperty("test.s", "a is a");
-        System.setProperty("test.main", "2468");
+        LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
+        arguments.configurationProvider.add(new PropertiesConfigurationProvider(properties));
+
+        LifecycleManager    manager = new LifecycleManager(arguments);
 
         SubclassedObjectWithConfig  obj = new SubclassedObjectWithConfig();
         manager.add(obj);
@@ -50,14 +56,18 @@ public class TestConfiguration
     @Test
     public void     testConfig() throws Exception
     {
-        LifecycleManager    manager = new LifecycleManager();
+        Properties properties = new Properties();
+        properties.setProperty("test.b", "true");
+        properties.setProperty("test.i", "100");
+        properties.setProperty("test.l", "200");
+        properties.setProperty("test.d", "300.4");
+        properties.setProperty("test.s", "a is a");
+        properties.setProperty("test.dt", "1964-10-06");
 
-        System.setProperty("test.b", "true");
-        System.setProperty("test.i", "100");
-        System.setProperty("test.l", "200");
-        System.setProperty("test.d", "300.4");
-        System.setProperty("test.s", "a is a");
-        System.setProperty("test.dt", "1964-10-06");
+        LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
+        arguments.configurationProvider.add(new PropertiesConfigurationProvider(properties));
+
+        LifecycleManager            manager = new LifecycleManager(arguments);
 
         ObjectWithConfig    obj = new ObjectWithConfig();
         manager.add(obj);

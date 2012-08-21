@@ -2,8 +2,8 @@ package com.netflix.governator.assets;
 
 import com.google.common.io.Closeables;
 import com.google.common.io.Resources;
-import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
+import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import javax.inject.Inject;
 import java.io.InputStream;
 import java.net.URL;
@@ -15,10 +15,10 @@ import java.util.Properties;
  */
 public class PropertyFileAssetLoader implements AssetLoader
 {
-    private final CompositeConfigurationProvider configurationProvider;
+    private final LifecycleConfigurationProviders configurationProvider;
 
     @Inject
-    public PropertyFileAssetLoader(CompositeConfigurationProvider configurationProvider)
+    public PropertyFileAssetLoader(LifecycleConfigurationProviders configurationProvider)
     {
         this.configurationProvider = configurationProvider;
     }
