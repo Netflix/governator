@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.SystemConfigurationProvider;
 import com.netflix.governator.lifecycle.ClasspathScanner;
@@ -22,6 +23,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private BootstrapModule bootstrapModule = null;
     private ClasspathScanner scanner = null;
     private LifecycleListener lifecycleListener = null;
+    private Stage stage = Stage.PRODUCTION;
 
     @Override
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
@@ -86,9 +88,16 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder inStage(Stage stage)
+    {
+        this.stage = stage;
+        return this;
+    }
+
+    @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, lifecycleListener);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, lifecycleListener, stage);
     }
 
     @Override

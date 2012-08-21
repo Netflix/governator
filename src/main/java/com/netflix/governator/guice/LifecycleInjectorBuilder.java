@@ -2,6 +2,7 @@ package com.netflix.governator.guice;
 
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleListener;
@@ -85,6 +86,14 @@ public interface LifecycleInjectorBuilder
      * @return this
      */
     public LifecycleInjectorBuilder withLifecycleListener(LifecycleListener lifecycleListener);
+
+    /**
+     * Set the Guice stage - the default is Production
+     *
+     * @param stage new stage
+     * @return this
+     */
+    public LifecycleInjectorBuilder inStage(Stage stage);
 
     /**
      * Build and return the injector

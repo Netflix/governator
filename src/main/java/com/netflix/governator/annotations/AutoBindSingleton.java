@@ -16,18 +16,16 @@
 
 package com.netflix.governator.annotations;
 
-import com.netflix.governator.guice.SingletonMode;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Marks a class as a singleton. Governator will auto-bind and auto-create it.
+ * Marks a class as a singleton. Governator will auto-bind it as an eager singleton
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target(java.lang.annotation.ElementType.TYPE)
 public @interface AutoBindSingleton
 {
-    SingletonMode value() default SingletonMode.LAZY;
 }

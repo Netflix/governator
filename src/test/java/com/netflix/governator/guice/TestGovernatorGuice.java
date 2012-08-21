@@ -16,10 +16,13 @@
 
 package com.netflix.governator.guice;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Scopes;
 import com.netflix.governator.guice.mocks.SimpleContainer;
 import com.netflix.governator.guice.mocks.SimpleEagerSingleton;
 import com.netflix.governator.guice.mocks.SimplePojo;
@@ -27,6 +30,7 @@ import com.netflix.governator.guice.mocks.SimplePojoAlt;
 import com.netflix.governator.guice.mocks.SimpleProvider;
 import com.netflix.governator.guice.mocks.SimpleProviderAlt;
 import com.netflix.governator.guice.mocks.SimpleSingleton;
+import com.netflix.governator.guice.mocks.UnreferencedSingleton;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -40,7 +44,7 @@ public class TestGovernatorGuice
     private static final String PACKAGES = "com.netflix.governator.guice.mocks";
 
     @Test
-    public void     testAutoBindSingletonMode() throws Exception
+    public void     testAutoBindSingletonVsSingleton() throws Exception
     {
         final List<Object>  objects = Lists.newArrayList();
         LifecycleListener   listener = new LifecycleListener()
@@ -62,13 +66,56 @@ public class TestGovernatorGuice
             .withLifecycleListener(new FilteredLifecycleListener(listener, PACKAGES))
             .createInjector();
 
-        Assert.assertEquals(objects.size(), 1);
-        SimpleEagerSingleton obj = injector.getInstance(SimpleEagerSingleton.class);
-        Assert.assertSame(obj, objects.get(0));
+        Assert.assertNull
+        (
+            Iterables.find
+            (
+                objects,
+                new Predicate<Object>()
+                {
+                    @Override
+                    public boolean apply(Object obj)
+                    {
+                        return obj instanceof UnreferencedSingleton;
+                    }
+                },
+                null
+            )
+        );
+        Assert.assertNotNull
+        (
+            Iterables.find
+                (
+                    objects,
+                    new Predicate<Object>()
+                    {
+                        @Override
+                        public boolean apply(Object obj)
+                        {
+                            return obj instanceof SimpleEagerSingleton;
+                        }
+                    },
+                    null
+                )
+        );
 
-        SimpleSingleton obj2 = injector.getInstance(SimpleSingleton.class);
-        Assert.assertEquals(objects.size(), 2);
-        Assert.assertSame(obj2, objects.get(1));
+        injector.getInstance(UnreferencedSingleton.class);
+        Assert.assertNotNull
+        (
+            Iterables.find
+                (
+                    objects,
+                    new Predicate<Object>()
+                    {
+                        @Override
+                        public boolean apply(Object obj)
+                        {
+                            return obj instanceof UnreferencedSingleton;
+                        }
+                    },
+                    null
+                )
+        );
     }
 
     @Test
@@ -81,8 +128,8 @@ public class TestGovernatorGuice
                 @Override
                 protected void configure()
                 {
-                    ProviderBinderUtil.bind(binder(), SimpleProvider.class, SingletonMode.EAGER);
-                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class, SingletonMode.EAGER);
+                    ProviderBinderUtil.bind(binder(), SimpleProvider.class, Scopes.SINGLETON);
+                    ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class, Scopes.SINGLETON);
                 }
             }
         );

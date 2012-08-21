@@ -19,6 +19,7 @@ package com.netflix.governator.guice;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
+import com.google.inject.Scopes;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import java.util.Collection;
@@ -43,24 +44,18 @@ class InternalAutoBindModule extends AbstractModule
     {
         for ( final Class<?> clazz : classpathScanner.get() )
         {
-            if ( ignoreClasses.contains(clazz) )
+            if ( ignoreClasses.contains(clazz) || !clazz.isAnnotationPresent(AutoBindSingleton.class) )
             {
                 continue;
             }
 
-            SingletonMode mode = SingletonMode.LAZY;
-            if ( clazz.isAnnotationPresent(AutoBindSingleton.class) )
-            {
-                mode = clazz.getAnnotation(AutoBindSingleton.class).value();
-            }
-
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
             {
-                ProviderBinderUtil.bind(binder(), (Class<? extends javax.inject.Provider>)clazz, mode);
+                ProviderBinderUtil.bind(binder(), (Class<? extends javax.inject.Provider>)clazz, Scopes.SINGLETON);
             }
             else
             {
-                binder().bind(clazz).in(mode.getScope());
+                binder().bind(clazz).asEagerSingleton();
             }
         }
     }
