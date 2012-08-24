@@ -201,7 +201,7 @@ public class BootstrapBinder implements Binder
     {
         if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
         {
-            log.warn("You should use the specialized binding methods for AssetLoaders, AssetParameters and ConfigurationProviders");
+            log.warn("You should use the specialized binding method for ConfigurationProviders");
         }
     }
 }

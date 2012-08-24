@@ -27,6 +27,11 @@ public enum LifecycleState
     LATENT,
 
     /**
+     * Calling PreConfiguration methods
+     */
+    PRE_CONFIGURATION,
+
+    /**
      * Assigning configuration values
      */
     SETTING_CONFIGURATION,

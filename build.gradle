@@ -1,4 +1,4 @@
-ext.releaseVersion = '0.0.27'
+ext.releaseVersion = '0.0.29'
 ext.githubProjectName = 'governator'
 group = "com.netflix.${githubProjectName}" // TEMPLATE: Set to organization of project
 

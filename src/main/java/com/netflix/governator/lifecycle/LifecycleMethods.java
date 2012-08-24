@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
+import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -48,6 +49,7 @@ public class LifecycleMethods
 
     private static final Collection<Class<? extends Annotation>>    methodAnnotations = ImmutableSet.of
     (
+        PreConfiguration.class,
         PostConstruct.class,
         PreDestroy.class,
         WarmUp.class,

@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
+import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -345,6 +346,13 @@ public class LifecycleManager implements Closeable
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
     {
         log.debug(String.format("Starting %s", obj.getClass().getName()));
+
+        setState(obj, LifecycleState.PRE_CONFIGURATION);
+        for ( Method preConfiguration : methods.methodsFor(PreConfiguration.class) )
+        {
+            log.debug(String.format("\t%s()", preConfiguration.getName()));
+            preConfiguration.invoke(obj);
+        }
 
         setState(obj, LifecycleState.SETTING_CONFIGURATION);
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
