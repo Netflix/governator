@@ -27,9 +27,9 @@ public enum LifecycleState
     LATENT,
 
     /**
-     * Loading required assets
+     * Calling PreConfiguration methods
      */
-    LOADING_ASSETS,
+    PRE_CONFIGURATION,
 
     /**
      * Assigning configuration values

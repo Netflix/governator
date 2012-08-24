@@ -7,9 +7,6 @@ import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.annotations.RequiredAsset;
-import com.netflix.governator.annotations.RequiredAssets;
-import com.netflix.governator.assets.AssetLoader;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
@@ -65,43 +62,12 @@ class InternalBootstrapModule extends AbstractModule
     {
         for ( Class<?> clazz : scanner.get() )
         {
-            if ( clazz.isAnnotationPresent(RequiredAsset.class) )
+            if ( clazz.isAnnotationPresent(AutoBindSingleton.class) && ConfigurationProvider.class.isAssignableFrom(clazz) )
             {
-                RequiredAsset       requiredAsset = clazz.getAnnotation(RequiredAsset.class);
-                bindRequiredAsset(binder, requiredAsset);
+                @SuppressWarnings("unchecked")
+                Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
+                binder.bindConfigurationProvider().to(configurationProviderClass).asEagerSingleton();
             }
-            else if ( clazz.isAnnotationPresent(RequiredAssets.class) )
-            {
-                RequiredAssets       requiredAssets = clazz.getAnnotation(RequiredAssets.class);
-                for ( RequiredAsset requiredAsset : requiredAssets.value() )
-                {
-                    bindRequiredAsset(binder, requiredAsset);
-                }
-            }
-
-            if ( clazz.isAnnotationPresent(AutoBindSingleton.class) )
-            {
-                if ( AssetLoader.class.isAssignableFrom(clazz) )
-                {
-                    @SuppressWarnings("unchecked")
-                    Class<? extends AssetLoader>    assetLoaderClass = (Class<? extends AssetLoader>)clazz;
-                    binder.bindDefaultAssetLoader().to(assetLoaderClass);
-                }
-                else if ( ConfigurationProvider.class.isAssignableFrom(clazz) )
-                {
-                    @SuppressWarnings("unchecked")
-                    Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
-                    binder.bindConfigurationProvider().to(configurationProviderClass).asEagerSingleton();
-                }
-            }
-        }
-    }
-
-    private void bindRequiredAsset(BootstrapBinder binder, RequiredAsset requiredAsset)
-    {
-        if ( requiredAsset.loader() != AssetLoader.class )
-        {
-            binder.bindAssetLoader(requiredAsset.value()).to(requiredAsset.loader());
         }
     }
 }

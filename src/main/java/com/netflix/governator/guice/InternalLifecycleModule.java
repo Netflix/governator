@@ -31,7 +31,6 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.annotations.RequiredAsset;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
@@ -75,7 +74,7 @@ class InternalLifecycleModule implements Module
                                 Class<?> clazz = obj.getClass();
                                 LifecycleMethods methods = getLifecycleMethods(clazz);
 
-                                if ( isLifeCycleClass(clazz, methods) )
+                                if ( methods.hasLifecycleAnnotations() )
                                 {
                                     try
                                     {
@@ -110,16 +109,5 @@ class InternalLifecycleModule implements Module
             lifecycleMethods.put(clazz, methods);
         }
         return methods;
-    }
-
-    private boolean isLifeCycleClass(Class<?> clazz, LifecycleMethods methods)
-    {
-        //noinspection SimplifiableIfStatement
-        if ( clazz.isAnnotationPresent(RequiredAsset.class) )
-        {
-            return true;
-        }
-
-        return methods.hasLifecycleAnnotations();
     }
 }

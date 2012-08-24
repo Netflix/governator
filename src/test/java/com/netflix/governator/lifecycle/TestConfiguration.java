@@ -18,6 +18,7 @@ package com.netflix.governator.lifecycle;
 
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
+import com.netflix.governator.lifecycle.mocks.PreConfigurationChange;
 import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -25,6 +26,24 @@ import java.util.Properties;
 
 public class TestConfiguration
 {
+    @Test
+    public void     testPreConfiguration() throws Exception
+    {
+        Properties  properties = new Properties();
+        properties.setProperty("pre-config-test", "not-default");
+
+        LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
+        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+
+        LifecycleManager            manager = new LifecycleManager(arguments);
+        PreConfigurationChange      test = new PreConfigurationChange(arguments.getConfigurationProvider());
+        manager.add(test);
+
+        manager.start();
+
+        // assertions in PreConfigurationChange
+    }
+
     @Test
     public void     testConfigSubclass() throws Exception
     {

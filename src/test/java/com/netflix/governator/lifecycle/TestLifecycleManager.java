@@ -16,17 +16,11 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.collect.Maps;
-import com.netflix.governator.assets.AssetLoader;
-import com.netflix.governator.lifecycle.mocks.DuplicateAsset;
-import com.netflix.governator.lifecycle.mocks.SimpleAssetLoader;
 import com.netflix.governator.lifecycle.mocks.SimpleContainer;
-import com.netflix.governator.lifecycle.mocks.SimpleHasAsset;
 import com.netflix.governator.lifecycle.mocks.SimpleObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import javax.validation.constraints.Min;
-import java.util.HashMap;
 
 @SuppressWarnings("UnusedDeclaration")
 public class TestLifecycleManager
@@ -113,82 +107,5 @@ public class TestLifecycleManager
         Assert.assertEquals(manager.getState(simpleContainer), LifecycleState.LATENT);
         Assert.assertEquals(simpleContainer.startCount.get(), 1);
         Assert.assertEquals(simpleContainer.finishCount.get(), 1);
-    }
-
-    @Test
-    public void     testOverrideAssetLoader() throws Exception
-    {
-        LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
-        SimpleAssetLoader               overrideAssetLoader = new SimpleAssetLoader();
-        SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
-        HashMap<String, AssetLoader>    map = Maps.newHashMap();
-        arguments.setDefaultAssetLoader(simpleAssetLoader);
-        arguments.getAssetLoaders().put("foo", overrideAssetLoader);
-        LifecycleManager                manager = new LifecycleManager(arguments);
-
-        manager.add(new SimpleHasAsset());
-
-        manager.start();
-
-        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 0);
-        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 0);
-        Assert.assertEquals(overrideAssetLoader.loadedCount.get(), 1);
-        Assert.assertEquals(overrideAssetLoader.unloadedCount.get(), 0);
-
-        manager.close();
-
-        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 0);
-        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 0);
-        Assert.assertEquals(overrideAssetLoader.loadedCount.get(), 1);
-        Assert.assertEquals(overrideAssetLoader.unloadedCount.get(), 1);
-    }
-
-    @Test
-    public void     testSimpleAsset() throws Exception
-    {
-        SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
-        LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
-        arguments.setDefaultAssetLoader(simpleAssetLoader);
-        LifecycleManager                manager = new LifecycleManager(arguments);
-        manager.start();
-
-        SimpleHasAsset      simpleHasAsset = new SimpleHasAsset();
-        manager.add(simpleHasAsset);
-
-        Assert.assertEquals(manager.getState(simpleHasAsset), LifecycleState.ACTIVE);
-        Assert.assertEquals(simpleHasAsset.startCount.get(), 1);
-        Assert.assertEquals(simpleHasAsset.finishCount.get(), 0);
-
-        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 1);
-        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 0);
-
-        manager.close();
-
-        Assert.assertEquals(manager.getState(simpleHasAsset), LifecycleState.LATENT);
-        Assert.assertEquals(simpleHasAsset.startCount.get(), 1);
-        Assert.assertEquals(simpleHasAsset.finishCount.get(), 1);
-
-        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 1);
-        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 1);
-    }
-
-    @Test
-    public void     testDuplicateAsset() throws Exception
-    {
-        SimpleAssetLoader               simpleAssetLoader = new SimpleAssetLoader();
-        LifecycleManagerArguments       arguments = new LifecycleManagerArguments();
-        arguments.setDefaultAssetLoader(simpleAssetLoader);
-
-        LifecycleManager                manager = new LifecycleManager(arguments);
-        manager.add(new SimpleHasAsset(), new DuplicateAsset());
-        manager.start();
-
-        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 1);
-        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 0);
-
-        manager.close();
-
-        Assert.assertEquals(simpleAssetLoader.loadedCount.get(), 1);
-        Assert.assertEquals(simpleAssetLoader.unloadedCount.get(), 1);
     }
 }
