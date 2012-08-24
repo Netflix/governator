@@ -33,12 +33,7 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
 
     public void add(ConfigurationProvider configurationProvider)
     {
-        providers.add(configurationProvider);
-    }
-
-    public void addAll(Collection<ConfigurationProvider> configurationProviders)
-    {
-        providers.addAll(configurationProviders);
+        providers.add(0, configurationProvider);
     }
 
     @Override
