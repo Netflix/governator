@@ -9,50 +9,50 @@ import com.netflix.governator.annotations.Configuration;
 public interface ConfigurationProvider
 {
     /**
-     * Return true if there is a configuration value set for the given name
+     * Return true if there is a configuration value set for the given key
      *
-     * @param name configuration name
+     * @param key configuration key
      * @return true/false
      */
-    public boolean     has(String name);
+    public boolean     has(ConfigurationKey key);
 
     /**
      * Return the given configuration as a boolean
      *
-     * @param name configuration name
+     * @param key configuration key
      * @return value
      */
-    public boolean     getBoolean(String name);
+    public boolean     getBoolean(ConfigurationKey key);
 
     /**
      * Return the given configuration as an integer
      *
-     * @param name configuration name
+     * @param key configuration key
      * @return value
      */
-    public int         getInteger(String name);
+    public int         getInteger(ConfigurationKey key);
 
     /**
      * Return the given configuration as a long
      *
-     * @param name configuration name
+     * @param key configuration key
      * @return value
      */
-    public long        getLong(String name);
+    public long        getLong(ConfigurationKey key);
 
     /**
      * Return the given configuration as a double
      *
-     * @param name configuration name
+     * @param key configuration key
      * @return value
      */
-    public double      getDouble(String name);
+    public double      getDouble(ConfigurationKey key);
 
     /**
      * Return the given configuration as a string
      *
-     * @param name configuration name
+     * @param key configuration key
      * @return value
      */
-    public String      getString(String name);
+    public String      getString(ConfigurationKey key);
 }

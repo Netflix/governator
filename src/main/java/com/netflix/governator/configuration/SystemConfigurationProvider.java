@@ -1,43 +1,69 @@
 package com.netflix.governator.configuration;
 
+import com.google.common.collect.Maps;
+import java.util.Map;
+
 /**
  * ConfigurationProvider backed by the system properties
  */
 public class SystemConfigurationProvider implements ConfigurationProvider
 {
-    @Override
-    public boolean has(String name)
+    private final Map<String, String> variableValues;
+
+    public SystemConfigurationProvider()
     {
-        return System.getProperty(name, null) != null;
+        this(Maps.<String, String>newHashMap());
+    }
+
+    public SystemConfigurationProvider(Map<String, String> variableValues)
+    {
+        this.variableValues = Maps.newHashMap(variableValues);
+    }
+
+    /**
+     * Change a variable value
+     *
+     * @param name name
+     * @param value value
+     */
+    public void     setVariable(String name, String value)
+    {
+        variableValues.put(name, value);
     }
 
     @Override
-    public boolean getBoolean(String name)
+    public boolean has(ConfigurationKey key)
     {
-        return Boolean.getBoolean(name);
+        return System.getProperty(key.getKey(variableValues), null) != null;
     }
 
     @Override
-    public int getInteger(String name)
+    public boolean getBoolean(ConfigurationKey key)
     {
-        return Integer.getInteger(name);
+        return Boolean.getBoolean(key.getKey(variableValues));
     }
 
     @Override
-    public long getLong(String name)
+    public int getInteger(ConfigurationKey key)
     {
-        return Long.getLong(name);
+        return Integer.getInteger(key.getKey(variableValues));
     }
 
     @Override
-    public double getDouble(String name)
+    public long getLong(ConfigurationKey key)
     {
-        return Double.parseDouble(System.getProperty(name));
+        return Long.getLong(key.getKey(variableValues));
     }
 
     @Override
-    public String getString(String name)
+    public double getDouble(ConfigurationKey key)
     {
-        return System.getProperty(name);
+        return Double.parseDouble(System.getProperty(key.getKey(variableValues)));
+    }
+
+    @Override
+    public String getString(ConfigurationKey key)
+    {
+        return System.getProperty(key.getKey(variableValues));
     }
 }
