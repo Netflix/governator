@@ -5,9 +5,15 @@ import java.util.List;
 
 public class KeyParser
 {
-    public static List<ConfigurationKey.Part>  parse(String raw)
+    /**
+     * Parse a key into parts
+     *
+     * @param raw the key
+     * @return parts
+     */
+    public static List<ConfigurationKeyPart>  parse(String raw)
     {
-        List<ConfigurationKey.Part>     parts = Lists.newArrayList();
+        List<ConfigurationKeyPart>     parts = Lists.newArrayList();
 
         int                             caret = 0;
         for(;;)
@@ -25,24 +31,24 @@ public class KeyParser
 
             if ( startIndex > caret )
             {
-                parts.add(new ConfigurationKey.Part(raw.substring(caret, startIndex), false));
+                parts.add(new ConfigurationKeyPart(raw.substring(caret, startIndex), false));
             }
             startIndex += 2;
             if ( startIndex < endIndex )
             {
-                parts.add(new ConfigurationKey.Part(raw.substring(startIndex, endIndex), true));
+                parts.add(new ConfigurationKeyPart(raw.substring(startIndex, endIndex), true));
             }
             caret = endIndex + 1;
         }
 
         if ( caret < raw.length() )
         {
-            parts.add(new ConfigurationKey.Part(raw.substring(caret), false));
+            parts.add(new ConfigurationKeyPart(raw.substring(caret), false));
         }
 
         if ( parts.size() == 0 )
         {
-            parts.add(new ConfigurationKey.Part("", false));
+            parts.add(new ConfigurationKeyPart("", false));
         }
 
         return parts;
