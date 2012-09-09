@@ -8,7 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A configuration provider that composites multiple providers. The first
- * provider (in order) that has a configuration set (via {@link #has(String)} is used
+ * provider (in order) that has a configuration set (via {@link #has(ConfigurationKey)} is used
  * to return the configuration.
  */
 public class CompositeConfigurationProvider implements ConfigurationProvider
@@ -37,11 +37,11 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public boolean has(String name)
+    public boolean has(ConfigurationKey key)
     {
         for ( ConfigurationProvider provider : providers )
         {
-            if ( provider.has(name) )
+            if ( provider.has(key) )
             {
                 return true;
             }
@@ -50,65 +50,65 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public boolean getBoolean(String name)
+    public boolean getBoolean(ConfigurationKey key)
     {
         for ( ConfigurationProvider provider : providers )
         {
-            if ( provider.has(name) )
+            if ( provider.has(key) )
             {
-                return provider.getBoolean(name);
+                return provider.getBoolean(key);
             }
         }
         return false;
     }
 
     @Override
-    public int getInteger(String name)
+    public int getInteger(ConfigurationKey key)
     {
         for ( ConfigurationProvider provider : providers )
         {
-            if ( provider.has(name) )
+            if ( provider.has(key) )
             {
-                return provider.getInteger(name);
+                return provider.getInteger(key);
             }
         }
         return 0;
     }
 
     @Override
-    public long getLong(String name)
+    public long getLong(ConfigurationKey key)
     {
         for ( ConfigurationProvider provider : providers )
         {
-            if ( provider.has(name) )
+            if ( provider.has(key) )
             {
-                return provider.getLong(name);
+                return provider.getLong(key);
             }
         }
         return 0;
     }
 
     @Override
-    public double getDouble(String name)
+    public double getDouble(ConfigurationKey key)
     {
         for ( ConfigurationProvider provider : providers )
         {
-            if ( provider.has(name) )
+            if ( provider.has(key) )
             {
-                return provider.getDouble(name);
+                return provider.getDouble(key);
             }
         }
         return 0;
     }
 
     @Override
-    public String getString(String name)
+    public String getString(ConfigurationKey key)
     {
         for ( ConfigurationProvider provider : providers )
         {
-            if ( provider.has(name) )
+            if ( provider.has(key) )
             {
-                return provider.getString(name);
+                return provider.getString(key);
             }
         }
         return null;

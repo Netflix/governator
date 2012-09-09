@@ -29,7 +29,9 @@ import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
+import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.configuration.KeyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -437,35 +439,36 @@ public class LifecycleManager implements Closeable
     {
         Configuration       configuration = field.getAnnotation(Configuration.class);
         String              configurationName = configuration.value();
+        ConfigurationKey    key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
 
-        Object      value = null;
+        Object              value = null;
 
-        boolean has = configurationProvider.has(configurationName);
+        boolean has = configurationProvider.has(key);
         if ( has )
         {
             if ( String.class.isAssignableFrom(field.getType()) )
             {
-                value = configurationProvider.getString(configurationName);
+                value = configurationProvider.getString(key);
             }
             else if ( Boolean.class.isAssignableFrom(field.getType()) || Boolean.TYPE.isAssignableFrom(field.getType()) )
             {
-                value = configurationProvider.getBoolean(configurationName);
+                value = configurationProvider.getBoolean(key);
             }
             else if ( Integer.class.isAssignableFrom(field.getType()) || Integer.TYPE.isAssignableFrom(field.getType()) )
             {
-                value = configurationProvider.getInteger(configurationName);
+                value = configurationProvider.getInteger(key);
             }
             else if ( Long.class.isAssignableFrom(field.getType()) || Long.TYPE.isAssignableFrom(field.getType()) )
             {
-                value = configurationProvider.getLong(configurationName);
+                value = configurationProvider.getLong(key);
             }
             else if ( Double.class.isAssignableFrom(field.getType()) || Double.TYPE.isAssignableFrom(field.getType()) )
             {
-                value = configurationProvider.getDouble(configurationName);
+                value = configurationProvider.getDouble(key);
             }
             else if ( Date.class.isAssignableFrom(field.getType()) )
             {
-                value = parseDate(configurationProvider.getString(configurationName));
+                value = parseDate(configurationProvider.getString(key));
             }
             else
             {

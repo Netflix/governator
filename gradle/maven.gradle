@@ -2,15 +2,9 @@
 apply plugin: 'maven' // Java plugin has to have been already applied for the conf2scope mappings to work
 apply plugin: 'signing'
 
-if (gradle.startParameter.taskNames.contains("uploadMavenCentral")) {
-    signing {
-        required true
-        sign configurations.archives
-    }
-} else {
-    task signArchives {
-        // do nothing
-    }
+signing {
+    required { gradle.taskGraph.hasTask(uploadMavenCentral) }
+    sign configurations.archives
 }
 
 /**
@@ -18,9 +12,8 @@ if (gradle.startParameter.taskNames.contains("uploadMavenCentral")) {
  * artifactory will execute uploadArchives to force generation of ivy.xml, and we don't want that to trigger an upload to maven
  * central, so using custom upload task.
  */
-task uploadMavenCentral(type:Upload) {
+task uploadMavenCentral(type:Upload, dependsOn: signArchives) {
     configuration = configurations.archives
-    dependsOn 'signArchives'
     doFirst {
         repositories.mavenDeployer {
             beforeDeployment { org.gradle.api.artifacts.maven.MavenDeployment deployment -> signing.signPom(deployment) }
@@ -35,18 +28,14 @@ task uploadMavenCentral(type:Upload) {
             // Prevent datastamp from being appending to artifacts during deployment
             uniqueVersion = false
 
-            // Closure to configure all the POM with extra info, common to all projects
-            pom.project {
-                parent {
-                    groupId 'org.sonatype.oss'
-                    artifactId 'oss-parent'
-                    version '7'
-                }
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
+                // Closure to configure all the POM with extra info, common to all projects
+                pom.project {
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
                     }
                 }
             }

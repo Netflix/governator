@@ -1,5 +1,7 @@
 package com.netflix.governator.configuration;
 
+import com.google.common.collect.Maps;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -8,48 +10,66 @@ import java.util.Properties;
 public class PropertiesConfigurationProvider implements ConfigurationProvider
 {
     private final Properties properties;
+    private final Map<String, String> variableValues;
 
     /**
      * @param properties the properties
      */
     public PropertiesConfigurationProvider(Properties properties)
     {
+        this(properties, Maps.<String, String>newHashMap());
+    }
+
+    public PropertiesConfigurationProvider(Properties properties, Map<String, String> variableValues)
+    {
         this.properties = properties;
+        this.variableValues = Maps.newHashMap(variableValues);
+    }
+
+    /**
+     * Change a variable value
+     *
+     * @param name name
+     * @param value value
+     */
+    public void     setVariable(String name, String value)
+    {
+        variableValues.put(name, value);
     }
 
     @Override
-    public boolean has(String name)
+    public boolean has(ConfigurationKey key)
     {
-        return properties.containsKey(name);
+        return properties.containsKey(key.getKey(variableValues));
     }
 
     @Override
-    public boolean getBoolean(String name)
+    public boolean getBoolean(ConfigurationKey key)
     {
-        return Boolean.parseBoolean(properties.getProperty(name));
+        return Boolean.parseBoolean(properties.getProperty(key.getKey(variableValues)));
     }
 
     @Override
-    public int getInteger(String name)
+    public int getInteger(ConfigurationKey key)
     {
-        return Integer.parseInt(properties.getProperty(name));
+        return Integer.parseInt(properties.getProperty(key.getKey(variableValues)));
     }
 
     @Override
-    public long getLong(String name)
+    public long getLong(ConfigurationKey key)
     {
-        return Long.parseLong(properties.getProperty(name));
+        return Long.parseLong(properties.getProperty(key.getKey(variableValues)));
     }
 
     @Override
-    public double getDouble(String name)
+    public double getDouble(ConfigurationKey key)
     {
-        return Double.parseDouble(properties.getProperty(name));
+        return Double.parseDouble(properties.getProperty(key.getKey(variableValues)));
     }
 
     @Override
-    public String getString(String name)
+    public String getString(ConfigurationKey key)
     {
-        return properties.getProperty(name);
+        return properties.getProperty(key.getKey(variableValues));
     }
 }
