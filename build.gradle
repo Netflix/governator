@@ -1,5 +1,6 @@
 // Establish version and status
 ext.githubProjectName = rootProject.name // Change if github project name is not the same as the root project's name
+group = "com.netflix.${githubProjectName}"
 
 buildscript {
     repositories { mavenCentral() }
