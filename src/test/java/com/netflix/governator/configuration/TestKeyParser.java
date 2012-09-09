@@ -22,6 +22,9 @@ public class TestKeyParser
         {"1 ${a} 2 ${b}${c}", VALUE, "1 ", VARIABLE, "a", VALUE, " 2 ", VARIABLE, "b", VARIABLE, "c"},
         {"${a}${b} one ${two} three", VARIABLE, "a", VARIABLE, "b", VALUE, " one ", VARIABLE, "two", VALUE, " three"},
         {"${a}${b}one${two}three", VARIABLE, "a", VARIABLE, "b", VALUE, "one", VARIABLE, "two", VALUE, "three"},
+        {"${", VALUE, "${"},
+        {"${foo bar", VALUE, "${foo bar"},
+        {"${${ foo bar}", VARIABLE, "${ foo bar"},
     };
 
     @Test
