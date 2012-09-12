@@ -31,6 +31,8 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.guice.lazy.LazySingleton;
+import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
@@ -51,6 +53,8 @@ class InternalLifecycleModule implements Module
     @Override
     public void configure(final Binder binder)
     {
+        binder.bindScope(LazySingleton.class, LazySingletonScope.get());
+
         binder.bindListener
         (
             Matchers.any(),
