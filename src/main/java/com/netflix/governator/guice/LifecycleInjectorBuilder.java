@@ -5,7 +5,6 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
-import com.netflix.governator.lifecycle.LifecycleListener;
 import java.util.Collection;
 
 /**
@@ -78,23 +77,6 @@ public interface LifecycleInjectorBuilder
      * @return this
      */
     public LifecycleInjectorBuilder usingClasspathScanner(ClasspathScanner scanner);
-
-    /**
-     * Specify a listener
-     *
-     * @param lifecycleListener the listener
-     * @return this
-     */
-    public LifecycleInjectorBuilder withLifecycleListener(LifecycleListener lifecycleListener);
-
-    /**
-     * Specify a listener class. The listener will be injected and, thus, can have its own
-     * dependencies injected. NOTE: The LifecycleListener is bound/injected in the bootstrap phase.
-     *
-     * @param lifecycleListener the listener class
-     * @return this
-     */
-    public LifecycleInjectorBuilder withLifecycleListener(Class<? extends LifecycleListener> lifecycleListener);
 
     /**
      * Set the Guice stage - the default is Production

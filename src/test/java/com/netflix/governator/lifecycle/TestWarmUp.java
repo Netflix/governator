@@ -30,12 +30,9 @@ public class TestWarmUp
                 }
             }
         };
-        LifecycleManager        manager = new LifecycleManager();
-        manager.add(obj);
-        manager.start();
-
         final CountDownLatch    errorLatch = new CountDownLatch(1);
-        manager.setListener
+        LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
+        arguments.setLifecycleListener
         (
             new LifecycleListener()
             {
@@ -54,6 +51,9 @@ public class TestWarmUp
                 }
             }
         );
+        LifecycleManager            manager = new LifecycleManager(arguments);
+        manager.add(obj);
+        manager.start();
 
         manager.setMaxCoolDownMs(1);
         manager.close();
@@ -67,18 +67,10 @@ public class TestWarmUp
     {
         ObjectWithWarmUp.reset();
 
-        final int               OBJECT_QTY = 10;
-        LifecycleManager        manager = new LifecycleManager()
-        {
-            protected int getWarmUpThreadQty()
-            {
-                return 2;
-            }
-        };
-
         final Semaphore         warmSemaphore = new Semaphore(0);
         final Semaphore         coolSemaphore = new Semaphore(0);
-        manager.setListener
+        LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
+        arguments.setLifecycleListener
         (
             new LifecycleListener()
             {
@@ -101,6 +93,16 @@ public class TestWarmUp
                 }
             }
         );
+
+        final int               OBJECT_QTY = 10;
+        LifecycleManager        manager = new LifecycleManager(arguments)
+        {
+            protected int getWarmUpThreadQty()
+            {
+                return 2;
+            }
+        };
+
         for ( int i = 0; i < OBJECT_QTY; ++i )
         {
             Object      obj = new ObjectWithWarmUp()

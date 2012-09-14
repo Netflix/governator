@@ -45,7 +45,6 @@ public class TestInjectedLifecycleListener
     public void     testInjectedLifecycleListener() throws Exception
     {
         Injector injector = LifecycleInjector.builder()
-            .withLifecycleListener(MyListener.class)
             .withBootstrapModule
             (
                 new BootstrapModule()
@@ -62,6 +61,7 @@ public class TestInjectedLifecycleListener
                             }
                         };
                         binder.bind(TestInterface.class).toInstance(instance);
+                        binder.bind(LifecycleListener.class).to(MyListener.class);
                     }
                 }
             )
