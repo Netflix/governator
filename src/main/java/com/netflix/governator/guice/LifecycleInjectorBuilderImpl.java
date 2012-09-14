@@ -1,5 +1,6 @@
 package com.netflix.governator.guice;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
@@ -20,6 +21,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private BootstrapModule bootstrapModule = null;
     private ClasspathScanner scanner = null;
     private LifecycleListener lifecycleListener = null;
+    private Class<? extends LifecycleListener> lifecycleListenerClass = null;
     private Stage stage = Stage.PRODUCTION;
 
     @Override
@@ -85,6 +87,13 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder withLifecycleListener(Class<? extends LifecycleListener> lifecycleListener)
+    {
+        lifecycleListenerClass = lifecycleListener;
+        return this;
+    }
+
+    @Override
     public LifecycleInjectorBuilder inStage(Stage stage)
     {
         this.stage = stage;
@@ -94,7 +103,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, lifecycleListener, stage);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, lifecycleListener, lifecycleListenerClass, stage);
     }
 
     @Override
