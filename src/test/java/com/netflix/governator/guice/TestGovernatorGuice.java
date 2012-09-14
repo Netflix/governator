@@ -47,7 +47,7 @@ public class TestGovernatorGuice
     public void     testAutoBindSingletonVsSingleton() throws Exception
     {
         final List<Object>  objects = Lists.newArrayList();
-        LifecycleListener   listener = new LifecycleListener()
+        final LifecycleListener   listener = new LifecycleListener()
         {
             @Override
             public void objectInjected(Object obj)
@@ -63,7 +63,17 @@ public class TestGovernatorGuice
         Injector    injector = LifecycleInjector
             .builder()
             .usingBasePackages(PACKAGES)
-            .withLifecycleListener(new FilteredLifecycleListener(listener, PACKAGES))
+            .withBootstrapModule
+            (
+                new BootstrapModule()
+                {
+                    @Override
+                    public void configure(BootstrapBinder binder)
+                    {
+                        binder.bind(LifecycleListener.class).toInstance(new FilteredLifecycleListener(listener, PACKAGES));
+                    }
+                }
+            )
             .createInjector();
 
         Assert.assertNull
