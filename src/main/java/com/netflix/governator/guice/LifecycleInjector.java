@@ -42,7 +42,6 @@ public class LifecycleInjector
     private final Collection<Class<?>> ignoreClasses;
     private final boolean ignoreAllClasses;
     private final LifecycleManager lifecycleManager;
-    private final LifecycleListener lifecycleListener;
     private final Stage stage;
 
     /**
@@ -99,7 +98,7 @@ public class LifecycleInjector
     public Injector createChildInjector(Collection<Module> modules)
     {
         List<Module>            localModules = Lists.newArrayList(modules);
-        localModules.add(new InternalLifecycleModule(lifecycleManager, lifecycleListener));
+        localModules.add(new InternalLifecycleModule(lifecycleManager));
         return Guice.createInjector(stage, localModules);
     }
 
@@ -121,10 +120,11 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener, Stage stage)
+    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener, Class<? extends LifecycleListener> lifecycleListenerClass, Stage stage)
     {
+        Preconditions.checkState((lifecycleListener == null) || (lifecycleListenerClass == null), "You cannot specify both a LifecycleListener and a LifecycleListener class");
+
         this.ignoreAllClasses = ignoreAllClasses;
-        this.lifecycleListener = lifecycleListener;
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
@@ -132,5 +132,13 @@ public class LifecycleInjector
 
         Injector        injector = Guice.createInjector(new InternalBootstrapModule(this.scanner, bootstrapModule));
         lifecycleManager = injector.getInstance(LifecycleManager.class);
+        if ( lifecycleListenerClass != null )
+        {
+            lifecycleListener = injector.getInstance(lifecycleListenerClass);
+        }
+        if ( lifecycleListener != null )
+        {
+            lifecycleManager.setListener(lifecycleListener);
+        }
     }
 }

@@ -155,6 +155,16 @@ public class LifecycleManager implements Closeable
     }
 
     /**
+     * Return the lifecycle listener if any
+     *
+     * @return listener or null
+     */
+    public LifecycleListener getListener()
+    {
+        return listener;
+    }
+
+    /**
      * Set the maximum time to wait for cool downs to complete. The default is 1 minute
      *
      * @param maxCoolDownMs max cool down in milliseconds
