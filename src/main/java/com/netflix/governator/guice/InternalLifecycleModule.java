@@ -33,7 +33,6 @@ import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
-import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import java.util.Map;
@@ -42,12 +41,10 @@ class InternalLifecycleModule implements Module
 {
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
     private final LifecycleManager lifecycleManager;
-    private final LifecycleListener lifecycleListener;
 
-    InternalLifecycleModule(LifecycleManager lifecycleManager, LifecycleListener lifecycleListener)
+    InternalLifecycleModule(LifecycleManager lifecycleManager)
     {
         this.lifecycleManager = lifecycleManager;
-        this.lifecycleListener = lifecycleListener;
     }
 
     @Override
@@ -70,9 +67,9 @@ class InternalLifecycleModule implements Module
                             @Override
                             public void afterInjection(T obj)
                             {
-                                if ( lifecycleListener != null )
+                                if ( lifecycleManager.getListener() != null )
                                 {
-                                    lifecycleListener.objectInjected(obj);
+                                    lifecycleManager.getListener().objectInjected(obj);
                                 }
 
                                 Class<?> clazz = obj.getClass();

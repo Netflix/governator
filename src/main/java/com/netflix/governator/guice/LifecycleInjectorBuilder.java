@@ -88,6 +88,15 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withLifecycleListener(LifecycleListener lifecycleListener);
 
     /**
+     * Specify a listener class. The listener will be injected and, thus, can have its own
+     * dependencies injected. NOTE: The LifecycleListener is bound/injected in the bootstrap phase.
+     *
+     * @param lifecycleListener the listener class
+     * @return this
+     */
+    public LifecycleInjectorBuilder withLifecycleListener(Class<? extends LifecycleListener> lifecycleListener);
+
+    /**
      * Set the Guice stage - the default is Production
      *
      * @param stage new stage
