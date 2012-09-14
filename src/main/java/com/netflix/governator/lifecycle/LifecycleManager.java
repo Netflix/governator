@@ -71,9 +71,9 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
     private final ConfigurationProvider configurationProvider;
+    private final LifecycleListener listener;
 
     private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
-    private volatile LifecycleListener listener = null;
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -142,16 +142,7 @@ public class LifecycleManager implements Closeable
     public LifecycleManager(LifecycleManagerArguments arguments)
     {
         configurationProvider = arguments.getConfigurationProvider();
-    }
-
-    /**
-     * Set the lifecycle listener
-     *
-     * @param listener the listener
-     */
-    public void setListener(LifecycleListener listener)
-    {
-        this.listener = listener;
+        listener = arguments.getLifecycleListener();
     }
 
     /**

@@ -10,7 +10,6 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
-import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -120,10 +119,8 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, LifecycleListener lifecycleListener, Class<? extends LifecycleListener> lifecycleListenerClass, Stage stage)
+    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
     {
-        Preconditions.checkState((lifecycleListener == null) || (lifecycleListenerClass == null), "You cannot specify both a LifecycleListener and a LifecycleListener class");
-
         this.ignoreAllClasses = ignoreAllClasses;
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -132,13 +129,5 @@ public class LifecycleInjector
 
         Injector        injector = Guice.createInjector(new InternalBootstrapModule(this.scanner, bootstrapModule));
         lifecycleManager = injector.getInstance(LifecycleManager.class);
-        if ( lifecycleListenerClass != null )
-        {
-            lifecycleListener = injector.getInstance(lifecycleListenerClass);
-        }
-        if ( lifecycleListener != null )
-        {
-            lifecycleManager.setListener(lifecycleListener);
-        }
     }
 }
