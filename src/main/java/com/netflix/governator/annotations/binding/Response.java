@@ -12,6 +12,6 @@ import java.lang.annotation.Target;
 /**
  * A generic binding annotation
  */
-public @interface AltStyle
+public @interface Response
 {
 }
