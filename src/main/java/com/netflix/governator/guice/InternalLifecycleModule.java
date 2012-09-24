@@ -24,25 +24,22 @@ package com.netflix.governator.guice;
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.guice.lazy.LazySingleton;
-import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 class InternalLifecycleModule implements Module
 {
     private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
-    private final LifecycleManager lifecycleManager;
+    private final AtomicReference<LifecycleManager> lifecycleManager;
 
-    InternalLifecycleModule(LifecycleManager lifecycleManager)
+    InternalLifecycleModule(AtomicReference<LifecycleManager> lifecycleManager)
     {
         this.lifecycleManager = lifecycleManager;
     }
@@ -50,8 +47,6 @@ class InternalLifecycleModule implements Module
     @Override
     public void configure(final Binder binder)
     {
-        binder.bindScope(LazySingleton.class, LazySingletonScope.get());
-
         binder.bindListener
         (
             Matchers.any(),
@@ -67,23 +62,27 @@ class InternalLifecycleModule implements Module
                             @Override
                             public void afterInjection(T obj)
                             {
-                                if ( lifecycleManager.getListener() != null )
+                                LifecycleManager manager = lifecycleManager.get();
+                                if ( manager != null )
                                 {
-                                    lifecycleManager.getListener().objectInjected(obj);
-                                }
-
-                                Class<?> clazz = obj.getClass();
-                                LifecycleMethods methods = getLifecycleMethods(clazz);
-
-                                if ( methods.hasLifecycleAnnotations() )
-                                {
-                                    try
+                                    if ( manager.getListener() != null )
                                     {
-                                        lifecycleManager.add(obj, methods);
+                                        manager.getListener().objectInjected(obj);
                                     }
-                                    catch ( Exception e )
+
+                                    Class<?> clazz = obj.getClass();
+                                    LifecycleMethods methods = getLifecycleMethods(clazz);
+
+                                    if ( methods.hasLifecycleAnnotations() )
                                     {
-                                        throw new Error(e);
+                                        try
+                                        {
+                                            manager.add(obj, methods);
+                                        }
+                                        catch ( Exception e )
+                                        {
+                                            throw new Error(e);
+                                        }
                                     }
                                 }
                             }
@@ -92,13 +91,6 @@ class InternalLifecycleModule implements Module
                 }
             }
         );
-    }
-
-    @Provides
-    @Singleton
-    public LifecycleManager     getLifecycleManager()
-    {
-        return lifecycleManager;
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)

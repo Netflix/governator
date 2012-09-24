@@ -46,7 +46,7 @@ public class TestGovernatorGuice
     @Test
     public void     testAutoBindSingletonVsSingleton() throws Exception
     {
-        final List<Object>  objects = Lists.newArrayList();
+        final List<Object>        objects = Lists.newArrayList();
         final LifecycleListener   listener = new LifecycleListener()
         {
             @Override
