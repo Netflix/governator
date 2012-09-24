@@ -15,6 +15,7 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <p>
@@ -41,7 +42,7 @@ public class LifecycleInjector
     private final Collection<Class<?>> ignoreClasses;
     private final boolean ignoreAllClasses;
     private final LifecycleManager lifecycleManager;
-    private final Stage stage;
+    private final Injector injector;
 
     /**
      * Create a new LifecycleInjector builder
@@ -96,9 +97,7 @@ public class LifecycleInjector
      */
     public Injector createChildInjector(Collection<Module> modules)
     {
-        List<Module>            localModules = Lists.newArrayList(modules);
-        localModules.add(new InternalLifecycleModule(lifecycleManager));
-        return Guice.createInjector(stage, localModules);
+        return injector.createChildInjector(modules);
     }
 
     /**
@@ -121,13 +120,21 @@ public class LifecycleInjector
 
     LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
     {
+        stage = Preconditions.checkNotNull(stage, "stage cannot be null");
+
         this.ignoreAllClasses = ignoreAllClasses;
-        this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
 
-        Injector        injector = Guice.createInjector(new InternalBootstrapModule(this.scanner, bootstrapModule));
+        AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
+        injector = Guice.createInjector
+        (
+            stage,
+            new InternalBootstrapModule(this.scanner, bootstrapModule),
+            new InternalLifecycleModule(lifecycleManagerRef)
+        );
         lifecycleManager = injector.getInstance(LifecycleManager.class);
+        lifecycleManagerRef.set(lifecycleManager);
     }
 }
