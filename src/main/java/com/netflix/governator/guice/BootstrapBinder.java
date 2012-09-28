@@ -43,7 +43,7 @@ public class BootstrapBinder implements Binder
     }
 
     /**
-     * Use this to bind LifecycleListener. It internal uses a Multibinder to do the
+     * Use this to bind a LifecycleListener. It internally uses a Multibinder to do the
      * binding so that you can bind multiple LifecycleListeners
      *
      * @return a binding builder used to add a new element in the set.
