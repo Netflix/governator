@@ -7,6 +7,7 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import java.util.Collection;
 
 public class TestInjectedLifecycleListener
 {
@@ -61,16 +62,16 @@ public class TestInjectedLifecycleListener
                             }
                         };
                         binder.bind(TestInterface.class).toInstance(instance);
-                        binder.bind(LifecycleListener.class).to(MyListener.class);
+                        binder.bindLifecycleListener().to(MyListener.class);
                     }
                 }
             )
             .createInjector();
 
-        LifecycleManager    manager = injector.getInstance(LifecycleManager.class);
-        LifecycleListener   listener = manager.getListener();
-        Assert.assertNotNull(listener);
-        Assert.assertTrue(listener instanceof MyListener);
-        Assert.assertEquals(((MyListener)listener).getTestInterface().getValue(), "a is a");
+        LifecycleManager                manager = injector.getInstance(LifecycleManager.class);
+        Collection<LifecycleListener>   listeners = manager.getListeners();
+        Assert.assertEquals(listeners.size(), 1);
+        Assert.assertTrue(listeners.iterator().next() instanceof MyListener);
+        Assert.assertEquals(((MyListener)listeners.iterator().next()).getTestInterface().getValue(), "a is a");
     }
 }

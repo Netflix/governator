@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -71,7 +72,8 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
     private final ConfigurationProvider configurationProvider;
-    private final LifecycleListener listener;
+    private final Collection<LifecycleListener> listeners;
+    private final ValidatorFactory factory;
 
     private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
 
@@ -142,7 +144,8 @@ public class LifecycleManager implements Closeable
     public LifecycleManager(LifecycleManagerArguments arguments)
     {
         configurationProvider = arguments.getConfigurationProvider();
-        listener = arguments.getLifecycleListener();
+        listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
+        factory = Validation.buildDefaultValidatorFactory();
     }
 
     /**
@@ -150,9 +153,9 @@ public class LifecycleManager implements Closeable
      *
      * @return listener or null
      */
-    public LifecycleListener getListener()
+    public Collection<LifecycleListener> getListeners()
     {
-        return listener;
+        return listeners;
     }
 
     /**
@@ -281,10 +284,48 @@ public class LifecycleManager implements Closeable
         }
     }
 
+    /**
+     * Run the validations on the managed objects. This is done automatically when {@link #start()} is called.
+     * But you can call this at any time you need.
+     *
+     * @throws ValidationException
+     */
+    public void        validate() throws ValidationException
+    {
+        ValidationException exception = null;
+        Validator           validator = factory.getValidator();
+        for ( StateKey key : objectStates.keySet() )
+        {
+            Object obj = key.obj;
+            exception = internalValidateObject(exception, obj, validator);
+        }
+
+        if ( exception != null )
+        {
+            throw exception;
+        }
+    }
+
+    /**
+     * Run validations on the given object
+     *
+     * @param obj the object to validate
+     * @throws ValidationException
+     */
+    public void        validate(Object obj) throws ValidationException
+    {
+        Validator           validator = factory.getValidator();
+        ValidationException exception = internalValidateObject(null, obj, validator);
+        if ( exception != null )
+        {
+            throw exception;
+        }
+    }
+
     void setState(Object obj, LifecycleState state)
     {
         objectStates.put(new StateKey(obj), state);
-        if ( listener != null )
+        for ( LifecycleListener listener : listeners )
         {
             listener.stateChanged(obj, state);
         }
@@ -294,6 +335,25 @@ public class LifecycleManager implements Closeable
     protected int getWarmUpThreadQty()
     {
         return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+    }
+
+    private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
+    {
+        Set<ConstraintViolation<Object>> violations = validator.validate(obj);
+        for ( ConstraintViolation<Object> violation : violations )
+        {
+            String      path = getPath(violation);
+            String      message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
+            if ( exception == null )
+            {
+                exception = new ValidationException(message);
+            }
+            else
+            {
+                exception = new ValidationException(message, exception);
+            }
+        }
+        return exception;
     }
 
     private void doCoolDown() throws Exception
@@ -492,35 +552,6 @@ public class LifecycleManager implements Closeable
                 documentationValue = "";
             }
             configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
-        }
-    }
-
-    private void        validate() throws ValidationException
-    {
-        ValidationException exception = null;
-        ValidatorFactory    factory = Validation.buildDefaultValidatorFactory();
-        Validator           validator = factory.getValidator();
-        for ( StateKey key : objectStates.keySet() )
-        {
-            Set<ConstraintViolation<Object>> violations = validator.validate(key.obj);
-            for ( ConstraintViolation<Object> violation : violations )
-            {
-                String      path = getPath(violation);
-                String      message = String.format("%s - %s.%s = %s", violation.getMessage(), key.obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
-                if ( exception == null )
-                {
-                    exception = new ValidationException(message);
-                }
-                else
-                {
-                    exception = new ValidationException(message, exception);
-                }
-            }
-        }
-
-        if ( exception != null )
-        {
-            throw exception;
         }
     }
 

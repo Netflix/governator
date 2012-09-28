@@ -18,6 +18,7 @@ import com.google.inject.spi.Message;
 import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.lifecycle.LifecycleListener;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,17 @@ public class BootstrapBinder implements Binder
     public void bindScope(Class<? extends Annotation> annotationType, Scope scope)
     {
         binder.bindScope(annotationType, scope);
+    }
+
+    /**
+     * Use this to bind LifecycleListener. It internal uses a Multibinder to do the
+     * binding so that you can bind multiple LifecycleListeners
+     *
+     * @return a binding builder used to add a new element in the set.
+     */
+    public LinkedBindingBuilder<LifecycleListener> bindLifecycleListener()
+    {
+        return Multibinder.newSetBinder(binder, LifecycleListener.class).addBinding();
     }
 
     @Override

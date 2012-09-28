@@ -1,6 +1,9 @@
 package com.netflix.governator.lifecycle;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.util.Collection;
+import java.util.Set;
 
 public class LifecycleManagerArguments
 {
@@ -8,7 +11,7 @@ public class LifecycleManagerArguments
     private LifecycleConfigurationProviders configurationProvider = new LifecycleConfigurationProviders();
 
     @Inject(optional = true)
-    private LifecycleListener lifecycleListener = null;
+    private Set<LifecycleListener> lifecycleListeners = ImmutableSet.of();
 
     @Inject
     public LifecycleManagerArguments()
@@ -20,9 +23,9 @@ public class LifecycleManagerArguments
         return configurationProvider;
     }
 
-    public LifecycleListener getLifecycleListener()
+    public Collection<LifecycleListener> getLifecycleListeners()
     {
-        return lifecycleListener;
+        return lifecycleListeners;
     }
 
     public void setConfigurationProvider(LifecycleConfigurationProviders configurationProvider)
@@ -30,8 +33,8 @@ public class LifecycleManagerArguments
         this.configurationProvider = configurationProvider;
     }
 
-    public void setLifecycleListener(LifecycleListener lifecycleListener)
+    public void setLifecycleListeners(Collection<LifecycleListener> lifecycleListeners)
     {
-        this.lifecycleListener = lifecycleListener;
+        this.lifecycleListeners = ImmutableSet.copyOf(lifecycleListeners);
     }
 }
