@@ -70,7 +70,7 @@ public class TestGovernatorGuice
                     @Override
                     public void configure(BootstrapBinder binder)
                     {
-                        binder.bind(LifecycleListener.class).toInstance(new FilteredLifecycleListener(listener, PACKAGES));
+                        binder.bindLifecycleListener().toInstance(new FilteredLifecycleListener(listener, PACKAGES));
                     }
                 }
             )
