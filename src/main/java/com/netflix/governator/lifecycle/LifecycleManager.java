@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -71,7 +72,7 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
     private final ConfigurationProvider configurationProvider;
-    private final LifecycleListener listener;
+    private final Collection<LifecycleListener> listeners;
     private final ValidatorFactory factory;
 
     private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
@@ -143,7 +144,7 @@ public class LifecycleManager implements Closeable
     public LifecycleManager(LifecycleManagerArguments arguments)
     {
         configurationProvider = arguments.getConfigurationProvider();
-        listener = arguments.getLifecycleListener();
+        listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         factory = Validation.buildDefaultValidatorFactory();
     }
 
@@ -152,9 +153,9 @@ public class LifecycleManager implements Closeable
      *
      * @return listener or null
      */
-    public LifecycleListener getListener()
+    public Collection<LifecycleListener> getListeners()
     {
-        return listener;
+        return listeners;
     }
 
     /**
@@ -324,7 +325,7 @@ public class LifecycleManager implements Closeable
     void setState(Object obj, LifecycleState state)
     {
         objectStates.put(new StateKey(obj), state);
-        if ( listener != null )
+        for ( LifecycleListener listener : listeners )
         {
             listener.stateChanged(obj, state);
         }

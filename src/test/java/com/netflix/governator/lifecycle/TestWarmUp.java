@@ -4,6 +4,7 @@ import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.lifecycle.mocks.ObjectWithWarmUp;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -32,25 +33,24 @@ public class TestWarmUp
         };
         final CountDownLatch    errorLatch = new CountDownLatch(1);
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.setLifecycleListener
-        (
-            new LifecycleListener()
+        LifecycleListener lifecycleListener = new LifecycleListener()
+        {
+            @Override
+            public void objectInjected(Object obj)
             {
-                @Override
-                public void objectInjected(Object obj)
-                {
-                }
+            }
 
-                @Override
-                public void stateChanged(Object obj, LifecycleState newState)
+            @Override
+            public void stateChanged(Object obj, LifecycleState newState)
+            {
+                if ( newState == LifecycleState.ERROR )
                 {
-                    if ( newState == LifecycleState.ERROR )
-                    {
-                        errorLatch.countDown();
-                    }
+                    errorLatch.countDown();
                 }
             }
-        );
+        };
+        arguments.setLifecycleListeners(Collections.singleton(lifecycleListener));
+
         LifecycleManager            manager = new LifecycleManager(arguments);
         manager.add(obj);
         manager.start();
@@ -70,29 +70,27 @@ public class TestWarmUp
         final Semaphore         warmSemaphore = new Semaphore(0);
         final Semaphore         coolSemaphore = new Semaphore(0);
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.setLifecycleListener
-        (
-            new LifecycleListener()
+        LifecycleListener       lifecycleListener = new LifecycleListener()
+        {
+            @Override
+            public void objectInjected(Object obj)
             {
-                @Override
-                public void objectInjected(Object obj)
-                {
-                }
+            }
 
-                @Override
-                public void stateChanged(Object obj, LifecycleState newState)
+            @Override
+            public void stateChanged(Object obj, LifecycleState newState)
+            {
+                if ( newState == LifecycleState.ACTIVE )
                 {
-                    if ( newState == LifecycleState.ACTIVE )
-                    {
-                        warmSemaphore.release();
-                    }
-                    else if ( newState == LifecycleState.PRE_DESTROYING )
-                    {
-                        coolSemaphore.release();
-                    }
+                    warmSemaphore.release();
+                }
+                else if ( newState == LifecycleState.PRE_DESTROYING )
+                {
+                    coolSemaphore.release();
                 }
             }
-        );
+        };
+        arguments.setLifecycleListeners(Collections.singleton(lifecycleListener));
 
         final int               OBJECT_QTY = 10;
         LifecycleManager        manager = new LifecycleManager(arguments)

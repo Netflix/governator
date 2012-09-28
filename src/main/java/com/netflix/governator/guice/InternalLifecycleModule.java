@@ -29,6 +29,7 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import java.util.Map;
@@ -65,9 +66,9 @@ class InternalLifecycleModule implements Module
                                 LifecycleManager manager = lifecycleManager.get();
                                 if ( manager != null )
                                 {
-                                    if ( manager.getListener() != null )
+                                    for ( LifecycleListener listener : manager.getListeners() )
                                     {
-                                        manager.getListener().objectInjected(obj);
+                                        listener.objectInjected(obj);
                                     }
 
                                     Class<?> clazz = obj.getClass();
