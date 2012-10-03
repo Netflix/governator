@@ -28,6 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -41,6 +44,9 @@ public class ClasspathScanner
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
     private final Set<Class<?>> classes;
+    private final Set<Constructor> constructors;
+    private final Set<Method> methods;
+    private final Set<Field> fields;
 
     /**
      * @param basePackages list of packages to search (recursively)
@@ -52,29 +58,51 @@ public class ClasspathScanner
 
         log.debug("Starting classpath scanning...");
 
-        final Set<Class<?>>     store = Sets.newHashSet();
+        Set<Class<?>>       localClasses = Sets.newHashSet();
+        Set<Constructor>    localConstructors = Sets.newHashSet();
+        Set<Method>         localMethods = Sets.newHashSet();
+        Set<Field>          localFields = Sets.newHashSet();
         if ( basePackages.size() == 0 )
         {
             log.warn("No base packages specified - no classpath scanning will be done");
         }
         else
         {
-            doScanning(basePackages, annotations, store);
+            doScanning(basePackages, annotations, localClasses, localConstructors, localMethods, localFields);
         }
 
-        classes = ImmutableSet.copyOf(store);
+        classes = ImmutableSet.copyOf(localClasses);
+        constructors = ImmutableSet.copyOf(localConstructors);
+        methods = ImmutableSet.copyOf(localMethods);
+        fields = ImmutableSet.copyOf(localFields);
+
         log.debug("Classpath scanning done");
     }
 
     /**
      * @return the found classes
      */
-    public Set<Class<?>> get()
+    public Set<Class<?>> getClasses()
     {
         return classes;
     }
 
-    private void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> store)
+    public Set<Constructor> getConstructors()
+    {
+        return constructors;
+    }
+
+    public Set<Method> getMethods()
+    {
+        return methods;
+    }
+
+    public Set<Field> getFields()
+    {
+        return fields;
+    }
+
+    private void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields)
     {
         try
         {
@@ -99,7 +127,10 @@ public class ClasspathScanner
                 AnnotationFinder annotationFinder = new AnnotationFinder(compositeArchive);
                 for ( Class<? extends Annotation> annotation : annotations )
                 {
-                    store.addAll(annotationFinder.findAnnotatedClasses(annotation));
+                    localClasses.addAll(annotationFinder.findAnnotatedClasses(annotation));
+                    localConstructors.addAll(annotationFinder.findAnnotatedConstructors(annotation));
+                    localMethods.addAll(annotationFinder.findAnnotatedMethods(annotation));
+                    localFields.addAll(annotationFinder.findAnnotatedFields(annotation));
                 }
             }
         }

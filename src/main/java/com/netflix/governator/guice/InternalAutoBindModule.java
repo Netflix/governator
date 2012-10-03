@@ -19,30 +19,138 @@ package com.netflix.governator.guice;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Scopes;
+import com.google.inject.TypeLiteral;
+import com.google.inject.util.Types;
+import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.List;
 
 class InternalAutoBindModule extends AbstractModule
 {
     private final List<Class<?>> ignoreClasses;
+    private final Injector injector;
     private final ClasspathScanner classpathScanner;
 
-    InternalAutoBindModule(ClasspathScanner classpathScanner, Collection<Class<?>> ignoreClasses)
+    InternalAutoBindModule(Injector injector, ClasspathScanner classpathScanner, Collection<Class<?>> ignoreClasses)
     {
+        this.injector = injector;
         this.classpathScanner = classpathScanner;
         Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
 
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void configure()
     {
-        for ( final Class<?> clazz : classpathScanner.get() )
+        bindAutoBindSingletons();
+        bindAutoBindConstructors();
+        bindAutoBindMethods();
+        bindAutoBindFields();
+    }
+
+    private void bindAutoBindFields()
+    {
+        for ( Field field : classpathScanner.getFields() )
+        {
+            if ( ignoreClasses.contains(field.getDeclaringClass()) )
+            {
+                continue;
+            }
+
+            for ( Annotation annotation : field.getDeclaredAnnotations() )
+            {
+                AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
+                if ( autoBindProvider != null )
+                {
+                    //noinspection unchecked
+                    autoBindProvider.configureForField(binder(), annotation, field);
+                }
+            }
+        }
+    }
+
+    private void bindAutoBindMethods()
+    {
+        for ( Method method : classpathScanner.getMethods() )
+        {
+            if ( ignoreClasses.contains(method.getDeclaringClass()) )
+            {
+                continue;
+            }
+
+            int     parameterIndex = 0;
+            for ( Annotation[] annotations : method.getParameterAnnotations() )
+            {
+                for ( Annotation annotation : annotations )
+                {
+                    AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
+                    if ( autoBindProvider != null )
+                    {
+                        //noinspection unchecked
+                        autoBindProvider.configureForMethod(binder(), annotation, method, parameterIndex);
+                    }
+                }
+                ++parameterIndex;
+            }
+        }
+    }
+
+    private void bindAutoBindConstructors()
+    {
+        for ( Constructor constructor : classpathScanner.getConstructors() )
+        {
+            if ( ignoreClasses.contains(constructor.getDeclaringClass()) )
+            {
+                continue;
+            }
+
+            int     parameterIndex = 0;
+            for ( Annotation[] annotations : constructor.getParameterAnnotations() )
+            {
+                for ( Annotation annotation : annotations )
+                {
+                    AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
+                    if ( autoBindProvider != null )
+                    {
+                        //noinspection unchecked
+                        autoBindProvider.configureForConstructor(binder(), annotation, constructor, parameterIndex);
+                    }
+                }
+                ++parameterIndex;
+            }
+        }
+    }
+
+    private AutoBindProvider getAutoBindProvider(Annotation annotation)
+    {
+        AutoBindProvider  autoBindProvider = null;
+        if ( annotation.annotationType().isAnnotationPresent(AutoBind.class) )
+        {
+            ParameterizedType parameterizedType = Types.newParameterizedType(AutoBindProvider.class, annotation.annotationType());
+            autoBindProvider = (AutoBindProvider<?>)injector.getInstance(Key.get(TypeLiteral.get(parameterizedType)));
+        }
+        else if ( annotation.annotationType().isAssignableFrom(AutoBind.class) )
+        {
+            autoBindProvider = injector.getInstance(Key.get(new TypeLiteral<AutoBindProvider<AutoBind>>(){}));
+        }
+        return autoBindProvider;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void bindAutoBindSingletons()
+    {
+        for ( Class<?> clazz : classpathScanner.getClasses() )
         {
             if ( ignoreClasses.contains(clazz) || !clazz.isAnnotationPresent(AutoBindSingleton.class) )
             {
