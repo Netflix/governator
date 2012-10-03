@@ -5,11 +5,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.annotations.HasAutoBind;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import java.lang.annotation.Annotation;
@@ -66,7 +66,8 @@ public class LifecycleInjector
     {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
-        annotations.add(HasAutoBind.class);
+        annotations.add(Inject.class);
+        annotations.add(javax.inject.Inject.class);
         return new ClasspathScanner(basePackages, annotations);
     }
 

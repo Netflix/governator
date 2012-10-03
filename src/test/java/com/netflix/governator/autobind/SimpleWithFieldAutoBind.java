@@ -2,17 +2,14 @@ package com.netflix.governator.autobind;
 
 import com.google.inject.Inject;
 import com.netflix.governator.annotations.AutoBind;
-import com.netflix.governator.annotations.HasAutoBind;
 
 public class SimpleWithFieldAutoBind
 {
-    @HasAutoBind
-    @AutoBind("f1")
+    @AutoBind("field1")
     @Inject
-    public MockWithParameter       f1;
+    public MockWithParameter    field1;
 
-    @HasAutoBind
-    @AutoBind("f2")
+    @AutoBind("field2")
     @Inject
-    public MockWithParameter       f2;
+    public MockWithParameter    field2;
 }

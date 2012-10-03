@@ -14,9 +14,6 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Collections;
 
 public class TestAutoBind
@@ -27,19 +24,9 @@ public class TestAutoBind
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
             @Override
-            public void configureForConstructor(Binder binder, AutoBind autoBindAnnotation, Constructor constructor, int argumentIndex)
+            public void configure(Binder binder, AutoBind autoBindAnnotation)
             {
                 binder.bind(String.class).annotatedWith(autoBindAnnotation).toInstance("a is a");
-            }
-
-            @Override
-            public void configureForMethod(Binder binder, AutoBind autoBindAnnotation, Method method, int argumentIndex)
-            {
-            }
-
-            @Override
-            public void configureForField(Binder binder, AutoBind autoBindAnnotation, Field field)
-            {
             }
         };
 
@@ -66,7 +53,14 @@ public class TestAutoBind
     @Test
     public void     testCustom()
     {
-        final AutoBindProvider<CustomAutoBind> provider = new CustomAutoProvider();
+        final AutoBindProvider<CustomAutoBind> provider = new AutoBindProvider<CustomAutoBind>()
+        {
+            @Override
+            public void configure(Binder binder, CustomAutoBind custom)
+            {
+                binder.bind(MockInjectable.class).annotatedWith(custom).toInstance(new MockInjectable(custom.str(), custom.value()));
+            }
+        };
 
         @SuppressWarnings("RedundantCast")
         Injector injector = LifecycleInjector
@@ -96,19 +90,9 @@ public class TestAutoBind
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
             @Override
-            public void configureForConstructor(Binder binder, AutoBind autoBindAnnotation, Constructor constructor, int argumentIndex)
+            public void configure(Binder binder, AutoBind autoBindAnnotation)
             {
                 binder.bind(MockWithParameter.class).annotatedWith(autoBindAnnotation).toInstance(new MockWithParameter(autoBindAnnotation.value()));
-            }
-
-            @Override
-            public void configureForMethod(Binder binder, AutoBind autoBindAnnotation, Method method, int argumentIndex)
-            {
-            }
-
-            @Override
-            public void configureForField(Binder binder, AutoBind autoBindAnnotation, Field field)
-            {
             }
         };
 
@@ -141,17 +125,7 @@ public class TestAutoBind
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
             @Override
-            public void configureForConstructor(Binder binder, AutoBind autoBindAnnotation, Constructor constructor, int argumentIndex)
-            {
-            }
-
-            @Override
-            public void configureForMethod(Binder binder, AutoBind autoBindAnnotation, Method method, int argumentIndex)
-            {
-            }
-
-            @Override
-            public void configureForField(Binder binder, AutoBind autoBindAnnotation, Field field)
+            public void configure(Binder binder, AutoBind autoBindAnnotation)
             {
                 binder.bind(MockWithParameter.class).annotatedWith(autoBindAnnotation).toInstance(new MockWithParameter(autoBindAnnotation.value()));
             }
@@ -176,8 +150,8 @@ public class TestAutoBind
             .usingBasePackages("com.netflix.governator.autobind")
             .createInjector();
         SimpleWithFieldAutoBind instance = injector.getInstance(SimpleWithFieldAutoBind.class);
-        Assert.assertEquals(instance.f1.getParameter(), "f1");
-        Assert.assertEquals(instance.f2.getParameter(), "f2");
+        Assert.assertEquals(instance.field1.getParameter(), "field1");
+        Assert.assertEquals(instance.field2.getParameter(), "field2");
     }
 
     @Test
@@ -186,19 +160,9 @@ public class TestAutoBind
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
             @Override
-            public void configureForConstructor(Binder binder, AutoBind autoBindAnnotation, Constructor constructor, int argumentIndex)
-            {
-            }
-
-            @Override
-            public void configureForMethod(Binder binder, AutoBind autoBindAnnotation, Method method, int argumentIndex)
+            public void configure(Binder binder, AutoBind autoBindAnnotation)
             {
                 binder.bind(MockWithParameter.class).annotatedWith(autoBindAnnotation).toInstance(new MockWithParameter(autoBindAnnotation.value()));
-            }
-
-            @Override
-            public void configureForField(Binder binder, AutoBind autoBindAnnotation, Field field)
-            {
             }
         };
 

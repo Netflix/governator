@@ -2,7 +2,6 @@ package com.netflix.governator.autobind;
 
 import com.google.inject.Inject;
 import com.netflix.governator.annotations.AutoBind;
-import com.netflix.governator.annotations.HasAutoBind;
 
 public class SimpleWithMultipleAutoBinds
 {
@@ -12,7 +11,6 @@ public class SimpleWithMultipleAutoBinds
     private final MockWithParameter arg4;
 
     @Inject
-    @HasAutoBind
     public SimpleWithMultipleAutoBinds
         (
             @AutoBind("one") MockWithParameter arg1,

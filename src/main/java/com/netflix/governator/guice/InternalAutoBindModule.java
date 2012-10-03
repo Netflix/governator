@@ -68,15 +68,7 @@ class InternalAutoBindModule extends AbstractModule
                 continue;
             }
 
-            for ( Annotation annotation : field.getDeclaredAnnotations() )
-            {
-                AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
-                if ( autoBindProvider != null )
-                {
-                    //noinspection unchecked
-                    autoBindProvider.configureForField(binder(), annotation, field);
-                }
-            }
+            bindAnnotations(field.getDeclaredAnnotations());
         }
     }
 
@@ -89,20 +81,7 @@ class InternalAutoBindModule extends AbstractModule
                 continue;
             }
 
-            int     parameterIndex = 0;
-            for ( Annotation[] annotations : method.getParameterAnnotations() )
-            {
-                for ( Annotation annotation : annotations )
-                {
-                    AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
-                    if ( autoBindProvider != null )
-                    {
-                        //noinspection unchecked
-                        autoBindProvider.configureForMethod(binder(), annotation, method, parameterIndex);
-                    }
-                }
-                ++parameterIndex;
-            }
+            bindParameterAnnotations(method.getParameterAnnotations());
         }
     }
 
@@ -115,19 +94,27 @@ class InternalAutoBindModule extends AbstractModule
                 continue;
             }
 
-            int     parameterIndex = 0;
-            for ( Annotation[] annotations : constructor.getParameterAnnotations() )
+            bindParameterAnnotations(constructor.getParameterAnnotations());
+        }
+    }
+
+    private void bindParameterAnnotations(Annotation[][] parameterAnnotations)
+    {
+        for ( Annotation[] annotations : parameterAnnotations )
+        {
+            bindAnnotations(annotations);
+        }
+    }
+
+    private void bindAnnotations(Annotation[] annotations)
+    {
+        for ( Annotation annotation : annotations )
+        {
+            AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
+            if ( autoBindProvider != null )
             {
-                for ( Annotation annotation : annotations )
-                {
-                    AutoBindProvider autoBindProvider = getAutoBindProvider(annotation);
-                    if ( autoBindProvider != null )
-                    {
-                        //noinspection unchecked
-                        autoBindProvider.configureForConstructor(binder(), annotation, constructor, parameterIndex);
-                    }
-                }
-                ++parameterIndex;
+                //noinspection unchecked
+                autoBindProvider.configure(binder(), annotation);
             }
         }
     }
