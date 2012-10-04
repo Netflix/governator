@@ -40,7 +40,9 @@ public class TestAutoBind
                     @Override
                     public void configure(BootstrapBinder binder)
                     {
-                        binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>(){}).toInstance(provider);
+                        binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>()
+                        {
+                        }).toInstance(provider);
                     }
                 }
             )
@@ -53,15 +55,6 @@ public class TestAutoBind
     @Test
     public void     testCustom()
     {
-        final AutoBindProvider<CustomAutoBind> provider = new AutoBindProvider<CustomAutoBind>()
-        {
-            @Override
-            public void configure(Binder binder, CustomAutoBind custom)
-            {
-                binder.bind(MockInjectable.class).annotatedWith(custom).toInstance(new MockInjectable(custom.str(), custom.value()));
-            }
-        };
-
         @SuppressWarnings("RedundantCast")
         Injector injector = LifecycleInjector
             .builder()
@@ -73,7 +66,7 @@ public class TestAutoBind
                         @Override
                         public void configure(BootstrapBinder binder)
                         {
-                            binder.bind(new TypeLiteral<AutoBindProvider<CustomAutoBind>>(){}).toInstance(provider);
+                            binder.bind(new TypeLiteral<AutoBindProvider<CustomAutoBind>>(){}).to(CustomAutoBindProvider.class).asEagerSingleton();
                         }
                     }
                 )
@@ -203,5 +196,14 @@ public class TestAutoBind
         );
 
         Assert.assertEquals(injector.getInstance(SimpleAutoBind.class).getString(), "we are the music makers");
+    }
+
+    private static class CustomAutoBindProvider implements AutoBindProvider<CustomAutoBind>
+    {
+        @Override
+        public void configure(Binder binder, CustomAutoBind custom)
+        {
+            binder.bind(MockInjectable.class).annotatedWith(custom).toInstance(new MockInjectable(custom.str(), custom.value()));
+        }
     }
 }
