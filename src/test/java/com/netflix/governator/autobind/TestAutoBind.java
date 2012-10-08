@@ -40,9 +40,7 @@ public class TestAutoBind
                     @Override
                     public void configure(BootstrapBinder binder)
                     {
-                        binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>()
-                        {
-                        }).toInstance(provider);
+                        binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>(){}).toInstance(provider);
                     }
                 }
             )
@@ -60,16 +58,16 @@ public class TestAutoBind
             .builder()
             .ignoringAutoBindClasses(Lists.newArrayList((Class<?>)SimpleAutoBind.class, (Class<?>)SimpleWithMultipleAutoBinds.class, (Class<?>)SimpleWithFieldAutoBind.class, (Class<?>)SimpleWithMethodAutoBind.class))
             .withBootstrapModule
-                (
-                    new BootstrapModule()
+            (
+                new BootstrapModule()
+                {
+                    @Override
+                    public void configure(BootstrapBinder binder)
                     {
-                        @Override
-                        public void configure(BootstrapBinder binder)
-                        {
-                            binder.bind(new TypeLiteral<AutoBindProvider<CustomAutoBind>>(){}).to(CustomAutoBindProvider.class).asEagerSingleton();
-                        }
+                        binder.bind(new TypeLiteral<AutoBindProvider<CustomAutoBind>>(){}).to(CustomAutoBindProvider.class).asEagerSingleton();
                     }
-                )
+                }
+            )
             .usingBasePackages("com.netflix.governator.autobind")
             .createInjector();
         ObjectWithCustomAutoBind instance = injector.getInstance(ObjectWithCustomAutoBind.class);
@@ -93,16 +91,16 @@ public class TestAutoBind
             .builder()
             .ignoringAutoBindClasses(Collections.<Class<?>>singleton(ObjectWithCustomAutoBind.class))
             .withBootstrapModule
-                (
-                    new BootstrapModule()
+            (
+                new BootstrapModule()
+                {
+                    @Override
+                    public void configure(BootstrapBinder binder)
                     {
-                        @Override
-                        public void configure(BootstrapBinder binder)
-                        {
-                            binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>(){}).toInstance(provider);
-                        }
+                        binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>(){}).toInstance(provider);
                     }
-                )
+                }
+            )
             .usingBasePackages("com.netflix.governator.autobind")
             .createInjector();
         SimpleWithMultipleAutoBinds instance = injector.getInstance(SimpleWithMultipleAutoBinds.class);
@@ -128,18 +126,18 @@ public class TestAutoBind
             .builder()
             .ignoringAutoBindClasses(Collections.<Class<?>>singleton(ObjectWithCustomAutoBind.class))
             .withBootstrapModule
-                (
-                    new BootstrapModule()
+            (
+                new BootstrapModule()
+                {
+                    @Override
+                    public void configure(BootstrapBinder binder)
                     {
-                        @Override
-                        public void configure(BootstrapBinder binder)
+                        binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>()
                         {
-                            binder.bind(new TypeLiteral<AutoBindProvider<AutoBind>>()
-                            {
-                            }).toInstance(provider);
-                        }
+                        }).toInstance(provider);
                     }
-                )
+                }
+            )
             .usingBasePackages("com.netflix.governator.autobind")
             .createInjector();
         SimpleWithFieldAutoBind instance = injector.getInstance(SimpleWithFieldAutoBind.class);
