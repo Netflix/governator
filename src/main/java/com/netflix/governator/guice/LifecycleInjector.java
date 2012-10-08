@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
@@ -65,6 +66,8 @@ public class LifecycleInjector
     {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
+        annotations.add(Inject.class);
+        annotations.add(javax.inject.Inject.class);
         return new ClasspathScanner(basePackages, annotations);
     }
 
@@ -112,7 +115,7 @@ public class LifecycleInjector
         if ( !ignoreAllClasses )
         {
             Collection<Class<?>>    localIgnoreClasses = Sets.newHashSet(ignoreClasses);
-            localModules.add(new InternalAutoBindModule(scanner, localIgnoreClasses));
+            localModules.add(new InternalAutoBindModule(injector, scanner, localIgnoreClasses));
         }
 
         return createChildInjector(localModules);

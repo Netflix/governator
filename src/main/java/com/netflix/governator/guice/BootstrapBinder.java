@@ -215,5 +215,9 @@ public class BootstrapBinder implements Binder
         {
             log.warn("You should use the specialized binding method for ConfigurationProviders");
         }
+        if ( LifecycleListener.class.isAssignableFrom(clazz) )
+        {
+            log.warn("You should use the specialized binding method for LifecycleListener");
+        }
     }
 }

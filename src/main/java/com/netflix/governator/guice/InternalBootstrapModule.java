@@ -64,7 +64,7 @@ class InternalBootstrapModule extends AbstractModule
 
     private void bindLoaders(BootstrapBinder binder)
     {
-        for ( Class<?> clazz : scanner.get() )
+        for ( Class<?> clazz : scanner.getClasses() )
         {
             if ( clazz.isAnnotationPresent(AutoBindSingleton.class) && ConfigurationProvider.class.isAssignableFrom(clazz) )
             {
