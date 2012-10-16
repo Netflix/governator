@@ -23,15 +23,19 @@ package com.netflix.governator.guice;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
+import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
+import com.netflix.governator.lifecycle.warmup.DAGManager;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,7 +58,7 @@ class InternalLifecycleModule implements Module
             new TypeListener()
             {
                 @Override
-                public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
+                public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter)
                 {
                     encounter.register
                     (
@@ -74,6 +78,8 @@ class InternalLifecycleModule implements Module
                                     Class<?> clazz = obj.getClass();
                                     LifecycleMethods methods = getLifecycleMethods(clazz);
 
+                                    addDependencies(manager, obj, type, methods);
+
                                     if ( methods.hasLifecycleAnnotations() )
                                     {
                                         try
@@ -92,6 +98,19 @@ class InternalLifecycleModule implements Module
                 }
             }
         );
+    }
+
+    private void addDependencies(LifecycleManager manager, Object obj, TypeLiteral<?> type, LifecycleMethods methods)
+    {
+        DAGManager              dagManager = manager.getDAGManager();
+        dagManager.addObjectMapping(type, obj, methods);
+
+        Key<?>                  key = Key.get(type);
+        List<Dependency<?>>     dependencies = Dependency.get(key).getInjectionPoint().getDependencies();
+        for ( Dependency<?> dependency : dependencies )
+        {
+            dagManager.addDependency(type, dependency.getKey().getTypeLiteral());
+        }
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)

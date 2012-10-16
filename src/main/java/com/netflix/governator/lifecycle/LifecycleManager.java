@@ -29,6 +29,7 @@ import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
+import com.netflix.governator.lifecycle.warmup.DAGManager;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -74,6 +75,7 @@ public class LifecycleManager implements Closeable
     private final ConfigurationProvider configurationProvider;
     private final Collection<LifecycleListener> listeners;
     private final ValidatorFactory factory;
+    private final DAGManager dagManager = new DAGManager();
 
     private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
 
@@ -320,6 +322,11 @@ public class LifecycleManager implements Closeable
         {
             throw exception;
         }
+    }
+
+    public DAGManager getDAGManager()
+    {
+        return dagManager;
     }
 
     void setState(Object obj, LifecycleState state)
