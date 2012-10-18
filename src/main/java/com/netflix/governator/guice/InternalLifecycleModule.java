@@ -23,12 +23,12 @@ package com.netflix.governator.guice;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
-import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
@@ -105,11 +105,22 @@ class InternalLifecycleModule implements Module
         DAGManager              dagManager = manager.getDAGManager();
         dagManager.addObjectMapping(type, obj, methods);
 
-        Key<?>                  key = Key.get(type);
-        List<Dependency<?>>     dependencies = Dependency.get(key).getInjectionPoint().getDependencies();
-        for ( Dependency<?> dependency : dependencies )
+        applyInjectionPoint(InjectionPoint.forConstructorOf(type), dagManager, type);
+        for ( InjectionPoint injectionPoint : InjectionPoint.forInstanceMethodsAndFields(type) )
         {
-            dagManager.addDependency(type, dependency.getKey().getTypeLiteral());
+            applyInjectionPoint(injectionPoint, dagManager, type);
+        }
+    }
+
+    private void applyInjectionPoint(InjectionPoint injectionPoint, DAGManager dagManager, TypeLiteral<?> type)
+    {
+        if ( injectionPoint != null )
+        {
+            List<Dependency<?>> dependencies = injectionPoint.getDependencies();
+            for ( Dependency<?> dependency : dependencies )
+            {
+                dagManager.addDependency(type, dependency.getKey().getTypeLiteral());
+            }
         }
     }
 

@@ -3,9 +3,7 @@ package com.netflix.governator.lifecycle.warmup;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.lifecycle.LifecycleMethods;
-import java.util.Collection;
 import java.util.Map;
 
 public class DAGManager
@@ -25,45 +23,43 @@ public class DAGManager
         dependencies.put(objectKey, dependencyKey);
     }
 
-    Tree        buildTree()
+    public DependencyNode buildTree()
     {
-        Tree            root = new Tree(new Dependency("", WarmupState.WARMED_UP));
+        DependencyNode root = new DependencyNode(new Object());
 
-        for ( Object object : dependencies.keySet() )
+        for ( Object objectKey : dependencies.keySet() )
         {
-            Object  objectKey = keyToObject.get(object);
-            if ( objectKey == null )
-            {
-                // TODO
-            }
-
-            internalBuildTree(root, dependencies.get(objectKey));
+            internalBuildTree(root, objectKey);
         }
 
         return root;
     }
 
-    void        clear()
+    public Object getObject(Object key)
+    {
+        return keyToObject.get(key);
+    }
+
+    public LifecycleMethods getLifecycleMethods(Object key)
+    {
+        return keyToLifecycle.get(key);
+    }
+
+    public void        clear()
     {
         keyToObject.clear();
         keyToLifecycle.clear();
         dependencies.clear();
     }
 
-    private void internalBuildTree(Tree parent, Collection<Object> nodeDependencies)
+    private void internalBuildTree(DependencyNode parent, Object objectKey)
     {
-        for ( Object d : nodeDependencies )
-        {
-            LifecycleMethods    methods = keyToLifecycle.get(d);
-            if ( methods == null )
-            {
-                // TODO
-            }
-            boolean             hasWarmups = (methods.methodsFor(WarmUp.class).size() > 0);
+        DependencyNode      node = new DependencyNode(objectKey);
+        parent.addChild(node);
 
-            Tree                child = new Tree(new Dependency(d, hasWarmups ? WarmupState.NOT_WARMED_UP : WarmupState.WARMED_UP));
-            internalBuildTree(child, dependencies.get(d));
-            parent.addChild(child);
+        for ( Object key : dependencies.get(objectKey) )
+        {
+            internalBuildTree(node, key);
         }
     }
 }

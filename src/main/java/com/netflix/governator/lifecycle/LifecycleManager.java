@@ -26,14 +26,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.governator.annotations.Configuration;
-import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
-import com.netflix.governator.lifecycle.warmup.DAGManager;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
+import com.netflix.governator.lifecycle.warmup.DAGManager;
+import com.netflix.governator.lifecycle.warmup.DependencyNode;
+import com.netflix.governator.lifecycle.warmup.SetStateMixin;
+import com.netflix.governator.lifecycle.warmup.WarmUpManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -57,7 +59,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 // TODO - should the methods really be synchronized? Maybe just sync on the object being added
@@ -76,8 +77,6 @@ public class LifecycleManager implements Closeable
     private final Collection<LifecycleListener> listeners;
     private final ValidatorFactory factory;
     private final DAGManager dagManager = new DAGManager();
-
-    private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -119,14 +118,12 @@ public class LifecycleManager implements Closeable
         final Object                obj;
         final Collection<Method>    preDestroyMethods;
         final Collection<Method>    warmUpMethods;
-        final Collection<Method>    coolDownMethods;
 
-        private InvokeRecord(Object obj, Collection<Method> preDestroyMethods, Collection<Method> warmUpMethods, Collection<Method> coolDownMethods)
+        private InvokeRecord(Object obj, Collection<Method> preDestroyMethods, Collection<Method> warmUpMethods)
         {
             this.obj = obj;
             this.preDestroyMethods = preDestroyMethods;
             this.warmUpMethods = warmUpMethods;
-            this.coolDownMethods = coolDownMethods;
         }
     }
 
@@ -158,16 +155,6 @@ public class LifecycleManager implements Closeable
     public Collection<LifecycleListener> getListeners()
     {
         return listeners;
-    }
-
-    /**
-     * Set the maximum time to wait for cool downs to complete. The default is 1 minute
-     *
-     * @param maxCoolDownMs max cool down in milliseconds
-     */
-    public void setMaxCoolDownMs(long maxCoolDownMs)
-    {
-        this.maxCoolDownMs = maxCoolDownMs;
     }
 
     /**
@@ -263,15 +250,6 @@ public class LifecycleManager implements Closeable
         {
             try
             {
-                doCoolDown();
-            }
-            catch ( Exception e )
-            {
-                log.error("While cooling down instances", e);
-            }
-
-            try
-            {
                 stopInstances();
             }
             catch ( Exception e )
@@ -329,19 +307,19 @@ public class LifecycleManager implements Closeable
         return dagManager;
     }
 
-    void setState(Object obj, LifecycleState state)
+    @VisibleForTesting
+    protected int getWarmUpThreadQty()
+    {
+        return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+    }
+
+    private void setState(Object obj, LifecycleState state)
     {
         objectStates.put(new StateKey(obj), state);
         for ( LifecycleListener listener : listeners )
         {
             listener.stateChanged(obj, state);
         }
-    }
-
-    @VisibleForTesting
-    protected int getWarmUpThreadQty()
-    {
-        return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
     }
 
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
@@ -363,54 +341,25 @@ public class LifecycleManager implements Closeable
         return exception;
     }
 
-    private void doCoolDown() throws Exception
-    {
-        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.PRE_DESTROYING, getWarmUpThreadQty());
-
-        for ( InvokeRecord record : getReversed(invokings) )
-        {
-            if ( record.coolDownMethods.size() > 0 )
-            {
-                setState(record.obj, LifecycleState.COOLING_DOWN);
-                log.debug(String.format("Cooling down %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
-
-                for ( Method m : record.coolDownMethods )
-                {
-                    manager.add(record.obj, m);
-                }
-            }
-        }
-
-        if ( !manager.runAllAndWait(maxCoolDownMs, TimeUnit.MILLISECONDS) )
-        {
-            log.error("Some cool down methods did not complete before the timeout of " + maxCoolDownMs + " ms");
-        }
-    }
-
     private void doWarmUp() throws Exception
     {
         for ( StateKey key : objectStates.keySet() )
         {
-            objectStates.put(key, LifecycleState.ACTIVE);
+            objectStates.put(key, LifecycleState.PRE_WARMING_UP);
         }
 
-        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.ACTIVE, getWarmUpThreadQty());
-
-        for ( InvokeRecord record : invokings )
+        SetStateMixin       setState = new SetStateMixin()
         {
-            if ( record.warmUpMethods.size() > 0 )
+            @Override
+            public void setState(Object obj, LifecycleState state)
             {
-                setState(record.obj, LifecycleState.WARMING_UP);
-                log.debug(String.format("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
-
-                for ( Method m : record.warmUpMethods )
-                {
-                    manager.add(record.obj, m);
-                }
+                LifecycleManager.this.setState(obj, state);
             }
-        }
+        };
+        WarmUpManager       manager = new WarmUpManager(this, setState, getWarmUpThreadQty());
+        manager.warmUp();
 
-        manager.runAll();
+        dagManager.clear();
     }
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
@@ -439,10 +388,9 @@ public class LifecycleManager implements Closeable
 
         Collection<Method>      preDestroyMethods = methods.methodsFor(PreDestroy.class);
         Collection<Method>      warmUpMethods = methods.methodsFor(WarmUp.class);
-        Collection<Method>      coolDownMethods = methods.methodsFor(CoolDown.class);
-        if ( (preDestroyMethods.size() > 0) || (warmUpMethods.size() > 0) || (coolDownMethods.size() > 0) )
+        if ( (preDestroyMethods.size() > 0) || (warmUpMethods.size() > 0) )
         {
-            invokings.add(new InvokeRecord(obj, preDestroyMethods, warmUpMethods, coolDownMethods));
+            invokings.add(new InvokeRecord(obj, preDestroyMethods, warmUpMethods));
         }
     }
 
