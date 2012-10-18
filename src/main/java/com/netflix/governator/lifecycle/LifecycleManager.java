@@ -309,6 +309,12 @@ public class LifecycleManager implements Closeable
         return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
     }
 
+    private void clear()
+    {
+        dagManager.clear();
+        objectStates.clear();
+    }
+
     private void setState(Object obj, LifecycleState state)
     {
         objectStates.put(new StateKey(obj), state);
@@ -354,6 +360,14 @@ public class LifecycleManager implements Closeable
         };
         WarmUpManager       manager = new WarmUpManager(this, setState, getWarmUpThreadQty());
         manager.warmUp();
+
+        for ( StateKey key : objectStates.keySet() )
+        {
+            if ( objectStates.get(key) != LifecycleState.ERROR )
+            {
+                objectStates.put(key, LifecycleState.ACTIVE);
+            }
+        }
     }
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
@@ -518,12 +532,6 @@ public class LifecycleManager implements Closeable
                 }
             );
         return Joiner.on(".").join(transformed);
-    }
-
-    private void clear()
-    {
-        dagManager.clear();
-        objectStates.clear();
     }
 
     private void initializeObjectPostStart(Object obj, LifecycleMethods methods) throws ValidationException, IllegalAccessException, InvocationTargetException

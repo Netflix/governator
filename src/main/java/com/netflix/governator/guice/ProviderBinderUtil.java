@@ -23,22 +23,32 @@ class ProviderBinderUtil
         binder.bind(providedType)
             .toProvider
             (
-                new com.google.inject.Provider()
-                {
-                    @Inject
-                    private Injector injector;
-
-                    @Override
-                    public Object get()
-                    {
-                        Provider provider = injector.getInstance(clazz);
-                        return provider.get();
-                    }
-                }
+                new MyProvider(clazz)
             )
             .in(scope);
     }
     private ProviderBinderUtil()
     {
+    }
+
+    private static class MyProvider implements com.google.inject.Provider
+    {
+        private final Class<? extends Provider> clazz;
+
+        @Inject
+        private Injector injector;
+
+        @Inject
+        public MyProvider(Class<? extends Provider> clazz)
+        {
+            this.clazz = clazz;
+        }
+
+        @Override
+        public Object get()
+        {
+            Provider provider = injector.getInstance(clazz);
+            return provider.get();
+        }
     }
 }

@@ -61,7 +61,7 @@ public class TestLifecycleManager
     public void     testSimple() throws Exception
     {
         LifecycleManager    manager = new LifecycleManager();
-        manager.start();
+        manager.internalStart();
 
         SimpleObject        simpleObject = new SimpleObject();
 
