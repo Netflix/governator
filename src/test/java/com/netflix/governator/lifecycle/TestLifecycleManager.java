@@ -58,29 +58,6 @@ public class TestLifecycleManager
     }
 
     @Test
-    public void     testSimple() throws Exception
-    {
-        LifecycleManager    manager = new LifecycleManager();
-        manager.internalStart();
-
-        SimpleObject        simpleObject = new SimpleObject();
-
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.LATENT);
-        Assert.assertEquals(simpleObject.startCount.get(), 0);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
-
-        manager.add(simpleObject);
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.ACTIVE);
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
-
-        manager.close();
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.LATENT);
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 1);
-    }
-
-    @Test
     public void     testSimpleContainer() throws Exception
     {
         LifecycleManager    manager = new LifecycleManager();
