@@ -26,20 +26,28 @@ public class WarmUpManager
         this.nThreads = nThreads;
     }
 
-    public void warmUp() throws InterruptedException
+    public void warmUp(long maxMs) throws InterruptedException
     {
+        long                startMs = System.currentTimeMillis();
         DependencyNode      root = lifecycleManager.getDAGManager().buildTree();
         ExecutorService     service = Executors.newFixedThreadPool(nThreads, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("GovernatorWarmUpManager-%d").build());
         try
         {
             for(;;)
             {
+                long        elapsed = System.currentTimeMillis() - startMs;
+                long        thisWait = maxMs - elapsed;
+                if ( thisWait <= 0 )
+                {
+                    break;  // TODO
+                }
+
                 long        localUpdateCount = getUpdateCount();
                 if ( internalIterator(root, service) )
                 {
                     break;
                 }
-                waitForUpdateCountChange(localUpdateCount);
+                waitForUpdateCountChange(localUpdateCount, startMs, maxMs);
             }
         }
         finally
@@ -144,12 +152,17 @@ public class WarmUpManager
         return updateCount;
     }
 
-    private synchronized void waitForUpdateCountChange(long localUpdateCount) throws InterruptedException
+    private synchronized void waitForUpdateCountChange(long localUpdateCount, long startMs, long maxMs) throws InterruptedException
     {
-        // TODO max wait
         while ( localUpdateCount == updateCount )
         {
-            wait();
+            long        elapsed = System.currentTimeMillis() - startMs;
+            long        thisWait = maxMs - elapsed;
+            if ( thisWait <= 0 )
+            {
+                break;
+            }
+            wait(thisWait);
         }
     }
 

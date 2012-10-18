@@ -59,6 +59,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 // TODO - should the methods really be synchronized? Maybe just sync on the object being added
@@ -225,11 +226,17 @@ public class LifecycleManager implements Closeable
      */
     public void start() throws Exception
     {
+        start(0, null);
+    }
+
+    public void start(long maxWait, TimeUnit unit) throws Exception
+    {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
 
         validate();
 
-        doWarmUp();
+        long        maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
+        doWarmUp(maxMs);
 
         configurationDocumentation.output(log);
         configurationDocumentation.clear();
@@ -343,7 +350,7 @@ public class LifecycleManager implements Closeable
         return exception;
     }
 
-    private void doWarmUp() throws Exception
+    private void doWarmUp(long maxMs) throws Exception
     {
         for ( StateKey key : objectStates.keySet() )
         {
@@ -359,7 +366,7 @@ public class LifecycleManager implements Closeable
             }
         };
         WarmUpManager       manager = new WarmUpManager(this, setState, getWarmUpThreadQty());
-        manager.warmUp();
+        manager.warmUp(maxMs);
 
         for ( StateKey key : objectStates.keySet() )
         {
