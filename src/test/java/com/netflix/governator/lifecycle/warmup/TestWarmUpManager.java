@@ -24,8 +24,8 @@ public class TestWarmUpManager
         injector.getInstance(Dag1.A.class);
         injector.getInstance(LifecycleManager.class).start();
 
-        Assert.assertEquals(Dag1.recorder.get().size(), 3);
-        Assert.assertEquals(Dag1.recorder.get().get(2), "A");
+        assertOrdering(Dag1.recorder, "A", "B");
+        assertOrdering(Dag1.recorder, "A", "C");
     }
 
     @Test
@@ -37,19 +37,18 @@ public class TestWarmUpManager
         injector.getInstance(Dag2.A3.class);
         injector.getInstance(LifecycleManager.class).start();
 
-        Assert.assertEquals(Dag2.recorder.get().size(), 10);
-        for ( int i = 0; i < 3; ++i )
-        {
-            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("C"), Dag2.recorder.get().toString());
-        }
-        for ( int i = 3; i < 7; ++i )
-        {
-            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("B"), Dag2.recorder.get().toString());
-        }
-        for ( int i = 7; i < 10; ++i )
-        {
-            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("A"), Dag2.recorder.get().toString());
-        }
+        assertOrdering(Dag2.recorder, "A1", "B1");
+        assertOrdering(Dag2.recorder, "B1", "C1");
+        assertOrdering(Dag2.recorder, "A1", "B2");
+        assertOrdering(Dag2.recorder, "B2", "C1");
+        assertOrdering(Dag2.recorder, "A2", "B2");
+        assertOrdering(Dag2.recorder, "B2", "C2");
+        assertOrdering(Dag2.recorder, "A2", "B3");
+        assertOrdering(Dag2.recorder, "B3", "C2");
+        assertOrdering(Dag2.recorder, "A3", "B3");
+        assertOrdering(Dag2.recorder, "B3", "C3");
+        assertOrdering(Dag2.recorder, "A3", "B4");
+        assertOrdering(Dag2.recorder, "B4", "C3");
     }
 
     @Test
@@ -59,10 +58,19 @@ public class TestWarmUpManager
         injector.getInstance(Dag3.A.class);
         injector.getInstance(LifecycleManager.class).start();
 
-        Assert.assertEquals(Dag3.recorder.get().size(), 4);
-        Assert.assertEquals(Dag3.recorder.get().get(0), "D");
-        Assert.assertTrue(Dag3.recorder.get().get(1).equals("B") || Dag3.recorder.get().get(1).equals("C"), Dag3.recorder.get().get(1));
-        Assert.assertTrue(Dag3.recorder.get().get(2).equals("B") || Dag3.recorder.get().get(2).equals("C"), Dag3.recorder.get().get(2));
-        Assert.assertEquals(Dag3.recorder.get().get(3), "A");
+        assertOrdering(Dag3.recorder, "A", "C");
+        assertOrdering(Dag3.recorder, "C", "D");
+        assertOrdering(Dag3.recorder, "A", "D");
+        assertOrdering(Dag3.recorder, "B", "D");
+    }
+
+    private void        assertOrdering(Recorder recorder, String base, String dependency)
+    {
+        int     baseIndex = recorder.get().indexOf(base);
+        int     dependencyIndex = recorder.get().indexOf(dependency);
+
+        Assert.assertTrue(baseIndex >= 0);
+        Assert.assertTrue(dependencyIndex >= 0);
+        Assert.assertTrue(baseIndex > dependencyIndex, "baseIndex: " + baseIndex + " - dependencyIndex: " + dependencyIndex);
     }
 }
