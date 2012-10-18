@@ -6,7 +6,6 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import java.util.Arrays;
 
 public class TestWarmUpManager
 {
@@ -41,15 +40,15 @@ public class TestWarmUpManager
         Assert.assertEquals(Dag2.recorder.get().size(), 10);
         for ( int i = 0; i < 3; ++i )
         {
-            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("C"));
+            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("C"), Dag2.recorder.get().toString());
         }
         for ( int i = 3; i < 7; ++i )
         {
-            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("B"));
+            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("B"), Dag2.recorder.get().toString());
         }
         for ( int i = 7; i < 10; ++i )
         {
-            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("A"));
+            Assert.assertTrue(Dag2.recorder.get().get(i).startsWith("A"), Dag2.recorder.get().toString());
         }
     }
 

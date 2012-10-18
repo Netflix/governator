@@ -61,11 +61,7 @@ public class WarmUpManager
                 // TODO
             }
             LifecycleMethods        lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
-            if ( lifecycleMethods != null )
-            {
-                Collection<Method>  methods = lifecycleMethods.methodsFor(WarmUp.class);
-                warmupObject(service, obj, methods);
-            }
+            warmupObject(service, obj, lifecycleMethods);
         }
 
         for ( DependencyNode child : node.getChildren() )
@@ -99,9 +95,10 @@ public class WarmUpManager
         return true;
     }
 
-    private void warmupObject(ExecutorService service, final Object obj, final Collection<Method> warmupMethodsForObject)
+    private void warmupObject(ExecutorService service, final Object obj, LifecycleMethods lifecycleMethods)
     {
-        if ( (warmupMethodsForObject == null) || (warmupMethodsForObject.size() == 0) )
+        final Collection<Method>  methods = (lifecycleMethods != null) ? lifecycleMethods.methodsFor(WarmUp.class) : null;
+        if ( (methods == null) || (methods.size() == 0) )
         {
             changeState(obj, LifecycleState.ACTIVE);
             return;
@@ -119,7 +116,7 @@ public class WarmUpManager
                 {
                     try
                     {
-                        for ( Method method : warmupMethodsForObject )
+                        for ( Method method : methods )
                         {
                             method.invoke(obj);
                         }

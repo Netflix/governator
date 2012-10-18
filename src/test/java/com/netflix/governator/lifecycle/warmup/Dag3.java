@@ -9,7 +9,7 @@ public class Dag3
 
     /*
         Mix of classes with/without warmups and
-        dependencies what cross groupings
+        dependencies that cross tiers
 
 
                   C
