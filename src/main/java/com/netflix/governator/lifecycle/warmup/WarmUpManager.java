@@ -26,8 +26,9 @@ public class WarmUpManager
         this.nThreads = nThreads;
     }
 
-    public void warmUp(long maxMs) throws InterruptedException
+    public boolean warmUp(long maxMs) throws InterruptedException
     {
+        boolean             success = true;
         long                startMs = System.currentTimeMillis();
         DependencyNode      root = lifecycleManager.getDAGManager().buildTree();
         ExecutorService     service = Executors.newFixedThreadPool(nThreads, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("GovernatorWarmUpManager-%d").build());
@@ -39,7 +40,8 @@ public class WarmUpManager
                 long        thisWait = maxMs - elapsed;
                 if ( thisWait <= 0 )
                 {
-                    break;  // TODO
+                    success = false;
+                    break;
                 }
 
                 long        localUpdateCount = getUpdateCount();
@@ -54,12 +56,15 @@ public class WarmUpManager
         {
             service.shutdownNow();
         }
+
+        return success;
     }
 
     private boolean internalIterator(DependencyNode node, ExecutorService service)
     {
-        boolean     needsWarmup = (getNodeState(node) == LifecycleState.PRE_WARMING_UP);
-        boolean     isDone = !needsWarmup;
+        LifecycleState  nodeState = getNodeState(node);
+        boolean         needsWarmup = (nodeState == LifecycleState.PRE_WARMING_UP);
+        boolean         isDone = !needsWarmup && (nodeState != LifecycleState.WARMING_UP);
 
         if ( needsWarmup && isReadyToWarmUp(node) )
         {
@@ -67,6 +72,7 @@ public class WarmUpManager
             if ( obj == null )
             {
                 // TODO
+                throw new RuntimeException();
             }
             LifecycleMethods        lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
             warmupObject(service, obj, lifecycleMethods);

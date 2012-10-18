@@ -29,7 +29,6 @@ public class Dag1
         public void warmUp() throws InterruptedException
         {
             recorder.record("A");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -44,7 +43,6 @@ public class Dag1
         public void warmUp() throws InterruptedException
         {
             recorder.record("B");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -59,7 +57,6 @@ public class Dag1
         public void warmUp() throws InterruptedException
         {
             recorder.record("C");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 }

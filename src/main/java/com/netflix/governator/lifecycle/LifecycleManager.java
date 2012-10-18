@@ -229,14 +229,14 @@ public class LifecycleManager implements Closeable
         start(0, null);
     }
 
-    public void start(long maxWait, TimeUnit unit) throws Exception
+    public boolean start(long maxWait, TimeUnit unit) throws Exception
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
 
         validate();
 
         long        maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
-        doWarmUp(maxMs);
+        boolean     success = doWarmUp(maxMs);
 
         configurationDocumentation.output(log);
         configurationDocumentation.clear();
@@ -244,6 +244,8 @@ public class LifecycleManager implements Closeable
         clear();
 
         state.set(State.STARTED);
+
+        return success;
     }
 
     @Override
@@ -350,7 +352,7 @@ public class LifecycleManager implements Closeable
         return exception;
     }
 
-    private void doWarmUp(long maxMs) throws Exception
+    private boolean doWarmUp(long maxMs) throws Exception
     {
         for ( StateKey key : objectStates.keySet() )
         {
@@ -366,7 +368,7 @@ public class LifecycleManager implements Closeable
             }
         };
         WarmUpManager       manager = new WarmUpManager(this, setState, getWarmUpThreadQty());
-        manager.warmUp(maxMs);
+        boolean             success = manager.warmUp(maxMs);
 
         for ( StateKey key : objectStates.keySet() )
         {
@@ -375,6 +377,8 @@ public class LifecycleManager implements Closeable
                 objectStates.put(key, LifecycleState.ACTIVE);
             }
         }
+
+        return success;
     }
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception

@@ -36,7 +36,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("C1");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -51,7 +50,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("C2");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -66,7 +64,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("C3");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -82,7 +79,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("B1");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -98,7 +94,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("B2");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -114,7 +109,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("B3");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -130,7 +124,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("B4");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -146,7 +139,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("A1");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -162,7 +154,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("A2");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 
@@ -178,7 +169,6 @@ public class Dag2
         public void warmUp() throws InterruptedException
         {
             recorder.record("A3");
-            Thread.sleep((int)(5 * Math.random()));
         }
     }
 }
