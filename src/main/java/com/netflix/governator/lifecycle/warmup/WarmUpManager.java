@@ -35,7 +35,7 @@ public class WarmUpManager
             for(;;)
             {
                 long        localUpdateCount = getUpdateCount();
-                if ( !internalIterator(root, service) )
+                if ( internalIterator(root, service) )
                 {
                     break;
                 }
@@ -50,8 +50,10 @@ public class WarmUpManager
 
     private boolean internalIterator(DependencyNode node, ExecutorService service)
     {
-        boolean     result = false;
-        if ( (getNodeState(node) == LifecycleState.PRE_WARMING_UP) && isReadyToWarmUp(node) )
+        boolean     needsWarmup = (getNodeState(node) == LifecycleState.PRE_WARMING_UP);
+        boolean     isDone = !needsWarmup;
+
+        if ( needsWarmup && isReadyToWarmUp(node) )
         {
             Object                  obj = lifecycleManager.getDAGManager().getObject(node.getKey());
             if ( obj == null )
@@ -63,16 +65,17 @@ public class WarmUpManager
             {
                 Collection<Method>  methods = lifecycleMethods.methodsFor(WarmUp.class);
                 warmupObject(service, obj, methods);
-                result = true;
             }
         }
 
         for ( DependencyNode child : node.getChildren() )
         {
-            boolean     recurseResult = internalIterator(child, service);
-            result = result || recurseResult;
+            if ( !internalIterator(child, service) )
+            {
+                isDone = false;
+            }
         }
-        return result;
+        return isDone;
     }
 
     private boolean isReadyToWarmUp(DependencyNode node)

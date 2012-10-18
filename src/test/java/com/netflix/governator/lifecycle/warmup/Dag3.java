@@ -3,25 +3,31 @@ package com.netflix.governator.lifecycle.warmup;
 import com.google.inject.Inject;
 import com.netflix.governator.annotations.WarmUp;
 
-public class Dag1
+public class Dag3
 {
     public static final Recorder recorder = new Recorder();
 
     /*
-        3 Classes all with warmups
+        Mix of classes with/without warmups and
+        dependencies what cross groupings
 
+
+                  C
+                <      >
+            BnW
+          <
+        A       ==>       D
+          <
             B
-          <
-        A
-          <
-            C
+                <      >
+                  CnW
      */
 
     @SuppressWarnings("UnusedParameters")
     public static class A
     {
         @Inject
-        public A(B b, C c)
+        public A(BnW bnw, B b, D d)
         {
         }
 
@@ -33,10 +39,11 @@ public class Dag1
         }
     }
 
+    @SuppressWarnings("UnusedParameters")
     public static class B
     {
         @Inject
-        public B()
+        public B(CnW cnw)
         {
         }
 
@@ -48,10 +55,20 @@ public class Dag1
         }
     }
 
+    @SuppressWarnings("UnusedParameters")
+    public static class BnW
+    {
+        @Inject
+        public BnW(C c)
+        {
+        }
+    }
+
+    @SuppressWarnings("UnusedParameters")
     public static class C
     {
         @Inject
-        public C()
+        public C(D d)
         {
         }
 
@@ -59,6 +76,30 @@ public class Dag1
         public void warmUp() throws InterruptedException
         {
             recorder.record("C");
+            Thread.sleep((int)(5 * Math.random()));
+        }
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    public static class CnW
+    {
+        @Inject
+        public CnW(D d)
+        {
+        }
+    }
+
+    public static class D
+    {
+        @Inject
+        public D()
+        {
+        }
+
+        @WarmUp
+        public void warmUp() throws InterruptedException
+        {
+            recorder.record("D");
             Thread.sleep((int)(5 * Math.random()));
         }
     }
