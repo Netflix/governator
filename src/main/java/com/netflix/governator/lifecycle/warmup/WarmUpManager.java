@@ -5,6 +5,8 @@ import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.LifecycleState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -12,6 +14,7 @@ import java.util.concurrent.Executors;
 
 public class WarmUpManager
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final LifecycleManager lifecycleManager;
     private final SetStateMixin setState;
     private final int nThreads;
@@ -54,6 +57,7 @@ public class WarmUpManager
         }
         finally
         {
+            logIssues(root);
             service.shutdownNow();
         }
 
@@ -71,11 +75,13 @@ public class WarmUpManager
             Object                  obj = lifecycleManager.getDAGManager().getObject(node.getKey());
             if ( obj == null )
             {
-                // TODO
-                throw new RuntimeException();
+                log.error(String.format("Could not find lifecycle-registered object for key. Ignoring object. Key: %s - KeyClass: %s", node.getKey(), node.getKey().getClass().getName()));
             }
-            LifecycleMethods        lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
-            warmupObject(service, obj, lifecycleMethods);
+            else
+            {
+                LifecycleMethods        lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
+                warmUpObject(service, obj, lifecycleMethods);
+            }
         }
 
         for ( DependencyNode child : node.getChildren() )
@@ -109,7 +115,7 @@ public class WarmUpManager
         return true;
     }
 
-    private void warmupObject(ExecutorService service, final Object obj, LifecycleMethods lifecycleMethods)
+    private void warmUpObject(ExecutorService service, final Object obj, LifecycleMethods lifecycleMethods)
     {
         final Collection<Method>  methods = (lifecycleMethods != null) ? lifecycleMethods.methodsFor(WarmUp.class) : null;
         if ( (methods == null) || (methods.size() == 0) )
@@ -117,8 +123,6 @@ public class WarmUpManager
             changeState(obj, LifecycleState.ACTIVE);
             return;
         }
-
-        // TODO - enforce a max time for object to warmUp
 
         setState.setState(obj, LifecycleState.WARMING_UP);
         service.submit
@@ -138,7 +142,7 @@ public class WarmUpManager
                     }
                     catch ( Throwable e )
                     {
-                        // TODO
+                        log.error(String.format("Error warming up object. Object: (%s) - Object Class: (%s)", obj, obj.getClass().getName()), e);
                         changeState(obj, LifecycleState.ERROR);
                     }
                 }
@@ -176,5 +180,20 @@ public class WarmUpManager
     {
         Object obj = lifecycleManager.getDAGManager().getObject(node.getKey());
         return (obj != null) ? lifecycleManager.getState(obj) : LifecycleState.LATENT;
+    }
+
+    private void logIssues(DependencyNode node)
+    {
+        LifecycleState      state = getNodeState(node);
+        if ( (state != LifecycleState.ACTIVE) && (state != LifecycleState.LATENT) )
+        {
+            Object              obj = lifecycleManager.getDAGManager().getObject(node.getKey());
+            log.error(String.format("Object did not complete warmup before timeout. Object: (%s) - Object Class: (%s)", obj, obj.getClass().getName()));
+        }
+
+        for ( DependencyNode child : node.getChildren() )
+        {
+            logIssues(child);
+        }
     }
 }
