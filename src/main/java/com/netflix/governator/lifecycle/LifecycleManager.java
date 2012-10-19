@@ -220,7 +220,8 @@ public class LifecycleManager implements Closeable
     }
 
     /**
-     * The manager MUST be started
+     * The manager MUST be started. Note: this method
+     * waits indefinitely for warm up methods to complete
      *
      * @throws Exception errors
      */
