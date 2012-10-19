@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// thanks to Allan Pratt for the ideas and initial code
 public class WarmUpManager
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
