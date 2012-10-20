@@ -16,7 +16,6 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -33,8 +32,9 @@ import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
+import com.netflix.governator.lifecycle.warmup.DependencyNode;
 import com.netflix.governator.lifecycle.warmup.SetStateMixin;
-import com.netflix.governator.lifecycle.warmup.WarmUpManager;
+import com.netflix.governator.lifecycle.warmup.WarmUpTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -59,6 +59,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -313,12 +314,6 @@ public class LifecycleManager implements Closeable
         return dagManager;
     }
 
-    @VisibleForTesting
-    protected int getWarmUpThreadQty()
-    {
-        return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
-    }
-
     private void clear()
     {
         dagManager.clear();
@@ -368,8 +363,18 @@ public class LifecycleManager implements Closeable
                 LifecycleManager.this.setState(obj, state);
             }
         };
-        WarmUpManager       manager = new WarmUpManager(this, setState, getWarmUpThreadQty());
-        boolean             success = manager.warmUp(maxMs);
+        DependencyNode      root = dagManager.buildTree();
+        ForkJoinPool        forkJoinPool = new ForkJoinPool();
+        WarmUpTask          rootTask = new WarmUpTask(root, this, setState, true);
+
+        forkJoinPool.submit(rootTask);
+        forkJoinPool.shutdown();
+
+        boolean             success = forkJoinPool.awaitTermination(maxMs, TimeUnit.MILLISECONDS);
+        if ( !success )
+        {
+            forkJoinPool.shutdownNow();
+        }
 
         for ( StateKey key : objectStates.keySet() )
         {

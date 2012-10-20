@@ -1,5 +1,6 @@
 package com.netflix.governator.lifecycle.warmup;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -7,6 +8,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class TestWarmUpManager
@@ -26,6 +28,8 @@ public class TestWarmUpManager
         injector.getInstance(Dag1.A.class);
         injector.getInstance(LifecycleManager.class).start();
 
+        System.out.println(Dag1.recorder.getRecordings());
+        assertSingleExecution(Dag1.recorder);
         Assert.assertEquals(Dag1.recorder.getInterruptions().size(), 0);
         assertOrdering(Dag1.recorder, "A", "B");
         assertOrdering(Dag1.recorder, "A", "C");
@@ -40,6 +44,8 @@ public class TestWarmUpManager
         injector.getInstance(Dag2.A3.class);
         injector.getInstance(LifecycleManager.class).start();
 
+        System.out.println(Dag2.recorder.getRecordings());
+        assertSingleExecution(Dag2.recorder);
         Assert.assertEquals(Dag2.recorder.getInterruptions().size(), 0);
         assertOrdering(Dag2.recorder, "A1", "B1");
         assertOrdering(Dag2.recorder, "B1", "C1");
@@ -62,6 +68,8 @@ public class TestWarmUpManager
         injector.getInstance(Dag3.A.class);
         injector.getInstance(LifecycleManager.class).start();
 
+        System.out.println(Dag3.recorder.getRecordings());
+        assertSingleExecution(Dag3.recorder);
         Assert.assertEquals(Dag3.recorder.getInterruptions().size(), 0);
         assertOrdering(Dag3.recorder, "A", "C");
         assertOrdering(Dag3.recorder, "C", "D");
@@ -78,9 +86,21 @@ public class TestWarmUpManager
         injector.getInstance(Dag1.A.class);
         boolean     succeeded = injector.getInstance(LifecycleManager.class).start(5, TimeUnit.SECONDS);
 
+        System.out.println(Dag1.recorder.getRecordings());
+        assertSingleExecution(Dag1.recorder);
         Assert.assertFalse(succeeded);
         Assert.assertTrue(Dag1.recorder.getRecordings().contains("B"));
         Assert.assertEquals(Dag1.recorder.getInterruptions(), Arrays.asList("C"));
+    }
+
+    private void        assertSingleExecution(Recorder recorder)
+    {
+        Set<String>     duplicateCheck = Sets.newHashSet();
+        for ( String s : recorder.getRecordings() )
+        {
+            Assert.assertFalse(duplicateCheck.contains(s), s + " ran more than once: " + recorder.getRecordings());
+            duplicateCheck.add(s);
+        }
     }
 
     private void        assertOrdering(Recorder recorder, String base, String dependency)
