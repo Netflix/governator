@@ -14,26 +14,11 @@ import java.util.concurrent.TimeUnit;
 
 public class TestWarmUpManager
 {
-    public void     printDeps(LifecycleManager manager, DependencyNode node, int indent)
-    {
-        for ( int i = 0; i < indent; ++i )
-        {
-            System.out.print("----");
-        }
-        System.out.println(manager.getDAGManager().getObject(node.getKey()));
-        for ( DependencyNode child : node.getChildren() )
-        {
-            printDeps(manager, child, indent + 1);
-        }
-    }
-
     @Test
     public void     testDag1() throws Exception
     {
         Injector    injector = LifecycleInjector.builder().createInjector();
         injector.getInstance(Dag1.A.class);
-        DependencyNode root = injector.getInstance(LifecycleManager.class).getDAGManager().buildTree();
-        printDeps(injector.getInstance(LifecycleManager.class), root, 0);
         injector.getInstance(LifecycleManager.class).start();
         Recorder    recorder = injector.getInstance(Recorder.class);
 
