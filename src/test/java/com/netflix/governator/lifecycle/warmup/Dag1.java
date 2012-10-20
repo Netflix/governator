@@ -5,8 +5,6 @@ import com.netflix.governator.annotations.WarmUp;
 
 public class Dag1
 {
-    public static final Recorder recorder = new Recorder();
-
     /*
         3 Classes all with warmups
 
@@ -20,9 +18,12 @@ public class Dag1
     @SuppressWarnings("UnusedParameters")
     public static class A
     {
+        private final Recorder recorder;
+
         @Inject
-        public A(B b, C c)
+        public A(Recorder recorder, B b, C c)
         {
+            this.recorder = recorder;
         }
 
         @WarmUp
@@ -34,9 +35,12 @@ public class Dag1
 
     public static class B
     {
+        private final Recorder recorder;
+
         @Inject
-        public B()
+        public B(Recorder recorder)
         {
+            this.recorder = recorder;
         }
 
         @WarmUp
@@ -48,9 +52,12 @@ public class Dag1
 
     public static class C
     {
+        private final Recorder recorder;
+
         @Inject
-        public C()
+        public C(Recorder recorder)
         {
+            this.recorder = recorder;
         }
 
         @WarmUp

@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
+// thanks to Allan Pratt for his help and design ideas
 public class WarmUpTask extends RecursiveAction
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -62,7 +63,7 @@ public class WarmUpTask extends RecursiveAction
         else
         {
             Collection<Method>  methods = null;
-            synchronized(setStateMixin)
+            synchronized(lifecycleManager)
             {
                 if ( lifecycleManager.getState(obj) == LifecycleState.PRE_WARMING_UP )
                 {
@@ -96,7 +97,7 @@ public class WarmUpTask extends RecursiveAction
                 }
                 finally
                 {
-                    synchronized(setStateMixin)
+                    synchronized(lifecycleManager)
                     {
                         setStateMixin.setState(obj, newState);
                     }
