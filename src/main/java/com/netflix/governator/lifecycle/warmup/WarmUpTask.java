@@ -13,7 +13,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
-// thanks to Allan Pratt for his help and design ideas
+/**
+ * <p>
+ *     A Fork Join task to warm up objects. Each node's dependency's
+ *     are warmed-up via forking before the node itself warms-up.
+ * </p>
+ *
+ * <p>
+ *     Thanks to Allan Pratt for his help and design ideas
+ * </p>
+ */
 public class WarmUpTask extends RecursiveAction
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -22,6 +31,12 @@ public class WarmUpTask extends RecursiveAction
     private final boolean isRoot;
     private final DependencyNode node;
 
+    /**
+     * @param node the node to warm up
+     * @param lifecycleManager lifecycle manager
+     * @param setStateMixin used to change object state
+     * @param isRoot true if the node is the root node (don't try to warm it up)
+     */
     public WarmUpTask(DependencyNode node, LifecycleManager lifecycleManager, SetStateMixin setStateMixin, boolean isRoot)
     {
         this.node = node;
