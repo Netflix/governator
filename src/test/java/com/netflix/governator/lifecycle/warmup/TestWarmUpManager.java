@@ -15,14 +15,43 @@ import java.util.concurrent.TimeUnit;
 public class TestWarmUpManager
 {
     @Test
+    public void     doit() throws Exception
+    {
+        for(;;)
+        {
+            testDag1();
+            System.out.println();
+            System.out.println("***");
+            System.out.println("");
+        }
+    }
+
+    public void     printDeps(LifecycleManager manager, DependencyNode node, int indent)
+    {
+        for ( int i = 0; i < indent; ++i )
+        {
+            System.out.print("----");
+        }
+        System.out.println(manager.getDAGManager().getObject(node.getKey()));
+        for ( DependencyNode child : node.getChildren() )
+        {
+            printDeps(manager, child, indent + 1);
+        }
+    }
+
+    @Test
     public void     testDag1() throws Exception
     {
         Injector    injector = LifecycleInjector.builder().createInjector();
         injector.getInstance(Dag1.A.class);
+        DependencyNode root = injector.getInstance(LifecycleManager.class).getDAGManager().buildTree();
+        printDeps(injector.getInstance(LifecycleManager.class), root, 0);
         injector.getInstance(LifecycleManager.class).start();
         Recorder    recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
         assertSingleExecution(recorder);
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "A", "B");
@@ -40,6 +69,8 @@ public class TestWarmUpManager
         Recorder    recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
         assertSingleExecution(recorder);
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "A1", "B1");
@@ -65,6 +96,8 @@ public class TestWarmUpManager
         Recorder    recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
         assertSingleExecution(recorder);
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "A", "C");
@@ -79,26 +112,28 @@ public class TestWarmUpManager
         Injector    injector = LifecycleInjector
             .builder()
             .withModules
-            (
-                new Module()
-                {
-                    @Override
-                    public void configure(Binder binder)
+                (
+                    new Module()
                     {
-                        RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
-                        recorderSleepSettings.setBaseSleep(1, TimeUnit.SECONDS);
-                        recorderSleepSettings.setBaseSleepFor("E", 1, TimeUnit.MILLISECONDS);
-                        recorderSleepSettings.setRandomize(false);
-                        binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
+                        @Override
+                        public void configure(Binder binder)
+                        {
+                            RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
+                            recorderSleepSettings.setBaseSleep(1, TimeUnit.SECONDS);
+                            recorderSleepSettings.setBaseSleepFor("E", 1, TimeUnit.MILLISECONDS);
+                            recorderSleepSettings.setRandomize(false);
+                            binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
+                        }
                     }
-                }
-            )
+                )
             .createInjector();
         injector.getInstance(Dag4.A.class);
         injector.getInstance(LifecycleManager.class).start();
         Recorder    recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
         assertSingleExecution(recorder);
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "D", "E");
@@ -132,6 +167,8 @@ public class TestWarmUpManager
         Recorder    recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
         assertSingleExecution(recorder);
         Assert.assertFalse(succeeded);
         Assert.assertTrue(recorder.getRecordings().contains("B"));

@@ -1,16 +1,20 @@
 package com.netflix.governator.lifecycle.warmup;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import java.util.Map;
+import java.util.Set;
 
 public class DAGManager
 {
     private final Map<Object, Object>               keyToObject = Maps.newHashMap();
     private final Map<Object, LifecycleMethods>     keyToLifecycle = Maps.newHashMap();
     private final Multimap<Object, Object>          dependencies = ArrayListMultimap.create();
+    private final Set<Object>                       nonRoots = Sets.newHashSet();
 
     public void addObjectMapping(Object objectKey, Object object, LifecycleMethods methods)
     {
@@ -21,16 +25,22 @@ public class DAGManager
     public void addDependency(Object objectKey, Object dependencyKey)
     {
         dependencies.put(objectKey, dependencyKey);
+        nonRoots.add(dependencyKey);
     }
 
     public DependencyNode buildTree()
     {
         DependencyNode root = new DependencyNode(new Object());
-
         for ( Object objectKey : dependencies.keySet() )
         {
-            internalBuildTree(root, objectKey);
+            DependencyNode node = internalBuildTree(null, objectKey);
+            if ( !nonRoots.contains(objectKey) )
+            {
+                root.addChild(node);
+            }
         }
+
+        Preconditions.checkState((root.getChildren().size() > 0) || (dependencies.size() == 0), "No root objects found. Maybe there are circular dependencies.");
 
         return root;
     }
@@ -52,14 +62,19 @@ public class DAGManager
         dependencies.clear();
     }
 
-    private void internalBuildTree(DependencyNode parent, Object objectKey)
+    private DependencyNode internalBuildTree(DependencyNode parent, Object objectKey)
     {
         DependencyNode      node = new DependencyNode(objectKey);
-        parent.addChild(node);
+        if ( parent != null )
+        {
+            parent.addChild(node);
+        }
 
         for ( Object key : dependencies.get(objectKey) )
         {
             internalBuildTree(node, key);
         }
+
+        return node;
     }
 }

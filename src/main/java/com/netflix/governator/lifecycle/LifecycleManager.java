@@ -24,6 +24,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
@@ -68,6 +69,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Main instance management container
  */
+@Singleton
 public class LifecycleManager implements Closeable
 {
     private final Logger log = LoggerFactory.getLogger(getClass());

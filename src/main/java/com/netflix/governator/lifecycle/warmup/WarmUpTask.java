@@ -80,6 +80,7 @@ public class WarmUpTask extends RecursiveAction
             Collection<Method>  methods = null;
             synchronized(lifecycleManager)
             {
+                System.out.println("pre " + obj);
                 if ( lifecycleManager.getState(obj) == LifecycleState.PRE_WARMING_UP )
                 {
                     LifecycleMethods    lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
@@ -95,7 +96,7 @@ public class WarmUpTask extends RecursiveAction
                 }
             }
 
-            if ( methods != null )
+            if ( (methods != null) && (methods.size() > 0) )
             {
                 LifecycleState newState = LifecycleState.ACTIVE;
                 try
@@ -112,6 +113,7 @@ public class WarmUpTask extends RecursiveAction
                 }
                 finally
                 {
+                    System.out.println("post " + obj);
                     synchronized(lifecycleManager)
                     {
                         setStateMixin.setState(obj, newState);

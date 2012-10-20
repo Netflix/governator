@@ -1,9 +1,12 @@
 package com.netflix.governator.lifecycle.warmup;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 public class Recorder
@@ -11,6 +14,8 @@ public class Recorder
     private final List<String>              recordings = Lists.newArrayList();
     private final List<String>              interruptions = Lists.newArrayList();
     private final RecorderSleepSettings     recorderSleepSettings;
+    private final Set<Set<String>>          concurrents = Sets.newHashSet();
+    private final Set<String>               activeConcurrents = Sets.newHashSet();
 
     @Inject
     public Recorder(RecorderSleepSettings recorderSleepSettings)
@@ -20,11 +25,15 @@ public class Recorder
 
     public synchronized void        record(String s) throws InterruptedException
     {
+
         recordings.add(s);
 
         Long        sleepMs = recorderSleepSettings.getSleepMsFor(s);
+
+        activeConcurrents.add(s);
         try
         {
+            concurrents.add(ImmutableSet.copyOf(activeConcurrents));
             wait(sleepMs);
         }
         catch ( InterruptedException e )
@@ -32,6 +41,10 @@ public class Recorder
             interruptions.add(s);
             Thread.currentThread().interrupt();
             throw e;
+        }
+        finally
+        {
+            activeConcurrents.remove(s);
         }
     }
 
@@ -45,8 +58,8 @@ public class Recorder
         return Lists.newArrayList(interruptions);
     }
 
-    public synchronized void clear()
+    public synchronized Set<Set<String>> getConcurrents()
     {
-        recordings.clear();
+        return ImmutableSet.copyOf(concurrents);
     }
 }
