@@ -1,6 +1,7 @@
 package com.netflix.governator.lifecycle.warmup;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.governator.annotations.WarmUp;
 
 public class Dag2
@@ -23,6 +24,7 @@ public class Dag2
              B4
      */
 
+    @Singleton
     public static class C1
     {
         private final Recorder recorder;
@@ -40,6 +42,7 @@ public class Dag2
         }
     }
 
+    @Singleton
     public static class C2
     {
         private final Recorder recorder;
@@ -57,6 +60,7 @@ public class Dag2
         }
     }
 
+    @Singleton
     public static class C3
     {
         private final Recorder recorder;
@@ -75,6 +79,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class B1
     {
         private final Recorder recorder;
@@ -93,6 +98,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class B2
     {
         private final Recorder recorder;
@@ -111,6 +117,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class B3
     {
         private final Recorder recorder;
@@ -129,6 +136,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class B4
     {
         private final Recorder recorder;
@@ -147,6 +155,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class A1
     {
         private final Recorder recorder;
@@ -165,6 +174,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class A2
     {
         private final Recorder recorder;
@@ -183,6 +193,7 @@ public class Dag2
     }
 
     @SuppressWarnings("UnusedParameters")
+    @Singleton
     public static class A3
     {
         private final Recorder recorder;

@@ -74,23 +74,58 @@ public class TestWarmUpManager
     }
 
     @Test
+    public void     testDag4() throws Exception
+    {
+        Injector    injector = LifecycleInjector
+            .builder()
+            .withModules
+            (
+                new Module()
+                {
+                    @Override
+                    public void configure(Binder binder)
+                    {
+                        RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
+                        recorderSleepSettings.setBaseSleep(1, TimeUnit.SECONDS);
+                        recorderSleepSettings.setBaseSleepFor("E", 1, TimeUnit.MILLISECONDS);
+                        recorderSleepSettings.setRandomize(false);
+                        binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
+                    }
+                }
+            )
+            .createInjector();
+        injector.getInstance(Dag4.A.class);
+        injector.getInstance(LifecycleManager.class).start();
+        Recorder    recorder = injector.getInstance(Recorder.class);
+
+        System.out.println(recorder.getRecordings());
+        assertSingleExecution(recorder);
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "D", "E");
+        assertOrdering(recorder, "D", "F");
+        assertOrdering(recorder, "C", "E");
+        assertOrdering(recorder, "B", "D");
+        assertOrdering(recorder, "A", "B");
+    }
+
+    @Test
     public void     testStuck() throws Exception
     {
         Injector    injector = LifecycleInjector
             .builder()
             .withModules
-                (
-                    new Module()
+            (
+                new Module()
+                {
+                    @Override
+                    public void configure(Binder binder)
                     {
-                        @Override
-                        public void configure(Binder binder)
-                        {
-                            RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
-                            recorderSleepSettings.setBaseSleepFor("C", 1, TimeUnit.DAYS);
-                            binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
-                        }
+                        RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
+                        recorderSleepSettings.setBaseSleepFor("C", 1, TimeUnit.DAYS);
+                        binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
                     }
-                )
+                }
+            )
             .createInjector();
         injector.getInstance(Dag1.A.class);
         boolean     succeeded = injector.getInstance(LifecycleManager.class).start(5, TimeUnit.SECONDS);

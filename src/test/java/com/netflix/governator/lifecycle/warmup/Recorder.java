@@ -25,7 +25,7 @@ public class Recorder
         Long        sleepMs = recorderSleepSettings.getSleepMsFor(s);
         try
         {
-            wait((long)(sleepMs * Math.random()) + 1);
+            wait(sleepMs);
         }
         catch ( InterruptedException e )
         {
