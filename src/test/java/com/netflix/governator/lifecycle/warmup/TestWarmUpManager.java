@@ -14,18 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 public class TestWarmUpManager
 {
-    @Test
-    public void     doit() throws Exception
-    {
-        for(;;)
-        {
-            testDag1();
-            System.out.println();
-            System.out.println("***");
-            System.out.println("");
-        }
-    }
-
     public void     printDeps(LifecycleManager manager, DependencyNode node, int indent)
     {
         for ( int i = 0; i < indent; ++i )
