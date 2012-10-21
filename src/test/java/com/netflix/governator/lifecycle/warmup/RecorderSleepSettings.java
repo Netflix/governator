@@ -14,7 +14,7 @@ public class RecorderSleepSettings
     private final Map<String, Long> baseSleepMsForString = Maps.newHashMap();
     private final AtomicBoolean randomize = new AtomicBoolean(true);
 
-    private static final int    DEFAULT_SLEEP_MS = 5;
+    private static final int    DEFAULT_SLEEP_MS = 1000;
 
     public void setBaseSleep(long time, TimeUnit unit)
     {

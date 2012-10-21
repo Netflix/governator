@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -365,9 +366,10 @@ public class LifecycleManager implements Closeable
                 LifecycleManager.this.setState(obj, state);
             }
         };
-        DependencyNode      root = dagManager.buildTree();
-        ForkJoinPool        forkJoinPool = new ForkJoinPool();
-        WarmUpTask          rootTask = new WarmUpTask(root, this, setState, true);
+        DependencyNode                      root = dagManager.buildTree();
+        ForkJoinPool                        forkJoinPool = new ForkJoinPool();
+        ConcurrentMap<Object, WarmUpTask>   tasks = Maps.newConcurrentMap();
+        WarmUpTask                          rootTask = new WarmUpTask(root, this, setState, tasks, true);
 
         forkJoinPool.submit(rootTask);
         forkJoinPool.shutdown();

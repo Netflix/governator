@@ -26,6 +26,9 @@ public class TestWarmUpManager
         System.out.println(recorder.getConcurrents());
 
         assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "A", "B");
         assertOrdering(recorder, "A", "C");
@@ -45,6 +48,20 @@ public class TestWarmUpManager
         System.out.println(recorder.getConcurrents());
 
         assertSingleExecution(recorder);
+
+        assertNotConcurrent(recorder, "A1", "B1");
+        assertNotConcurrent(recorder, "A1", "B2");
+        assertNotConcurrent(recorder, "B1", "C1");
+        assertNotConcurrent(recorder, "B2", "C1");
+        assertNotConcurrent(recorder, "A2", "B2");
+        assertNotConcurrent(recorder, "A2", "B3");
+        assertNotConcurrent(recorder, "B2", "C2");
+        assertNotConcurrent(recorder, "B3", "C2");
+        assertNotConcurrent(recorder, "A3", "B3");
+        assertNotConcurrent(recorder, "A3", "B4");
+        assertNotConcurrent(recorder, "B3", "C3");
+        assertNotConcurrent(recorder, "B4", "C3");
+
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "A1", "B1");
         assertOrdering(recorder, "B1", "C1");
@@ -72,6 +89,12 @@ public class TestWarmUpManager
         System.out.println(recorder.getConcurrents());
 
         assertSingleExecution(recorder);
+
+        assertNotConcurrent(recorder, "C", "D");
+        assertNotConcurrent(recorder, "B", "D");
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "A", "C");
         assertOrdering(recorder, "C", "D");
@@ -92,7 +115,6 @@ public class TestWarmUpManager
                         public void configure(Binder binder)
                         {
                             RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
-                            recorderSleepSettings.setBaseSleep(1, TimeUnit.SECONDS);
                             recorderSleepSettings.setBaseSleepFor("E", 1, TimeUnit.MILLISECONDS);
                             recorderSleepSettings.setRandomize(false);
                             binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
@@ -166,5 +188,13 @@ public class TestWarmUpManager
         Assert.assertTrue(baseIndex >= 0);
         Assert.assertTrue(dependencyIndex >= 0);
         Assert.assertTrue(baseIndex > dependencyIndex, "baseIndex: " + baseIndex + " - dependencyIndex: " + dependencyIndex);
+    }
+
+    private void        assertNotConcurrent(Recorder recorder, String task1, String task2)
+    {
+        for ( Set<String> s : recorder.getConcurrents() )
+        {
+            Assert.assertTrue(!s.contains(task1) || !s.contains(task2), String.format("Incorrect concurrency for %s and %s: %s", task1, task2, s));
+        }
     }
 }

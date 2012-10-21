@@ -1,6 +1,5 @@
 package com.netflix.governator.lifecycle.warmup;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RecursiveAction;
 
 /**
@@ -28,6 +28,7 @@ public class WarmUpTask extends RecursiveAction
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final LifecycleManager lifecycleManager;
     private final SetStateMixin setStateMixin;
+    private final ConcurrentMap<Object, WarmUpTask> tasks;
     private final boolean isRoot;
     private final DependencyNode node;
 
@@ -37,30 +38,38 @@ public class WarmUpTask extends RecursiveAction
      * @param setStateMixin used to change object state
      * @param isRoot true if the node is the root node (don't try to warm it up)
      */
-    public WarmUpTask(DependencyNode node, LifecycleManager lifecycleManager, SetStateMixin setStateMixin, boolean isRoot)
+    public WarmUpTask(DependencyNode node, LifecycleManager lifecycleManager, SetStateMixin setStateMixin, ConcurrentMap<Object, WarmUpTask> tasks, boolean isRoot)
     {
         this.node = node;
         this.lifecycleManager = lifecycleManager;
         this.setStateMixin = setStateMixin;
+        this.tasks = tasks;
         this.isRoot = isRoot;
     }
 
     @Override
     protected void compute()
     {
-        List<WarmUpTask> childTasks = Lists.transform
-        (
-            node.getChildren(),
-            new Function<DependencyNode, WarmUpTask>()
+        List<WarmUpTask> childTasks = Lists.newArrayList();
+        for ( DependencyNode child : node.getChildren() )
+        {
+            WarmUpTask  newChildTask = new WarmUpTask(child, lifecycleManager, setStateMixin, tasks, false);
+            WarmUpTask  existingChildTask = tasks.putIfAbsent(child.getKey(), newChildTask);
+            if ( existingChildTask == null )
             {
-                @Override
-                public WarmUpTask apply(DependencyNode child)
-                {
-                    return new WarmUpTask(child, lifecycleManager, setStateMixin, false);
-                }
+                newChildTask.fork();
+                childTasks.add(newChildTask);
             }
-        );
-        invokeAll(childTasks);
+            else
+            {
+                childTasks.add(existingChildTask);
+            }
+        }
+
+        for ( WarmUpTask task : childTasks )
+        {
+            task.join();
+        }
 
         if ( !isRoot )
         {
