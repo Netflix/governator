@@ -234,6 +234,15 @@ public class LifecycleManager implements Closeable
         start(0, null);
     }
 
+    /**
+     * The manager MUST be started. This version of start() has a maximum
+     * wait period for warm up methods.
+     *
+     * @param maxWait maximum wait time for warm up methods - if the time elapses, the warm up methods are interrupted
+     * @param unit time unit
+     * @return true if warm up methods successfully executed, false if the time elapses
+     * @throws Exception errors
+     */
     public boolean start(long maxWait, TimeUnit unit) throws Exception
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");

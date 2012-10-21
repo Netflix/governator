@@ -9,6 +9,9 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Manages building of dependencies
+ */
 public class DAGManager
 {
     private final Map<Object, Object>               keyToObject = Maps.newHashMap();
@@ -16,18 +19,36 @@ public class DAGManager
     private final Multimap<Object, Object>          dependencies = ArrayListMultimap.create();
     private final Set<Object>                       nonRoots = Sets.newHashSet();
 
+    /**
+     * Adds a mapping of an object "key" to an object
+     *
+     * @param objectKey the object's key
+     * @param object the object
+     * @param methods the objects lifecycle methods
+     */
     public void addObjectMapping(Object objectKey, Object object, LifecycleMethods methods)
     {
         keyToObject.put(objectKey, object);
         keyToLifecycle.put(objectKey, methods);
     }
 
+    /**
+     * Adds a dependency for the given object
+     *
+     * @param objectKey object's key
+     * @param dependencyKey object key of the dependency
+     */
     public void addDependency(Object objectKey, Object dependencyKey)
     {
         dependencies.put(objectKey, dependencyKey);
         nonRoots.add(dependencyKey);
     }
 
+    /**
+     * Build the dependencies into a DAG
+     *
+     * @return root of the DAG
+     */
     public DependencyNode buildTree()
     {
         DependencyNode root = new DependencyNode(new Object());
