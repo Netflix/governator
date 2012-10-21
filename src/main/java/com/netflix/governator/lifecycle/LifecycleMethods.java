@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.netflix.governator.annotations.Configuration;
-import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import javax.annotation.PostConstruct;
@@ -52,8 +51,7 @@ public class LifecycleMethods
         PreConfiguration.class,
         PostConstruct.class,
         PreDestroy.class,
-        WarmUp.class,
-        CoolDown.class
+        WarmUp.class
     );
 
     public LifecycleMethods(Class<?> clazz)

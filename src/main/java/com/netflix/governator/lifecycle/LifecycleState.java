@@ -42,6 +42,11 @@ public enum LifecycleState
     POST_CONSTRUCTING,
 
     /**
+     * Preparing to call warm-up methods
+     */
+    PRE_WARMING_UP,
+
+    /**
      * Calling warm-up methods
      */
     WARMING_UP,
@@ -50,11 +55,6 @@ public enum LifecycleState
      * Completely ready for use
      */
     ACTIVE,
-
-    /**
-     * Calling cool down methods
-     */
-    COOLING_DOWN,
 
     /**
      * Calling PreDestroy methods (state will change to LATENT after this)

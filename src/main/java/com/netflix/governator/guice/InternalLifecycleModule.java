@@ -26,12 +26,16 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
+import com.netflix.governator.lifecycle.warmup.DAGManager;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,7 +58,7 @@ class InternalLifecycleModule implements Module
             new TypeListener()
             {
                 @Override
-                public <T> void hear(TypeLiteral<T> type, TypeEncounter<T> encounter)
+                public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter)
                 {
                     encounter.register
                     (
@@ -74,6 +78,8 @@ class InternalLifecycleModule implements Module
                                     Class<?> clazz = obj.getClass();
                                     LifecycleMethods methods = getLifecycleMethods(clazz);
 
+                                    addDependencies(manager, obj, type, methods);
+
                                     if ( methods.hasLifecycleAnnotations() )
                                     {
                                         try
@@ -92,6 +98,30 @@ class InternalLifecycleModule implements Module
                 }
             }
         );
+    }
+
+    private void addDependencies(LifecycleManager manager, Object obj, TypeLiteral<?> type, LifecycleMethods methods)
+    {
+        DAGManager              dagManager = manager.getDAGManager();
+        dagManager.addObjectMapping(type, obj, methods);
+
+        applyInjectionPoint(InjectionPoint.forConstructorOf(type), dagManager, type);
+        for ( InjectionPoint injectionPoint : InjectionPoint.forInstanceMethodsAndFields(type) )
+        {
+            applyInjectionPoint(injectionPoint, dagManager, type);
+        }
+    }
+
+    private void applyInjectionPoint(InjectionPoint injectionPoint, DAGManager dagManager, TypeLiteral<?> type)
+    {
+        if ( injectionPoint != null )
+        {
+            List<Dependency<?>> dependencies = injectionPoint.getDependencies();
+            for ( Dependency<?> dependency : dependencies )
+            {
+                dagManager.addDependency(type, dependency.getKey().getTypeLiteral());
+            }
+        }
     }
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)
