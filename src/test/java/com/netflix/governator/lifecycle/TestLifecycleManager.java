@@ -16,8 +16,6 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.netflix.governator.lifecycle.mocks.SimpleContainer;
-import com.netflix.governator.lifecycle.mocks.SimpleObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import javax.validation.constraints.Min;
@@ -55,57 +53,5 @@ public class TestLifecycleManager
         {
             // correct
         }
-    }
-
-    @Test
-    public void     testSimple() throws Exception
-    {
-        LifecycleManager    manager = new LifecycleManager();
-        manager.start();
-
-        SimpleObject        simpleObject = new SimpleObject();
-
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.LATENT);
-        Assert.assertEquals(simpleObject.startCount.get(), 0);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
-
-        manager.add(simpleObject);
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.ACTIVE);
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
-
-        manager.close();
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.LATENT);
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 1);
-    }
-
-    @Test
-    public void     testSimpleContainer() throws Exception
-    {
-        LifecycleManager    manager = new LifecycleManager();
-        manager.start();
-
-        SimpleObject        simpleObject = new SimpleObject();
-        manager.add(simpleObject);
-
-        SimpleContainer     simpleContainer = new SimpleContainer(manager, simpleObject);
-        manager.add(simpleContainer);
-
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.ACTIVE);
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 0);
-        Assert.assertEquals(manager.getState(simpleContainer), LifecycleState.ACTIVE);
-        Assert.assertEquals(simpleContainer.startCount.get(), 1);
-        Assert.assertEquals(simpleContainer.finishCount.get(), 0);
-
-        manager.close();
-
-        Assert.assertEquals(manager.getState(simpleObject), LifecycleState.LATENT);
-        Assert.assertEquals(simpleObject.startCount.get(), 1);
-        Assert.assertEquals(simpleObject.finishCount.get(), 1);
-        Assert.assertEquals(manager.getState(simpleContainer), LifecycleState.LATENT);
-        Assert.assertEquals(simpleContainer.startCount.get(), 1);
-        Assert.assertEquals(simpleContainer.finishCount.get(), 1);
     }
 }

@@ -16,7 +16,6 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -25,14 +24,18 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
-import com.netflix.governator.annotations.CoolDown;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
+import com.netflix.governator.lifecycle.warmup.DAGManager;
+import com.netflix.governator.lifecycle.warmup.DependencyNode;
+import com.netflix.governator.lifecycle.warmup.SetStateMixin;
+import com.netflix.governator.lifecycle.warmup.WarmUpTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -45,6 +48,7 @@ import javax.validation.ValidatorFactory;
 import javax.xml.bind.DatatypeConverter;
 import java.io.Closeable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -55,7 +59,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -64,18 +70,18 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Main instance management container
  */
+@Singleton
 public class LifecycleManager implements Closeable
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
-    private final List<InvokeRecord> invokings = new CopyOnWriteArrayList<InvokeRecord>();
+    private final List<PreDestroyRecord> preDestroys = new CopyOnWriteArrayList<PreDestroyRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
     private final ConfigurationProvider configurationProvider;
     private final Collection<LifecycleListener> listeners;
     private final ValidatorFactory factory;
-
-    private volatile long maxCoolDownMs = TimeUnit.MINUTES.toMillis(1);
+    private final DAGManager dagManager = new DAGManager();
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -112,25 +118,22 @@ public class LifecycleManager implements Closeable
         }
     }
 
-    private static class InvokeRecord
+    private static class PreDestroyRecord
     {
         final Object                obj;
         final Collection<Method>    preDestroyMethods;
-        final Collection<Method>    warmUpMethods;
-        final Collection<Method>    coolDownMethods;
 
-        private InvokeRecord(Object obj, Collection<Method> preDestroyMethods, Collection<Method> warmUpMethods, Collection<Method> coolDownMethods)
+        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
         {
             this.obj = obj;
             this.preDestroyMethods = preDestroyMethods;
-            this.warmUpMethods = warmUpMethods;
-            this.coolDownMethods = coolDownMethods;
         }
     }
 
     private enum State
     {
         LATENT,
+        STARTING,
         STARTED,
         CLOSED
     }
@@ -156,16 +159,6 @@ public class LifecycleManager implements Closeable
     public Collection<LifecycleListener> getListeners()
     {
         return listeners;
-    }
-
-    /**
-     * Set the maximum time to wait for cool downs to complete. The default is 1 minute
-     *
-     * @param maxCoolDownMs max cool down in milliseconds
-     */
-    public void setMaxCoolDownMs(long maxCoolDownMs)
-    {
-        this.maxCoolDownMs = maxCoolDownMs;
     }
 
     /**
@@ -205,23 +198,11 @@ public class LifecycleManager implements Closeable
     {
         Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
 
-        StateKey        key = new StateKey(obj);
-        if ( getState(key) == LifecycleState.LATENT )
+        startInstance(obj, methods);
+
+        if ( state.get() == State.STARTED )
         {
-            try
-            {
-                startInstance(obj, methods);
-            }
-            catch ( Exception e )
-            {
-                objectStates.remove(key);
-                throw e;
-            }
-            objectStates.put(key, LifecycleState.ACTIVE);
-        }
-        else
-        {
-            log.warn(String.format("Object already completed lifecycle. class: %s - ID: %d", obj.getClass().getName(), System.identityHashCode(obj)));
+            initializeObjectPostStart(obj, methods);
         }
     }
 
@@ -233,41 +214,59 @@ public class LifecycleManager implements Closeable
      */
     public synchronized LifecycleState getState(Object obj)
     {
+        if ( state.get() == State.STARTED )
+        {
+            return LifecycleState.ACTIVE;   // by definition
+        }
+
         LifecycleState state = objectStates.get(new StateKey(obj));
         return (state != null) ? state : LifecycleState.LATENT;
     }
 
     /**
-     * The manager MUST be started
+     * The manager MUST be started. Note: this method
+     * waits indefinitely for warm up methods to complete
      *
      * @throws Exception errors
      */
     public void start() throws Exception
     {
-        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
+        start(0, null);
+    }
+
+    /**
+     * The manager MUST be started. This version of start() has a maximum
+     * wait period for warm up methods.
+     *
+     * @param maxWait maximum wait time for warm up methods - if the time elapses, the warm up methods are interrupted
+     * @param unit time unit
+     * @return true if warm up methods successfully executed, false if the time elapses
+     * @throws Exception errors
+     */
+    public boolean start(long maxWait, TimeUnit unit) throws Exception
+    {
+        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
 
         validate();
 
-        doWarmUp();
+        long        maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
+        boolean     success = doWarmUp(maxMs);
 
         configurationDocumentation.output(log);
         configurationDocumentation.clear();
+
+        clear();
+
+        state.set(State.STARTED);
+
+        return success;
     }
 
     @Override
     public synchronized void close()
     {
-        if ( state.compareAndSet(State.STARTED, State.CLOSED) )
+        if ( state.compareAndSet(State.STARTING, State.CLOSED) || state.compareAndSet(State.STARTED, State.CLOSED) )
         {
-            try
-            {
-                doCoolDown();
-            }
-            catch ( Exception e )
-            {
-                log.error("While cooling down instances", e);
-            }
-
             try
             {
                 stopInstances();
@@ -278,7 +277,7 @@ public class LifecycleManager implements Closeable
             }
             finally
             {
-                invokings.clear();
+                preDestroys.clear();
                 objectStates.clear();
             }
         }
@@ -296,7 +295,7 @@ public class LifecycleManager implements Closeable
         Validator           validator = factory.getValidator();
         for ( StateKey key : objectStates.keySet() )
         {
-            Object obj = key.obj;
+            Object      obj = key.obj;
             exception = internalValidateObject(exception, obj, validator);
         }
 
@@ -322,19 +321,24 @@ public class LifecycleManager implements Closeable
         }
     }
 
-    void setState(Object obj, LifecycleState state)
+    public DAGManager getDAGManager()
+    {
+        return dagManager;
+    }
+
+    private void clear()
+    {
+        dagManager.clear();
+        objectStates.clear();
+    }
+
+    private void setState(Object obj, LifecycleState state)
     {
         objectStates.put(new StateKey(obj), state);
         for ( LifecycleListener listener : listeners )
         {
             listener.stateChanged(obj, state);
         }
-    }
-
-    @VisibleForTesting
-    protected int getWarmUpThreadQty()
-    {
-        return Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
     }
 
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
@@ -356,54 +360,44 @@ public class LifecycleManager implements Closeable
         return exception;
     }
 
-    private void doCoolDown() throws Exception
-    {
-        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.PRE_DESTROYING, getWarmUpThreadQty());
-
-        for ( InvokeRecord record : getReversed(invokings) )
-        {
-            if ( record.coolDownMethods.size() > 0 )
-            {
-                setState(record.obj, LifecycleState.COOLING_DOWN);
-                log.debug(String.format("Cooling down %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
-
-                for ( Method m : record.coolDownMethods )
-                {
-                    manager.add(record.obj, m);
-                }
-            }
-        }
-
-        if ( !manager.runAllAndWait(maxCoolDownMs, TimeUnit.MILLISECONDS) )
-        {
-            log.error("Some cool down methods did not complete before the timeout of " + maxCoolDownMs + " ms");
-        }
-    }
-
-    private void doWarmUp() throws Exception
+    private boolean doWarmUp(long maxMs) throws Exception
     {
         for ( StateKey key : objectStates.keySet() )
         {
-            objectStates.put(key, LifecycleState.ACTIVE);
+            objectStates.put(key, LifecycleState.PRE_WARMING_UP);
         }
 
-        WarmUpManager       manager = new WarmUpManager(this, LifecycleState.ACTIVE, getWarmUpThreadQty());
-
-        for ( InvokeRecord record : invokings )
+        SetStateMixin       setState = new SetStateMixin()
         {
-            if ( record.warmUpMethods.size() > 0 )
+            @Override
+            public void setState(Object obj, LifecycleState state)
             {
-                setState(record.obj, LifecycleState.WARMING_UP);
-                log.debug(String.format("Warming up %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
+                LifecycleManager.this.setState(obj, state);
+            }
+        };
+        DependencyNode                      root = dagManager.buildTree();
+        ForkJoinPool                        forkJoinPool = new ForkJoinPool();
+        ConcurrentMap<Object, WarmUpTask>   tasks = Maps.newConcurrentMap();
+        WarmUpTask                          rootTask = new WarmUpTask(root, this, setState, tasks, true);
 
-                for ( Method m : record.warmUpMethods )
-                {
-                    manager.add(record.obj, m);
-                }
+        forkJoinPool.submit(rootTask);
+        forkJoinPool.shutdown();
+
+        boolean             success = forkJoinPool.awaitTermination(maxMs, TimeUnit.MILLISECONDS);
+        if ( !success )
+        {
+            forkJoinPool.shutdownNow();
+        }
+
+        for ( StateKey key : objectStates.keySet() )
+        {
+            if ( objectStates.get(key) != LifecycleState.ERROR )
+            {
+                objectStates.put(key, LifecycleState.ACTIVE);
             }
         }
 
-        manager.runAll();
+        return success;
     }
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
@@ -431,17 +425,15 @@ public class LifecycleManager implements Closeable
         }
 
         Collection<Method>      preDestroyMethods = methods.methodsFor(PreDestroy.class);
-        Collection<Method>      warmUpMethods = methods.methodsFor(WarmUp.class);
-        Collection<Method>      coolDownMethods = methods.methodsFor(CoolDown.class);
-        if ( (preDestroyMethods.size() > 0) || (warmUpMethods.size() > 0) || (coolDownMethods.size() > 0) )
+        if ( preDestroyMethods.size() > 0 )
         {
-            invokings.add(new InvokeRecord(obj, preDestroyMethods, warmUpMethods, coolDownMethods));
+            preDestroys.add(new PreDestroyRecord(obj, preDestroyMethods));
         }
     }
 
     private void stopInstances() throws Exception
     {
-        for ( InvokeRecord record : getReversed(invokings) )
+        for ( PreDestroyRecord record : getReversed(preDestroys) )
         {
             log.debug(String.format("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
             setState(record.obj, LifecycleState.PRE_DESTROYING);
@@ -463,9 +455,9 @@ public class LifecycleManager implements Closeable
         }
     }
 
-    private List<InvokeRecord> getReversed(List<InvokeRecord> records)
+    private List<PreDestroyRecord> getReversed(List<PreDestroyRecord> records)
     {
-        List<InvokeRecord> reversed = Lists.newArrayList(records);
+        List<PreDestroyRecord> reversed = Lists.newArrayList(records);
         Collections.reverse(reversed);
         return reversed;
     }
@@ -558,17 +550,30 @@ public class LifecycleManager implements Closeable
     private String getPath(ConstraintViolation<Object> violation)
     {
         Iterable<String> transformed = Iterables.transform
-        (
-            violation.getPropertyPath(),
-            new Function<Path.Node, String>()
-            {
-                @Override
-                public String apply(Path.Node node)
+            (
+                violation.getPropertyPath(),
+                new Function<Path.Node, String>()
                 {
-                    return node.getName();
+                    @Override
+                    public String apply(Path.Node node)
+                    {
+                        return node.getName();
+                    }
                 }
-            }
-        );
+            );
         return Joiner.on(".").join(transformed);
+    }
+
+    private void initializeObjectPostStart(Object obj, LifecycleMethods methods) throws ValidationException, IllegalAccessException, InvocationTargetException
+    {
+        validate(obj);
+
+        objectStates.put(new StateKey(obj), LifecycleState.PRE_WARMING_UP);
+        for ( Method method : methods.methodsFor(WarmUp.class) )
+        {
+            method.invoke(obj);
+        }
+
+        clear();
     }
 }
