@@ -86,46 +86,30 @@ public class WarmUpTask extends RecursiveAction
         }
         else
         {
-            Collection<Method>  methods = null;
-            synchronized(lifecycleManager)
-            {
-                if ( lifecycleManager.getState(obj) == LifecycleState.PRE_WARMING_UP )
-                {
-                    LifecycleMethods    lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
-                    methods = (lifecycleMethods != null) ? lifecycleMethods.methodsFor(WarmUp.class) : null;
-                    if ( (methods == null) || (methods.size() == 0) )
-                    {
-                        setStateMixin.setState(obj, LifecycleState.ACTIVE);
-                    }
-                    else
-                    {
-                        setStateMixin.setState(obj, LifecycleState.WARMING_UP);
-                    }
-                }
-            }
+            setStateMixin.setState(obj, LifecycleState.WARMING_UP);
 
-            if ( (methods != null) && (methods.size() > 0) )
+            LifecycleMethods    lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
+            Collection<Method>  methods = (lifecycleMethods != null) ? lifecycleMethods.methodsFor(WarmUp.class) : null;
+
+            LifecycleState      newState = LifecycleState.ACTIVE;
+            try
             {
-                LifecycleState newState = LifecycleState.ACTIVE;
-                try
+                if ( methods != null )
                 {
                     for ( Method method : methods )
                     {
                         method.invoke(obj);
                     }
                 }
-                catch ( Throwable e )
-                {
-                    log.error(String.format("Error warming up object. Object: (%s) - Object Class: (%s)", obj, obj.getClass().getName()), e);
-                    newState = LifecycleState.ERROR;
-                }
-                finally
-                {
-                    synchronized(lifecycleManager)
-                    {
-                        setStateMixin.setState(obj, newState);
-                    }
-                }
+            }
+            catch ( Throwable e )
+            {
+                log.error(String.format("Error warming up object. Object: (%s) - Object Class: (%s)", obj, obj.getClass().getName()), e);
+                newState = LifecycleState.ERROR;
+            }
+            finally
+            {
+                setStateMixin.setState(obj, newState);
             }
         }
     }
