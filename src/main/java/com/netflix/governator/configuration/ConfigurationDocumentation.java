@@ -6,6 +6,9 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+/**
+ * Used internally to display configuration documentation
+ */
 public class ConfigurationDocumentation
 {
     private final Map<String, Entry>        entries = Maps.newTreeMap();
