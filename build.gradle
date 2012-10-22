@@ -33,7 +33,7 @@ dependencies {
     compile     'com.netflix.archaius:archaius-core:0.4.1'
 
     // if you are using Java 7 you can remove this and switch to the JDK version
-    compile 'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
+    compile     'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
 
     testCompile 'org.testng:testng:6.1.1'
     testCompile 'org.mockito:mockito-core:1.8.5'
