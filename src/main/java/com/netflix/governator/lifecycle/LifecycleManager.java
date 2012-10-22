@@ -33,7 +33,6 @@ import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
-import com.netflix.governator.lifecycle.warmup.DependencyNode;
 import com.netflix.governator.lifecycle.warmup.SetStateMixin;
 import com.netflix.governator.lifecycle.warmup.WarmUpTask;
 import org.slf4j.Logger;
@@ -375,10 +374,9 @@ public class LifecycleManager implements Closeable
                 LifecycleManager.this.setState(obj, state);
             }
         };
-        DependencyNode                      root = dagManager.buildTree();
         ForkJoinPool                        forkJoinPool = new ForkJoinPool();
         ConcurrentMap<Object, WarmUpTask>   tasks = Maps.newConcurrentMap();
-        WarmUpTask                          rootTask = new WarmUpTask(root, this, setState, tasks, true);
+        WarmUpTask                          rootTask = new WarmUpTask(dagManager.buildTree(), this, setState, tasks, true);
 
         forkJoinPool.submit(rootTask);
         forkJoinPool.shutdown();
