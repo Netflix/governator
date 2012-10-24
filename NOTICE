@@ -4,7 +4,7 @@ Copyright 2012 Netflix, Inc.
 This product includes software developed by The Apache Software
 Foundation (http://www.apache.org/).
 
-Initial lifecycle concepts and some code developed by Proofpoint, Inc.
+ColumnPrinter code developed by Proofpoint, Inc.
 https://github.com/proofpoint/platform
 Copyright (c) 2010 Proofpoint, Inc.
 
