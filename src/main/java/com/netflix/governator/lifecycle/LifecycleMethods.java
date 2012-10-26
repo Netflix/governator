@@ -14,11 +14,6 @@
  *    limitations under the License.
  */
 
-/*
- * Based on work from the Proofpoint Platform published using the same Apache License, Version 2.0
- * https://github.com/proofpoint/platform
- */
-
 package com.netflix.governator.lifecycle;
 
 import com.google.common.collect.ArrayListMultimap;
