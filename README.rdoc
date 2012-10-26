@@ -10,7 +10,7 @@ Please see the doc at https://github.com/Netflix/governator/wiki
 
 == BUILDING
 
-Curator is built via Gradle (http://www.gradle.org). To build from the command line:
+Governator is built via Gradle (http://www.gradle.org). To build from the command line:
     ./gradlew build
 
 == ARTIFACTS
