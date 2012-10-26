@@ -1,8 +1,8 @@
 == DESCRIPTION
 
-Governator is a library of extensions and utilities that extend Google Guice to provide:
-classpath scanning and automatic binding, lifecycle management, configuration to field mapping,
-asset/property loading, field validation and object warmup/cooldown.
+Governator is a library of extensions and utilities that extend Google Guice to 
+provide: classpath scanning and automatic binding, lifecycle management, configuration 
+to field mapping, field validation and parallelized object warmup.
 
 == DETAILS
 
