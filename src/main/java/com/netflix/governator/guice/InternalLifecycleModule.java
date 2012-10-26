@@ -18,6 +18,7 @@ package com.netflix.governator.guice;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Binder;
+import com.google.inject.ConfigurationException;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
@@ -32,6 +33,7 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 class InternalLifecycleModule implements Module
@@ -100,11 +102,37 @@ class InternalLifecycleModule implements Module
         DAGManager              dagManager = manager.getDAGManager();
         dagManager.addObjectMapping(type, obj, methods);
 
-        applyInjectionPoint(InjectionPoint.forConstructorOf(type), dagManager, type);
-        for ( InjectionPoint injectionPoint : InjectionPoint.forInstanceMethodsAndFields(type) )
+        applyInjectionPoint(getConstructorInjectionPoint(type), dagManager, type);
+        for ( InjectionPoint injectionPoint : getMethodInjectionPoints(type) )
         {
             applyInjectionPoint(injectionPoint, dagManager, type);
         }
+    }
+
+    private Set<InjectionPoint> getMethodInjectionPoints(TypeLiteral<?> type)
+    {
+        try
+        {
+            return InjectionPoint.forInstanceMethodsAndFields(type);
+        }
+        catch ( ConfigurationException e )
+        {
+            // ignore
+        }
+        return null;
+    }
+
+    private InjectionPoint getConstructorInjectionPoint(TypeLiteral<?> type)
+    {
+        try
+        {
+            return InjectionPoint.forConstructorOf(type);
+        }
+        catch ( ConfigurationException e )
+        {
+            // ignore
+        }
+        return null;
     }
 
     private void applyInjectionPoint(InjectionPoint injectionPoint, DAGManager dagManager, TypeLiteral<?> type)
