@@ -1,0 +1,7 @@
+com.netflix.governator.annotations
+com.netflix.governator.annotations.binding
+com.netflix.governator.configuration
+com.netflix.governator.guice
+com.netflix.governator.guice.lazy
+com.netflix.governator.lifecycle
+com.netflix.governator.lifecycle.warmup
