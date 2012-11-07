@@ -11,7 +11,7 @@ public class LifecycleManagerArguments
     private LifecycleConfigurationProviders configurationProvider = new LifecycleConfigurationProviders();
 
     @Inject(optional = true)
-    private Set<LifecycleListener> lifecycleListeners = ImmutableSet.of();
+    private Set<LifecycleListener>          lifecycleListeners = ImmutableSet.of();
 
     @Inject
     public LifecycleManagerArguments()

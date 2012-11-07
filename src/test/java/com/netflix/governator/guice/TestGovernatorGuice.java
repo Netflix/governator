@@ -31,6 +31,8 @@ import com.netflix.governator.guice.mocks.SimpleProvider;
 import com.netflix.governator.guice.mocks.SimpleProviderAlt;
 import com.netflix.governator.guice.mocks.SimpleSingleton;
 import com.netflix.governator.guice.mocks.UnreferencedSingleton;
+import com.netflix.governator.guice.modules.ObjectA;
+import com.netflix.governator.guice.modules.ObjectB;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -42,6 +44,20 @@ import java.util.List;
 public class TestGovernatorGuice
 {
     private static final String PACKAGES = "com.netflix.governator.guice.mocks";
+
+    @Test
+    public void     testAutoBindModules() throws Exception
+    {
+        Injector    injector = LifecycleInjector
+            .builder()
+            .usingBasePackages("com.netflix.governator.guice.modules")
+            .createInjector();
+        ObjectA objectA = injector.getInstance(ObjectA.class);
+        ObjectB objectB = injector.getInstance(ObjectB.class);
+
+        Assert.assertEquals(objectA.getColor(), "blue");
+        Assert.assertEquals(objectB.getSize(), "large");
+    }
 
     @Test
     public void     testAutoBindSingletonVsSingleton() throws Exception

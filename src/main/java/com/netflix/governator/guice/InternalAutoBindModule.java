@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
@@ -147,6 +148,12 @@ class InternalAutoBindModule extends AbstractModule
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
             {
                 ProviderBinderUtil.bind(binder(), (Class<? extends javax.inject.Provider>)clazz, Scopes.SINGLETON);
+            }
+            else if ( Module.class.isAssignableFrom(clazz) )
+            {
+                Class<Module>               moduleClass = (Class<Module>)clazz;
+                Module                      module = injector.getInstance(moduleClass);
+                binder().install(module);
             }
             else
             {
