@@ -22,15 +22,12 @@ import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Scopes;
-import com.netflix.governator.guice.mocks.SimpleContainer;
-import com.netflix.governator.guice.mocks.SimpleEagerSingleton;
-import com.netflix.governator.guice.mocks.SimplePojo;
-import com.netflix.governator.guice.mocks.SimplePojoAlt;
-import com.netflix.governator.guice.mocks.SimpleProvider;
-import com.netflix.governator.guice.mocks.SimpleProviderAlt;
-import com.netflix.governator.guice.mocks.SimpleSingleton;
-import com.netflix.governator.guice.mocks.UnreferencedSingleton;
+import com.google.inject.TypeLiteral;
+import com.netflix.governator.guice.mocks.*;
+import com.netflix.governator.guice.modules.ObjectA;
+import com.netflix.governator.guice.modules.ObjectB;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -42,6 +39,49 @@ import java.util.List;
 public class TestGovernatorGuice
 {
     private static final String PACKAGES = "com.netflix.governator.guice.mocks";
+
+    @Test
+    public void     testAutoBindSingletonToGenericInterface() throws Exception
+    {
+        Injector    injector = LifecycleInjector
+            .builder()
+            .usingBasePackages("com.netflix.governator.guice.mocks")
+            .createInjector();
+
+        Key<SimpleGenericInterface<String>>     key = Key.get(new TypeLiteral<SimpleGenericInterface<String>>(){});
+        SimpleGenericInterface<String>          simple = injector.getInstance(key);
+
+        Assert.assertEquals(simple.getValue(), "a is a");
+
+        ObjectWithGenericInterface              obj = injector.getInstance(ObjectWithGenericInterface.class);
+        Assert.assertEquals(obj.getObj().getValue(), "a is a");
+    }
+
+    @Test
+    public void     testAutoBindSingletonToInterface() throws Exception
+    {
+        Injector    injector = LifecycleInjector
+            .builder()
+            .usingBasePackages("com.netflix.governator.guice.mocks")
+            .createInjector();
+        SimpleInterface     simple = injector.getInstance(SimpleInterface.class);
+
+        Assert.assertEquals(simple.getValue(), 1234);
+    }
+
+    @Test
+    public void     testAutoBindModules() throws Exception
+    {
+        Injector    injector = LifecycleInjector
+            .builder()
+            .usingBasePackages("com.netflix.governator.guice.modules")
+            .createInjector();
+        ObjectA objectA = injector.getInstance(ObjectA.class);
+        ObjectB objectB = injector.getInstance(ObjectB.class);
+
+        Assert.assertEquals(objectA.getColor(), "blue");
+        Assert.assertEquals(objectB.getSize(), "large");
+    }
 
     @Test
     public void     testAutoBindSingletonVsSingleton() throws Exception
