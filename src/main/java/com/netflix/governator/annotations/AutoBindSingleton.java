@@ -28,4 +28,13 @@ import java.lang.annotation.Target;
 @Target(java.lang.annotation.ElementType.TYPE)
 public @interface AutoBindSingleton
 {
+    /**
+     * By default, AutoBindSingleton binds to the class that has the annotation. However,
+     * you can set the value to any base class/interface that you want to bind to. You can
+     * bind to generic base classes/interfaces by specifying the raw type (i.e. <code>@AutoBindSingleton(List.class)</code>
+     * for <code>List&lt;String&gt;</code>)
+     *
+     * @return base class/interface to bind to
+     */
+    Class<?>  value() default AutoBindSingleton.class;
 }

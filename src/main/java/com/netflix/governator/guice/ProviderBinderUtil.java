@@ -8,7 +8,7 @@ import com.google.inject.Scope;
 
 class ProviderBinderUtil
 {
-    static void      bind(Binder binder, final Class<? extends Provider> clazz, Scope scope)
+    static void      bind(Binder binder, Class<? extends Provider> clazz, Scope scope)
     {
         Class<?> providedType;
         try
@@ -27,6 +27,7 @@ class ProviderBinderUtil
             )
             .in(scope);
     }
+
     private ProviderBinderUtil()
     {
     }
