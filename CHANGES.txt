@@ -1,5 +1,5 @@
-1.0.1 - xxxxxxxxxxxxx
-=====================
+1.0.1 - November 28, 2012
+=========================
 * Issue 27: Add support for auto binding Guice modules. Modules can now be marked
 @AutoBindSingleton and they will get automatically installed.
 
