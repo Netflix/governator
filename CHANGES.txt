@@ -2,3 +2,8 @@
 =====================
 * Issue 27: Add support for auto binding Guice modules. Modules can now be marked
 @AutoBindSingleton and they will get automatically installed.
+
+* By default, @AutoBindSingleton binds to the class that has the annotation. You can
+now set the value to any base class/interface that you want to bind to. You can bind to
+generic base classes/interfaces by specifying the raw type (i.e.
+@AutoBindSingleton(List.class) for List<String>).

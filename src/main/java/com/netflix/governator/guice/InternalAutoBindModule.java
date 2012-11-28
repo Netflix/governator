@@ -18,12 +18,14 @@ package com.netflix.governator.guice;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
+import com.google.inject.internal.MoreTypes;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
@@ -33,8 +35,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 class InternalAutoBindModule extends AbstractModule
 {
@@ -157,8 +161,86 @@ class InternalAutoBindModule extends AbstractModule
             }
             else
             {
-                binder().bind(clazz).asEagerSingleton();
+                bindAutoBindSingleton(clazz);
             }
         }
+    }
+
+    private void bindAutoBindSingleton(Class<?> clazz)
+    {
+        AutoBindSingleton       annotation = clazz.getAnnotation(AutoBindSingleton.class);
+        if ( annotation.value() != AutoBindSingleton.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
+        {
+            Object    foundBindingClass = searchForBaseClass(clazz, annotation, Sets.newHashSet());
+            if ( foundBindingClass == null )
+            {
+                throw new IllegalArgumentException(String.format("AutoBindSingleton class %s does not implement or extend %s", clazz.getName(), annotation.value().getName()));
+            }
+
+            if ( foundBindingClass instanceof Class )
+            {
+                //noinspection unchecked
+                binder().bind((Class)foundBindingClass).to(clazz).asEagerSingleton();
+            }
+            else if ( foundBindingClass instanceof Type )
+            {
+                TypeLiteral typeLiteral = TypeLiteral.get((Type)foundBindingClass);
+                //noinspection unchecked
+                binder().bind(typeLiteral).to(clazz).asEagerSingleton();
+            }
+            else
+            {
+                throw new RuntimeException("Unexpected binding class: " + foundBindingClass);
+            }
+        }
+        else
+        {
+            binder().bind(clazz).asEagerSingleton();
+        }
+    }
+
+    private Object searchForBaseClass(Class<?> clazz, AutoBindSingleton annotation, Set<Object> usedSet)
+    {
+        if ( clazz == null )
+        {
+            return null;
+        }
+
+        if ( clazz.equals(annotation.value()) )
+        {
+            return clazz;
+        }
+
+        if ( !usedSet.add(clazz) )
+        {
+            return null;
+        }
+
+        for ( Type type : clazz.getGenericInterfaces() )
+        {
+            if ( MoreTypes.getRawType(type).equals(annotation.value()) )
+            {
+                return type;
+            }
+        }
+
+        if ( clazz.getGenericSuperclass() != null )
+        {
+            if ( MoreTypes.getRawType(clazz.getGenericSuperclass()).equals(annotation.value()) )
+            {
+                return clazz.getGenericSuperclass();
+            }
+        }
+
+        for ( Class<?> interfaceClass : clazz.getInterfaces() )
+        {
+            Object    foundBindingClass = searchForBaseClass(interfaceClass, annotation, usedSet);
+            if ( foundBindingClass != null )
+            {
+                return foundBindingClass;
+            }
+        }
+
+        return searchForBaseClass(clazz.getSuperclass(), annotation, usedSet);
     }
 }
