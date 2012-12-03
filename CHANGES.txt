@@ -1,3 +1,8 @@
+1.0.2 - xxxxxxxxxxxxxxxxx
+=========================
+* Integrated hierarchy graphing. See the wiki for details:
+https://github.com/Netflix/governator/wiki/Grapher-Integration
+
 1.0.1 - November 28, 2012
 =========================
 * Issue 27: Add support for auto binding Guice modules. Modules can now be marked
