@@ -31,6 +31,7 @@ dependencies {
     compile     'com.google.inject:guice:3.0'
     compile     'com.google.inject.extensions:guice-multibindings:3.0'
     compile     'com.netflix.archaius:archaius-core:0.4.1'
+    compile     'com.google.inject.extensions:guice-grapher:3.0'    // should be provided - only if you want graphing
 
     // if you are using Java 7 you can remove this and switch to the JDK version
     compile     'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
