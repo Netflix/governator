@@ -1,7 +1,11 @@
-1.0.2 - xxxxxxxxxxxxxxxxx
-=========================
+1.0.2 - December 5, 2012
+========================
 * Integrated hierarchy graphing. See the wiki for details:
 https://github.com/Netflix/governator/wiki/Grapher-Integration
+
+* There's an edge case that results in a ClassNotFoundException when Governator
+reflects on a class to find annotated methods. Governator now catches these and logs
+an error instead of stopping the app.
 
 1.0.1 - November 28, 2012
 =========================
