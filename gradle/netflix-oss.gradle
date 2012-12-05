@@ -1,1 +1,17 @@
 apply from: 'http://artifacts.netflix.com/gradle-netflix-local/artifactory.gradle'
+
+rootProject {
+    afterProject { project ->
+        def compileConf = project.configurations.findByName('compile')
+        if (compileConf==null) {
+            return
+        }
+        def deps = compileConf.dependencies
+        def thisDep = deps.find { it.group == 'com.google.inject.extensions' && it.name == 'guice-grapher' }
+        if (thisDep != null) {
+            def thisVersion = thisDep.version
+            deps.remove(thisDep)
+            project.dependencies.add('compile', "com.google.inject:guice-grapher:${thisVersion}")
+        }
+    }
+}
