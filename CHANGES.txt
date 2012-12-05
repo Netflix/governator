@@ -3,6 +3,10 @@
 * Integrated hierarchy graphing. See the wiki for details:
 https://github.com/Netflix/governator/wiki/Grapher-Integration
 
+* There's an edge case that results in a ClassNotFoundException when Governator
+reflects on a class to find annotated methods. Governator now catches these and logs
+an error instead of stopping the app.
+
 1.0.1 - November 28, 2012
 =========================
 * Issue 27: Add support for auto binding Guice modules. Modules can now be marked
