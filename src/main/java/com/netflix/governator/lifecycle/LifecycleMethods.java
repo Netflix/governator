@@ -23,6 +23,8 @@ import com.google.common.collect.Multimap;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.validation.Constraint;
@@ -36,6 +38,7 @@ import java.util.Collection;
  */
 public class LifecycleMethods
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
 
@@ -78,7 +81,7 @@ public class LifecycleMethods
             return;
         }
 
-        for ( Field field : clazz.getDeclaredFields() )
+        for ( Field field : getDeclardFields(clazz) )
         {
             if ( field.isSynthetic() )
             {
@@ -93,7 +96,7 @@ public class LifecycleMethods
             processField(field, Configuration.class, usedNames);
         }
 
-        for ( Method method : clazz.getDeclaredMethods() )
+        for ( Method method : getDeclaredMethods(clazz) )
         {
             if ( method.isSynthetic() || method.isBridge() )
             {
@@ -110,6 +113,48 @@ public class LifecycleMethods
         for ( Class<?> face : clazz.getInterfaces() )
         {
             addLifeCycleMethods(face, usedNames);
+        }
+    }
+
+    private Method[] getDeclaredMethods(Class<?> clazz)
+    {
+        try
+        {
+            return clazz.getDeclaredMethods();
+        }
+        catch ( Throwable e )
+        {
+            handleReflectionError(clazz, e);
+        }
+
+        return new Method[]{};
+    }
+
+    private Field[] getDeclardFields(Class<?> clazz)
+    {
+        try
+        {
+            return clazz.getDeclaredFields();
+        }
+        catch ( Throwable e )
+        {
+            handleReflectionError(clazz, e);
+        }
+
+        return new Field[]{};
+    }
+
+    private void handleReflectionError(Class<?> clazz, Throwable e)
+    {
+        if ( e != null )
+        {
+            if ( (e instanceof NoClassDefFoundError) || (e instanceof ClassNotFoundException) )
+            {
+                log.error(String.format("Class %s could not be resolved because of a class path error. Governator cannot further process the class.", clazz.getName()), e);
+                return;
+            }
+
+            handleReflectionError(clazz, e);
         }
     }
 
