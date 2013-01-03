@@ -24,6 +24,8 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
+import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
@@ -58,6 +60,7 @@ class InternalBootstrapModule extends AbstractModule
     protected void configure()
     {
         bindScope(LazySingleton.class, LazySingletonScope.get());
+        bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
 
         BootstrapBinder         bootstrapBinder = new BootstrapBinder(binder());
 
