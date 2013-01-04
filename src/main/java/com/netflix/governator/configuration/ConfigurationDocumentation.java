@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public class ConfigurationDocumentation
 {
-    private final Map<String, Entry>        entries = Maps.newTreeMap();
+    private final Map<String, Entry>        entries = Maps.newConcurrentMap();
 
     private static class Entry
     {
@@ -98,7 +98,10 @@ public class ConfigurationDocumentation
         printer.addColumn("VALUE");
         printer.addColumn("DESCRIPTION");
 
-        for ( Entry entry : entries.values() )
+        Map<String, Entry>      sortedEntries = Maps.newTreeMap();
+        sortedEntries.putAll(entries);
+
+        for ( Entry entry : sortedEntries.values() )
         {
             printer.addValue(0, entry.configurationName);
             printer.addValue(1, entry.field.getDeclaringClass().getName() + "#" + entry.field.getName());

@@ -64,8 +64,6 @@ import jsr166y.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-// TODO - should the methods really be synchronized? Maybe just sync on the object being added
-
 /**
  * Main instance management container
  */
@@ -180,7 +178,7 @@ public class LifecycleManager implements Closeable
      * @param obj object to add
      * @throws Exception errors
      */
-    public synchronized void add(Object obj) throws Exception
+    public void add(Object obj) throws Exception
     {
         add(obj, new LifecycleMethods(obj.getClass()));
     }
@@ -193,7 +191,7 @@ public class LifecycleManager implements Closeable
      * @param methods calculated lifecycle methods
      * @throws Exception errors
      */
-    public synchronized void add(Object obj, LifecycleMethods methods) throws Exception
+    public void add(Object obj, LifecycleMethods methods) throws Exception
     {
         Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
 
@@ -211,7 +209,7 @@ public class LifecycleManager implements Closeable
      * @param obj object to check
      * @return state
      */
-    public synchronized LifecycleState getState(Object obj)
+    public LifecycleState getState(Object obj)
     {
         if ( state.get() == State.STARTED )
         {
