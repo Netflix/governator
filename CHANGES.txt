@@ -1,11 +1,13 @@
-1.0.3 - xxxxxxxxxxxxxxxx
-========================
+1.0.3 - January 3, 2013
+=======================
 * Added a new scope, FineGrainedLazySingleton. Guice's default Singleton scope synchronizes
 all object creation on a single lock (InternalInjectorCreator.class). It does this to avoid
 deadlocks with circular dependencies. FineGrainedLazySingleton instead locks on the key
 so that multiple singletons can be created concurrently. Circular dependencies are rare
 so FineGrainedLazySingleton risks deadlocks in those situations for the benefit of better
 concurrency.
+
+* Made LifecycleManager more concurrent by removing the coarse syncs on the add methods.
 
 1.0.2 - December 5, 2012
 ========================
