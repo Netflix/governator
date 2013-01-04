@@ -42,7 +42,7 @@ public class DAGManager
      * @param object the object
      * @param methods the objects lifecycle methods
      */
-    public void addObjectMapping(Object objectKey, Object object, LifecycleMethods methods)
+    public synchronized void addObjectMapping(Object objectKey, Object object, LifecycleMethods methods)
     {
         keyToObject.put(objectKey, object);
         keyToLifecycle.put(objectKey, methods);
@@ -54,7 +54,7 @@ public class DAGManager
      * @param objectKey object's key
      * @param dependencyKey object key of the dependency
      */
-    public void addDependency(Object objectKey, Object dependencyKey)
+    public synchronized void addDependency(Object objectKey, Object dependencyKey)
     {
         dependencies.put(objectKey, dependencyKey);
         nonRoots.add(dependencyKey);
@@ -65,7 +65,7 @@ public class DAGManager
      *
      * @return root of the DAG
      */
-    public DependencyNode buildTree()
+    public synchronized DependencyNode buildTree()
     {
         DependencyNode root = new DependencyNode(new Object());
         for ( Object objectKey : dependencies.keySet() )
@@ -82,17 +82,17 @@ public class DAGManager
         return root;
     }
 
-    public Object getObject(Object key)
+    public synchronized Object getObject(Object key)
     {
         return keyToObject.get(key);
     }
 
-    public LifecycleMethods getLifecycleMethods(Object key)
+    public synchronized LifecycleMethods getLifecycleMethods(Object key)
     {
         return keyToLifecycle.get(key);
     }
 
-    public void        clear()
+    public synchronized void        clear()
     {
         keyToObject.clear();
         keyToLifecycle.clear();
