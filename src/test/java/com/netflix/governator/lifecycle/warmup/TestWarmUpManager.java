@@ -52,6 +52,8 @@ public class TestWarmUpManager
         }
         catch ( WarmUpException e )
         {
+            e.printStackTrace();
+
             List<WarmUpErrors.Error>        errors = Lists.newArrayList(e.getErrors());
             Assert.assertEquals(errors.size(), 1);
             Assert.assertEquals(errors.get(0).getException().getClass(), NullPointerException.class);

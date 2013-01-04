@@ -16,9 +16,18 @@
 
 package com.netflix.governator.lifecycle.warmup;
 
-import com.netflix.governator.lifecycle.LifecycleState;
+import com.netflix.governator.annotations.WarmUp;
 
-public interface SetStateMixin
+public class WarmUpWithException
 {
-    public void setState(Object obj, LifecycleState state);
+    @WarmUp
+    public void warmUp()
+    {
+        System.out.println(getNull().toString());   // generate NPE
+    }
+
+    private Object getNull()
+    {
+        return null;
+    }
 }

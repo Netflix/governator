@@ -33,7 +33,7 @@ import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
-import com.netflix.governator.lifecycle.warmup.SetStateMixin;
+import com.netflix.governator.lifecycle.warmup.WarmUpErrors;
 import com.netflix.governator.lifecycle.warmup.WarmUpTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -221,6 +221,21 @@ public class LifecycleManager implements Closeable
     }
 
     /**
+     * Change the state of an object. Use with caution. This method is generally only used internally.
+     *
+     * @param obj object to change
+     * @param state new state
+     */
+    public void setState(Object obj, LifecycleState state)
+    {
+        objectStates.put(new StateKey(obj), state);
+        for ( LifecycleListener listener : listeners )
+        {
+            listener.stateChanged(obj, state);
+        }
+    }
+
+    /**
      * The manager MUST be started. Note: this method
      * waits indefinitely for warm up methods to complete
      *
@@ -329,15 +344,6 @@ public class LifecycleManager implements Closeable
         objectStates.clear();
     }
 
-    private void setState(Object obj, LifecycleState state)
-    {
-        objectStates.put(new StateKey(obj), state);
-        for ( LifecycleListener listener : listeners )
-        {
-            listener.stateChanged(obj, state);
-        }
-    }
-
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
     {
         Set<ConstraintViolation<Object>> violations = validator.validate(obj);
@@ -364,22 +370,15 @@ public class LifecycleManager implements Closeable
             objectStates.put(key, LifecycleState.PRE_WARMING_UP);
         }
 
-        SetStateMixin       setState = new SetStateMixin()
-        {
-            @Override
-            public void setState(Object obj, LifecycleState state)
-            {
-                LifecycleManager.this.setState(obj, state);
-            }
-        };
         ForkJoinPool                        forkJoinPool = new ForkJoinPool();
         ConcurrentMap<Object, WarmUpTask>   tasks = Maps.newConcurrentMap();
-        WarmUpTask                          rootTask = new WarmUpTask(dagManager.buildTree(), this, setState, tasks, true);
+        WarmUpErrors                        errors = new WarmUpErrors();
+        WarmUpTask                          rootTask = new WarmUpTask(this, errors, dagManager.buildTree(), tasks, true);
 
         forkJoinPool.submit(rootTask);
         forkJoinPool.shutdown();
 
-        boolean             success = forkJoinPool.awaitTermination(maxMs, TimeUnit.MILLISECONDS);
+        boolean                             success = forkJoinPool.awaitTermination(maxMs, TimeUnit.MILLISECONDS);
         if ( !success )
         {
             forkJoinPool.shutdownNow();
@@ -392,6 +391,8 @@ public class LifecycleManager implements Closeable
                 objectStates.put(key, LifecycleState.ACTIVE);
             }
         }
+
+        errors.throwIfErrors();
 
         return success;
     }

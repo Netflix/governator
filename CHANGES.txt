@@ -1,3 +1,11 @@
+1.0.4 - xxxxxxxxxxxxxxx
+=======================
+* WarmUps weren't being run for objects with no dependencies.
+
+* Issue 33: Warm up errors were merely being logged. They now generate true exceptions. Any
+exceptions thrown by warm up methods are wrapped in a single WarmUpException that is throw by
+the LifecycleManager.start() method.
+
 1.0.3 - January 3, 2013
 =======================
 * Added a new scope, FineGrainedLazySingleton. Guice's default Singleton scope synchronizes
