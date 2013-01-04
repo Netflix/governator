@@ -35,6 +35,8 @@ public class DAGManager
     private final Multimap<Object, Object>          dependencies = ArrayListMultimap.create();
     private final Set<Object>                       nonRoots = Sets.newHashSet();
 
+    private static final Object         ROOT_DEPENDENCY_KEY = new Object();
+
     /**
      * Adds a mapping of an object "key" to an object
      *
@@ -46,6 +48,7 @@ public class DAGManager
     {
         keyToObject.put(objectKey, object);
         keyToLifecycle.put(objectKey, methods);
+        dependencies.put(objectKey, ROOT_DEPENDENCY_KEY);   // add an initial entry in case this object has no dependencies
     }
 
     /**
