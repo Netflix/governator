@@ -16,20 +16,74 @@
 
 package com.netflix.governator.lifecycle.warmup;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.lifecycle.LifecycleManagerArguments;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class TestWarmUpManager
 {
+    @Test
+    public void     testPostStart() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder().createInjector();
+        injector.getInstance(LifecycleManager.class).start();
+
+        injector.getInstance(Dag1.A.class);
+        Recorder    recorder = injector.getInstance(Recorder.class);
+
+        Thread.sleep(LifecycleManagerArguments.DEFAULT_WARM_UP_PADDING_MS + 1000);
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+    }
+
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+    @Test
+    public void     testErrors() throws Exception
+    {
+        AbstractModule  module = new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                binder().bind(WarmUpWithException.class).asEagerSingleton();
+            }
+        };
+        try
+        {
+            LifecycleInjector.builder().withModules(module).createInjector().getInstance(LifecycleManager.class).start();
+            Assert.fail("Should have thrown WarmUpException");
+        }
+        catch ( WarmUpException e )
+        {
+            e.printStackTrace();
+
+            List<WarmUpErrors.Error>        errors = Lists.newArrayList(e.getErrors());
+            Assert.assertEquals(errors.size(), 1);
+            Assert.assertEquals(errors.get(0).getException().getClass(), NullPointerException.class);
+        }
+    }
+
     @Test
     public void     testDag1() throws Exception
     {
@@ -148,10 +202,27 @@ public class TestWarmUpManager
         assertSingleExecution(recorder);
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         assertOrdering(recorder, "D", "E");
-        assertOrdering(recorder, "D", "F");
         assertOrdering(recorder, "C", "E");
         assertOrdering(recorder, "B", "D");
         assertOrdering(recorder, "A", "B");
+    }
+
+    @Test
+    public void     testFlat() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder().createInjector();
+        Recorder    recorder = injector.getInstance(Recorder.class);
+        injector.getInstance(Flat.A.class).recorder = recorder;
+        injector.getInstance(Flat.B.class).recorder = recorder;
+        injector.getInstance(LifecycleManager.class).start();
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        Assert.assertTrue(recorder.getRecordings().indexOf("A") >= 0);
+        Assert.assertTrue(recorder.getRecordings().indexOf("B") >= 0);
     }
 
     @Test

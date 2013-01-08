@@ -1,3 +1,17 @@
+1.0.4 - January 8, 2013
+=======================
+* WarmUps weren't being run for objects with no dependencies.
+
+* Issue 33: Warm up errors were merely being logged. They now generate true exceptions. Any
+exceptions thrown by warm up methods are wrapped in a single WarmUpException that is throw by
+the LifecycleManager.start() method.
+
+* Issue 32: Objects added to the lifecycle after LifecycleManager.start() was called were getting
+warmed up in the Guice thread. This could cause deadlocks and other problems. Further, each object
+would get warmed up independently. I've reworked this code so that post-start warm ups occur in
+a separate thread and there is a small padding period so that multiple objects added near the same
+time can get warmed up together.
+
 1.0.3 - January 3, 2013
 =======================
 * Added a new scope, FineGrainedLazySingleton. Guice's default Singleton scope synchronizes

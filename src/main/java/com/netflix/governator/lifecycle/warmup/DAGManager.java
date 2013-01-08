@@ -18,10 +18,12 @@ package com.netflix.governator.lifecycle.warmup;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.netflix.governator.lifecycle.LifecycleMethods;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +37,29 @@ public class DAGManager
     private final Multimap<Object, Object>          dependencies = ArrayListMultimap.create();
     private final Set<Object>                       nonRoots = Sets.newHashSet();
 
+    private static final Object         ROOT_DEPENDENCY_KEY = new Object();
+
+    /**
+     * Return a copy of this DAGManager
+     *
+     * @return copy
+     */
+    public synchronized DAGManager newCopy()
+    {
+        DAGManager copy = new DAGManager();
+        copy.keyToObject.putAll(keyToObject);
+        copy.keyToLifecycle.putAll(keyToLifecycle);
+        copy.nonRoots.addAll(nonRoots);
+
+        for ( Object key : dependencies.keys() )
+        {
+            List<Object> objectsCopy = Lists.newArrayList(dependencies.get(key));
+            copy.dependencies.putAll(key, objectsCopy);
+        }
+
+        return copy;
+    }
+
     /**
      * Adds a mapping of an object "key" to an object
      *
@@ -46,6 +71,7 @@ public class DAGManager
     {
         keyToObject.put(objectKey, object);
         keyToLifecycle.put(objectKey, methods);
+        dependencies.put(objectKey, ROOT_DEPENDENCY_KEY);   // add an initial entry in case this object has no dependencies
     }
 
     /**

@@ -18,16 +18,15 @@ package com.netflix.governator.lifecycle.warmup;
 
 import com.google.common.collect.Lists;
 import com.netflix.governator.annotations.WarmUp;
-import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.LifecycleState;
+import jsr166y.RecursiveAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import jsr166y.RecursiveAction;
 
 /**
  * <p>
@@ -42,23 +41,28 @@ import jsr166y.RecursiveAction;
 public class WarmUpTask extends RecursiveAction
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final LifecycleManager lifecycleManager;
-    private final SetStateMixin setStateMixin;
     private final ConcurrentMap<Object, WarmUpTask> tasks;
     private final boolean isRoot;
+    private final WarmUpDriver warmUpDriver;
+    private final WarmUpErrors errors;
+    private final DAGManager dagManager;
     private final DependencyNode node;
 
     /**
-     * @param node the node to warm up
-     * @param lifecycleManager lifecycle manager
-     * @param setStateMixin used to change object state
-     * @param isRoot true if the node is the root node (don't try to warm it up)
+     * @param warmUpDriver the warmUpDriver
+     * @param errors container for warm up errors
      */
-    public WarmUpTask(DependencyNode node, LifecycleManager lifecycleManager, SetStateMixin setStateMixin, ConcurrentMap<Object, WarmUpTask> tasks, boolean isRoot)
+    public WarmUpTask(WarmUpDriver warmUpDriver, WarmUpErrors errors, DAGManager dagManager, ConcurrentMap<Object, WarmUpTask> tasks)
     {
+        this(warmUpDriver, errors, dagManager, dagManager.buildTree(), tasks, true);
+    }
+
+    private WarmUpTask(WarmUpDriver warmUpDriver, WarmUpErrors errors, DAGManager dagManager, DependencyNode node, ConcurrentMap<Object, WarmUpTask> tasks, boolean isRoot)
+    {
+        this.warmUpDriver = warmUpDriver;
+        this.errors = errors;
+        this.dagManager = dagManager;
         this.node = node;
-        this.lifecycleManager = lifecycleManager;
-        this.setStateMixin = setStateMixin;
         this.tasks = tasks;
         this.isRoot = isRoot;
     }
@@ -69,7 +73,7 @@ public class WarmUpTask extends RecursiveAction
         List<WarmUpTask> childTasks = Lists.newArrayList();
         for ( DependencyNode child : node.getChildren() )
         {
-            WarmUpTask  newChildTask = new WarmUpTask(child, lifecycleManager, setStateMixin, tasks, false);
+            WarmUpTask  newChildTask = new WarmUpTask(warmUpDriver, errors, dagManager, child, tasks, false);
             WarmUpTask  existingChildTask = tasks.putIfAbsent(child.getKey(), newChildTask);
             if ( existingChildTask == null )
             {
@@ -95,16 +99,16 @@ public class WarmUpTask extends RecursiveAction
 
     private void warmUpObject()
     {
-        Object                  obj = lifecycleManager.getDAGManager().getObject(node.getKey());
+        Object                  obj = dagManager.getObject(node.getKey());
         if ( obj == null )
         {
             log.error(String.format("Could not find lifecycle-registered object for key. Ignoring object. Key: %s - KeyClass: %s", node.getKey(), node.getKey().getClass().getName()));
         }
         else
         {
-            setStateMixin.setState(obj, LifecycleState.WARMING_UP);
+            warmUpDriver.setState(obj, LifecycleState.WARMING_UP);
 
-            LifecycleMethods    lifecycleMethods = lifecycleManager.getDAGManager().getLifecycleMethods(node.getKey());
+            LifecycleMethods    lifecycleMethods = dagManager.getLifecycleMethods(node.getKey());
             Collection<Method>  methods = (lifecycleMethods != null) ? lifecycleMethods.methodsFor(WarmUp.class) : null;
 
             LifecycleState      newState = LifecycleState.ACTIVE;
@@ -120,12 +124,14 @@ public class WarmUpTask extends RecursiveAction
             }
             catch ( Throwable e )
             {
-                log.error(String.format("Error warming up object. Object: (%s) - Object Class: (%s)", obj, obj.getClass().getName()), e);
+                String      message = String.format("Key: %s - Object: %s", node.getKey(), obj.getClass().getName());
+                e = errors.addError(e, message);
+                log.error("Error warming up object. " + message, e);
                 newState = LifecycleState.ERROR;
             }
             finally
             {
-                setStateMixin.setState(obj, newState);
+                warmUpDriver.setState(obj, newState);
             }
         }
     }
