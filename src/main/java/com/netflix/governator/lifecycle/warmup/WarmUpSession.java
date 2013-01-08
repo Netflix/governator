@@ -55,9 +55,7 @@ public class WarmUpSession
 
     private WarmUpTask newRootTask(WarmUpErrors errors)
     {
-        DAGManager                          copy = dagManager.newCopy();
-        dagManager.clear();
-
+        DAGManager                          copy = dagManager.newCopyAndClear();
         ConcurrentMap<Object, WarmUpTask>   tasks = Maps.newConcurrentMap();
         return new WarmUpTask(warmUpDriver, errors, copy, tasks);
     }
