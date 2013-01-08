@@ -17,6 +17,7 @@
 package com.netflix.governator.lifecycle.warmup;
 
 import com.google.common.collect.Iterators;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -68,7 +69,7 @@ public class WarmUpErrors implements Iterable<WarmUpErrors.Error>
      */
     public Throwable     addError(Throwable e, String context)
     {
-        while ( e instanceof ReflectiveOperationException )
+        while ( InvocationTargetException.class.isAssignableFrom(e.getClass()) )
         {
             if ( e.getCause() != null )
             {
