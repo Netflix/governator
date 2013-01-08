@@ -24,6 +24,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.lifecycle.LifecycleManagerArguments;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Arrays;
@@ -33,6 +34,29 @@ import java.util.concurrent.TimeUnit;
 
 public class TestWarmUpManager
 {
+    @Test
+    public void     testPostStart() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder().createInjector();
+        injector.getInstance(LifecycleManager.class).start();
+
+        injector.getInstance(Dag1.A.class);
+        Recorder    recorder = injector.getInstance(Recorder.class);
+
+        Thread.sleep(LifecycleManagerArguments.DEFAULT_WARM_UP_PADDING_MS + 1000);
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+    }
+
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     @Test
     public void     testErrors() throws Exception

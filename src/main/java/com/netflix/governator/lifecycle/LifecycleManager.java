@@ -27,14 +27,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.PreConfiguration;
-import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
-import com.netflix.governator.lifecycle.warmup.WarmUpErrors;
-import com.netflix.governator.lifecycle.warmup.WarmUpTask;
+import com.netflix.governator.lifecycle.warmup.WarmUpDriver;
+import com.netflix.governator.lifecycle.warmup.WarmUpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -47,20 +46,18 @@ import javax.validation.ValidatorFactory;
 import javax.xml.bind.DatatypeConverter;
 import java.io.Closeable;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import jsr166y.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -79,6 +76,8 @@ public class LifecycleManager implements Closeable
     private final Collection<LifecycleListener> listeners;
     private final ValidatorFactory factory;
     private final DAGManager dagManager = new DAGManager();
+    private final PostStartArguments postStartArguments;
+    private final AtomicReference<WarmUpSession> postStartWarmUpSession = new AtomicReference<WarmUpSession>(null);
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -146,6 +145,7 @@ public class LifecycleManager implements Closeable
         configurationProvider = arguments.getConfigurationProvider();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         factory = Validation.buildDefaultValidatorFactory();
+        postStartArguments = arguments.getPostStartArguments();
     }
 
     /**
@@ -199,7 +199,7 @@ public class LifecycleManager implements Closeable
 
         if ( state.get() == State.STARTED )
         {
-            initializeObjectPostStart(obj, methods);
+            initializeObjectPostStart(obj);
         }
     }
 
@@ -211,28 +211,12 @@ public class LifecycleManager implements Closeable
      */
     public LifecycleState getState(Object obj)
     {
-        if ( state.get() == State.STARTED )
+        LifecycleState lifecycleState = objectStates.get(new StateKey(obj));
+        if ( lifecycleState == null )
         {
-            return LifecycleState.ACTIVE;   // by definition
+            lifecycleState = (state.get() == State.STARTED) ? LifecycleState.ACTIVE : LifecycleState.LATENT;
         }
-
-        LifecycleState state = objectStates.get(new StateKey(obj));
-        return (state != null) ? state : LifecycleState.LATENT;
-    }
-
-    /**
-     * Change the state of an object. Use with caution. This method is generally only used internally.
-     *
-     * @param obj object to change
-     * @param state new state
-     */
-    public void setState(Object obj, LifecycleState state)
-    {
-        objectStates.put(new StateKey(obj), state);
-        for ( LifecycleListener listener : listeners )
-        {
-            listener.stateChanged(obj, state);
-        }
+        return lifecycleState;
     }
 
     /**
@@ -261,13 +245,13 @@ public class LifecycleManager implements Closeable
 
         validate();
 
-        long        maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
-        boolean     success = doWarmUp(maxMs);
+        long            maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
+        WarmUpSession   warmUpSession = new WarmUpSession(getWarmUpDriver(), dagManager);
+        boolean         success = warmUpSession.doImmediate(maxMs);
+
 
         configurationDocumentation.output(log);
         configurationDocumentation.clear();
-
-        clear();
 
         state.set(State.STARTED);
 
@@ -333,15 +317,21 @@ public class LifecycleManager implements Closeable
         }
     }
 
+    /**
+     * @return the internal DAG manager
+     */
     public DAGManager getDAGManager()
     {
         return dagManager;
     }
 
-    private void clear()
+    private void setState(Object obj, LifecycleState state)
     {
-        dagManager.clear();
-        objectStates.clear();
+        objectStates.put(new StateKey(obj), state);
+        for ( LifecycleListener listener : listeners )
+        {
+            listener.stateChanged(obj, state);
+        }
     }
 
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
@@ -361,40 +351,6 @@ public class LifecycleManager implements Closeable
             }
         }
         return exception;
-    }
-
-    private boolean doWarmUp(long maxMs) throws Exception
-    {
-        for ( StateKey key : objectStates.keySet() )
-        {
-            objectStates.put(key, LifecycleState.PRE_WARMING_UP);
-        }
-
-        ForkJoinPool                        forkJoinPool = new ForkJoinPool();
-        ConcurrentMap<Object, WarmUpTask>   tasks = Maps.newConcurrentMap();
-        WarmUpErrors                        errors = new WarmUpErrors();
-        WarmUpTask                          rootTask = new WarmUpTask(this, errors, dagManager.buildTree(), tasks, true);
-
-        forkJoinPool.submit(rootTask);
-        forkJoinPool.shutdown();
-
-        boolean                             success = forkJoinPool.awaitTermination(maxMs, TimeUnit.MILLISECONDS);
-        if ( !success )
-        {
-            forkJoinPool.shutdownNow();
-        }
-
-        for ( StateKey key : objectStates.keySet() )
-        {
-            if ( objectStates.get(key) != LifecycleState.ERROR )
-            {
-                objectStates.put(key, LifecycleState.ACTIVE);
-            }
-        }
-
-        errors.throwIfErrors();
-
-        return success;
     }
 
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
@@ -561,16 +517,52 @@ public class LifecycleManager implements Closeable
         return Joiner.on(".").join(transformed);
     }
 
-    private void initializeObjectPostStart(Object obj, LifecycleMethods methods) throws ValidationException, IllegalAccessException, InvocationTargetException
+    private void initializeObjectPostStart(Object obj) throws ValidationException
     {
         validate(obj);
 
-        objectStates.put(new StateKey(obj), LifecycleState.PRE_WARMING_UP);
-        for ( Method method : methods.methodsFor(WarmUp.class) )
-        {
-            method.invoke(obj);
-        }
+        postStartWarmUpSession.compareAndSet(null, new WarmUpSession(getWarmUpDriver(), dagManager));
+        WarmUpSession       session = postStartWarmUpSession.get();
+        session.doInBackground();
+    }
 
-        clear();
+    private WarmUpDriver getWarmUpDriver()
+    {
+        return new WarmUpDriver()
+        {
+            @Override
+            public void setPreWarmUpState()
+            {
+                for ( StateKey key : objectStates.keySet() )
+                {
+                    objectStates.put(key, LifecycleState.PRE_WARMING_UP);
+                }
+            }
+
+            @Override
+            public void setPostWarmUpState()
+            {
+                Iterator<LifecycleState> iterator = objectStates.values().iterator();
+                while ( iterator.hasNext() )
+                {
+                    if ( iterator.next() != LifecycleState.ERROR )
+                    {
+                        iterator.remove();
+                    }
+                }
+            }
+
+            @Override
+            public PostStartArguments getPostStartArguments()
+            {
+                return postStartArguments;
+            }
+
+            @Override
+            public void setState(Object obj, LifecycleState state)
+            {
+                LifecycleManager.this.setState(obj, state);
+            }
+        };
     }
 }
