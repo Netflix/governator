@@ -150,11 +150,11 @@ public class LifecycleMethods
         {
             if ( (e instanceof NoClassDefFoundError) || (e instanceof ClassNotFoundException) )
             {
-                log.error(String.format("Class %s could not be resolved because of a class path error. Governator cannot further process the class.", clazz.getName()), e);
+                log.debug(String.format("Class %s could not be resolved because of a class path error. Governator cannot further process the class.", clazz.getName()), e);
                 return;
             }
 
-            handleReflectionError(clazz, e);
+            handleReflectionError(clazz, e.getCause());
         }
     }
 
