@@ -1,3 +1,10 @@
+1.0.5 - xxxxxxxxxxxxxxx
+=======================
+* Fixed a potential infinite loop with an internal reflective method. Though, I have not seen
+it actually occur in production.
+
+* Changed the log message "Could not find lifecycle-registered object for key..." to DEBUG.
+
 1.0.4 - January 8, 2013
 =======================
 * WarmUps weren't being run for objects with no dependencies.
