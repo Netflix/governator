@@ -19,6 +19,7 @@ package com.netflix.governator.lifecycle;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -34,6 +35,7 @@ import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 import com.netflix.governator.lifecycle.warmup.WarmUpDriver;
 import com.netflix.governator.lifecycle.warmup.WarmUpSession;
+import org.apache.commons.configuration.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -415,7 +417,7 @@ public class LifecycleManager implements Closeable
         return reversed;
     }
 
-    private Date parseDate(String value)
+    private Date parseDate(String configurationName, String value, Configuration configuration)
     {
         DateFormat  formatter = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
         formatter.setLenient(false);
@@ -424,9 +426,8 @@ public class LifecycleManager implements Closeable
         {
             return formatter.parse(value);
         }
-        catch( ParseException e )
-        {
-            // ignore
+        catch( ParseException e ) {
+            // ignore as the fallback is the DatattypeConverter.
         }
 
         try
@@ -435,7 +436,7 @@ public class LifecycleManager implements Closeable
         }
         catch ( IllegalArgumentException e )
         {
-            // ignore
+            ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
         }
 
         return null;
@@ -452,34 +453,49 @@ public class LifecycleManager implements Closeable
         boolean has = configurationProvider.has(key);
         if ( has )
         {
-            if ( String.class.isAssignableFrom(field.getType()) )
-            {
-                value = configurationProvider.getString(key);
-            }
-            else if ( Boolean.class.isAssignableFrom(field.getType()) || Boolean.TYPE.isAssignableFrom(field.getType()) )
-            {
-                value = configurationProvider.getBoolean(key);
-            }
-            else if ( Integer.class.isAssignableFrom(field.getType()) || Integer.TYPE.isAssignableFrom(field.getType()) )
-            {
-                value = configurationProvider.getInteger(key);
-            }
-            else if ( Long.class.isAssignableFrom(field.getType()) || Long.TYPE.isAssignableFrom(field.getType()) )
-            {
-                value = configurationProvider.getLong(key);
-            }
-            else if ( Double.class.isAssignableFrom(field.getType()) || Double.TYPE.isAssignableFrom(field.getType()) )
-            {
-                value = configurationProvider.getDouble(key);
-            }
-            else if ( Date.class.isAssignableFrom(field.getType()) )
-            {
-                value = parseDate(configurationProvider.getString(key));
-            }
-            else
-            {
-                log.error("Field type not supported: " + field.getType());
-                field = null;
+            try {
+                if ( String.class.isAssignableFrom(field.getType()) )
+                {
+                    value = configurationProvider.getString(key);
+                }
+                else if ( Boolean.class.isAssignableFrom(field.getType()) || Boolean.TYPE.isAssignableFrom(field.getType()) )
+                {
+                    value = configurationProvider.getBoolean(key);
+                }
+                else if ( Integer.class.isAssignableFrom(field.getType()) || Integer.TYPE.isAssignableFrom(field.getType()) )
+                {
+                    value = configurationProvider.getInteger(key);
+                }
+                else if ( Long.class.isAssignableFrom(field.getType()) || Long.TYPE.isAssignableFrom(field.getType()) )
+                {
+                    value = configurationProvider.getLong(key);
+                }
+                else if ( Double.class.isAssignableFrom(field.getType()) || Double.TYPE.isAssignableFrom(field.getType()) )
+                {
+                    value = configurationProvider.getDouble(key);
+                }
+                else if ( Date.class.isAssignableFrom(field.getType()) )
+                {
+                    value = parseDate(configurationName, configurationProvider.getString(key), configuration);
+                    if (null == value) {
+                        field = null;
+                    }
+                }
+                else
+                {
+                    log.error("Field type not supported: " + field.getType());
+                    field = null;
+                }
+            } catch (IllegalArgumentException e) {
+                if (!Date.class.isAssignableFrom(field.getType())) {
+                    ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                    field = null;
+                }
+            } catch (ConversionException e) {
+                if (!Date.class.isAssignableFrom(field.getType())) {
+                    ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                    field = null;
+                }
             }
         }
 
@@ -497,6 +513,17 @@ public class LifecycleManager implements Closeable
                 documentationValue = "";
             }
             configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
+        }
+    }
+
+    private void ignoreTypeMismtachIfConfigured(Configuration configuration, String configurationName,
+                                                Exception e) {
+        if (configuration.ignoreTypeMismatch()) {
+            log.info(String.format(
+                    "Type conversion failed for configuration name %s. This error will be ignored and the field will have the default value if specified. Error: %s",
+                    configurationName, e));
+        } else {
+            throw Throwables.propagate(e);
         }
     }
 
