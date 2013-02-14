@@ -80,10 +80,27 @@ public class LifecycleInjector
      */
     public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)
     {
+        return createStandardClasspathScanner(basePackages, null);
+    }
+
+    /**
+     * If you need early access to the CLASSPATH scanner. For performance reasons, you should
+     * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
+     *
+     * @param basePackages packages to recursively scan
+     * @param additionalAnnotations any additional annotations to scan for
+     * @return scanner
+     */
+    public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages, List<Class<? extends Annotation>> additionalAnnotations)
+    {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
         annotations.add(Inject.class);
         annotations.add(javax.inject.Inject.class);
+        if ( additionalAnnotations != null )
+        {
+            annotations.addAll(additionalAnnotations);
+        }
         return new ClasspathScanner(basePackages, annotations);
     }
 
