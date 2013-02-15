@@ -16,12 +16,19 @@
 
 package com.netflix.governator.lifecycle;
 
+import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
+import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
+import com.netflix.governator.lifecycle.mocks.ObjectWithIgnoreTypeMismatchConfig;
 import com.netflix.governator.lifecycle.mocks.PreConfigurationChange;
 import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class TestConfiguration
@@ -97,5 +104,53 @@ public class TestConfiguration
         Assert.assertEquals(obj.aLong, 200);
         Assert.assertEquals(obj.aDouble, 300.4);
         Assert.assertEquals(obj.aString, "a is a");
+    }
+
+    @Test
+    public void     testConfigTypeMismatchWithPropProvider() throws Exception
+    {
+        Properties properties = new Properties();
+        properties.setProperty("test.b", "20");
+        properties.setProperty("test.i", "foo");
+        properties.setProperty("test.l", "bar");
+        properties.setProperty("test.d", "zar");
+        properties.setProperty("test.s", "a is a");
+        properties.setProperty("test.dt", "dar");
+
+        testTypeMismatch(new PropertiesConfigurationProvider(properties));
+    }
+
+    @Test
+    public void     testConfigTypeMismatchWithArchaius() throws Exception
+    {
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("test.b", "20");
+        properties.put("test.i", "foo");
+        properties.put("test.l", "bar");
+        properties.put("test.d", "zar");
+        properties.put("test.s", "a is a");
+        properties.put("test.dt", "dar");
+
+        testTypeMismatch(new ArchaiusConfigurationProvider(properties));
+    }
+
+    private void testTypeMismatch(ConfigurationProvider provider) throws Exception {
+        LifecycleManagerArguments arguments = new LifecycleManagerArguments();
+        arguments.getConfigurationProvider().add(provider);
+
+        LifecycleManager manager = new LifecycleManager(arguments);
+
+        ObjectWithIgnoreTypeMismatchConfig obj = new ObjectWithIgnoreTypeMismatchConfig();
+        ObjectWithIgnoreTypeMismatchConfig nonGovernatedSample = new ObjectWithIgnoreTypeMismatchConfig();
+        nonGovernatedSample.aDate = new Date(obj.aDate.getTime());
+        manager.add(obj);
+        manager.start();
+
+
+        Assert.assertEquals(obj.aBool, nonGovernatedSample.aBool);
+        Assert.assertEquals(obj.anInt, nonGovernatedSample.anInt);
+        Assert.assertEquals(obj.aLong, nonGovernatedSample.aLong);
+        Assert.assertEquals(obj.aDouble, nonGovernatedSample.aDouble);
+        Assert.assertEquals(obj.aDate, nonGovernatedSample.aDate);
     }
 }
