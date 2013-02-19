@@ -16,7 +16,7 @@ public interface ResourceLocator
      * it, pass on to the next locator in the chain. NOTE: the default ResourceLocator
      * merely throws {@link NameNotFoundException}.
      *
-     * @param resource the resource to load
+     * @param resource the resource to load - NOTE: type() and name() will have been adjusted if defaults were used.
      * @param nextInChain the next locator in the chain (never <code>null</code>)
      * @return the loaded object
      * @throws Exception errors
