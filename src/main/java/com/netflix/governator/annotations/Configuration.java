@@ -40,4 +40,20 @@ public @interface Configuration
      * @return user displayable description of this configuration
      */
     String      documentation() default "";
+
+    /**
+     * If the value of the property defined for this config is not the same or can not be converted to the
+     * required type, setting this to <code>true</code> will ignore such a value. In such a case, the target field
+     * will contain the default value if defined.<br/>
+     * The error during configuration is deemed as a type mismatch if the exception thrown by the {@link ConfigurationProvider}
+     * is one amongst:
+     * <ul>
+     * <li>{@link IllegalArgumentException}</li>
+     * <li>{@link org.apache.commons.configuration.ConversionException}</li>
+     </ul>
+     *
+     * @return <code>true</code> if type mismatch must be ignored. <code>false</code> otherwise. Default value is
+     * <code>false</code>
+     */
+    boolean ignoreTypeMismatch() default false;
 }
