@@ -28,6 +28,8 @@ import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import javax.annotation.Resource;
+import javax.annotation.Resources;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,6 +99,8 @@ public class LifecycleInjector
         annotations.add(AutoBindSingleton.class);
         annotations.add(Inject.class);
         annotations.add(javax.inject.Inject.class);
+        annotations.add(Resource.class);
+        annotations.add(Resources.class);
         if ( additionalAnnotations != null )
         {
             annotations.addAll(additionalAnnotations);

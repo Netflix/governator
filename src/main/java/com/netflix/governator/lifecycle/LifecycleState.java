@@ -16,6 +16,8 @@
 
 package com.netflix.governator.lifecycle;
 
+import org.omg.PortableInterceptor.ACTIVE;
+
 /**
  * Possible states for a managed object
  */
@@ -25,6 +27,11 @@ public enum LifecycleState
      * Not managed, unknown, etc.
      */
     LATENT,
+
+    /**
+     * Loading/assigning Resources
+     */
+    SETTING_RESOURCES,
 
     /**
      * Calling PreConfiguration methods

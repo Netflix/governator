@@ -38,13 +38,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import javax.annotation.Resources;
+import javax.naming.NameNotFoundException;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import javax.xml.bind.DatatypeConverter;
+import java.beans.Introspector;
+import java.beans.MethodDescriptor;
 import java.io.Closeable;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
@@ -74,6 +80,7 @@ public class LifecycleManager implements Closeable
     private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
     private final ConfigurationProvider configurationProvider;
     private final Collection<LifecycleListener> listeners;
+    private final Collection<ResourceLocator> resourceLocators;
     private final ValidatorFactory factory;
     private final DAGManager dagManager = new DAGManager();
     private final PostStartArguments postStartArguments;
@@ -84,7 +91,7 @@ public class LifecycleManager implements Closeable
      */
     private static class StateKey
     {
-        final Object        obj;
+        final Object obj;
 
         private StateKey(Object obj)
         {
@@ -116,8 +123,8 @@ public class LifecycleManager implements Closeable
 
     private static class PreDestroyRecord
     {
-        final Object                obj;
-        final Collection<Method>    preDestroyMethods;
+        final Object obj;
+        final Collection<Method> preDestroyMethods;
 
         private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
         {
@@ -144,6 +151,7 @@ public class LifecycleManager implements Closeable
     {
         configurationProvider = arguments.getConfigurationProvider();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
+        resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
         factory = Validation.buildDefaultValidatorFactory();
         postStartArguments = arguments.getPostStartArguments();
     }
@@ -187,7 +195,7 @@ public class LifecycleManager implements Closeable
      * Add the object to the container. Its assets will be loaded, post construct methods called, etc.
      * This version helps performance when the lifecycle methods have already been calculated
      *
-     * @param obj object to add
+     * @param obj     object to add
      * @param methods calculated lifecycle methods
      * @throws Exception errors
      */
@@ -235,7 +243,7 @@ public class LifecycleManager implements Closeable
      * wait period for warm up methods.
      *
      * @param maxWait maximum wait time for warm up methods - if the time elapses, the warm up methods are interrupted
-     * @param unit time unit
+     * @param unit    time unit
      * @return true if warm up methods successfully executed, false if the time elapses
      * @throws Exception errors
      */
@@ -245,10 +253,9 @@ public class LifecycleManager implements Closeable
 
         validate();
 
-        long            maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
-        WarmUpSession   warmUpSession = new WarmUpSession(getWarmUpDriver(), dagManager);
-        boolean         success = warmUpSession.doImmediate(maxMs);
-
+        long maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
+        WarmUpSession warmUpSession = new WarmUpSession(getWarmUpDriver(), dagManager);
+        boolean success = warmUpSession.doImmediate(maxMs);
 
         configurationDocumentation.output(log);
         configurationDocumentation.clear();
@@ -285,13 +292,13 @@ public class LifecycleManager implements Closeable
      *
      * @throws ValidationException
      */
-    public void        validate() throws ValidationException
+    public void validate() throws ValidationException
     {
         ValidationException exception = null;
-        Validator           validator = factory.getValidator();
+        Validator validator = factory.getValidator();
         for ( StateKey key : objectStates.keySet() )
         {
-            Object      obj = key.obj;
+            Object obj = key.obj;
             exception = internalValidateObject(exception, obj, validator);
         }
 
@@ -307,9 +314,9 @@ public class LifecycleManager implements Closeable
      * @param obj the object to validate
      * @throws ValidationException
      */
-    public void        validate(Object obj) throws ValidationException
+    public void validate(Object obj) throws ValidationException
     {
-        Validator           validator = factory.getValidator();
+        Validator validator = factory.getValidator();
         ValidationException exception = internalValidateObject(null, obj, validator);
         if ( exception != null )
         {
@@ -339,8 +346,8 @@ public class LifecycleManager implements Closeable
         Set<ConstraintViolation<Object>> violations = validator.validate(obj);
         for ( ConstraintViolation<Object> violation : violations )
         {
-            String      path = getPath(violation);
-            String      message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
+            String path = getPath(violation);
+            String message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
             if ( exception == null )
             {
                 exception = new ValidationException(message);
@@ -356,6 +363,9 @@ public class LifecycleManager implements Closeable
     private void startInstance(Object obj, LifecycleMethods methods) throws Exception
     {
         log.debug(String.format("Starting %s", obj.getClass().getName()));
+
+        setState(obj, LifecycleState.SETTING_RESOURCES);
+        setResources(obj, methods);
 
         setState(obj, LifecycleState.PRE_CONFIGURATION);
         for ( Method preConfiguration : methods.methodsFor(PreConfiguration.class) )
@@ -377,11 +387,172 @@ public class LifecycleManager implements Closeable
             postConstruct.invoke(obj);
         }
 
-        Collection<Method>      preDestroyMethods = methods.methodsFor(PreDestroy.class);
+        Collection<Method> preDestroyMethods = methods.methodsFor(PreDestroy.class);
         if ( preDestroyMethods.size() > 0 )
         {
             preDestroys.add(new PreDestroyRecord(obj, preDestroyMethods));
         }
+    }
+
+    private void setResources(Object obj, LifecycleMethods methods) throws Exception
+    {
+        for ( Field field : methods.fieldsFor(Resources.class) )
+        {
+            Resources resources = field.getAnnotation(Resources.class);
+            for ( Resource resource : resources.value() )
+            {
+                setFieldResource(obj, field, resource);
+            }
+        }
+
+        for ( Field field : methods.fieldsFor(Resource.class) )
+        {
+            Resource resource = field.getAnnotation(Resource.class);
+            setFieldResource(obj, field, resource);
+        }
+
+        for ( Method method : methods.methodsFor(Resources.class) )
+        {
+            Resources resources = method.getAnnotation(Resources.class);
+            for ( Resource resource : resources.value() )
+            {
+                setMethodResource(obj, method, resource);
+            }
+        }
+
+        for ( Method method : methods.methodsFor(Resource.class) )
+        {
+            Resource resource = method.getAnnotation(Resource.class);
+            setMethodResource(obj, method, resource);
+        }
+
+        for ( Resources resources : methods.classAnnotationsFor(Resources.class) )
+        {
+            for ( Resource resource : resources.value() )
+            {
+                loadClassResource(resource);
+            }
+        }
+
+        for ( Resource resource : methods.classAnnotationsFor(Resource.class) )
+        {
+            loadClassResource(resource);
+        }
+    }
+
+    private void loadClassResource(Resource resource) throws Exception
+    {
+        if ( (resource.name().length() == 0) || (resource.type() == Object.class) )
+        {
+            throw new Exception("Class resources must have both name() and type(): " + resource);
+        }
+        findResource(resource);
+    }
+
+    private void setMethodResource(Object obj, Method method, Resource resource) throws Exception
+    {
+        if ( (method.getParameterTypes().length != 1) || (method.getReturnType() != Void.TYPE) )
+        {
+            throw new Exception(String.format("%s.%s() is not a proper JavaBean setter.", obj.getClass().getName(), method.getName()));
+        }
+
+        String beanName = method.getName();
+        if ( beanName.toLowerCase().startsWith("set") )
+        {
+            beanName = beanName.substring("set".length());
+        }
+        beanName = Introspector.decapitalize(beanName);
+
+        String siteName = obj.getClass().getName() + "/" + beanName;
+        resource = adjustResource(resource, method.getParameterTypes()[0].getClass(), siteName);
+        Object resourceObj = findResource(resource);
+        method.setAccessible(true);
+        method.invoke(obj, resourceObj);
+    }
+
+    private void setFieldResource(Object obj, Field field, Resource resource) throws Exception
+    {
+        String siteName = obj.getClass().getName() + "/" + field.getName();
+        Object resourceObj = findResource(adjustResource(resource, field.getType(), siteName));
+        field.setAccessible(true);
+        field.set(obj, resourceObj);
+    }
+
+    private Resource adjustResource(final Resource resource, final Class siteType, final String siteName)
+    {
+        return new Resource()
+        {
+            @Override
+            public String name()
+            {
+                return (resource.name().length() == 0) ? siteName : resource.name();
+            }
+
+            @Override
+            public String lookup()
+            {
+                return resource.lookup();
+            }
+
+            @Override
+            public Class type()
+            {
+                return (resource.type() == Object.class) ? siteType : resource.type();
+            }
+
+            @Override
+            public AuthenticationType authenticationType()
+            {
+                return resource.authenticationType();
+            }
+
+            @Override
+            public boolean shareable()
+            {
+                return resource.shareable();
+            }
+
+            @Override
+            public String mappedName()
+            {
+                return resource.mappedName();
+            }
+
+            @Override
+            public String description()
+            {
+                return resource.description();
+            }
+
+            @Override
+            public Class<? extends Annotation> annotationType()
+            {
+                return resource.annotationType();
+            }
+        };
+    }
+
+    private Object findResource(Resource resource) throws Exception
+    {
+        if ( resourceLocators.size() > 0 )
+        {
+            final Iterator<ResourceLocator> iterator = resourceLocators.iterator();
+            ResourceLocator locator = iterator.next();
+            ResourceLocator nextInChain = new ResourceLocator()
+            {
+                @Override
+                public Object locate(Resource resource, ResourceLocator nextInChain) throws Exception
+                {
+                    if ( iterator.hasNext() )
+                    {
+                        return iterator.next().locate(resource, this);
+                    }
+                    throw new NameNotFoundException("No resource found that matches: " + resource);
+                }
+            };
+            return locator.locate(resource, nextInChain);
+        }
+        throw new NameNotFoundException("No resource found that matches: " + resource);
     }
 
     private void stopInstances() throws Exception
@@ -417,14 +588,14 @@ public class LifecycleManager implements Closeable
 
     private Date parseDate(String value)
     {
-        DateFormat  formatter = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
+        DateFormat formatter = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
         formatter.setLenient(false);
 
         try
         {
             return formatter.parse(value);
         }
-        catch( ParseException e )
+        catch ( ParseException e )
         {
             // ignore
         }
@@ -443,11 +614,11 @@ public class LifecycleManager implements Closeable
 
     private void assignConfiguration(Object obj, Field field) throws Exception
     {
-        Configuration       configuration = field.getAnnotation(Configuration.class);
-        String              configurationName = configuration.value();
-        ConfigurationKey    key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
+        Configuration configuration = field.getAnnotation(Configuration.class);
+        String configurationName = configuration.value();
+        ConfigurationKey key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
 
-        Object              value = null;
+        Object value = null;
 
         boolean has = configurationProvider.has(key);
         if ( has )
@@ -485,8 +656,8 @@ public class LifecycleManager implements Closeable
 
         if ( field != null )
         {
-            String  defaultValue = String.valueOf(field.get(obj));
-            String  documentationValue;
+            String defaultValue = String.valueOf(field.get(obj));
+            String documentationValue;
             if ( has )
             {
                 field.set(obj, value);
@@ -522,7 +693,7 @@ public class LifecycleManager implements Closeable
         validate(obj);
 
         postStartWarmUpSession.compareAndSet(null, new WarmUpSession(getWarmUpDriver(), dagManager));
-        WarmUpSession       session = postStartWarmUpSession.get();
+        WarmUpSession session = postStartWarmUpSession.get();
         session.doInBackground();
     }
 
