@@ -498,12 +498,6 @@ public class LifecycleManager implements Closeable
             }
 
             @Override
-            public String lookup()
-            {
-                return resource.lookup();
-            }
-
-            @Override
             public Class type()
             {
                 return (resource.type() == Object.class) ? siteType : resource.type();
