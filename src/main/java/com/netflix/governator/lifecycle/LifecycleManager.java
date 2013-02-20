@@ -25,6 +25,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.PreConfiguration;
@@ -42,7 +43,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
-import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
@@ -86,6 +87,7 @@ public class LifecycleManager implements Closeable
     private final DAGManager dagManager = new DAGManager();
     private final PostStartArguments postStartArguments;
     private final AtomicReference<WarmUpSession> postStartWarmUpSession = new AtomicReference<WarmUpSession>(null);
+    private final Injector injector;
 
     /**
      * Lifecycle managed objects have to be referenced via Object identity not equals()
@@ -144,12 +146,18 @@ public class LifecycleManager implements Closeable
 
     public LifecycleManager()
     {
-        this(new LifecycleManagerArguments());
+        this(new LifecycleManagerArguments(), null);
+    }
+
+    public LifecycleManager(LifecycleManagerArguments arguments)
+    {
+        this(arguments, null);
     }
 
     @Inject
-    public LifecycleManager(LifecycleManagerArguments arguments)
+    public LifecycleManager(LifecycleManagerArguments arguments, Injector injector)
     {
+        this.injector = injector;
         configurationProvider = arguments.getConfigurationProvider();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
@@ -465,7 +473,7 @@ public class LifecycleManager implements Closeable
         beanName = Introspector.decapitalize(beanName);
 
         String siteName = obj.getClass().getName() + "/" + beanName;
-        resource = adjustResource(resource, method.getParameterTypes()[0].getClass(), siteName);
+        resource = adjustResource(resource, method.getParameterTypes()[0], siteName);
         Object resourceObj = findResource(resource);
         method.setAccessible(true);
         method.invoke(obj, resourceObj);
@@ -548,12 +556,23 @@ public class LifecycleManager implements Closeable
                     {
                         return iterator.next().locate(resource, this);
                     }
-                    throw new NameNotFoundException("No resource found that matches: " + resource);
+                    return defaultFindResource(resource);
                 }
             };
             return locator.locate(resource, nextInChain);
         }
-        throw new NameNotFoundException("No resource found that matches: " + resource);
+        return defaultFindResource(resource);
+    }
+
+    private Object defaultFindResource(Resource resource) throws Exception
+    {
+        if ( injector == null )
+        {
+            throw new NamingException("Could not find resource: " + resource);
+        }
+
+        //noinspection unchecked
+        return injector.getInstance(resource.type());
     }
 
     private void stopInstances() throws Exception
