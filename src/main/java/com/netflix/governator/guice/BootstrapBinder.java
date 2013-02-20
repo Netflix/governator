@@ -35,6 +35,7 @@ import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.LifecycleListener;
+import com.netflix.governator.lifecycle.ResourceLocator;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public class BootstrapBinder implements Binder
     }
 
     /**
-     * Use this to bind a LifecycleListener. It internally uses a Multibinder to do the
+     * Use this to bind a {@link LifecycleListener}. It internally uses a Multibinder to do the
      * binding so that you can bind multiple LifecycleListeners
      *
      * @return a binding builder used to add a new element in the set.
@@ -67,6 +68,27 @@ public class BootstrapBinder implements Binder
     public LinkedBindingBuilder<LifecycleListener> bindLifecycleListener()
     {
         return Multibinder.newSetBinder(binder, LifecycleListener.class).addBinding();
+    }
+
+    /**
+     * Use this to bind a {@link ResourceLocator}. It internally uses a Multibinder to do the
+     * binding so that you can bind multiple ResourceLocators
+     *
+     * @return a binding builder used to add a new element in the set.
+     */
+    public LinkedBindingBuilder<ResourceLocator> bindResourceLocator()
+    {
+        return Multibinder.newSetBinder(binder, ResourceLocator.class).addBinding();
+    }
+
+    /**
+     * Use this to bind {@link ConfigurationProvider}s. Do NOT use standard Guice binding.
+     *
+     * @return configuration binding builder
+     */
+    public LinkedBindingBuilder<ConfigurationProvider> bindConfigurationProvider()
+    {
+        return Multibinder.newSetBinder(binder, ConfigurationProvider.class).addBinding();
     }
 
     @Override
@@ -210,16 +232,6 @@ public class BootstrapBinder implements Binder
         binder.disableCircularProxies();
     }
 
-    /**
-     * Use this to bind {@link ConfigurationProvider}s. Do NOT use standard Guice binding.
-     *
-     * @return configuration binding builder
-     */
-    public LinkedBindingBuilder<ConfigurationProvider> bindConfigurationProvider()
-    {
-        return Multibinder.newSetBinder(binder, ConfigurationProvider.class).addBinding();
-    }
-
     BootstrapBinder(Binder binder)
     {
         this.binder = binder;
@@ -234,6 +246,10 @@ public class BootstrapBinder implements Binder
         if ( LifecycleListener.class.isAssignableFrom(clazz) )
         {
             log.warn("You should use the specialized binding method for LifecycleListener");
+        }
+        if ( ResourceLocator.class.isAssignableFrom(clazz) )
+        {
+            log.warn("You should use the specialized binding method for ResourceLocator");
         }
     }
 }
