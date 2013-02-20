@@ -58,6 +58,25 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder withAdditionalModules(Iterable<? extends Module> additionalModules)
+    {
+        ImmutableList.Builder<Module> builder = ImmutableList.builder();
+        if ( this.modules != null )
+        {
+            builder.addAll(this.modules);
+        }
+        builder.addAll(additionalModules);
+        this.modules = builder.build();
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withAdditionalModules(Module... modules)
+    {
+        return withAdditionalModules(ImmutableList.copyOf(modules));
+    }
+
+    @Override
     public LifecycleInjectorBuilder ignoringAutoBindClasses(Collection<Class<?>> ignoreClasses)
     {
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
