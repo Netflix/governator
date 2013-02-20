@@ -373,9 +373,6 @@ public class LifecycleManager implements Closeable
     {
         log.debug(String.format("Starting %s", obj.getClass().getName()));
 
-        setState(obj, LifecycleState.SETTING_RESOURCES);
-        setResources(obj, methods);
-
         setState(obj, LifecycleState.PRE_CONFIGURATION);
         for ( Method preConfiguration : methods.methodsFor(PreConfiguration.class) )
         {
@@ -388,6 +385,9 @@ public class LifecycleManager implements Closeable
         {
             assignConfiguration(obj, configurationField);
         }
+
+        setState(obj, LifecycleState.SETTING_RESOURCES);
+        setResources(obj, methods);
 
         setState(obj, LifecycleState.POST_CONSTRUCTING);
         for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
