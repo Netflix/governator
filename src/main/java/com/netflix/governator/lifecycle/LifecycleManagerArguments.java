@@ -40,6 +40,9 @@ public class LifecycleManagerArguments
     private Set<LifecycleListener>          lifecycleListeners = ImmutableSet.of();
 
     @Inject(optional = true)
+    private Set<ResourceLocator>            resourceLocators = ImmutableSet.of();
+
+    @Inject(optional = true)
     private PostStartArguments              postStartArguments = new PostStartArguments()
     {
         @Override
@@ -96,5 +99,15 @@ public class LifecycleManagerArguments
     public void setPostStartArguments(PostStartArguments postStartArguments)
     {
         this.postStartArguments = postStartArguments;
+    }
+
+    public Set<ResourceLocator> getResourceLocators()
+    {
+        return resourceLocators;
+    }
+
+    public void setResourceLocators(Set<ResourceLocator> resourceLocators)
+    {
+        this.resourceLocators = ImmutableSet.copyOf(resourceLocators);
     }
 }

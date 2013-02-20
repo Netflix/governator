@@ -28,6 +28,8 @@ import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import javax.annotation.Resource;
+import javax.annotation.Resources;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
@@ -80,10 +82,29 @@ public class LifecycleInjector
      */
     public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)
     {
+        return createStandardClasspathScanner(basePackages, null);
+    }
+
+    /**
+     * If you need early access to the CLASSPATH scanner. For performance reasons, you should
+     * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
+     *
+     * @param basePackages packages to recursively scan
+     * @param additionalAnnotations any additional annotations to scan for
+     * @return scanner
+     */
+    public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages, List<Class<? extends Annotation>> additionalAnnotations)
+    {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
         annotations.add(Inject.class);
         annotations.add(javax.inject.Inject.class);
+        annotations.add(Resource.class);
+        annotations.add(Resources.class);
+        if ( additionalAnnotations != null )
+        {
+            annotations.addAll(additionalAnnotations);
+        }
         return new ClasspathScanner(basePackages, annotations);
     }
 

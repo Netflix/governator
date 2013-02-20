@@ -102,7 +102,7 @@ public class WarmUpTask extends RecursiveAction
         Object                  obj = dagManager.getObject(node.getKey());
         if ( obj == null )
         {
-            log.error(String.format("Could not find lifecycle-registered object for key. Ignoring object. Key: %s - KeyClass: %s", node.getKey(), node.getKey().getClass().getName()));
+            log.debug(String.format("Could not find lifecycle-registered object for key. Ignoring object. Key: %s - KeyClass: %s", node.getKey(), node.getKey().getClass().getName()));
         }
         else
         {

@@ -40,11 +40,11 @@ public class DAGManager
     private static final Object         ROOT_DEPENDENCY_KEY = new Object();
 
     /**
-     * Return a copy of this DAGManager
+     * Return a copy of this DAGManager and then clears this instance
      *
      * @return copy
      */
-    public synchronized DAGManager newCopy()
+    public synchronized DAGManager newCopyAndClear()
     {
         DAGManager copy = new DAGManager();
         copy.keyToObject.putAll(keyToObject);
@@ -56,6 +56,8 @@ public class DAGManager
             List<Object> objectsCopy = Lists.newArrayList(dependencies.get(key));
             copy.dependencies.putAll(key, objectsCopy);
         }
+
+        clear();
 
         return copy;
     }

@@ -16,7 +16,9 @@
 
 package com.netflix.governator.lifecycle;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -27,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import javax.annotation.Resources;
 import javax.validation.Constraint;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -39,25 +43,45 @@ import java.util.Collection;
 public class LifecycleMethods
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
+    private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
+    private final Multimap<Class<? extends Annotation>, Annotation> classMap = ArrayListMultimap.create();
 
     private boolean hasValidations = false;
 
-    private static final Collection<Class<? extends Annotation>>    methodAnnotations = ImmutableSet.of
-    (
-        PreConfiguration.class,
-        PostConstruct.class,
-        PreDestroy.class,
-        WarmUp.class
-    );
+    private static final Collection<Class<? extends Annotation>> fieldAnnotations;
+    private static final Collection<Class<? extends Annotation>> methodAnnotations;
+    private static final Collection<Class<? extends Annotation>> classAnnotations;
+
+    static
+    {
+        ImmutableSet.Builder<Class<? extends Annotation>> methodAnnotationsBuilder = ImmutableSet.builder();
+        methodAnnotationsBuilder.add(PreConfiguration.class);
+        methodAnnotationsBuilder.add(PostConstruct.class);
+        methodAnnotationsBuilder.add(PreDestroy.class);
+        methodAnnotationsBuilder.add(Resource.class);
+        methodAnnotationsBuilder.add(Resources.class);
+        methodAnnotationsBuilder.add(WarmUp.class);
+        methodAnnotations = methodAnnotationsBuilder.build();
+
+        ImmutableSet.Builder<Class<? extends Annotation>> fieldAnnotationsBuilder = ImmutableSet.builder();
+        fieldAnnotationsBuilder.add(Configuration.class);
+        fieldAnnotationsBuilder.add(Resource.class);
+        fieldAnnotationsBuilder.add(Resources.class);
+        fieldAnnotations = fieldAnnotationsBuilder.build();
+
+        ImmutableSet.Builder<Class<? extends Annotation>> classAnnotationsBuilder = ImmutableSet.builder();
+        classAnnotationsBuilder.add(Resource.class);
+        classAnnotationsBuilder.add(Resources.class);
+        classAnnotations = classAnnotationsBuilder.build();
+    }
 
     public LifecycleMethods(Class<?> clazz)
     {
         addLifeCycleMethods(clazz, ArrayListMultimap.<Class<? extends Annotation>, String>create());
     }
 
-    public boolean      hasLifecycleAnnotations()
+    public boolean hasLifecycleAnnotations()
     {
         return hasValidations || (methodMap.size() > 0) || (fieldMap.size() > 0);
     }
@@ -74,11 +98,37 @@ public class LifecycleMethods
         return (fields != null) ? fields : Lists.<Field>newArrayList();
     }
 
+    public <T extends Annotation> Collection<T> classAnnotationsFor(Class<T> annotation)
+    {
+        Collection<Annotation> annotations = classMap.get(annotation);
+        return Collections2.transform
+        (
+            annotations,
+            new Function<Annotation, T>()
+            {
+                @Override
+                public T apply(Annotation annotation)
+                {
+                    //noinspection unchecked
+                    return (T)annotation;
+                }
+            }
+        );
+    }
+
     private void addLifeCycleMethods(Class<?> clazz, Multimap<Class<? extends Annotation>, String> usedNames)
     {
         if ( clazz == null )
         {
             return;
+        }
+
+        for ( Class<? extends Annotation> annotationClass : classAnnotations )
+        {
+            if ( clazz.isAnnotationPresent(annotationClass) )
+            {
+                classMap.put(annotationClass, clazz.getAnnotation(annotationClass));
+            }
         }
 
         for ( Field field : getDeclardFields(clazz) )
@@ -93,7 +143,10 @@ public class LifecycleMethods
                 checkForValidations(field);
             }
 
-            processField(field, Configuration.class, usedNames);
+            for ( Class<? extends Annotation> annotationClass : fieldAnnotations )
+            {
+                processField(field, annotationClass, usedNames);
+            }
         }
 
         for ( Method method : getDeclaredMethods(clazz) )
@@ -150,11 +203,11 @@ public class LifecycleMethods
         {
             if ( (e instanceof NoClassDefFoundError) || (e instanceof ClassNotFoundException) )
             {
-                log.error(String.format("Class %s could not be resolved because of a class path error. Governator cannot further process the class.", clazz.getName()), e);
+                log.debug(String.format("Class %s could not be resolved because of a class path error. Governator cannot further process the class.", clazz.getName()), e);
                 return;
             }
 
-            handleReflectionError(clazz, e);
+            handleReflectionError(clazz, e.getCause());
         }
     }
 
@@ -189,10 +242,12 @@ public class LifecycleMethods
         {
             if ( !usedNames.get(annotationClass).contains(method.getName()) )
             {
+/* TODO
                 if ( method.getParameterTypes().length != 0 )
                 {
                     throw new UnsupportedOperationException(String.format("@PostConstruct/@PreDestroy methods cannot have arguments: %s", method.getDeclaringClass().getName() + "." + method.getName() + "(...)"));
                 }
+*/
 
                 method.setAccessible(true);
                 usedNames.put(annotationClass, method.getName());
