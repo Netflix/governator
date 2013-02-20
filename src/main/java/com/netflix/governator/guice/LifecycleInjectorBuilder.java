@@ -53,6 +53,22 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withModules(Iterable<? extends Module> modules);
 
     /**
+     * Add to any modules already specified via {@link #withModules(Iterable)}
+     *
+     * @param modules modules
+     * @return this
+     */
+    public LifecycleInjectorBuilder withAdditionalModules(Iterable<? extends Module> modules);
+
+    /**
+     * Add to any modules already specified via {@link #withModules(Iterable)}
+     *
+     * @param modules modules
+     * @return this
+     */
+    public LifecycleInjectorBuilder withAdditionalModules(Module... modules);
+
+    /**
      * Specify specific {@link AutoBindSingleton} classes that should NOT be bound in the main
      * binding phase
      *
