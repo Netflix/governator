@@ -1,3 +1,8 @@
+1.1.0 - February 21, 2103
+=========================
+* Enhanced LifecycleListener.objectInjected() to take correct type information. All implementations
+of LifecycleListener will need to be updated.
+
 1.0.5 - February 20, 2103
 =========================
 * Fixed a potential infinite loop with an internal reflective method. Though, I have not seen
