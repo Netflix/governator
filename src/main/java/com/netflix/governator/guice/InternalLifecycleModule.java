@@ -69,7 +69,7 @@ class InternalLifecycleModule implements Module
                                 {
                                     for ( LifecycleListener listener : manager.getListeners() )
                                     {
-                                        listener.objectInjected(obj);
+                                        listener.objectInjected(type, obj);
                                     }
 
                                     Class<?> clazz = obj.getClass();

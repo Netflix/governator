@@ -18,6 +18,7 @@ package com.netflix.governator.lifecycle;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.inject.TypeLiteral;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -50,11 +51,11 @@ public class FilteredLifecycleListener implements LifecycleListener
     }
 
     @Override
-    public void objectInjected(Object obj)
+    public <T> void objectInjected(TypeLiteral<T> type, T obj)
     {
         if ( isInPackages(obj) )
         {
-            listener.objectInjected(obj);
+            listener.objectInjected(type, obj);
         }
     }
 

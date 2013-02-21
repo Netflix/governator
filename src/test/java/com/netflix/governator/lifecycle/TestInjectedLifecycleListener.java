@@ -18,6 +18,7 @@ package com.netflix.governator.lifecycle;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
@@ -48,7 +49,7 @@ public class TestInjectedLifecycleListener
         }
 
         @Override
-        public void objectInjected(Object obj)
+        public <T> void objectInjected(TypeLiteral<T> type, T obj)
         {
         }
 

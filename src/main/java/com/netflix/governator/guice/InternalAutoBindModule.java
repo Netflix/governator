@@ -151,7 +151,7 @@ class InternalAutoBindModule extends AbstractModule
 
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
             {
-                ProviderBinderUtil.bind(binder(), (Class<? extends javax.inject.Provider>)clazz, Scopes.SINGLETON);
+                ProviderBinderUtil.bind(binder(), (Class<javax.inject.Provider>)clazz, Scopes.SINGLETON);
             }
             else if ( Module.class.isAssignableFrom(clazz) )
             {

@@ -90,7 +90,7 @@ public class TestGovernatorGuice
         final LifecycleListener   listener = new LifecycleListener()
         {
             @Override
-            public void objectInjected(Object obj)
+            public <T> void objectInjected(TypeLiteral<T> type, T obj)
             {
                 objects.add(obj);
             }
