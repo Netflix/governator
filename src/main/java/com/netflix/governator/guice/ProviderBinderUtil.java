@@ -36,6 +36,7 @@ class ProviderBinderUtil
             throw new RuntimeException(e);
         }
 
+        //noinspection unchecked
         binder.bind(providedType)
             .toProvider
             (
