@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * ConfigurationProvider backed by the system properties
  */
-public class SystemConfigurationProvider implements ConfigurationProvider
+public class SystemConfigurationProvider extends AbstractConfigurationProvider
 {
     private final Map<String, String> variableValues;
 
@@ -82,4 +82,5 @@ public class SystemConfigurationProvider implements ConfigurationProvider
     {
         return System.getProperty(key.getKey(variableValues));
     }
+
 }

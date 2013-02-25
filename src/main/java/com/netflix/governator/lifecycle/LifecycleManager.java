@@ -19,6 +19,7 @@ package com.netflix.governator.lifecycle;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -55,6 +56,8 @@ import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Collection;
@@ -667,9 +670,39 @@ public class LifecycleManager implements Closeable
                         field = null;
                     }
                 }
+                else if ( Supplier.class.isAssignableFrom(field.getType())) {
+                    ParameterizedType type = (ParameterizedType) field.getGenericType();
+                    Class<?> actualType    = (Class<?>)type.getActualTypeArguments()[0];
+                    Supplier<?> current       = (Supplier<?>) field.get(obj);
+                    if ( String.class.isAssignableFrom(actualType) )
+                    {
+                        value = configurationProvider.getStringSupplier(key, (String)current.get());
+                    }
+                    else if ( Boolean.class.isAssignableFrom(actualType) || Boolean.TYPE.isAssignableFrom(actualType) )
+                    {
+                        value = configurationProvider.getBooleanSupplier(key, (Boolean)current.get());
+                    }
+                    else if ( Integer.class.isAssignableFrom(actualType) || Integer.TYPE.isAssignableFrom(actualType) )
+                    {
+                        value = configurationProvider.getIntegerSupplier(key, (Integer)current.get());
+                    }
+                    else if ( Long.class.isAssignableFrom(actualType) || Long.TYPE.isAssignableFrom(actualType) )
+                    {
+                        value = configurationProvider.getLongSupplier(key, (Long)current.get());
+                    }
+                    else if ( Double.class.isAssignableFrom(actualType) || Double.TYPE.isAssignableFrom(actualType) )
+                    {
+                        value = configurationProvider.getDoubleSupplier(key, (Double)current.get());
+                    }
+                    else 
+                    {
+                        log.error("Field type not supported: " + actualType + " (" + field.getName() + ")");
+                        field = null;
+                    }
+                }
                 else
                 {
-                    log.error("Field type not supported: " + field.getType());
+                    log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
                     field = null;
                 }
             }
@@ -693,12 +726,26 @@ public class LifecycleManager implements Closeable
 
         if ( field != null )
         {
-            String defaultValue = String.valueOf(field.get(obj));
+            String defaultValue;
+            if ( Supplier.class.isAssignableFrom(field.getType())) {
+                defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
+            }
+            else {
+                defaultValue = String.valueOf(field.get(obj));
+            }
+            
             String documentationValue;
             if ( has )
             {
                 field.set(obj, value);
+                
                 documentationValue = String.valueOf(value);
+                if ( Supplier.class.isAssignableFrom(field.getType())) {
+                    documentationValue = String.valueOf(((Supplier<?>)value).get());
+                }
+                else {
+                    documentationValue = String.valueOf(documentationValue);
+                }
             }
             else
             {

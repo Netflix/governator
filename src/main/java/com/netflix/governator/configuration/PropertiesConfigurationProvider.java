@@ -23,7 +23,7 @@ import java.util.Properties;
 /**
  * ConfigurationProvider backed by a {#link Properties}
  */
-public class PropertiesConfigurationProvider implements ConfigurationProvider
+public class PropertiesConfigurationProvider extends AbstractConfigurationProvider
 {
     private final Properties properties;
     private final Map<String, String> variableValues;

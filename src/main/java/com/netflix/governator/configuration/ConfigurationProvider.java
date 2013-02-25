@@ -16,6 +16,7 @@
 
 package com.netflix.governator.configuration;
 
+import com.google.common.base.Supplier;
 import com.netflix.governator.annotations.Configuration;
 
 /**
@@ -71,4 +72,49 @@ public interface ConfigurationProvider
      * @return value
      */
     public String      getString(ConfigurationKey key);
+    
+    /**
+     * Return the given configuration as a boolean.  Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<Boolean>     getBooleanSupplier(ConfigurationKey key, Boolean defaultValue);
+
+    /**
+     * Return the given configuration as an integer.   Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<Integer>     getIntegerSupplier(ConfigurationKey key, Integer defaultValue);
+
+    /**
+     * Return the given configuration as a long.  Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<Long>        getLongSupplier(ConfigurationKey key, Long defaultValue);
+
+    /**
+     * Return the given configuration as a double.  Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<Double>      getDoubleSupplier(ConfigurationKey key, Double defaultValue);
+
+    /**
+     * Return the given configuration as a string.  Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<String>      getStringSupplier(ConfigurationKey key, String defaultValue);
 }

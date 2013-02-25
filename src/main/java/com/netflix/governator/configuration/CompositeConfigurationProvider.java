@@ -16,6 +16,7 @@
 
 package com.netflix.governator.configuration;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,6 +126,66 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
             if ( provider.has(key) )
             {
                 return provider.getString(key);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Supplier<Boolean> getBooleanSupplier(ConfigurationKey key, Boolean defaultValue) {
+        for ( ConfigurationProvider provider : providers )
+        {
+            if ( provider.has(key) )
+            {
+                return provider.getBooleanSupplier(key, defaultValue);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Supplier<Integer> getIntegerSupplier(ConfigurationKey key, Integer defaultValue) {
+        for ( ConfigurationProvider provider : providers )
+        {
+            if ( provider.has(key) )
+            {
+                return provider.getIntegerSupplier(key, defaultValue);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Supplier<Long> getLongSupplier(ConfigurationKey key, Long defaultValue) {
+        for ( ConfigurationProvider provider : providers )
+        {
+            if ( provider.has(key) )
+            {
+                return provider.getLongSupplier(key, defaultValue);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Supplier<Double> getDoubleSupplier(ConfigurationKey key, Double defaultValue) {
+        for ( ConfigurationProvider provider : providers )
+        {
+            if ( provider.has(key) )
+            {
+                return provider.getDoubleSupplier(key, defaultValue);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Supplier<String> getStringSupplier(ConfigurationKey key, String defaultValue) {
+        for ( ConfigurationProvider provider : providers )
+        {
+            if ( provider.has(key) )
+            {
+                return provider.getStringSupplier(key, defaultValue);
             }
         }
         return null;
