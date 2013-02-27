@@ -143,11 +143,23 @@ public class LifecycleInjector
     /**
      * Create the main injector
      *
+     * @param modules any additional modiules
      * @return injector
      */
-    public Injector createInjector()
+    public Injector createInjector(Module... modules)
     {
-        List<Module>            localModules = Lists.newArrayList(modules);
+        return createInjector(Arrays.asList(modules));
+    }
+
+    /**
+     * Create the main injector
+     *
+     * @param additionalModules any additional modiules
+     * @return injector
+     */
+    public Injector createInjector(Collection<Module> additionalModules)
+    {
+        List<Module>            localModules = Lists.newArrayList(additionalModules);
 
         if ( !ignoreAllClasses )
         {
@@ -156,6 +168,16 @@ public class LifecycleInjector
         }
 
         return createChildInjector(localModules);
+    }
+
+    /**
+     * Create the main injector
+     *
+     * @return injector
+     */
+    public Injector createInjector()
+    {
+        return createInjector(modules);
     }
 
     LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
