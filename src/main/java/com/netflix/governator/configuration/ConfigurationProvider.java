@@ -16,6 +16,9 @@
 
 package com.netflix.governator.configuration;
 
+import java.util.Date;
+
+import com.google.common.base.Supplier;
 import com.netflix.governator.annotations.Configuration;
 
 /**
@@ -33,42 +36,56 @@ public interface ConfigurationProvider
     public boolean     has(ConfigurationKey key);
 
     /**
-     * Return the given configuration as a boolean
+     * Return the given configuration as a boolean.  Use this when the configuration
+     * value is expected to change at run time.
      *
      * @param key configuration key
      * @return value
      */
-    public boolean     getBoolean(ConfigurationKey key);
+    public Supplier<Boolean>     getBooleanSupplier(ConfigurationKey key, Boolean defaultValue);
 
     /**
-     * Return the given configuration as an integer
+     * Return the given configuration as an integer.   Use this when the configuration
+     * value is expected to change at run time.
      *
      * @param key configuration key
      * @return value
      */
-    public int         getInteger(ConfigurationKey key);
+    public Supplier<Integer>     getIntegerSupplier(ConfigurationKey key, Integer defaultValue);
 
     /**
-     * Return the given configuration as a long
+     * Return the given configuration as a long.  Use this when the configuration
+     * value is expected to change at run time.
      *
      * @param key configuration key
      * @return value
      */
-    public long        getLong(ConfigurationKey key);
+    public Supplier<Long>        getLongSupplier(ConfigurationKey key, Long defaultValue);
 
     /**
-     * Return the given configuration as a double
+     * Return the given configuration as a double.  Use this when the configuration
+     * value is expected to change at run time.
      *
      * @param key configuration key
      * @return value
      */
-    public double      getDouble(ConfigurationKey key);
+    public Supplier<Double>      getDoubleSupplier(ConfigurationKey key, Double defaultValue);
 
     /**
-     * Return the given configuration as a string
+     * Return the given configuration as a string.  Use this when the configuration
+     * value is expected to change at run time.
      *
      * @param key configuration key
      * @return value
      */
-    public String      getString(ConfigurationKey key);
+    public Supplier<String>      getStringSupplier(ConfigurationKey key, String defaultValue);
+    
+    /**
+     * Return the given configuration as a date.  Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<Date>      getDateSupplier(ConfigurationKey key, Date defaultValue);
 }
