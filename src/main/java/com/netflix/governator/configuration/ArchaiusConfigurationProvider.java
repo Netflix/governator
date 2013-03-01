@@ -22,6 +22,8 @@ import com.netflix.config.ConfigurationManager;
 import com.netflix.config.DynamicPropertyFactory;
 import com.netflix.config.PropertyWrapper;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.configuration.AbstractConfiguration;
@@ -34,13 +36,13 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     private final Map<String, String>    variableValues;
     private final AbstractConfiguration  configurationManager;
     private final DynamicPropertyFactory propertyFactory;
-    private final boolean                hasAllProperties;
-    
+    private final ConfigurationOwnershipPolicy ownershipPolicy;
+
     public static class Builder {
-        private Map<String, String>    variableValues = Maps.newHashMap();
-        private AbstractConfiguration  configurationManager = ConfigurationManager.getConfigInstance();
-        private DynamicPropertyFactory propertyFactory = DynamicPropertyFactory.getInstance();
-        private boolean                hasAllProperties;
+        private Map<String, String>    variableValues        = Maps.newHashMap();
+        private AbstractConfiguration  configurationManager  = ConfigurationManager.getConfigInstance();
+        private DynamicPropertyFactory propertyFactory       = DynamicPropertyFactory.getInstance();
+        private ConfigurationOwnershipPolicy ownershipPolicy = ConfigurationOwnershipPolicies.ownesAll();
             
         /**
          * Set of variables to use when expanding property key names
@@ -75,12 +77,20 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
          * but haven't been overriden yet.
          * @param hasAllProperties
          */
-        public Builder withHasAllProperties(Boolean hasAllProperties) {
-            this.hasAllProperties = hasAllProperties;
+        public Builder withOwnershipPolicy(ConfigurationOwnershipPolicy policy) {
+            this.ownershipPolicy = policy;
             return this;
         }
         
         public ArchaiusConfigurationProvider build() {
+            if (this.ownershipPolicy == null) {
+                this.ownershipPolicy = new ConfigurationOwnershipPolicy() {
+                   @Override
+                    public boolean has(ConfigurationKey key, Map<String, String> variables) {
+                        return configurationManager.containsKey(key.getKey(variableValues));
+                    }
+                };
+            }
             return new ArchaiusConfigurationProvider(this);
         }
     }
@@ -107,28 +117,32 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
         }
     }
     
+    @Deprecated
     public ArchaiusConfigurationProvider()
     {
-        this.variableValues       = Maps.newHashMap();
-        this.configurationManager = ConfigurationManager.getConfigInstance();
-        this.propertyFactory      = DynamicPropertyFactory.getInstance();
-        this.hasAllProperties     = false;
+        this(new HashMap<String, String>());
     }
 
+    @Deprecated
     public ArchaiusConfigurationProvider(Map<String, String> variableValues)
     {
         this.variableValues       = Maps.newHashMap(variableValues);
         this.configurationManager = ConfigurationManager.getConfigInstance();
         this.propertyFactory      = DynamicPropertyFactory.getInstance();
-        this.hasAllProperties     = false;
+        this.ownershipPolicy = new ConfigurationOwnershipPolicy() {
+            @Override
+             public boolean has(ConfigurationKey key, Map<String, String> variables) {
+                 return configurationManager.containsKey(key.getKey(variables));
+             }
+        };
     }
     
-    ArchaiusConfigurationProvider(Builder builder) 
+    private ArchaiusConfigurationProvider(Builder builder) 
     {
         this.variableValues       = builder.variableValues;
         this.configurationManager = builder.configurationManager;
         this.propertyFactory      = builder.propertyFactory;
-        this.hasAllProperties     = builder.hasAllProperties;
+        this.ownershipPolicy      = builder.ownershipPolicy;
     }
 
     protected static Supplier<?> getDynamicSupplier(Class<?> type, String key, String defaultValue, DynamicPropertyFactory propertyFactory) {
@@ -179,39 +193,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     @Override
     public boolean has(ConfigurationKey key)
     {
-        if (hasAllProperties)
-            return true;
-        return configurationManager.containsKey(key.getKey(variableValues));
-    }
-
-    @Override
-    public boolean getBoolean(ConfigurationKey key)
-    {
-        return configurationManager.getBoolean(key.getKey(variableValues));
-    }
-
-    @Override
-    public int getInteger(ConfigurationKey key)
-    {
-        return configurationManager.getInt(key.getKey(variableValues));
-    }
-
-    @Override
-    public long getLong(ConfigurationKey key)
-    {
-        return configurationManager.getLong(key.getKey(variableValues));
-    }
-
-    @Override
-    public double getDouble(ConfigurationKey key)
-    {
-        return configurationManager.getDouble(key.getKey(variableValues));
-    }
-
-    @Override
-    public String getString(ConfigurationKey key)
-    {
-        return configurationManager.getString(key.getKey(variableValues));
+        return ownershipPolicy.has(key, variableValues);
     }
 
     @Override
@@ -252,5 +234,10 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
                 propertyFactory.getStringProperty(
                         key.getKey(variableValues), 
                         defaultValue));
+    }
+
+    @Override
+    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue) {
+        return new DateWithDefaultSupplier(getStringSupplier(key, null), defaultValue);
     }
 }

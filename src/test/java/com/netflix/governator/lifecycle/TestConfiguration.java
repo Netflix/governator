@@ -18,6 +18,7 @@ package com.netflix.governator.lifecycle;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
+import com.netflix.governator.configuration.ConfigurationOwnershipPolicies;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
@@ -28,6 +29,7 @@ import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -142,7 +144,7 @@ public class TestConfiguration
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.getConfigurationProvider().add(ArchaiusConfigurationProvider
                 .builder()
-                    .withHasAllProperties(true)
+                    .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownesAll())
                 .build());
 
         LifecycleManager            manager = new LifecycleManager(arguments);
@@ -156,6 +158,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(2L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
+        Assert.assertEquals(obj.aDynamicDate.get(), null);
         
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.b", "false");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.i", "101");
@@ -169,6 +172,9 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(201L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is b");
+        
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Assert.assertEquals(obj.aDynamicDate.get(), formatter.parse("1964-11-06"));
     }
     
     private void testTypeMismatch(ConfigurationProvider provider) throws Exception {

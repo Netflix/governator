@@ -1,5 +1,7 @@
 package com.netflix.governator.lifecycle.mocks;
 
+import java.util.Date;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.netflix.governator.annotations.Configuration;
@@ -19,4 +21,8 @@ public class ObjectWithDynamicConfig {
     
     @Configuration(value = "test.dynamic.s")
     public Supplier<String>    aDynamicString = Suppliers.ofInstance("a is a");
+    
+    @Configuration(value = "test.dynamic.dt")
+    public Supplier<Date>      aDynamicDate = Suppliers.ofInstance(null);
+    
 }

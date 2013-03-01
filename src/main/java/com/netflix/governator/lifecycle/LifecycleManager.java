@@ -20,6 +20,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -50,22 +51,17 @@ import javax.validation.Path;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-import javax.xml.bind.DatatypeConverter;
 import java.beans.Introspector;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -603,32 +599,6 @@ public class LifecycleManager implements Closeable
         return reversed;
     }
 
-    private Date parseDate(String configurationName, String value, Configuration configuration)
-    {
-        DateFormat formatter = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
-        formatter.setLenient(false);
-
-        try
-        {
-            return formatter.parse(value);
-        }
-        catch ( ParseException e )
-        {
-            // ignore as the fallback is the DatattypeConverter.
-        }
-
-        try
-        {
-            return DatatypeConverter.parseDateTime(value).getTime();
-        }
-        catch ( IllegalArgumentException e )
-        {
-            ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
-        }
-
-        return null;
-    }
-
     private void assignConfiguration(Object obj, Field field) throws Exception
     {
         Configuration configuration = field.getAnnotation(Configuration.class);
@@ -642,85 +612,37 @@ public class LifecycleManager implements Closeable
         {
             try
             {
-                if ( String.class.isAssignableFrom(field.getType()) )
-                {
-                    value = configurationProvider.getString(key);
-                }
-                else if ( Boolean.class.isAssignableFrom(field.getType()) || Boolean.TYPE.isAssignableFrom(field.getType()) )
-                {
-                    value = configurationProvider.getBoolean(key);
-                }
-                else if ( Integer.class.isAssignableFrom(field.getType()) || Integer.TYPE.isAssignableFrom(field.getType()) )
-                {
-                    value = configurationProvider.getInteger(key);
-                }
-                else if ( Long.class.isAssignableFrom(field.getType()) || Long.TYPE.isAssignableFrom(field.getType()) )
-                {
-                    value = configurationProvider.getLong(key);
-                }
-                else if ( Double.class.isAssignableFrom(field.getType()) || Double.TYPE.isAssignableFrom(field.getType()) )
-                {
-                    value = configurationProvider.getDouble(key);
-                }
-                else if ( Date.class.isAssignableFrom(field.getType()) )
-                {
-                    value = parseDate(configurationName, configurationProvider.getString(key), configuration);
-                    if ( null == value )
-                    {
-                        field = null;
-                    }
-                }
-                else if ( Supplier.class.isAssignableFrom(field.getType())) {
+                if ( Supplier.class.isAssignableFrom(field.getType())) {
                     ParameterizedType type = (ParameterizedType) field.getGenericType();
                     Class<?> actualType    = (Class<?>)type.getActualTypeArguments()[0];
                     Supplier<?> current       = (Supplier<?>) field.get(obj);
-                    if ( String.class.isAssignableFrom(actualType) )
-                    {
-                        value = configurationProvider.getStringSupplier(key, (String)current.get());
-                    }
-                    else if ( Boolean.class.isAssignableFrom(actualType) || Boolean.TYPE.isAssignableFrom(actualType) )
-                    {
-                        value = configurationProvider.getBooleanSupplier(key, (Boolean)current.get());
-                    }
-                    else if ( Integer.class.isAssignableFrom(actualType) || Integer.TYPE.isAssignableFrom(actualType) )
-                    {
-                        value = configurationProvider.getIntegerSupplier(key, (Integer)current.get());
-                    }
-                    else if ( Long.class.isAssignableFrom(actualType) || Long.TYPE.isAssignableFrom(actualType) )
-                    {
-                        value = configurationProvider.getLongSupplier(key, (Long)current.get());
-                    }
-                    else if ( Double.class.isAssignableFrom(actualType) || Double.TYPE.isAssignableFrom(actualType) )
-                    {
-                        value = configurationProvider.getDoubleSupplier(key, (Double)current.get());
-                    }
-                    else 
-                    {
+                    value = this.getConfigurationSupplier(field, key, actualType, current, configuration);
+                    if (value == null) {
                         log.error("Field type not supported: " + actualType + " (" + field.getName() + ")");
                         field = null;
                     }
                 }
                 else
                 {
-                    log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
-                    field = null;
+                    Supplier<?> supplier = this.getConfigurationSupplier(field, key,  field.getType(), Suppliers.ofInstance(field.get(obj)), configuration);
+                    if (supplier == null) {
+                        log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
+                        field = null;
+                    }
+                    else {
+                        value = supplier.get();
+                    }
                 }
             }
             catch ( IllegalArgumentException e )
             {
-                if ( !Date.class.isAssignableFrom(field.getType()) )
-                {
-                    ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
-                    field = null;
-                }
+                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                field = null;
             }
             catch ( ConversionException e )
             {
-                if ( !Date.class.isAssignableFrom(field.getType()) )
-                {
-                    ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
-                    field = null;
-                }
+                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                field = null;
             }
         }
 
@@ -752,6 +674,38 @@ public class LifecycleManager implements Closeable
                 documentationValue = "";
             }
             configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
+        }
+    }
+    
+    private Supplier<?> getConfigurationSupplier(final Field field, final ConfigurationKey key, final Class<?> type, Supplier<?> current, final Configuration configuration) {
+        if ( String.class.isAssignableFrom(type) )
+        {
+            return configurationProvider.getStringSupplier(key, (String)current.get());
+        }
+        else if ( Boolean.class.isAssignableFrom(type) || Boolean.TYPE.isAssignableFrom(type) )
+        {
+            return configurationProvider.getBooleanSupplier(key, (Boolean)current.get());
+        }
+        else if ( Integer.class.isAssignableFrom(type) || Integer.TYPE.isAssignableFrom(type) )
+        {
+            return configurationProvider.getIntegerSupplier(key, (Integer)current.get());
+        }
+        else if ( Long.class.isAssignableFrom(type) || Long.TYPE.isAssignableFrom(type) )
+        {
+            return configurationProvider.getLongSupplier(key, (Long)current.get());
+        }
+        else if ( Double.class.isAssignableFrom(type) || Double.TYPE.isAssignableFrom(type) )
+        {
+            return configurationProvider.getDoubleSupplier(key, (Double)current.get());
+        }
+        else if ( Date.class.isAssignableFrom(type) )
+        {
+            return configurationProvider.getDateSupplier(key,  (Date)current.get());
+        }
+        else 
+        {
+            log.error("Field type not supported: " + type + " (" + field.getName() + ")");
+            return null;
         }
     }
 

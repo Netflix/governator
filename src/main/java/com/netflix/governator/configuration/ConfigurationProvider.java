@@ -16,6 +16,8 @@
 
 package com.netflix.governator.configuration;
 
+import java.util.Date;
+
 import com.google.common.base.Supplier;
 import com.netflix.governator.annotations.Configuration;
 
@@ -33,46 +35,6 @@ public interface ConfigurationProvider
      */
     public boolean     has(ConfigurationKey key);
 
-    /**
-     * Return the given configuration as a boolean
-     *
-     * @param key configuration key
-     * @return value
-     */
-    public boolean     getBoolean(ConfigurationKey key);
-
-    /**
-     * Return the given configuration as an integer
-     *
-     * @param key configuration key
-     * @return value
-     */
-    public int         getInteger(ConfigurationKey key);
-
-    /**
-     * Return the given configuration as a long
-     *
-     * @param key configuration key
-     * @return value
-     */
-    public long        getLong(ConfigurationKey key);
-
-    /**
-     * Return the given configuration as a double
-     *
-     * @param key configuration key
-     * @return value
-     */
-    public double      getDouble(ConfigurationKey key);
-
-    /**
-     * Return the given configuration as a string
-     *
-     * @param key configuration key
-     * @return value
-     */
-    public String      getString(ConfigurationKey key);
-    
     /**
      * Return the given configuration as a boolean.  Use this when the configuration
      * value is expected to change at run time.
@@ -117,4 +79,13 @@ public interface ConfigurationProvider
      * @return value
      */
     public Supplier<String>      getStringSupplier(ConfigurationKey key, String defaultValue);
+    
+    /**
+     * Return the given configuration as a date.  Use this when the configuration
+     * value is expected to change at run time.
+     *
+     * @param key configuration key
+     * @return value
+     */
+    public Supplier<Date>      getDateSupplier(ConfigurationKey key, Date defaultValue);
 }
