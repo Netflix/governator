@@ -16,10 +16,9 @@
 
 package com.netflix.governator.configuration;
 
-import java.util.Date;
-
 import com.google.common.base.Supplier;
 import com.netflix.governator.annotations.Configuration;
+import java.util.Date;
 
 /**
  * Abstraction for get configuration values to use for fields annotated
@@ -33,7 +32,7 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return true/false
      */
-    public boolean     has(ConfigurationKey key);
+    public boolean has(ConfigurationKey key);
 
     /**
      * Return the given configuration as a boolean.  Use this when the configuration
@@ -42,7 +41,7 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return value
      */
-    public Supplier<Boolean>     getBooleanSupplier(ConfigurationKey key, Boolean defaultValue);
+    public Supplier<Boolean> getBooleanSupplier(ConfigurationKey key, Boolean defaultValue);
 
     /**
      * Return the given configuration as an integer.   Use this when the configuration
@@ -51,7 +50,7 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return value
      */
-    public Supplier<Integer>     getIntegerSupplier(ConfigurationKey key, Integer defaultValue);
+    public Supplier<Integer> getIntegerSupplier(ConfigurationKey key, Integer defaultValue);
 
     /**
      * Return the given configuration as a long.  Use this when the configuration
@@ -60,7 +59,7 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return value
      */
-    public Supplier<Long>        getLongSupplier(ConfigurationKey key, Long defaultValue);
+    public Supplier<Long> getLongSupplier(ConfigurationKey key, Long defaultValue);
 
     /**
      * Return the given configuration as a double.  Use this when the configuration
@@ -69,7 +68,7 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return value
      */
-    public Supplier<Double>      getDoubleSupplier(ConfigurationKey key, Double defaultValue);
+    public Supplier<Double> getDoubleSupplier(ConfigurationKey key, Double defaultValue);
 
     /**
      * Return the given configuration as a string.  Use this when the configuration
@@ -78,8 +77,8 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return value
      */
-    public Supplier<String>      getStringSupplier(ConfigurationKey key, String defaultValue);
-    
+    public Supplier<String> getStringSupplier(ConfigurationKey key, String defaultValue);
+
     /**
      * Return the given configuration as a date.  Use this when the configuration
      * value is expected to change at run time.
@@ -87,5 +86,5 @@ public interface ConfigurationProvider
      * @param key configuration key
      * @return value
      */
-    public Supplier<Date>      getDateSupplier(ConfigurationKey key, Date defaultValue);
+    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue);
 }

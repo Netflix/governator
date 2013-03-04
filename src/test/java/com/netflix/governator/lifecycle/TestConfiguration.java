@@ -144,7 +144,7 @@ public class TestConfiguration
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.getConfigurationProvider().add(ArchaiusConfigurationProvider
                 .builder()
-                    .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownesAll())
+                    .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownsAll())
                 .build());
 
         LifecycleManager            manager = new LifecycleManager(arguments);
