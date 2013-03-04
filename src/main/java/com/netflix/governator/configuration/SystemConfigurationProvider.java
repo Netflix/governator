@@ -18,7 +18,6 @@ package com.netflix.governator.configuration;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
-
 import java.util.Date;
 import java.util.Map;
 
@@ -42,10 +41,10 @@ public class SystemConfigurationProvider implements ConfigurationProvider
     /**
      * Change a variable value
      *
-     * @param name name
+     * @param name  name
      * @param value value
      */
-    public void     setVariable(String name, String value)
+    public void setVariable(String name, String value)
     {
         variableValues.put(name, value);
     }
@@ -55,74 +54,100 @@ public class SystemConfigurationProvider implements ConfigurationProvider
     {
         return System.getProperty(key.getKey(variableValues), null) != null;
     }
-    
+
     @Override
-    public Supplier<Boolean> getBooleanSupplier(final ConfigurationKey key, final Boolean defaultValue) {
-        return new Supplier<Boolean>() {
+    public Supplier<Boolean> getBooleanSupplier(final ConfigurationKey key, final Boolean defaultValue)
+    {
+        return new Supplier<Boolean>()
+        {
             @Override
-            public Boolean get() {
+            public Boolean get()
+            {
                 Boolean value = Boolean.getBoolean(System.getProperty(key.getKey(variableValues)));
-                if (value == null)
+                if ( value == null )
+                {
                     return defaultValue;
+                }
                 return value;
             }
         };
     }
 
     @Override
-    public Supplier<Integer> getIntegerSupplier(final ConfigurationKey key, final Integer defaultValue) {
-        return new Supplier<Integer>() {
+    public Supplier<Integer> getIntegerSupplier(final ConfigurationKey key, final Integer defaultValue)
+    {
+        return new Supplier<Integer>()
+        {
             @Override
-            public Integer get() {
+            public Integer get()
+            {
                 Integer value = Integer.getInteger(System.getProperty(key.getKey(variableValues)));
-                if (value == null)
+                if ( value == null )
+                {
                     return defaultValue;
+                }
                 return value;
             }
         };
     }
 
     @Override
-    public Supplier<Long> getLongSupplier(final ConfigurationKey key, final Long defaultValue) {
-        return new Supplier<Long>() {
+    public Supplier<Long> getLongSupplier(final ConfigurationKey key, final Long defaultValue)
+    {
+        return new Supplier<Long>()
+        {
             @Override
-            public Long get() {
+            public Long get()
+            {
                 Long value = Long.getLong(System.getProperty(key.getKey(variableValues)));
-                if (value == null)
+                if ( value == null )
+                {
                     return defaultValue;
+                }
                 return value;
             }
         };
     }
 
     @Override
-    public Supplier<Double> getDoubleSupplier(final ConfigurationKey key, final Double defaultValue) {
-        return new Supplier<Double>() {
+    public Supplier<Double> getDoubleSupplier(final ConfigurationKey key, final Double defaultValue)
+    {
+        return new Supplier<Double>()
+        {
             @Override
-            public Double get() {
+            public Double get()
+            {
                 Double value = Double.parseDouble(System.getProperty(key.getKey(variableValues)));
-                if (value == null)
+                if ( value == null )
+                {
                     return defaultValue;
+                }
                 return value;
             }
         };
     }
 
     @Override
-    public Supplier<String> getStringSupplier(final ConfigurationKey key, final String defaultValue) {
-        return new Supplier<String>() {
+    public Supplier<String> getStringSupplier(final ConfigurationKey key, final String defaultValue)
+    {
+        return new Supplier<String>()
+        {
             @Override
-            public String get() {
+            public String get()
+            {
                 String value = System.getProperty(key.getKey(variableValues));
-                if (value == null)
+                if ( value == null )
+                {
                     return defaultValue;
+                }
                 return value;
             }
         };
     }
-    
+
     @Override
-    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue) {
+    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue)
+    {
         return new DateWithDefaultSupplier(getStringSupplier(key, null), defaultValue);
     }
 

@@ -19,9 +19,6 @@ package com.netflix.governator.lifecycle;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -32,13 +29,10 @@ import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
-import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 import com.netflix.governator.lifecycle.warmup.WarmUpDriver;
 import com.netflix.governator.lifecycle.warmup.WarmUpSession;
-import org.apache.commons.configuration.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
@@ -56,10 +50,8 @@ import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -87,61 +79,6 @@ public class LifecycleManager implements Closeable
     private final PostStartArguments postStartArguments;
     private final AtomicReference<WarmUpSession> postStartWarmUpSession = new AtomicReference<WarmUpSession>(null);
     private final Injector injector;
-
-    /**
-     * Lifecycle managed objects have to be referenced via Object identity not equals()
-     */
-    private static class StateKey
-    {
-        final Object obj;
-
-        private StateKey(Object obj)
-        {
-            this.obj = obj;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return System.identityHashCode(obj);
-        }
-
-        @SuppressWarnings("SimplifiableIfStatement")
-        @Override
-        public boolean equals(Object o)
-        {
-            if ( this == o )
-            {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() )
-            {
-                return false;
-            }
-
-            return hashCode() == o.hashCode();
-        }
-    }
-
-    private static class PreDestroyRecord
-    {
-        final Object obj;
-        final Collection<Method> preDestroyMethods;
-
-        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
-        {
-            this.obj = obj;
-            this.preDestroyMethods = preDestroyMethods;
-        }
-    }
-
-    private enum State
-    {
-        LATENT,
-        STARTING,
-        STARTED,
-        CLOSED
-    }
 
     public LifecycleManager()
     {
@@ -380,9 +317,10 @@ public class LifecycleManager implements Closeable
         }
 
         setState(obj, LifecycleState.SETTING_CONFIGURATION);
+        ConfigurationProcessor configurationProcessor = new ConfigurationProcessor(configurationProvider, configurationDocumentation);
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {
-            assignConfiguration(obj, configurationField);
+            configurationProcessor.assignConfiguration(obj, configurationField);
         }
 
         setState(obj, LifecycleState.SETTING_RESOURCES);
@@ -599,131 +537,6 @@ public class LifecycleManager implements Closeable
         return reversed;
     }
 
-    private void assignConfiguration(Object obj, Field field) throws Exception
-    {
-        Configuration configuration = field.getAnnotation(Configuration.class);
-        String configurationName = configuration.value();
-        ConfigurationKey key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
-
-        Object value = null;
-
-        boolean has = configurationProvider.has(key);
-        if ( has )
-        {
-            try
-            {
-                if ( Supplier.class.isAssignableFrom(field.getType())) {
-                    ParameterizedType type = (ParameterizedType) field.getGenericType();
-                    Class<?> actualType    = (Class<?>)type.getActualTypeArguments()[0];
-                    Supplier<?> current       = (Supplier<?>) field.get(obj);
-                    value = this.getConfigurationSupplier(field, key, actualType, current, configuration);
-                    if (value == null) {
-                        log.error("Field type not supported: " + actualType + " (" + field.getName() + ")");
-                        field = null;
-                    }
-                }
-                else
-                {
-                    Supplier<?> supplier = this.getConfigurationSupplier(field, key,  field.getType(), Suppliers.ofInstance(field.get(obj)), configuration);
-                    if (supplier == null) {
-                        log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
-                        field = null;
-                    }
-                    else {
-                        value = supplier.get();
-                    }
-                }
-            }
-            catch ( IllegalArgumentException e )
-            {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
-                field = null;
-            }
-            catch ( ConversionException e )
-            {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
-                field = null;
-            }
-        }
-
-        if ( field != null )
-        {
-            String defaultValue;
-            if ( Supplier.class.isAssignableFrom(field.getType())) {
-                defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
-            }
-            else {
-                defaultValue = String.valueOf(field.get(obj));
-            }
-            
-            String documentationValue;
-            if ( has )
-            {
-                field.set(obj, value);
-                
-                documentationValue = String.valueOf(value);
-                if ( Supplier.class.isAssignableFrom(field.getType())) {
-                    documentationValue = String.valueOf(((Supplier<?>)value).get());
-                }
-                else {
-                    documentationValue = String.valueOf(documentationValue);
-                }
-            }
-            else
-            {
-                documentationValue = "";
-            }
-            configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
-        }
-    }
-    
-    private Supplier<?> getConfigurationSupplier(final Field field, final ConfigurationKey key, final Class<?> type, Supplier<?> current, final Configuration configuration) {
-        if ( String.class.isAssignableFrom(type) )
-        {
-            return configurationProvider.getStringSupplier(key, (String)current.get());
-        }
-        else if ( Boolean.class.isAssignableFrom(type) || Boolean.TYPE.isAssignableFrom(type) )
-        {
-            return configurationProvider.getBooleanSupplier(key, (Boolean)current.get());
-        }
-        else if ( Integer.class.isAssignableFrom(type) || Integer.TYPE.isAssignableFrom(type) )
-        {
-            return configurationProvider.getIntegerSupplier(key, (Integer)current.get());
-        }
-        else if ( Long.class.isAssignableFrom(type) || Long.TYPE.isAssignableFrom(type) )
-        {
-            return configurationProvider.getLongSupplier(key, (Long)current.get());
-        }
-        else if ( Double.class.isAssignableFrom(type) || Double.TYPE.isAssignableFrom(type) )
-        {
-            return configurationProvider.getDoubleSupplier(key, (Double)current.get());
-        }
-        else if ( Date.class.isAssignableFrom(type) )
-        {
-            return configurationProvider.getDateSupplier(key,  (Date)current.get());
-        }
-        else 
-        {
-            log.error("Field type not supported: " + type + " (" + field.getName() + ")");
-            return null;
-        }
-    }
-
-    private void ignoreTypeMismtachIfConfigured(Configuration configuration, String configurationName,
-                                                Exception e)
-    {
-        if ( configuration.ignoreTypeMismatch() )
-        {
-            log.info(String.format(
-                "Type conversion failed for configuration name %s. This error will be ignored and the field will have the default value if specified. Error: %s",
-                configurationName, e));
-        }
-        else
-        {
-            throw Throwables.propagate(e);
-        }
-    }
-
     private String getPath(ConstraintViolation<Object> violation)
     {
         Iterable<String> transformed = Iterables.transform
@@ -788,5 +601,60 @@ public class LifecycleManager implements Closeable
                 LifecycleManager.this.setState(obj, state);
             }
         };
+    }
+
+    private enum State
+    {
+        LATENT,
+        STARTING,
+        STARTED,
+        CLOSED
+    }
+
+    /**
+     * Lifecycle managed objects have to be referenced via Object identity not equals()
+     */
+    private static class StateKey
+    {
+        final Object obj;
+
+        private StateKey(Object obj)
+        {
+            this.obj = obj;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return System.identityHashCode(obj);
+        }
+
+        @SuppressWarnings("SimplifiableIfStatement")
+        @Override
+        public boolean equals(Object o)
+        {
+            if ( this == o )
+            {
+                return true;
+            }
+            if ( o == null || getClass() != o.getClass() )
+            {
+                return false;
+            }
+
+            return hashCode() == o.hashCode();
+        }
+    }
+
+    private static class PreDestroyRecord
+    {
+        final Object obj;
+        final Collection<Method> preDestroyMethods;
+
+        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
+        {
+            this.obj = obj;
+            this.preDestroyMethods = preDestroyMethods;
+        }
     }
 }

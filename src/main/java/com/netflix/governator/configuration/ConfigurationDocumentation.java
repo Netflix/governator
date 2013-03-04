@@ -27,16 +27,16 @@ import java.util.Map;
  */
 public class ConfigurationDocumentation
 {
-    private final Map<String, Entry>        entries = Maps.newConcurrentMap();
+    private final Map<String, Entry> entries = Maps.newConcurrentMap();
 
     private static class Entry
     {
-        private final Field         field;
-        private final String        configurationName;
-        private final boolean       has;
-        private final String        defaultValue;
-        private final String        value;
-        private final String        documentation;
+        private final Field field;
+        private final String configurationName;
+        private final boolean has;
+        private final String defaultValue;
+        private final String value;
+        private final String documentation;
 
         private Entry(Field field, String configurationName, boolean has, String defaultValue, String value, String documentation)
         {
@@ -49,12 +49,12 @@ public class ConfigurationDocumentation
         }
     }
 
-    public void     registerConfiguration(Field field, String configurationName, boolean has, String defaultValue, String value, String documentation)
+    public void registerConfiguration(Field field, String configurationName, boolean has, String defaultValue, String value, String documentation)
     {
         entries.put(configurationName, new Entry(field, configurationName, has, defaultValue, value, documentation));
     }
 
-    public void     output(Logger log)
+    public void output(Logger log)
     {
         if ( entries.size() == 0 )
         {
@@ -70,12 +70,12 @@ public class ConfigurationDocumentation
         }
     }
 
-    public void     output()
+    public void output()
     {
         output(new PrintWriter(System.out));
     }
 
-    public void     output(PrintWriter out)
+    public void output(PrintWriter out)
     {
         if ( entries.size() == 0 )
         {
@@ -90,7 +90,7 @@ public class ConfigurationDocumentation
 
     private ColumnPrinter build()
     {
-        ColumnPrinter       printer = new ColumnPrinter();
+        ColumnPrinter printer = new ColumnPrinter();
 
         printer.addColumn("PROPERTY");
         printer.addColumn("FIELD");
@@ -98,7 +98,7 @@ public class ConfigurationDocumentation
         printer.addColumn("VALUE");
         printer.addColumn("DESCRIPTION");
 
-        Map<String, Entry>      sortedEntries = Maps.newTreeMap();
+        Map<String, Entry> sortedEntries = Maps.newTreeMap();
         sortedEntries.putAll(entries);
 
         for ( Entry entry : sortedEntries.values() )
@@ -112,7 +112,7 @@ public class ConfigurationDocumentation
         return printer;
     }
 
-    public void     clear()
+    public void clear()
     {
         entries.clear();
     }

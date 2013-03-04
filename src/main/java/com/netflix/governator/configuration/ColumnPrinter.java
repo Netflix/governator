@@ -18,7 +18,6 @@ package com.netflix.governator.configuration;
 // copied from https://raw.github.com/proofpoint/platform/master/bootstrap/src/main/java/com/proofpoint/bootstrap/ColumnPrinter.java
 
 import com.google.common.collect.Lists;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -56,7 +55,7 @@ class ColumnPrinter
      * Add a value to the first column with the given name
      *
      * @param columnName name of the column to add to
-     * @param value value to add
+     * @param value      value to add
      */
     void addValue(String columnName, String value)
     {
@@ -67,11 +66,12 @@ class ColumnPrinter
      * Add a value to the nth column
      *
      * @param columnIndex n
-     * @param value value to add
+     * @param value       value to add
      */
     void addValue(int columnIndex, String value)
     {
-        if ((columnIndex < 0) || (columnIndex >= data.size())) {
+        if ( (columnIndex < 0) || (columnIndex >= data.size()) )
+        {
             throw new IllegalArgumentException();
         }
 
@@ -96,7 +96,8 @@ class ColumnPrinter
      */
     void print(PrintWriter out)
     {
-        for (String s : generate()) {
+        for ( String s : generate() )
+        {
             out.println(s);
         }
     }
@@ -115,31 +116,37 @@ class ColumnPrinter
         List<Iterator<String>> dataIterators = getDataIterators();
 
         Iterator<AtomicInteger> columnWidthIterator = columnWidths.iterator();
-        for (String columnName : columnNames) {
+        for ( String columnName : columnNames )
+        {
             int thisWidth = columnWidthIterator.next().intValue();
             printValue(workStr, columnName, thisWidth);
         }
         pushLine(lines, workStr);
 
         boolean done = false;
-        while (!done) {
+        while ( !done )
+        {
             boolean hadValue = false;
             Iterator<Iterator<String>> rowIterator = dataIterators.iterator();
-            for (AtomicInteger width : columnWidths) {
+            for ( AtomicInteger width : columnWidths )
+            {
                 Iterator<String> thisDataIterator = rowIterator.next();
-                if (thisDataIterator.hasNext()) {
+                if ( thisDataIterator.hasNext() )
+                {
                     hadValue = true;
 
                     String value = thisDataIterator.next();
                     printValue(workStr, value, width.intValue());
                 }
-                else {
+                else
+                {
                     printValue(workStr, "", width.intValue());
                 }
             }
             pushLine(lines, workStr);
 
-            if (!hadValue) {
+            if ( !hadValue )
+            {
                 done = true;
             }
         }
@@ -166,7 +173,8 @@ class ColumnPrinter
     private List<Iterator<String>> getDataIterators()
     {
         List<Iterator<String>> dataIterators = Lists.newArrayList();
-        for (List<String> valueList : data) {
+        for ( List<String> valueList : data )
+        {
             dataIterators.add(valueList.iterator());
         }
         return dataIterators;
@@ -175,14 +183,17 @@ class ColumnPrinter
     private List<AtomicInteger> getColumnWidths()
     {
         List<AtomicInteger> columnWidths = Lists.newArrayList();
-        for (String columnName : columnNames) {
+        for ( String columnName : columnNames )
+        {
             columnWidths.add(new AtomicInteger(columnName.length()));
         }
 
         int columnIndex = 0;
-        for (List<String> valueList : data) {
+        for ( List<String> valueList : data )
+        {
             AtomicInteger width = columnWidths.get(columnIndex++);
-            for (String value : valueList) {
+            for ( String value : valueList )
+            {
                 width.set(Math.max(value.length(), width.intValue()));
             }
         }

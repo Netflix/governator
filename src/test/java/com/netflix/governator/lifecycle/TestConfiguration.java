@@ -28,7 +28,6 @@ import com.netflix.governator.lifecycle.mocks.PreConfigurationChange;
 import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -135,6 +134,7 @@ public class TestConfiguration
         properties.put("test.s", "a is a");
         properties.put("test.dt", "dar");
 
+        //noinspection deprecation
         testTypeMismatch(new ArchaiusConfigurationProvider(properties));
     }
 
@@ -144,7 +144,7 @@ public class TestConfiguration
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.getConfigurationProvider().add(ArchaiusConfigurationProvider
                 .builder()
-                    .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownesAll())
+                    .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownsAll())
                 .build());
 
         LifecycleManager            manager = new LifecycleManager(arguments);
@@ -153,7 +153,7 @@ public class TestConfiguration
         manager.add(obj);
         manager.start();
 
-        Assert.assertEquals(obj.aDynamicBool.get(), new Boolean(true));
+        Assert.assertEquals(obj.aDynamicBool.get(), Boolean.TRUE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(1));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(2L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
@@ -167,7 +167,7 @@ public class TestConfiguration
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.s", "a is b");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.dt", "1964-11-06");
 
-        Assert.assertEquals(obj.aDynamicBool.get(), new Boolean(false));
+        Assert.assertEquals(obj.aDynamicBool.get(), Boolean.FALSE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(101));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(201L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
