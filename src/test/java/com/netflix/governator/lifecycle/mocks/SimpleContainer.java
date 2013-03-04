@@ -22,7 +22,7 @@ import org.testng.Assert;
 
 public class SimpleContainer extends SimpleObject
 {
-    public final SimpleObject       simpleObject;
+    public final SimpleObject simpleObject;
 
     public SimpleContainer(LifecycleManager manager, SimpleObject simpleObject)
     {
