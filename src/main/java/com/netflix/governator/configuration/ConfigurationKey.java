@@ -29,13 +29,13 @@ import java.util.Map;
  */
 public class ConfigurationKey
 {
-    private final Logger        log = LoggerFactory.getLogger(getClass());
-    private final String        rawKey;
-    private final List<ConfigurationKeyPart>    parts;
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final String rawKey;
+    private final List<ConfigurationKeyPart> parts;
 
     /**
      * @param rawKey the unprocessed value
-     * @param parts the parsed values
+     * @param parts  the parsed values
      */
     public ConfigurationKey(String rawKey, List<ConfigurationKeyPart> parts)
     {
@@ -59,7 +59,7 @@ public class ConfigurationKey
      */
     public String getKey(Map<String, String> variableValues)
     {
-        StringBuilder       key = new StringBuilder();
+        StringBuilder key = new StringBuilder();
         for ( ConfigurationKeyPart p : parts )
         {
             if ( p.isVariable() )

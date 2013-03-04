@@ -21,11 +21,11 @@ package com.netflix.governator.configuration;
  */
 public class ConfigurationKeyPart
 {
-    private final String        value;
-    private final boolean       isVariable;
+    private final String value;
+    private final boolean isVariable;
 
     /**
-     * @param value the string or variable name
+     * @param value    the string or variable name
      * @param variable true if this is a variable substitution
      */
     public ConfigurationKeyPart(String value, boolean variable)

@@ -22,17 +22,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SimpleObject
 {
-    public final AtomicInteger      startCount = new AtomicInteger(0);
-    public final AtomicInteger      finishCount = new AtomicInteger(0);
+    public final AtomicInteger startCount = new AtomicInteger(0);
+    public final AtomicInteger finishCount = new AtomicInteger(0);
 
     @PostConstruct
-    public void     start() throws InterruptedException
+    public void start() throws InterruptedException
     {
         startCount.incrementAndGet();
     }
 
     @PreDestroy
-    public void     finish() throws InterruptedException
+    public void finish() throws InterruptedException
     {
         finishCount.incrementAndGet();
     }

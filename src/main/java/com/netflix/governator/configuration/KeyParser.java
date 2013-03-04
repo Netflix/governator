@@ -27,19 +27,19 @@ public class KeyParser
      * @param raw the key
      * @return parts
      */
-    public static List<ConfigurationKeyPart>  parse(String raw)
+    public static List<ConfigurationKeyPart> parse(String raw)
     {
-        List<ConfigurationKeyPart>     parts = Lists.newArrayList();
+        List<ConfigurationKeyPart> parts = Lists.newArrayList();
 
-        int                             caret = 0;
-        for(;;)
+        int caret = 0;
+        for (; ; )
         {
-            int     startIndex = raw.indexOf("${", caret);
+            int startIndex = raw.indexOf("${", caret);
             if ( startIndex < 0 )
             {
                 break;
             }
-            int     endIndex = raw.indexOf("}", startIndex);
+            int endIndex = raw.indexOf("}", startIndex);
             if ( endIndex < 0 )
             {
                 break;

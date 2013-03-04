@@ -30,7 +30,7 @@ public class PreConfigurationChange
     private final CompositeConfigurationProvider configurationProvider;
 
     @Configuration("pre-config-test")
-    private String      value = "default";
+    private String value = "default";
 
     @Inject
     public PreConfigurationChange(CompositeConfigurationProvider configurationProvider)
@@ -39,17 +39,17 @@ public class PreConfigurationChange
     }
 
     @PreConfiguration
-    public void     preConfiguration()
+    public void preConfiguration()
     {
         Assert.assertEquals(value, "default");
 
-        Properties      override = new Properties();
+        Properties override = new Properties();
         override.setProperty("pre-config-test", "override");
         configurationProvider.add(new PropertiesConfigurationProvider(override));
     }
 
     @PostConstruct
-    public void     postConstruct()
+    public void postConstruct()
     {
         Assert.assertEquals(value, "override");
     }

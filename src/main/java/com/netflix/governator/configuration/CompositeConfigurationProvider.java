@@ -16,6 +16,7 @@
 
 package com.netflix.governator.configuration;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 import java.util.Arrays;
@@ -49,6 +50,7 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
         this.providers = new CopyOnWriteArrayList<ConfigurationProvider>(providers);
     }
 
+    @VisibleForTesting
     public void add(ConfigurationProvider configurationProvider)
     {
         providers.add(0, configurationProvider);
@@ -68,7 +70,8 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public Supplier<Boolean> getBooleanSupplier(ConfigurationKey key, Boolean defaultValue) {
+    public Supplier<Boolean> getBooleanSupplier(ConfigurationKey key, Boolean defaultValue)
+    {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
@@ -80,7 +83,8 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public Supplier<Integer> getIntegerSupplier(ConfigurationKey key, Integer defaultValue) {
+    public Supplier<Integer> getIntegerSupplier(ConfigurationKey key, Integer defaultValue)
+    {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
@@ -92,7 +96,8 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public Supplier<Long> getLongSupplier(ConfigurationKey key, Long defaultValue) {
+    public Supplier<Long> getLongSupplier(ConfigurationKey key, Long defaultValue)
+    {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
@@ -104,7 +109,8 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public Supplier<Double> getDoubleSupplier(ConfigurationKey key, Double defaultValue) {
+    public Supplier<Double> getDoubleSupplier(ConfigurationKey key, Double defaultValue)
+    {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
@@ -116,7 +122,8 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public Supplier<String> getStringSupplier(ConfigurationKey key, String defaultValue) {
+    public Supplier<String> getStringSupplier(ConfigurationKey key, String defaultValue)
+    {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
@@ -126,9 +133,10 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
         }
         return null;
     }
-    
+
     @Override
-    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue) {
+    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue)
+    {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )

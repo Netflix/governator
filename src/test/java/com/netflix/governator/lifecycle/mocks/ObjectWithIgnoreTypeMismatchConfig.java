@@ -17,23 +17,22 @@
 package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.annotations.Configuration;
-
 import java.util.Date;
 
 public class ObjectWithIgnoreTypeMismatchConfig
 {
     @Configuration(value = "test.b", documentation = "this is a boolean", ignoreTypeMismatch = true)
-    public boolean   aBool = false;
+    public boolean aBool = false;
 
-    @Configuration(value="test.i", ignoreTypeMismatch = true)
-    public int       anInt = 1;
+    @Configuration(value = "test.i", ignoreTypeMismatch = true)
+    public int anInt = 1;
 
     @Configuration(value = "test.l", ignoreTypeMismatch = true)
-    public long      aLong = 2;
+    public long aLong = 2;
 
     @Configuration(value = "test.d", ignoreTypeMismatch = true)
-    public double    aDouble = 3.4;
+    public double aDouble = 3.4;
 
     @Configuration(value = "test.dt", ignoreTypeMismatch = true)
-    public Date     aDate = new Date();
+    public Date aDate = new Date();
 }
