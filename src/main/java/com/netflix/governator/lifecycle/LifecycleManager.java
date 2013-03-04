@@ -88,61 +88,6 @@ public class LifecycleManager implements Closeable
     private final AtomicReference<WarmUpSession> postStartWarmUpSession = new AtomicReference<WarmUpSession>(null);
     private final Injector injector;
 
-    /**
-     * Lifecycle managed objects have to be referenced via Object identity not equals()
-     */
-    private static class StateKey
-    {
-        final Object obj;
-
-        private StateKey(Object obj)
-        {
-            this.obj = obj;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return System.identityHashCode(obj);
-        }
-
-        @SuppressWarnings("SimplifiableIfStatement")
-        @Override
-        public boolean equals(Object o)
-        {
-            if ( this == o )
-            {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() )
-            {
-                return false;
-            }
-
-            return hashCode() == o.hashCode();
-        }
-    }
-
-    private static class PreDestroyRecord
-    {
-        final Object obj;
-        final Collection<Method> preDestroyMethods;
-
-        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
-        {
-            this.obj = obj;
-            this.preDestroyMethods = preDestroyMethods;
-        }
-    }
-
-    private enum State
-    {
-        LATENT,
-        STARTING,
-        STARTED,
-        CLOSED
-    }
-
     public LifecycleManager()
     {
         this(new LifecycleManagerArguments(), null);
@@ -612,24 +557,28 @@ public class LifecycleManager implements Closeable
         {
             try
             {
-                if ( Supplier.class.isAssignableFrom(field.getType())) {
-                    ParameterizedType type = (ParameterizedType) field.getGenericType();
-                    Class<?> actualType    = (Class<?>)type.getActualTypeArguments()[0];
-                    Supplier<?> current       = (Supplier<?>) field.get(obj);
-                    value = this.getConfigurationSupplier(field, key, actualType, current, configuration);
-                    if (value == null) {
+                if ( Supplier.class.isAssignableFrom(field.getType()) )
+                {
+                    ParameterizedType type = (ParameterizedType)field.getGenericType();
+                    Class<?> actualType = (Class<?>)type.getActualTypeArguments()[0];
+                    Supplier<?> current = (Supplier<?>)field.get(obj);
+                    value = getConfigurationSupplier(field, key, actualType, current);
+                    if ( value == null )
+                    {
                         log.error("Field type not supported: " + actualType + " (" + field.getName() + ")");
                         field = null;
                     }
                 }
                 else
                 {
-                    Supplier<?> supplier = this.getConfigurationSupplier(field, key,  field.getType(), Suppliers.ofInstance(field.get(obj)), configuration);
-                    if (supplier == null) {
+                    Supplier<?> supplier = getConfigurationSupplier(field, key, field.getType(), Suppliers.ofInstance(field.get(obj)));
+                    if ( supplier == null )
+                    {
                         log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
                         field = null;
                     }
-                    else {
+                    else
+                    {
                         value = supplier.get();
                     }
                 }
@@ -649,23 +598,27 @@ public class LifecycleManager implements Closeable
         if ( field != null )
         {
             String defaultValue;
-            if ( Supplier.class.isAssignableFrom(field.getType())) {
+            if ( Supplier.class.isAssignableFrom(field.getType()) )
+            {
                 defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
             }
-            else {
+            else
+            {
                 defaultValue = String.valueOf(field.get(obj));
             }
-            
+
             String documentationValue;
             if ( has )
             {
                 field.set(obj, value);
-                
+
                 documentationValue = String.valueOf(value);
-                if ( Supplier.class.isAssignableFrom(field.getType())) {
+                if ( Supplier.class.isAssignableFrom(field.getType()) )
+                {
                     documentationValue = String.valueOf(((Supplier<?>)value).get());
                 }
-                else {
+                else
+                {
                     documentationValue = String.valueOf(documentationValue);
                 }
             }
@@ -676,8 +629,9 @@ public class LifecycleManager implements Closeable
             configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
         }
     }
-    
-    private Supplier<?> getConfigurationSupplier(final Field field, final ConfigurationKey key, final Class<?> type, Supplier<?> current, final Configuration configuration) {
+
+    private Supplier<?> getConfigurationSupplier(final Field field, final ConfigurationKey key, final Class<?> type, Supplier<?> current)
+    {
         if ( String.class.isAssignableFrom(type) )
         {
             return configurationProvider.getStringSupplier(key, (String)current.get());
@@ -700,23 +654,20 @@ public class LifecycleManager implements Closeable
         }
         else if ( Date.class.isAssignableFrom(type) )
         {
-            return configurationProvider.getDateSupplier(key,  (Date)current.get());
+            return configurationProvider.getDateSupplier(key, (Date)current.get());
         }
-        else 
+        else
         {
             log.error("Field type not supported: " + type + " (" + field.getName() + ")");
             return null;
         }
     }
 
-    private void ignoreTypeMismtachIfConfigured(Configuration configuration, String configurationName,
-                                                Exception e)
+    private void ignoreTypeMismtachIfConfigured(Configuration configuration, String configurationName, Exception e)
     {
         if ( configuration.ignoreTypeMismatch() )
         {
-            log.info(String.format(
-                "Type conversion failed for configuration name %s. This error will be ignored and the field will have the default value if specified. Error: %s",
-                configurationName, e));
+            log.info(String.format("Type conversion failed for configuration name %s. This error will be ignored and the field will have the default value if specified. Error: %s", configurationName, e));
         }
         else
         {
@@ -788,5 +739,60 @@ public class LifecycleManager implements Closeable
                 LifecycleManager.this.setState(obj, state);
             }
         };
+    }
+
+    private enum State
+    {
+        LATENT,
+        STARTING,
+        STARTED,
+        CLOSED
+    }
+
+    /**
+     * Lifecycle managed objects have to be referenced via Object identity not equals()
+     */
+    private static class StateKey
+    {
+        final Object obj;
+
+        private StateKey(Object obj)
+        {
+            this.obj = obj;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return System.identityHashCode(obj);
+        }
+
+        @SuppressWarnings("SimplifiableIfStatement")
+        @Override
+        public boolean equals(Object o)
+        {
+            if ( this == o )
+            {
+                return true;
+            }
+            if ( o == null || getClass() != o.getClass() )
+            {
+                return false;
+            }
+
+            return hashCode() == o.hashCode();
+        }
+    }
+
+    private static class PreDestroyRecord
+    {
+        final Object obj;
+        final Collection<Method> preDestroyMethods;
+
+        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
+        {
+            this.obj = obj;
+            this.preDestroyMethods = preDestroyMethods;
+        }
     }
 }
