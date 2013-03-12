@@ -1,3 +1,9 @@
+1.2.0 - March 12, 2103
+=========================
+* Pull 51: Support dynamic property configuration injection. The Configuration
+APIs have changed to support this new functionality. Please see
+https://github.com/Netflix/governator/wiki/Configuration-Mapping for details.
+
 1.1.1 - February 26, 2103
 =========================
 * Some additional createInjector() variants in LifecycleInjector.
