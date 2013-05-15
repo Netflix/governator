@@ -116,9 +116,9 @@ class GovernatorFileArchive implements Archive
     }
 
     private static File toFile(URL url) {
-        if ( !"file".equals(url.getProtocol()) )
+        if ( !"file".equals(url.getProtocol()) &&  !"vfs".equals(url.getProtocol()) )
         {
-            throw new IllegalArgumentException("not a file url: " + url);
+            throw new IllegalArgumentException("not a file or vfs url: " + url);
         }
         String path = url.getFile();
         File dir = new File(decode(path));
