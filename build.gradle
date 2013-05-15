@@ -3,12 +3,17 @@ ext.githubProjectName = rootProject.name // Change if github project name is not
 group = "com.netflix.${githubProjectName}"
 
 buildscript {
-    repositories { mavenCentral() }
+    repositories {
+        mavenLocal()
+        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
+    }
     apply from: file('gradle/buildscript.gradle'), to: buildscript 
 }
 
 allprojects {
-    repositories { mavenCentral() }
+    repositories { 
+        mavenCentral() // maven { url: 'http://jcenter.bintray.com' }
+    }
 }
 
 apply from: file('gradle/convention.gradle')
@@ -39,9 +44,4 @@ dependencies {
     testCompile 'org.testng:testng:6.1.1'
     testCompile 'org.mockito:mockito-core:1.8.5'
     testCompile 'org.slf4j:slf4j-log4j12:1.6.1'
-}
-
-task doc(type: Javadoc) {
-   source = sourceSets.main.allJava
-   options.overview = file('src/main/overview.html')
 }
