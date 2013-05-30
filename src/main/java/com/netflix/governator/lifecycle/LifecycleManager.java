@@ -150,10 +150,20 @@ public class LifecycleManager implements Closeable
 
         startInstance(obj, methods);
 
-        if ( state.get() == State.STARTED )
+        if ( hasStarted() )
         {
             initializeObjectPostStart(obj);
         }
+    }
+
+    /**
+     * Returns true if the lifecycle has started (i.e. {@link #start()} has been called).
+     *
+     * @return true/false
+     */
+    public boolean hasStarted()
+    {
+        return state.get() == State.STARTED;
     }
 
     /**
@@ -167,7 +177,7 @@ public class LifecycleManager implements Closeable
         LifecycleState lifecycleState = objectStates.get(new StateKey(obj));
         if ( lifecycleState == null )
         {
-            lifecycleState = (state.get() == State.STARTED) ? LifecycleState.ACTIVE : LifecycleState.LATENT;
+            lifecycleState = hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
         }
         return lifecycleState;
     }
@@ -469,6 +479,11 @@ public class LifecycleManager implements Closeable
             {
                 return resource.annotationType();
             }
+
+//			@Override
+//			public String lookup() {
+//				return resource.lookup();
+//			}
         };
     }
 
