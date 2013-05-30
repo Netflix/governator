@@ -26,6 +26,7 @@ import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.MoreTypes;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
@@ -126,7 +127,7 @@ class InternalAutoBindModule extends AbstractModule
 
     private AutoBindProvider getAutoBindProvider(Annotation annotation)
     {
-        AutoBindProvider  autoBindProvider = null;
+        AutoBindProvider autoBindProvider = null;
         if ( annotation.annotationType().isAnnotationPresent(AutoBind.class) )
         {
             ParameterizedType parameterizedType = Types.newParameterizedType(AutoBindProvider.class, annotation.annotationType());
@@ -134,7 +135,9 @@ class InternalAutoBindModule extends AbstractModule
         }
         else if ( annotation.annotationType().isAssignableFrom(AutoBind.class) )
         {
-            autoBindProvider = injector.getInstance(Key.get(new TypeLiteral<AutoBindProvider<AutoBind>>(){}));
+            autoBindProvider = injector.getInstance(Key.get(new TypeLiteral<AutoBindProvider<AutoBind>>()
+            {
+            }));
         }
         return autoBindProvider;
     }
@@ -149,44 +152,70 @@ class InternalAutoBindModule extends AbstractModule
                 continue;
             }
 
+            AutoBindSingleton annotation = clazz.getAnnotation(AutoBindSingleton.class);
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
             {
+                Preconditions.checkState(annotation.value() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Providers");
+                Preconditions.checkState(annotation.baseClass() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Providers");
+
                 ProviderBinderUtil.bind(binder(), (Class<javax.inject.Provider>)clazz, Scopes.SINGLETON);
             }
             else if ( Module.class.isAssignableFrom(clazz) )
             {
-                Class<Module>               moduleClass = (Class<Module>)clazz;
-                Module                      module = injector.getInstance(moduleClass);
+                Preconditions.checkState(annotation.value() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Modules");
+                Preconditions.checkState(annotation.baseClass() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Modules");
+                Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for Modules");
+
+                Class<Module> moduleClass = (Class<Module>)clazz;
+                Module module = injector.getInstance(moduleClass);
                 binder().install(module);
             }
             else
             {
-                bindAutoBindSingleton(clazz);
+                bindAutoBindSingleton(annotation, clazz);
             }
         }
     }
 
-    private void bindAutoBindSingleton(Class<?> clazz)
+    private void bindAutoBindSingleton(AutoBindSingleton annotation, Class<?> clazz)
     {
-        AutoBindSingleton       annotation = clazz.getAnnotation(AutoBindSingleton.class);
-        if ( annotation.value() != AutoBindSingleton.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
+        Class<?> annotationBaseClass = getAnnotationBaseClass(annotation);
+        if ( annotationBaseClass != AutoBindSingleton.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
         {
-            Object    foundBindingClass = searchForBaseClass(clazz, annotation, Sets.newHashSet());
+            Object foundBindingClass = searchForBaseClass(clazz, annotationBaseClass, Sets.newHashSet());
             if ( foundBindingClass == null )
             {
-                throw new IllegalArgumentException(String.format("AutoBindSingleton class %s does not implement or extend %s", clazz.getName(), annotation.value().getName()));
+                throw new IllegalArgumentException(String.format("AutoBindSingleton class %s does not implement or extend %s", clazz.getName(), annotationBaseClass.getName()));
             }
 
             if ( foundBindingClass instanceof Class )
             {
-                //noinspection unchecked
-                binder().bind((Class)foundBindingClass).to(clazz).asEagerSingleton();
+                if ( annotation.multiple() )
+                {
+                    Multibinder<?> multibinder = Multibinder.newSetBinder(binder(), (Class)foundBindingClass);
+                    //noinspection unchecked
+                    multibinder.addBinding().to((Class)clazz).asEagerSingleton();
+                }
+                else
+                {
+                    //noinspection unchecked
+                    binder().bind((Class)foundBindingClass).to(clazz).asEagerSingleton();
+                }
             }
             else if ( foundBindingClass instanceof Type )
             {
                 TypeLiteral typeLiteral = TypeLiteral.get((Type)foundBindingClass);
-                //noinspection unchecked
-                binder().bind(typeLiteral).to(clazz).asEagerSingleton();
+                if ( annotation.multiple() )
+                {
+                    Multibinder<?> multibinder = Multibinder.newSetBinder(binder(), typeLiteral);
+                    //noinspection unchecked
+                    multibinder.addBinding().to((Class)clazz).asEagerSingleton();
+                }
+                else
+                {
+                    //noinspection unchecked
+                    binder().bind(typeLiteral).to(clazz).asEagerSingleton();
+                }
             }
             else
             {
@@ -195,18 +224,28 @@ class InternalAutoBindModule extends AbstractModule
         }
         else
         {
+            Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) must have either value or baseClass set");
             binder().bind(clazz).asEagerSingleton();
         }
     }
 
-    private Object searchForBaseClass(Class<?> clazz, AutoBindSingleton annotation, Set<Object> usedSet)
+    private Class<?> getAnnotationBaseClass(AutoBindSingleton annotation)
+    {
+        Class<?> annotationValue = annotation.value();
+        Class<?> annotationBaseClass = annotation.baseClass();
+        Preconditions.checkState((annotationValue == AutoBindSingleton.class) || (annotationBaseClass == AutoBindSingleton.class), "@AutoBindSingleton cannot have both value and baseClass set");
+
+        return (annotationBaseClass != AutoBindSingleton.class) ? annotationBaseClass : annotationValue;
+    }
+
+    private Object searchForBaseClass(Class<?> clazz, Class<?> annotationBaseClass, Set<Object> usedSet)
     {
         if ( clazz == null )
         {
             return null;
         }
 
-        if ( clazz.equals(annotation.value()) )
+        if ( clazz.equals(annotationBaseClass) )
         {
             return clazz;
         }
@@ -218,7 +257,7 @@ class InternalAutoBindModule extends AbstractModule
 
         for ( Type type : clazz.getGenericInterfaces() )
         {
-            if ( MoreTypes.getRawType(type).equals(annotation.value()) )
+            if ( MoreTypes.getRawType(type).equals(annotationBaseClass) )
             {
                 return type;
             }
@@ -226,7 +265,7 @@ class InternalAutoBindModule extends AbstractModule
 
         if ( clazz.getGenericSuperclass() != null )
         {
-            if ( MoreTypes.getRawType(clazz.getGenericSuperclass()).equals(annotation.value()) )
+            if ( MoreTypes.getRawType(clazz.getGenericSuperclass()).equals(annotationBaseClass) )
             {
                 return clazz.getGenericSuperclass();
             }
@@ -234,13 +273,13 @@ class InternalAutoBindModule extends AbstractModule
 
         for ( Class<?> interfaceClass : clazz.getInterfaces() )
         {
-            Object    foundBindingClass = searchForBaseClass(interfaceClass, annotation, usedSet);
+            Object foundBindingClass = searchForBaseClass(interfaceClass, annotationBaseClass, usedSet);
             if ( foundBindingClass != null )
             {
                 return foundBindingClass;
             }
         }
 
-        return searchForBaseClass(clazz.getSuperclass(), annotation, usedSet);
+        return searchForBaseClass(clazz.getSuperclass(), annotationBaseClass, usedSet);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.netflix.governator.guice;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -87,6 +88,11 @@ class InternalBootstrapModule extends AbstractModule
         {
             if ( clazz.isAnnotationPresent(AutoBindSingleton.class) && ConfigurationProvider.class.isAssignableFrom(clazz) )
             {
+                AutoBindSingleton annotation = clazz.getAnnotation(AutoBindSingleton.class);
+                Preconditions.checkState(annotation.value() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for ConfigurationProviders");
+                Preconditions.checkState(annotation.baseClass() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for ConfigurationProviders");
+                Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for ConfigurationProviders");
+
                 @SuppressWarnings("unchecked")
                 Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
                 binder.bindConfigurationProvider().to(configurationProviderClass).asEagerSingleton();

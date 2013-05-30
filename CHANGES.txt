@@ -1,3 +1,7 @@
+1.2.2 - xxxxxxxxxxxxxxxxx
+=========================
+* Issue 59: Add support for multi binding via AutoBindSingleton.
+
 1.2.1 - May 15, 2013
 =========================
 * Pull 57: In JBoss 7.X, url.getProtocol() returns "vfs" instead of "file".
