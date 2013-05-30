@@ -64,37 +64,50 @@ class InternalLifecycleModule implements Module
                             @Override
                             public void afterInjection(T obj)
                             {
-                                LifecycleManager manager = lifecycleManager.get();
-                                if ( manager != null )
-                                {
-                                    for ( LifecycleListener listener : manager.getListeners() )
-                                    {
-                                        listener.objectInjected(type, obj);
-                                    }
-
-                                    Class<?> clazz = obj.getClass();
-                                    LifecycleMethods methods = getLifecycleMethods(clazz);
-
-                                    addDependencies(manager, obj, type, methods);
-
-                                    if ( methods.hasLifecycleAnnotations() )
-                                    {
-                                        try
-                                        {
-                                            manager.add(obj, methods);
-                                        }
-                                        catch ( Exception e )
-                                        {
-                                            throw new Error(e);
-                                        }
-                                    }
-                                }
+                                processInjectedObject(obj, type);
                             }
                         }
                     );
                 }
             }
         );
+    }
+
+    private <T> void processInjectedObject(T obj, TypeLiteral<T> type)
+    {
+        LifecycleManager manager = lifecycleManager.get();
+        if ( manager != null )
+        {
+            for ( LifecycleListener listener : manager.getListeners() )
+            {
+                listener.objectInjected(type, obj);
+            }
+
+            Class<?> clazz = obj.getClass();
+            LifecycleMethods methods = getLifecycleMethods(clazz);
+
+            if ( methods.hasLifecycleAnnotations() )
+            {
+                addDependencies(manager, obj, type, methods);
+                try
+                {
+                    manager.add(obj, methods);
+                }
+                catch ( Exception e )
+                {
+                    throw new Error(e);
+                }
+            }
+            else
+            {
+                // if the lifecycle has already started, there's no need to record the deps.
+                // In fact, it will cause a memory leak if we do
+                if ( !manager.hasStarted() )
+                {
+                    addDependencies(manager, obj, type, methods);
+                }
+            }
+        }
     }
 
     private void addDependencies(LifecycleManager manager, Object obj, TypeLiteral<?> type, LifecycleMethods methods)

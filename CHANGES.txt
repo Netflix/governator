@@ -1,19 +1,26 @@
-1.2.0 - March 12, 2103
+1.2.1 - May 15, 2013
+=========================
+* Pull 57: In JBoss 7.X, url.getProtocol() returns "vfs" instead of "file".
+
+* Issue 60: Once the LifecycleManager has been started, newly injected objects
+could cause a memory leak due how the warmup code was handling post-start injections.
+
+1.2.0 - March 12, 2013
 =========================
 * Pull 51: Support dynamic property configuration injection. The Configuration
 APIs have changed to support this new functionality. Please see
 https://github.com/Netflix/governator/wiki/Configuration-Mapping for details.
 
-1.1.1 - February 26, 2103
+1.1.1 - February 26, 2013
 =========================
 * Some additional createInjector() variants in LifecycleInjector.
 
-1.1.0 - February 21, 2103
+1.1.0 - February 21, 2013
 =========================
 * Enhanced LifecycleListener.objectInjected() to take correct type information. All implementations
 of LifecycleListener will need to be updated.
 
-1.0.5 - February 20, 2103
+1.0.5 - February 20, 2013
 =========================
 * Fixed a potential infinite loop with an internal reflective method. Though, I have not seen
 it actually occur in production.
