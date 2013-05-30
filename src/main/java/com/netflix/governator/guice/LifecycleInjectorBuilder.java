@@ -20,7 +20,8 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.GovernedResources;
+
 import java.util.Collection;
 
 /**
@@ -108,7 +109,7 @@ public interface LifecycleInjectorBuilder
      * @param scanner the scanner to use
      * @return this
      */
-    public LifecycleInjectorBuilder usingClasspathScanner(ClasspathScanner scanner);
+    public LifecycleInjectorBuilder usingGovernedResources(GovernedResources resources);
 
     /**
      * Set the Guice stage - the default is Production

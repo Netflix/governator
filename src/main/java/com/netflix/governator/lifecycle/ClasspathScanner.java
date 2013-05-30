@@ -40,7 +40,7 @@ import java.util.Set;
 /**
  * Utility to find annotated classes
  */
-public class ClasspathScanner
+public class ClasspathScanner implements GovernedResources
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
     private final Set<Class<?>> classes;
@@ -82,21 +82,25 @@ public class ClasspathScanner
     /**
      * @return the found classes
      */
+    @Override
     public Set<Class<?>> getClasses()
     {
         return classes;
     }
 
+    @Override
     public Set<Constructor> getConstructors()
     {
         return constructors;
     }
 
+    @Override
     public Set<Method> getMethods()
     {
         return methods;
     }
 
+    @Override
     public Set<Field> getFields()
     {
         return fields;
@@ -118,10 +122,13 @@ public class ClasspathScanner
                     {
                         archives.add(new JarArchive(contextClassLoader, thisUrl));
                     }
-                    else
+                    else //if (isFileURL(thisUrl))
                     {
                         archives.add(new GovernatorFileArchive(contextClassLoader, thisUrl, basePackage));
                     }
+//                    else {
+///                    	archives.add(new BundleJarFile(bundle));
+//                    }
                 }
                 CompositeArchive compositeArchive = new CompositeArchive(archives);
                 AnnotationFinder annotationFinder = new AnnotationFinder(compositeArchive);
@@ -143,6 +150,7 @@ public class ClasspathScanner
     private boolean isJarURL(URL url)
     {
         String protocol = url.getProtocol();
-        return "zip".equals(protocol) || "jar".equals(protocol);
+        log.info("the protocol is " + protocol);
+        return "zip".equals(protocol) || "jar".equals(protocol) || "bundle".equals(protocol);
     }
 }
