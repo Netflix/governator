@@ -122,13 +122,10 @@ public class ClasspathScanner implements GovernedResources
                     {
                         archives.add(new JarArchive(contextClassLoader, thisUrl));
                     }
-                    else //if (isFileURL(thisUrl))
+                    else
                     {
                         archives.add(new GovernatorFileArchive(contextClassLoader, thisUrl, basePackage));
                     }
-//                    else {
-///                    	archives.add(new BundleJarFile(bundle));
-//                    }
                 }
                 CompositeArchive compositeArchive = new CompositeArchive(archives);
                 AnnotationFinder annotationFinder = new AnnotationFinder(compositeArchive);
@@ -150,7 +147,6 @@ public class ClasspathScanner implements GovernedResources
     private boolean isJarURL(URL url)
     {
         String protocol = url.getProtocol();
-        log.info("the protocol is " + protocol);
-        return "zip".equals(protocol) || "jar".equals(protocol) || "bundle".equals(protocol);
+        return "zip".equals(protocol) || "jar".equals(protocol);
     }
 }
