@@ -147,7 +147,6 @@ public class ClasspathScanner implements GovernedResources
     private boolean isJarURL(URL url)
     {
         String protocol = url.getProtocol();
-        log.info("the protocol is " + protocol);
-        return "zip".equals(protocol) || "jar".equals(protocol) || "bundle".equals(protocol);
+        return "zip".equals(protocol) || "jar".equals(protocol);
     }
 }
