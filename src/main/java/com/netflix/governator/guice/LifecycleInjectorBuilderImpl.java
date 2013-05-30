@@ -21,7 +21,8 @@ import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
-import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.GovernedResources;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +34,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private Collection<String> basePackages = Lists.newArrayList();
     private boolean ignoreAllClasses = false;
     private BootstrapModule bootstrapModule = null;
-    private ClasspathScanner scanner = null;
+    private GovernedResources governedResources = null;
     private Stage stage = Stage.PRODUCTION;
 
     @Override
@@ -104,9 +105,9 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder usingClasspathScanner(ClasspathScanner scanner)
+    public LifecycleInjectorBuilder usingGovernedResources(GovernedResources resources)
     {
-        this.scanner = scanner;
+        this.governedResources = resources;
         return this;
     }
 
@@ -120,7 +121,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, stage);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, governedResources, basePackages, stage);
     }
 
     @Override

@@ -479,6 +479,11 @@ public class LifecycleManager implements Closeable
             {
                 return resource.annotationType();
             }
+
+//			@Override
+//			public String lookup() {
+//				return resource.lookup();
+//			}
         };
     }
 
