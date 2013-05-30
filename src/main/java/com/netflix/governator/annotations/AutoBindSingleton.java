@@ -16,6 +16,7 @@
 
 package com.netflix.governator.annotations;
 
+import com.google.inject.multibindings.Multibinder;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -37,4 +38,21 @@ public @interface AutoBindSingleton
      * @return base class/interface to bind to
      */
     Class<?>  value() default AutoBindSingleton.class;
+
+    /**
+     * This is a synonym for {@link #value()}. It exists to make the annotation
+     * more legible if other annotation values are used. NOTE: it is an error to
+     * specify both {@link #value()} and {@link #baseClass()}
+     *
+     * @return base class/interface to bind to
+     */
+    Class<?>  baseClass() default AutoBindSingleton.class;
+
+    /**
+     * If true, instances are gathered into a Set using Guice's {@link Multibinder}. You must
+     * also set a base class using either {@link #value()} or {@link #baseClass()}
+     *
+     * @return true/false
+     */
+    boolean multiple() default false;
 }
