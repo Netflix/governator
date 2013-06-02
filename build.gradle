@@ -25,6 +25,10 @@ apply from: file('gradle/release.gradle')
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
+test {
+    useTestNG()
+}
+
 dependencies {
     compile     'javax.inject:javax.inject:1'
     compile     'com.google.guava:guava:11.0.1'
