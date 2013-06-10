@@ -20,6 +20,7 @@ import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationOwnershipPolicies;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.configuration.MapConfigurationVariablesProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
 import com.netflix.governator.lifecycle.mocks.ObjectWithDynamicConfig;
@@ -135,7 +136,7 @@ public class TestConfiguration
         properties.put("test.dt", "dar");
 
         //noinspection deprecation
-        testTypeMismatch(new ArchaiusConfigurationProvider(properties));
+        testTypeMismatch(new ArchaiusConfigurationProvider(new MapConfigurationVariablesProvider(properties)));
     }
 
     @Test
@@ -159,7 +160,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
         Assert.assertEquals(obj.aDynamicDate.get(), null);
-        
+
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.b", "false");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.i", "101");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.l", "201");
@@ -172,11 +173,11 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(201L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is b");
-        
+
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Assert.assertEquals(obj.aDynamicDate.get(), formatter.parse("1964-11-06"));
     }
-    
+
     private void testTypeMismatch(ConfigurationProvider provider) throws Exception {
         LifecycleManagerArguments arguments = new LifecycleManagerArguments();
         arguments.getConfigurationProvider().add(provider);

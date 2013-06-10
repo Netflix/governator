@@ -19,23 +19,22 @@ package com.netflix.governator.configuration;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 import java.util.Date;
-import java.util.Map;
 
 /**
  * ConfigurationProvider backed by the system properties
  */
 public class SystemConfigurationProvider implements ConfigurationProvider
 {
-    private final Map<String, String> variableValues;
+    private final ConfigurationVariablesProvider variableValuesProvider;
 
     public SystemConfigurationProvider()
     {
-        this(Maps.<String, String>newHashMap());
+        this(new MapConfigurationVariablesProvider(Maps.<String, String>newHashMap()));
     }
 
-    public SystemConfigurationProvider(Map<String, String> variableValues)
+    public SystemConfigurationProvider(ConfigurationVariablesProvider variableValuesProvider)
     {
-        this.variableValues = Maps.newHashMap(variableValues);
+        this.variableValuesProvider = variableValuesProvider;
     }
 
     /**
@@ -46,13 +45,13 @@ public class SystemConfigurationProvider implements ConfigurationProvider
      */
     public void setVariable(String name, String value)
     {
-        variableValues.put(name, value);
+        variableValuesProvider.put(name, value);
     }
 
     @Override
     public boolean has(ConfigurationKey key)
     {
-        return System.getProperty(key.getKey(variableValues), null) != null;
+        return System.getProperty(key.getKey(variableValuesProvider), null) != null;
     }
 
     @Override
@@ -63,7 +62,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Boolean get()
             {
-                Boolean value = Boolean.getBoolean(System.getProperty(key.getKey(variableValues)));
+                Boolean value = Boolean.getBoolean(System.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -81,7 +80,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Integer get()
             {
-                Integer value = Integer.getInteger(System.getProperty(key.getKey(variableValues)));
+                Integer value = Integer.getInteger(System.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -99,7 +98,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Long get()
             {
-                Long value = Long.getLong(System.getProperty(key.getKey(variableValues)));
+                Long value = Long.getLong(System.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -117,7 +116,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Double get()
             {
-                Double value = Double.parseDouble(System.getProperty(key.getKey(variableValues)));
+                Double value = Double.parseDouble(System.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -135,7 +134,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public String get()
             {
-                String value = System.getProperty(key.getKey(variableValues));
+                String value = System.getProperty(key.getKey(variableValuesProvider));
                 if ( value == null )
                 {
                     return defaultValue;

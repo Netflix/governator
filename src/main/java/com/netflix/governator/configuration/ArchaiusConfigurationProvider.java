@@ -31,14 +31,14 @@ import java.util.Map;
  */
 public class ArchaiusConfigurationProvider implements ConfigurationProvider
 {
-    private final Map<String, String> variableValues;
+    private final ConfigurationVariablesProvider variableValuesProvider;
     private final AbstractConfiguration configurationManager;
     private final DynamicPropertyFactory propertyFactory;
     private final ConfigurationOwnershipPolicy ownershipPolicy;
 
     public static class Builder
     {
-        private Map<String, String> variableValues = Maps.newHashMap();
+        private ConfigurationVariablesProvider variableValuesProvider = new MapConfigurationVariablesProvider(Maps.<String, String>newHashMap());
         private AbstractConfiguration configurationManager = ConfigurationManager.getConfigInstance();
         private DynamicPropertyFactory propertyFactory = DynamicPropertyFactory.getInstance();
         private ConfigurationOwnershipPolicy ownershipPolicy = ConfigurationOwnershipPolicies.ownsAll();
@@ -46,9 +46,9 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
         /**
          * Set of variables to use when expanding property key names
          */
-        public Builder withVariableValues(Map<String, String> variableValues)
+        public Builder withVariableValues(ConfigurationVariablesProvider variableValuesProvider)
         {
-            this.variableValues = variableValues;
+            this.variableValuesProvider = variableValuesProvider;
             return this;
         }
 
@@ -88,9 +88,9 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
                 this.ownershipPolicy = new ConfigurationOwnershipPolicy()
                 {
                     @Override
-                    public boolean has(ConfigurationKey key, Map<String, String> variables)
+                    public boolean has(ConfigurationKey key, ConfigurationVariablesProvider variables)
                     {
-                        return configurationManager.containsKey(key.getKey(variableValues));
+                        return configurationManager.containsKey(key.getKey(variableValuesProvider));
                     }
                 };
             }
@@ -131,19 +131,19 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     @Deprecated
     public ArchaiusConfigurationProvider()
     {
-        this(new HashMap<String, String>());
+        this(new MapConfigurationVariablesProvider(Maps.<String, String>newHashMap()));
     }
 
     @Deprecated
-    public ArchaiusConfigurationProvider(Map<String, String> variableValues)
+    public ArchaiusConfigurationProvider(ConfigurationVariablesProvider variableValuesProvider)
     {
-        this.variableValues = Maps.newHashMap(variableValues);
+        this.variableValuesProvider = variableValuesProvider;
         this.configurationManager = ConfigurationManager.getConfigInstance();
         this.propertyFactory = DynamicPropertyFactory.getInstance();
         this.ownershipPolicy = new ConfigurationOwnershipPolicy()
         {
             @Override
-            public boolean has(ConfigurationKey key, Map<String, String> variables)
+            public boolean has(ConfigurationKey key, ConfigurationVariablesProvider variables)
             {
                 return configurationManager.containsKey(key.getKey(variables));
             }
@@ -152,7 +152,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
 
     private ArchaiusConfigurationProvider(Builder builder)
     {
-        this.variableValues = builder.variableValues;
+        this.variableValuesProvider = builder.variableValuesProvider;
         this.configurationManager = builder.configurationManager;
         this.propertyFactory = builder.propertyFactory;
         this.ownershipPolicy = builder.ownershipPolicy;
@@ -206,13 +206,13 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
      */
     public void setVariable(String name, String value)
     {
-        variableValues.put(name, value);
+        variableValuesProvider.put(name, value);
     }
 
     @Override
     public boolean has(ConfigurationKey key)
     {
-        return ownershipPolicy.has(key, variableValues);
+        return ownershipPolicy.has(key, variableValuesProvider);
     }
 
     @Override
@@ -220,7 +220,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     {
         return new PropertyWrapperSupplier<Boolean>(
             propertyFactory.getBooleanProperty(
-                key.getKey(variableValues),
+                key.getKey(variableValuesProvider),
                 defaultValue));
     }
 
@@ -229,7 +229,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     {
         return new PropertyWrapperSupplier<Integer>(
             propertyFactory.getIntProperty(
-                key.getKey(variableValues),
+                key.getKey(variableValuesProvider),
                 defaultValue));
     }
 
@@ -238,7 +238,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     {
         return new PropertyWrapperSupplier<Long>(
             propertyFactory.getLongProperty(
-                key.getKey(variableValues),
+                key.getKey(variableValuesProvider),
                 defaultValue));
     }
 
@@ -247,7 +247,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     {
         return new PropertyWrapperSupplier<Double>(
             propertyFactory.getDoubleProperty(
-                key.getKey(variableValues),
+                key.getKey(variableValuesProvider),
                 defaultValue));
     }
 
@@ -256,7 +256,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     {
         return new PropertyWrapperSupplier<String>(
             propertyFactory.getStringProperty(
-                key.getKey(variableValues),
+                key.getKey(variableValuesProvider),
                 defaultValue));
     }
 

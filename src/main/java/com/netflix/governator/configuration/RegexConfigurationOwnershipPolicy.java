@@ -37,8 +37,8 @@ public class RegexConfigurationOwnershipPolicy implements ConfigurationOwnership
     }
 
     @Override
-    public boolean has(ConfigurationKey key, Map<String, String> variables)
+    public boolean has(ConfigurationKey key, ConfigurationVariablesProvider variableValuesProvider)
     {
-        return pattern.matcher(key.getKey(variables)).matches();
+        return pattern.matcher(key.getKey(variableValuesProvider)).matches();
     }
 }
