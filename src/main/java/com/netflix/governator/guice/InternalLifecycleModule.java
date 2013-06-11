@@ -16,7 +16,10 @@
 
 package com.netflix.governator.guice;
 
-import com.google.common.collect.Maps;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Sets;
 import com.google.inject.Binder;
 import com.google.inject.ConfigurationException;
 import com.google.inject.Module;
@@ -33,13 +36,26 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 class InternalLifecycleModule implements Module
 {
-    private final Map<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newHashMap();
+    private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
+        .newBuilder()
+        .softValues()
+        .build
+            (
+                new CacheLoader<Class<?>, LifecycleMethods>()
+                {
+                    @Override
+                    public LifecycleMethods load(Class<?> key) throws Exception
+                    {
+                        return new LifecycleMethods(key);
+                    }
+                }
+            );
     private final AtomicReference<LifecycleManager> lifecycleManager;
 
     InternalLifecycleModule(AtomicReference<LifecycleManager> lifecycleManager)
@@ -87,9 +103,13 @@ class InternalLifecycleModule implements Module
             Class<?> clazz = obj.getClass();
             LifecycleMethods methods = getLifecycleMethods(clazz);
 
-            if ( methods.fieldsFor(WarmUp.class).size() > 0 )
+            if ( warmUpIsInDag(clazz, type) )
             {
                 addDependencies(manager, obj, type, methods);
+            }
+
+            if ( methods.hasLifecycleAnnotations() )
+            {
                 try
                 {
                     manager.add(obj, methods);
@@ -97,15 +117,6 @@ class InternalLifecycleModule implements Module
                 catch ( Exception e )
                 {
                     throw new Error(e);
-                }
-            }
-            else
-            {
-                // if the lifecycle has already started, there's no need to record the deps.
-                // In fact, it will cause a memory leak if we do
-                if ( !manager.hasStarted() )
-                {
-                    addDependencies(manager, obj, type, methods);
                 }
             }
         }
@@ -123,17 +134,63 @@ class InternalLifecycleModule implements Module
         }
     }
 
+    private boolean warmUpIsInDag(Class<?> clazz, TypeLiteral<?> type)
+    {
+        LifecycleMethods methods = getLifecycleMethods(clazz);
+        if ( methods.methodsFor(WarmUp.class).size() > 0 )
+        {
+            return true;
+        }
+
+        if ( warmUpIsInDag(getConstructorInjectionPoint(type)) )
+        {
+            return true;
+        }
+
+        for ( InjectionPoint injectionPoint : getMethodInjectionPoints(type) )
+        {
+            if ( warmUpIsInDag(injectionPoint) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean warmUpIsInDag(InjectionPoint injectionPoint)
+    {
+        if ( injectionPoint == null )
+        {
+            return false;
+        }
+
+        List<Dependency<?>> dependencies = injectionPoint.getDependencies();
+        for ( Dependency<?> dependency : dependencies )
+        {
+            if ( warmUpIsInDag(dependency.getKey().getTypeLiteral().getRawType(), dependency.getKey().getTypeLiteral()) )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Set<InjectionPoint> getMethodInjectionPoints(TypeLiteral<?> type)
     {
         try
         {
             return InjectionPoint.forInstanceMethodsAndFields(type);
         }
+        catch ( NullPointerException e )
+        {
+            // ignore - unfortunately this is happening inside of Guice
+        }
         catch ( ConfigurationException e )
         {
             // ignore
         }
-        return null;
+        return Sets.newHashSet();
     }
 
     private InjectionPoint getConstructorInjectionPoint(TypeLiteral<?> type)
@@ -163,12 +220,13 @@ class InternalLifecycleModule implements Module
 
     private LifecycleMethods getLifecycleMethods(Class<?> clazz)
     {
-        LifecycleMethods methods = lifecycleMethods.get(clazz);
-        if ( methods == null )
+        try
         {
-            methods = new LifecycleMethods(clazz);
-            lifecycleMethods.put(clazz, methods);
+            return lifecycleMethods.get(clazz);
         }
-        return methods;
+        catch ( ExecutionException e )
+        {
+            throw new RuntimeException(e);
+        }
     }
 }
