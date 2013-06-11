@@ -2,6 +2,9 @@
 =========================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
 
+* Previous fix for memory leak (Issue 60) is improved in 1.2.2. Only
+record dependencies for objects that have @WarmUp methods.
+
 1.2.1 - May 15, 2013
 =========================
 * Pull 57: In JBoss 7.X, url.getProtocol() returns "vfs" instead of "file".

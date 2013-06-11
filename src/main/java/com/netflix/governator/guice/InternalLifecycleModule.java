@@ -27,6 +27,7 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
@@ -86,7 +87,7 @@ class InternalLifecycleModule implements Module
             Class<?> clazz = obj.getClass();
             LifecycleMethods methods = getLifecycleMethods(clazz);
 
-            if ( methods.hasLifecycleAnnotations() )
+            if ( methods.fieldsFor(WarmUp.class).size() > 0 )
             {
                 addDependencies(manager, obj, type, methods);
                 try
