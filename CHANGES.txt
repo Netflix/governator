@@ -1,9 +1,10 @@
-1.2.2 - xxxxxxxxxxxxxxxxx
-=========================
+1.2.2 - June 11, 2013
+=====================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
 
 * Previous fix for memory leak (Issue 60) is improved in 1.2.2. Only
-record dependencies for objects that have @WarmUp methods.
+record dependencies for objects that have @WarmUp methods. Also,
+use a weak valued Guava cache internally.
 
 1.2.1 - May 15, 2013
 =========================
