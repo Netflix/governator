@@ -34,7 +34,7 @@ public @interface Configuration
     /**
      * @return name/key of the config to assign
      */
-    String      value();
+    String      value() default "";
 
     /**
      * @return user displayable description of this configuration

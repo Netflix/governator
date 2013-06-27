@@ -47,6 +47,11 @@ class ConfigurationProcessor
     {
         Configuration configuration = field.getAnnotation(Configuration.class);
         String configurationName = configuration.value();
+
+        if (configurationName.equals("") || configurationName.endsWith(".")) {
+            configurationName += field.getName();
+        }
+
         ConfigurationKey key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
 
         Object value = null;
