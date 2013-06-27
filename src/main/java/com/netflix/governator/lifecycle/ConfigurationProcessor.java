@@ -84,12 +84,12 @@ class ConfigurationProcessor
             }
             catch ( IllegalArgumentException e )
             {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                ignoreTypeMismatchIfConfigured(configuration, configurationName, e);
                 field = null;
             }
             catch ( ConversionException e )
             {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                ignoreTypeMismatchIfConfigured(configuration, configurationName, e);
                 field = null;
             }
         }
@@ -162,7 +162,7 @@ class ConfigurationProcessor
         }
     }
 
-    private void ignoreTypeMismtachIfConfigured(Configuration configuration, String configurationName, Exception e)
+    private void ignoreTypeMismatchIfConfigured(Configuration configuration, String configurationName, Exception e)
     {
         if ( configuration.ignoreTypeMismatch() )
         {
