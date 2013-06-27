@@ -47,6 +47,11 @@ class ConfigurationProcessor
     {
         Configuration configuration = field.getAnnotation(Configuration.class);
         String configurationName = configuration.value();
+
+        if (configurationName.equals("") || configurationName.endsWith(".")) {
+            configurationName += field.getName();
+        }
+
         ConfigurationKey key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
 
         Object value = null;
@@ -84,12 +89,12 @@ class ConfigurationProcessor
             }
             catch ( IllegalArgumentException e )
             {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                ignoreTypeMismatchIfConfigured(configuration, configurationName, e);
                 field = null;
             }
             catch ( ConversionException e )
             {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+                ignoreTypeMismatchIfConfigured(configuration, configurationName, e);
                 field = null;
             }
         }
@@ -162,7 +167,7 @@ class ConfigurationProcessor
         }
     }
 
-    private void ignoreTypeMismtachIfConfigured(Configuration configuration, String configurationName, Exception e)
+    private void ignoreTypeMismatchIfConfigured(Configuration configuration, String configurationName, Exception e)
     {
         if ( configuration.ignoreTypeMismatch() )
         {

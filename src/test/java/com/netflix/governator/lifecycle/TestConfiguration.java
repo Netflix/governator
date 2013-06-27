@@ -92,6 +92,7 @@ public class TestConfiguration
         properties.setProperty("test.d", "300.4");
         properties.setProperty("test.s", "a is a");
         properties.setProperty("test.dt", "1964-10-06");
+        properties.setProperty("test.auto", "bindByName");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
@@ -107,6 +108,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aLong, 200);
         Assert.assertEquals(obj.aDouble, 300.4);
         Assert.assertEquals(obj.aString, "a is a");
+        Assert.assertEquals(obj.auto, "bindByName");
     }
 
     @Test

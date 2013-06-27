@@ -38,4 +38,7 @@ public class ObjectWithConfig
 
     @Configuration("test.dt")
     public Date aDate = null;
+
+    @Configuration("test.auto")
+    public String auto;
 }
