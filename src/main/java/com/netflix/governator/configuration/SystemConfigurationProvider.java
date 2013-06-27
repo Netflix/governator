@@ -63,7 +63,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Boolean get()
             {
-                Boolean value = Boolean.getBoolean(System.getProperty(key.getKey(variableValues)));
+                Boolean value = Boolean.getBoolean(key.getKey(variableValues));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -81,7 +81,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Integer get()
             {
-                Integer value = Integer.getInteger(System.getProperty(key.getKey(variableValues)));
+                Integer value = Integer.getInteger(key.getKey(variableValues));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -99,7 +99,7 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Long get()
             {
-                Long value = Long.getLong(System.getProperty(key.getKey(variableValues)));
+                Long value = Long.getLong(key.getKey(variableValues));
                 if ( value == null )
                 {
                     return defaultValue;
