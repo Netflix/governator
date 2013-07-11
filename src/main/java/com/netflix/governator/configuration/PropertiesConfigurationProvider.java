@@ -19,7 +19,6 @@ package com.netflix.governator.configuration;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 import java.util.Date;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -28,20 +27,20 @@ import java.util.Properties;
 public class PropertiesConfigurationProvider implements ConfigurationProvider
 {
     private final Properties properties;
-    private final Map<String, String> variableValues;
+    private final ConfigurationVariablesProvider variableValuesProvider;
 
     /**
      * @param properties the properties
      */
     public PropertiesConfigurationProvider(Properties properties)
     {
-        this(properties, Maps.<String, String>newHashMap());
+        this(properties, new MapConfigurationVariablesProvider(Maps.<String, String>newHashMap()));
     }
 
-    public PropertiesConfigurationProvider(Properties properties, Map<String, String> variableValues)
+    public PropertiesConfigurationProvider(Properties properties, ConfigurationVariablesProvider variableValuesProvider)
     {
         this.properties = properties;
-        this.variableValues = Maps.newHashMap(variableValues);
+        this.variableValuesProvider = variableValuesProvider;
     }
 
     /**
@@ -52,13 +51,13 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider
      */
     public void setVariable(String name, String value)
     {
-        variableValues.put(name, value);
+        variableValuesProvider.put(name, value);
     }
 
     @Override
     public boolean has(ConfigurationKey key)
     {
-        return properties.containsKey(key.getKey(variableValues));
+        return properties.containsKey(key.getKey(variableValuesProvider));
     }
 
     @Override
@@ -69,7 +68,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider
             @Override
             public Boolean get()
             {
-                Boolean value = Boolean.parseBoolean(properties.getProperty(key.getKey(variableValues)));
+                Boolean value = Boolean.parseBoolean(properties.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -87,7 +86,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider
             @Override
             public Integer get()
             {
-                Integer value = Integer.parseInt(properties.getProperty(key.getKey(variableValues)));
+                Integer value = Integer.parseInt(properties.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -105,7 +104,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider
             @Override
             public Long get()
             {
-                Long value = Long.parseLong(properties.getProperty(key.getKey(variableValues)));
+                Long value = Long.parseLong(properties.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -123,7 +122,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider
             @Override
             public Double get()
             {
-                Double value = Double.parseDouble(properties.getProperty(key.getKey(variableValues)));
+                Double value = Double.parseDouble(properties.getProperty(key.getKey(variableValuesProvider)));
                 if ( value == null )
                 {
                     return defaultValue;
@@ -141,7 +140,7 @@ public class PropertiesConfigurationProvider implements ConfigurationProvider
             @Override
             public String get()
             {
-                String value = properties.getProperty(key.getKey(variableValues));
+                String value = properties.getProperty(key.getKey(variableValuesProvider));
                 if ( value == null )
                 {
                     return defaultValue;

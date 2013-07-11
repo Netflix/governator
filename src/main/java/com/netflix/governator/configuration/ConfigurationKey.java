@@ -57,7 +57,7 @@ public class ConfigurationKey
      * @param variableValues map of variable names to values
      * @return the key
      */
-    public String getKey(Map<String, String> variableValues)
+    public String getKey(ConfigurationVariablesProvider variableValues)
     {
         StringBuilder key = new StringBuilder();
         for ( ConfigurationKeyPart p : parts )

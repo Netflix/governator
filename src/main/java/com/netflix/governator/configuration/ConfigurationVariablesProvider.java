@@ -13,22 +13,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package com.netflix.governator.configuration;
 
 /**
- * Policy to determine if a configuration key is owned by a ConfigurationProvider
- *
- * @author elandau
+ * Abstraction for get configuration variables values to use for fields annotated with {@link Configuration}
  */
-public interface ConfigurationOwnershipPolicy
-{
-    /**
-     * Return true if there is a configuration value set for the given key + variables
-     *
-     * @param key configuration key
-     * @param variableValuesProvider provider to get variables values
-     * @return true/false
-     */
-    public boolean has(ConfigurationKey key, ConfigurationVariablesProvider variableValuesProvider);
+public interface ConfigurationVariablesProvider {
+
+    public String put(String key, String value);
+
+    public String get(String key);
 }
