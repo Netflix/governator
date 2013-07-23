@@ -16,16 +16,6 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import org.apache.xbean.finder.AnnotationFinder;
-import org.apache.xbean.finder.archive.Archive;
-import org.apache.xbean.finder.archive.CompositeArchive;
-import org.apache.xbean.finder.archive.JarArchive;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -37,12 +27,26 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.xbean.finder.AnnotationFinder;
+import org.apache.xbean.finder.archive.Archive;
+import org.apache.xbean.finder.archive.CompositeArchive;
+import org.apache.xbean.finder.archive.JarArchive;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
 /**
  * Utility to find annotated classes
  */
 public class ClasspathScanner
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
+    private final ClassLoader classLoader;
+    
     private final Set<Class<?>> classes;
     private final Set<Constructor> constructors;
     private final Set<Method> methods;
@@ -54,9 +58,21 @@ public class ClasspathScanner
      */
     public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations)
     {
+        this(basePackages, annotations, Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * @param basePackages list of packages to search (recursively)
+     * @param annotations class annotations to search for
+     * @param classLoader ClassLoader containing the classes to be scanned
+     */
+    public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, final ClassLoader classLoader) 
+    {
         Preconditions.checkNotNull(annotations, "additionalAnnotations cannot be null");
+        Preconditions.checkNotNull(classLoader, "classLoader cannot be null");
 
         log.debug("Starting classpath scanning...");
+        this.classLoader = classLoader;
 
         Set<Class<?>>       localClasses = Sets.newHashSet();
         Set<Constructor>    localConstructors = Sets.newHashSet();
@@ -107,20 +123,19 @@ public class ClasspathScanner
         try
         {
             List<Archive> archives = Lists.newArrayList();
-            ClassLoader         contextClassLoader = Thread.currentThread().getContextClassLoader();
             for ( String basePackage : basePackages )
             {
-                Enumeration<URL> resources = contextClassLoader.getResources(basePackage.replace(".", "/"));
+                Enumeration<URL> resources = classLoader.getResources(basePackage.replace(".", "/"));
                 while ( resources.hasMoreElements() )
                 {
                     URL thisUrl = resources.nextElement();
                     if ( isJarURL(thisUrl))
                     {
-                        archives.add(new JarArchive(contextClassLoader, thisUrl));
+                        archives.add(new JarArchive(classLoader, thisUrl));
                     }
                     else
                     {
-                        archives.add(new GovernatorFileArchive(contextClassLoader, thisUrl, basePackage));
+                        archives.add(new GovernatorFileArchive(classLoader, thisUrl, basePackage));
                     }
                 }
                 CompositeArchive compositeArchive = new CompositeArchive(archives);
