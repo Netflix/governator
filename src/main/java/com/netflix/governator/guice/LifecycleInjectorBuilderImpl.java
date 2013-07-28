@@ -16,15 +16,16 @@
 
 package com.netflix.governator.guice;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.lifecycle.ClasspathScanner;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 
 class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
 {
@@ -124,6 +125,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    @Deprecated
     public Injector createInjector()
     {
         return build().createInjector();
