@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Configuration;
+import com.netflix.governator.annotations.ConfigurationVariable;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -317,10 +318,18 @@ public class LifecycleManager implements Closeable
         }
 
         setState(obj, LifecycleState.SETTING_CONFIGURATION);
+        Map<String, String> overrides = Maps.newHashMap();
+        for ( Field variableField : methods.fieldsFor(ConfigurationVariable.class)) {
+            ConfigurationVariable annot = variableField.getAnnotation(ConfigurationVariable.class);
+            if (annot != null) {
+                overrides.put(annot.name(), variableField.get(obj).toString());
+            }
+        }
+        
         ConfigurationProcessor configurationProcessor = new ConfigurationProcessor(configurationProvider, configurationDocumentation);
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {
-            configurationProcessor.assignConfiguration(obj, configurationField);
+            configurationProcessor.assignConfiguration(obj, configurationField, overrides);
         }
 
         setState(obj, LifecycleState.SETTING_RESOURCES);
