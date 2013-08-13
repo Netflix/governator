@@ -18,16 +18,21 @@ package com.netflix.governator.configuration;
 
 import com.google.common.collect.Lists;
 import java.util.List;
+import java.util.Map;
 
 public class KeyParser
 {
+    public static List<ConfigurationKeyPart> parse(String raw) {
+        return parse(raw, null);
+    }
+    
     /**
      * Parse a key into parts
      *
      * @param raw the key
      * @return parts
      */
-    public static List<ConfigurationKeyPart> parse(String raw)
+    public static List<ConfigurationKeyPart> parse(String raw, Map<String, String> contextOverrides)
     {
         List<ConfigurationKeyPart> parts = Lists.newArrayList();
 
@@ -52,7 +57,13 @@ public class KeyParser
             startIndex += 2;
             if ( startIndex < endIndex )
             {
-                parts.add(new ConfigurationKeyPart(raw.substring(startIndex, endIndex), true));
+                String name = raw.substring(startIndex, endIndex);
+                if (contextOverrides != null && contextOverrides.containsKey(name)) {
+                    parts.add(new ConfigurationKeyPart(contextOverrides.get(name), false));
+                }
+                else {
+                    parts.add(new ConfigurationKeyPart(name, true));
+                }
             }
             caret = endIndex + 1;
         }

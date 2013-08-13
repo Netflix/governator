@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.Date;
+import java.util.Map;
 
 class ConfigurationProcessor
 {
@@ -43,11 +44,11 @@ class ConfigurationProcessor
         this.configurationDocumentation = configurationDocumentation;
     }
 
-    void assignConfiguration(Object obj, Field field) throws Exception
+    void assignConfiguration(Object obj, Field field, Map<String, String> contextOverrides) throws Exception
     {
         Configuration configuration = field.getAnnotation(Configuration.class);
         String configurationName = configuration.value();
-        ConfigurationKey key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName));
+        ConfigurationKey key = new ConfigurationKey(configurationName, KeyParser.parse(configurationName, contextOverrides));
 
         Object value = null;
 
