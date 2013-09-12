@@ -63,12 +63,12 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Boolean get()
             {
-                Boolean value = Boolean.getBoolean(System.getProperty(key.getKey(variableValues)));
+                String value = System.getProperty(key.getKey(variableValues));
                 if ( value == null )
                 {
                     return defaultValue;
                 }
-                return value;
+                return Boolean.parseBoolean(value);
             }
         };
     }
@@ -81,9 +81,10 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Integer get()
             {
-                Integer value = Integer.getInteger(System.getProperty(key.getKey(variableValues)));
-                if ( value == null )
-                {
+                Integer value;
+                try {
+                    value = Integer.parseInt(System.getProperty(key.getKey(variableValues)));
+                } catch (NumberFormatException ex) {
                     return defaultValue;
                 }
                 return value;
@@ -99,9 +100,10 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Long get()
             {
-                Long value = Long.getLong(System.getProperty(key.getKey(variableValues)));
-                if ( value == null )
-                {
+                Long value;
+                try {
+                    value = Long.parseLong(System.getProperty(key.getKey(variableValues)));
+                } catch (NumberFormatException ex) {
                     return defaultValue;
                 }
                 return value;
@@ -117,9 +119,10 @@ public class SystemConfigurationProvider implements ConfigurationProvider
             @Override
             public Double get()
             {
-                Double value = Double.parseDouble(System.getProperty(key.getKey(variableValues)));
-                if ( value == null )
-                {
+                Double value;
+                try {
+                    value = Double.parseDouble(System.getProperty(key.getKey(variableValues)));
+                } catch (NumberFormatException ex) {
                     return defaultValue;
                 }
                 return value;
