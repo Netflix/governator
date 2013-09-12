@@ -208,6 +208,33 @@ public class TestWarmUpManager
     }
 
     @Test
+    public void testDagInterfaceModule() throws Exception
+    {
+        final Module dag1Module = new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(DagInterface.A.class).to(DagInterface.AImpl.class);
+                bind(DagInterface.B.class).to(DagInterface.BImpl.class);
+                bind(DagInterface.C.class).to(DagInterface.CImpl.class);
+            }
+        };
+        Injector injector = LifecycleInjector.builder().withModules(dag1Module).build().createInjector();
+        injector.getInstance(LifecycleManager.class).start();
+        Recorder recorder = injector.getInstance(Recorder.class);
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+    }
+
+    @Test
     public void     testFlat() throws Exception
     {
         Injector    injector = LifecycleInjector.builder().createInjector();
