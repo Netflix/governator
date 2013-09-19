@@ -31,7 +31,7 @@ test {
 
 dependencies {
     compile     'javax.inject:javax.inject:1'
-    compile     'com.google.guava:guava:11.0.1'
+    compile     'com.google.guava:guava:15.0'
     compile     'org.slf4j:slf4j-api:1.6.3'
     compile     'org.hibernate:hibernate-validator:4.1.0.Final'
     compile     'org.apache.xbean:xbean-finder:3.11.1'

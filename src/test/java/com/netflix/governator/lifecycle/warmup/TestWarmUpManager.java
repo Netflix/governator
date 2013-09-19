@@ -22,6 +22,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleManagerArguments;
@@ -210,7 +212,7 @@ public class TestWarmUpManager
     @Test
     public void testDagInterfaceModule() throws Exception
     {
-        final Module dag1Module = new AbstractModule() {
+        final Module dagInterfaceModule = new AbstractModule() {
             @Override
             protected void configure() {
                 bind(DagInterface.A.class).to(DagInterface.AImpl.class);
@@ -218,7 +220,7 @@ public class TestWarmUpManager
                 bind(DagInterface.C.class).to(DagInterface.CImpl.class);
             }
         };
-        Injector injector = LifecycleInjector.builder().withModules(dag1Module).build().createInjector();
+        Injector injector = LifecycleInjector.builder().withModules(dagInterfaceModule).build().createInjector();
         injector.getInstance(LifecycleManager.class).start();
         Recorder recorder = injector.getInstance(Recorder.class);
 
@@ -250,6 +252,129 @@ public class TestWarmUpManager
         Assert.assertEquals(recorder.getInterruptions().size(), 0);
         Assert.assertTrue(recorder.getRecordings().indexOf("A") >= 0);
         Assert.assertTrue(recorder.getRecordings().indexOf("B") >= 0);
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void testCircular() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder()
+            .withModules(new AbstractModule()
+            {
+                @Override
+                protected void configure()
+                {
+                    bind(DagCircular.A.class).to(DagCircular.AImpl.class);
+                    bind(DagCircular.B.class).to(DagCircular.BImpl.class);
+                }
+            })
+            .createInjector();
+        injector.getInstance(LifecycleManager.class).start();
+    }
+
+    @Test
+    public void testNoInject() throws Exception {
+        Injector    injector = LifecycleInjector.builder().createInjector();
+        Recorder    recorder = injector.getInstance(Recorder.class);
+        DagNoInject.recorder = recorder;
+        injector.getInstance(DagNoInject.A.class);
+        injector.getInstance(LifecycleManager.class).start();
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+        DagNoInject.recorder = null;
+    }
+
+    @Test
+    public void testNoInjectInterface() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder().withModules(new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(DagNoInjectInterface.A.class).to(DagNoInjectInterface.AImpl.class);
+                bind(DagNoInjectInterface.B.class).to(DagNoInjectInterface.BImpl.class);
+                bind(DagNoInjectInterface.C.class).to(DagNoInjectInterface.CImpl.class);
+            }
+        }).createInjector();
+        Recorder    recorder = injector.getInstance(Recorder.class);
+        DagNoInjectInterface.recorder = recorder;
+        injector.getInstance(LifecycleManager.class).start();
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+        DagNoInjectInterface.recorder = null;
+    }
+
+    @Test
+    public void testGeneric() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder().withModules(new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(new TypeLiteral<DagGeneric.Supplier<String>>(){}).to(DagGeneric.StringSupplier.class);
+                bind(new TypeLiteral<DagGeneric.Supplier<Integer>>(){}).to(DagGeneric.IntegerSupplier.class);
+            }
+        }).createInjector();
+        Recorder    recorder = injector.getInstance(Recorder.class);
+        injector.getInstance(DagGeneric.Supplied.class);
+        injector.getInstance(LifecycleManager.class).start();
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "Supplied", "StringSupplier");
+        assertNotConcurrent(recorder, "StringSupplier", "IntegerSupplier");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "Supplied", "StringSupplier");
+        assertOrdering(recorder, "IntegerSupplier", "StringSupplier");
+    }
+
+    @Test
+    public void testWarmUpGap() throws Exception
+    {
+        Injector    injector = LifecycleInjector.builder().withModules(new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(DagWarmUpGap.A.class).to(DagWarmUpGap.AImpl.class);
+                bind(DagWarmUpGap.B.class).to(DagWarmUpGap.BImpl.class);
+                bind(DagWarmUpGap.C.class).to(DagWarmUpGap.CImpl.class);
+                bind(DagWarmUpGap.D.class).to(DagWarmUpGap.DImpl.class);
+            }
+        }).createInjector();
+        injector.getInstance(LifecycleManager.class).start();
+        Recorder    recorder = injector.getInstance(Recorder.class);
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "D");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "D");
     }
 
     @Test
