@@ -35,13 +35,13 @@ import java.util.concurrent.TimeUnit;
 public class TestWarmUpManager
 {
     @Test
-    public void     testPostStart() throws Exception
+    public void testPostStart() throws Exception
     {
-        Injector    injector = LifecycleInjector.builder().createInjector();
+        Injector injector = LifecycleInjector.builder().createInjector();
         injector.getInstance(LifecycleManager.class).start();
 
         injector.getInstance(Dag1.A.class);
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        Recorder recorder = injector.getInstance(Recorder.class);
 
         Thread.sleep(LifecycleManagerArguments.DEFAULT_WARM_UP_PADDING_MS + 1000);
 
@@ -59,9 +59,9 @@ public class TestWarmUpManager
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     @Test
-    public void     testErrors() throws Exception
+    public void testErrors() throws Exception
     {
-        AbstractModule  module = new AbstractModule()
+        AbstractModule module = new AbstractModule()
         {
             @Override
             protected void configure()
@@ -78,19 +78,44 @@ public class TestWarmUpManager
         {
             e.printStackTrace();
 
-            List<WarmUpErrors.Error>        errors = Lists.newArrayList(e.getErrors());
+            List<WarmUpErrors.Error> errors = Lists.newArrayList(e.getErrors());
             Assert.assertEquals(errors.size(), 1);
             Assert.assertEquals(errors.get(0).getException().getClass(), NullPointerException.class);
         }
     }
 
     @Test
-    public void     testDag1() throws Exception
+    public void testDag1MultiModule() throws Exception
     {
-        Injector    injector = LifecycleInjector.builder().createInjector();
-        injector.getInstance(Dag1.A.class);
+        final List<AbstractModule> modules = Arrays.asList(
+            new AbstractModule()
+            {
+                @Override
+                protected void configure()
+                {
+                    bind(Dag1.A.class);
+                }
+            },
+            new AbstractModule()
+            {
+                @Override
+                protected void configure()
+                {
+                    bind(Dag1.B.class);
+                }
+            },
+            new AbstractModule()
+            {
+                @Override
+                protected void configure()
+                {
+                    bind(Dag1.C.class);
+                }
+            }
+                                                          );
+        Injector injector = LifecycleInjector.builder().withModules(modules).build().createInjector();
         injector.getInstance(LifecycleManager.class).start();
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        Recorder recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
         System.out.println(recorder.getConcurrents());
@@ -105,14 +130,63 @@ public class TestWarmUpManager
     }
 
     @Test
-    public void     testDag2() throws Exception
+    public void testDagInterfaceModule() throws Exception
     {
-        Injector    injector = LifecycleInjector.builder().createInjector();
+        final Module dag1Module = new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(DagInterface.A.class).to(DagInterface.AImpl.class);
+                bind(DagInterface.B.class).to(DagInterface.BImpl.class);
+                bind(DagInterface.C.class).to(DagInterface.CImpl.class);
+            }
+        };
+        Injector injector = LifecycleInjector.builder().withModules(dag1Module).build().createInjector();
+        injector.getInstance(LifecycleManager.class).start();
+        Recorder recorder = injector.getInstance(Recorder.class);
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+    }
+
+    @Test
+    public void testDag1() throws Exception
+    {
+        Injector injector = LifecycleInjector.builder().createInjector();
+        injector.getInstance(Dag1.A.class);
+        injector.getInstance(LifecycleManager.class).start();
+        Recorder recorder = injector.getInstance(Recorder.class);
+
+        System.out.println(recorder.getRecordings());
+        System.out.println(recorder.getConcurrents());
+
+        assertSingleExecution(recorder);
+        assertNotConcurrent(recorder, "A", "B");
+        assertNotConcurrent(recorder, "A", "C");
+
+        Assert.assertEquals(recorder.getInterruptions().size(), 0);
+        assertOrdering(recorder, "A", "B");
+        assertOrdering(recorder, "A", "C");
+    }
+
+    @Test
+    public void testDag2() throws Exception
+    {
+        Injector injector = LifecycleInjector.builder().createInjector();
         injector.getInstance(Dag2.A1.class);
         injector.getInstance(Dag2.A2.class);
         injector.getInstance(Dag2.A3.class);
         injector.getInstance(LifecycleManager.class).start();
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        Recorder recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
         System.out.println(recorder.getConcurrents());
@@ -148,12 +222,12 @@ public class TestWarmUpManager
     }
 
     @Test
-    public void     testDag3() throws Exception
+    public void testDag3() throws Exception
     {
-        Injector    injector = LifecycleInjector.builder().createInjector();
+        Injector injector = LifecycleInjector.builder().createInjector();
         injector.getInstance(Dag3.A.class);
         injector.getInstance(LifecycleManager.class).start();
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        Recorder recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
         System.out.println(recorder.getConcurrents());
@@ -173,9 +247,9 @@ public class TestWarmUpManager
     }
 
     @Test
-    public void     testDag4() throws Exception
+    public void testDag4() throws Exception
     {
-        Injector    injector = LifecycleInjector
+        Injector injector = LifecycleInjector
             .builder()
             .withModules
                 (
@@ -194,7 +268,7 @@ public class TestWarmUpManager
             .createInjector();
         injector.getInstance(Dag4.A.class);
         injector.getInstance(LifecycleManager.class).start();
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        Recorder recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
         System.out.println(recorder.getConcurrents());
@@ -208,10 +282,10 @@ public class TestWarmUpManager
     }
 
     @Test
-    public void     testFlat() throws Exception
+    public void testFlat() throws Exception
     {
-        Injector    injector = LifecycleInjector.builder().createInjector();
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        Injector injector = LifecycleInjector.builder().createInjector();
+        Recorder recorder = injector.getInstance(Recorder.class);
         injector.getInstance(Flat.A.class).recorder = recorder;
         injector.getInstance(Flat.B.class).recorder = recorder;
         injector.getInstance(LifecycleManager.class).start();
@@ -226,27 +300,27 @@ public class TestWarmUpManager
     }
 
     @Test
-    public void     testStuck() throws Exception
+    public void testStuck() throws Exception
     {
-        Injector    injector = LifecycleInjector
+        Injector injector = LifecycleInjector
             .builder()
             .withModules
-            (
-                new Module()
-                {
-                    @Override
-                    public void configure(Binder binder)
+                (
+                    new Module()
                     {
-                        RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
-                        recorderSleepSettings.setBaseSleepFor("C", 1, TimeUnit.DAYS);
-                        binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
+                        @Override
+                        public void configure(Binder binder)
+                        {
+                            RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
+                            recorderSleepSettings.setBaseSleepFor("C", 1, TimeUnit.DAYS);
+                            binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
+                        }
                     }
-                }
-            )
+                )
             .createInjector();
         injector.getInstance(Dag1.A.class);
-        boolean     succeeded = injector.getInstance(LifecycleManager.class).start(5, TimeUnit.SECONDS);
-        Recorder    recorder = injector.getInstance(Recorder.class);
+        boolean succeeded = injector.getInstance(LifecycleManager.class).start(5, TimeUnit.SECONDS);
+        Recorder recorder = injector.getInstance(Recorder.class);
 
         System.out.println(recorder.getRecordings());
         System.out.println(recorder.getConcurrents());
@@ -257,9 +331,9 @@ public class TestWarmUpManager
         Assert.assertEquals(recorder.getInterruptions(), Arrays.asList("C"));
     }
 
-    private void        assertSingleExecution(Recorder recorder)
+    private void assertSingleExecution(Recorder recorder)
     {
-        Set<String>     duplicateCheck = Sets.newHashSet();
+        Set<String> duplicateCheck = Sets.newHashSet();
         for ( String s : recorder.getRecordings() )
         {
             Assert.assertFalse(duplicateCheck.contains(s), s + " ran more than once: " + recorder.getRecordings());
@@ -267,17 +341,17 @@ public class TestWarmUpManager
         }
     }
 
-    private void        assertOrdering(Recorder recorder, String base, String dependency)
+    private void assertOrdering(Recorder recorder, String base, String dependency)
     {
-        int     baseIndex = recorder.getRecordings().indexOf(base);
-        int     dependencyIndex = recorder.getRecordings().indexOf(dependency);
+        int baseIndex = recorder.getRecordings().indexOf(base);
+        int dependencyIndex = recorder.getRecordings().indexOf(dependency);
 
         Assert.assertTrue(baseIndex >= 0);
         Assert.assertTrue(dependencyIndex >= 0);
         Assert.assertTrue(baseIndex > dependencyIndex, "baseIndex: " + baseIndex + " - dependencyIndex: " + dependencyIndex);
     }
 
-    private void        assertNotConcurrent(Recorder recorder, String task1, String task2)
+    private void assertNotConcurrent(Recorder recorder, String task1, String task2)
     {
         for ( Set<String> s : recorder.getConcurrents() )
         {

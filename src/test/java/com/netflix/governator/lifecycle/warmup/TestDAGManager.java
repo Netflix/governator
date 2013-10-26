@@ -30,7 +30,7 @@ public class TestDAGManager
         manager.addDependency("A", "B");
         manager.addDependency("A", "C");
 
-        DependencyNode  root = manager.buildTree();
+        DependencyNode  root = manager.generateTree();
         Assert.assertEquals(root.getChildren().size(), 1);
 
         DependencyNode  aNode = root.getChildren().get(0);
@@ -51,7 +51,7 @@ public class TestDAGManager
         manager.addDependency("A", "C");
         manager.addDependency("B", "C");
 
-        DependencyNode  root = manager.buildTree();
+        DependencyNode  root = manager.generateTree();
         Assert.assertEquals(root.getChildren().size(), 1);
 
         DependencyNode  aNode = root.getChildren().get(0);
@@ -68,7 +68,7 @@ public class TestDAGManager
         manager.addDependency("A", "C");
         manager.addDependency("B", "C");
 
-        DependencyNode  root = manager.buildTree();
+        DependencyNode  root = manager.generateTree();
         Assert.assertEquals(root.getChildren().size(), 2);
 
         Set<Object>     set = Sets.newHashSet();
@@ -91,7 +91,7 @@ public class TestDAGManager
         manager.addDependency("C", "D");
         manager.addDependency("B", "D");
 
-        DependencyNode  root = manager.buildTree();
+        DependencyNode  root = manager.generateTree();
         Assert.assertEquals(root.getChildren().size(), 2);
 
         Set<Object>     set = Sets.newHashSet();
