@@ -1,3 +1,7 @@
+1.2.3 - xxxxxxxxxxxxx
+=====================
+* Updated to use Guava 14
+
 1.2.2 - June 11, 2013
 =====================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
