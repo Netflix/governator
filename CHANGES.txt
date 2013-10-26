@@ -2,6 +2,11 @@
 =====================
 * Updated to use Guava 14
 
+* Issue 82: DAG builder wasn't handling bindings through interfaces. Integrated
+pull request that builds implicit dependencies. Also, as a side benefit, the
+PR reduces the size of the DAG by removing non warmup deps. Thanks to user
+wfhartford.
+
 1.2.2 - June 11, 2013
 =====================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
