@@ -53,8 +53,7 @@ public class LifecycleManagerArguments
                 @Override
                 public void warmUpError(WarmUpException exception)
                 {
-                    log.error("Fatal error in warm up after LifecycleManager.start() has been called.", exception);
-                    System.exit(-1);
+                    log.error("warm-up error after LifecycleManager.start() has been called.", exception);
                 }
             };
         }
