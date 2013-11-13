@@ -18,6 +18,7 @@ package com.netflix.governator.lifecycle;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
+import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationOwnershipPolicies;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
@@ -44,10 +45,13 @@ public class TestConfiguration
         properties.setProperty("pre-config-test", "not-default");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        CompositeConfigurationProvider compositeProvider = new CompositeConfigurationProvider();
+        
+        arguments.setConfigurationProvider(compositeProvider);
+        compositeProvider.add(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager            manager = new LifecycleManager(arguments);
-        PreConfigurationChange      test = new PreConfigurationChange(arguments.getConfigurationProvider());
+        PreConfigurationChange      test = new PreConfigurationChange(compositeProvider);
         manager.add(test);
 
         manager.start();
@@ -67,7 +71,7 @@ public class TestConfiguration
         properties.setProperty("test.main", "2468");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager    manager = new LifecycleManager(arguments);
 
@@ -95,7 +99,7 @@ public class TestConfiguration
         properties.setProperty("test.dt", "1964-10-06");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager            manager = new LifecycleManager(arguments);
 
@@ -122,7 +126,7 @@ public class TestConfiguration
         properties.setProperty("test.dt", "1965-10-06");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager            manager = new LifecycleManager(arguments);
 
@@ -170,7 +174,7 @@ public class TestConfiguration
     public void     testDynamicConfiguration() throws Exception
     {
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(ArchaiusConfigurationProvider
+        arguments.setConfigurationProvider(ArchaiusConfigurationProvider
                 .builder()
                     .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownsAll())
                 .build());
@@ -207,7 +211,7 @@ public class TestConfiguration
     
     private void testTypeMismatch(ConfigurationProvider provider) throws Exception {
         LifecycleManagerArguments arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(provider);
+        arguments.setConfigurationProvider(provider);
 
         LifecycleManager manager = new LifecycleManager(arguments);
 

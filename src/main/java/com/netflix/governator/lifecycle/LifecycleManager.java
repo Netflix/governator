@@ -26,10 +26,10 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.netflix.governator.annotations.Configuration;
-import com.netflix.governator.annotations.ConfigurationVariable;
 import com.netflix.governator.annotations.PreConfiguration;
+import com.netflix.governator.configuration.ConfigurationColumnWriter;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
+import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 import com.netflix.governator.lifecycle.warmup.WarmUpDriver;
@@ -71,8 +71,9 @@ public class LifecycleManager implements Closeable
     private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
     private final List<PreDestroyRecord> preDestroys = new CopyOnWriteArrayList<PreDestroyRecord>();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
-    private final ConfigurationDocumentation configurationDocumentation = new ConfigurationDocumentation();
+    private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
+    private final ConfigurationMapper configurationMapper;
     private final Collection<LifecycleListener> listeners;
     private final Collection<ResourceLocator> resourceLocators;
     private final ValidatorFactory factory;
@@ -95,11 +96,13 @@ public class LifecycleManager implements Closeable
     public LifecycleManager(LifecycleManagerArguments arguments, Injector injector)
     {
         this.injector = injector;
-        configurationProvider = arguments.getConfigurationProvider();
+        configurationMapper = arguments.getConfigurationMapper();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
         factory = Validation.buildDefaultValidatorFactory();
         postStartArguments = arguments.getPostStartArguments();
+        configurationDocumentation = arguments.getConfigurationDocumentation();
+        configurationProvider = arguments.getConfigurationProvider();
     }
 
     /**
@@ -213,8 +216,7 @@ public class LifecycleManager implements Closeable
         WarmUpSession warmUpSession = new WarmUpSession(getWarmUpDriver(), dagManager);
         boolean success = warmUpSession.doImmediate(maxMs);
 
-        configurationDocumentation.output(log);
-        configurationDocumentation.clear();
+        new ConfigurationColumnWriter(configurationDocumentation).output(log);
 
         state.set(State.STARTED);
 
@@ -328,19 +330,7 @@ public class LifecycleManager implements Closeable
         }
 
         setState(obj, LifecycleState.SETTING_CONFIGURATION);
-        Map<String, String> overrides = Maps.newHashMap();
-        for ( Field variableField : methods.fieldsFor(ConfigurationVariable.class)) {
-            ConfigurationVariable annot = variableField.getAnnotation(ConfigurationVariable.class);
-            if (annot != null) {
-                overrides.put(annot.name(), variableField.get(obj).toString());
-            }
-        }
-        
-        ConfigurationProcessor configurationProcessor = new ConfigurationProcessor(configurationProvider, configurationDocumentation);
-        for ( Field configurationField : methods.fieldsFor(Configuration.class) )
-        {
-            configurationProcessor.assignConfiguration(obj, configurationField, overrides);
-        }
+        configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
 
         setState(obj, LifecycleState.SETTING_RESOURCES);
         setResources(obj, methods);
@@ -487,6 +477,12 @@ public class LifecycleManager implements Closeable
             public Class<? extends Annotation> annotationType()
             {
                 return resource.annotationType();
+            }
+
+            @Override
+            public String lookup() {
+                // TODO Auto-generated method stub
+                return null;
             }
         };
     }
