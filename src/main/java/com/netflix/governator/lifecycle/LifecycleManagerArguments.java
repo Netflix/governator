@@ -19,6 +19,9 @@ package com.netflix.governator.lifecycle;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.netflix.governator.configuration.ConfigurationDocumentation;
+import com.netflix.governator.configuration.ConfigurationMapper;
+import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.warmup.WarmUpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +36,15 @@ public class LifecycleManagerArguments
     @VisibleForTesting
     public static final long                DEFAULT_WARM_UP_PADDING_MS = TimeUnit.SECONDS.toMillis(3);
 
-    @Inject(optional = true)
-    private LifecycleConfigurationProviders configurationProvider = new LifecycleConfigurationProviders();
+    @Inject
+    private ConfigurationProvider           configurationProvider;
+    
+    @Inject
+    private ConfigurationMapper             configurationMapper;
 
+    @Inject
+    private ConfigurationDocumentation      configurationDocumentation;
+    
     @Inject(optional = true)
     private Set<LifecycleListener>          lifecycleListeners = ImmutableSet.of();
 
@@ -66,11 +75,31 @@ public class LifecycleManagerArguments
     };
 
     @Inject
-    public LifecycleManagerArguments()
+    public LifecycleManagerArguments(
+            ConfigurationDocumentation configurationDocumentation,
+            ConfigurationMapper configurationMapper,
+            ConfigurationProvider configurationProvider) 
     {
+        this.configurationDocumentation = configurationDocumentation;
+        this.configurationMapper = configurationMapper;
+        this.configurationProvider = configurationProvider;
+    }
+    
+    public LifecycleManagerArguments() {
+        this.configurationDocumentation = new ConfigurationDocumentation();
+        this.configurationProvider = new LifecycleConfigurationProviders();
+        this.configurationMapper = new DefaultConfigurationMapper();
     }
 
-    public LifecycleConfigurationProviders getConfigurationProvider()
+    public ConfigurationMapper getConfigurationMapper() {
+        return configurationMapper;
+    }
+    
+    public void setConfigurationMapper(ConfigurationMapper configurationMapper) {
+        this.configurationMapper = configurationMapper;
+    }
+    
+    public ConfigurationProvider getConfigurationProvider()
     {
         return configurationProvider;
     }
@@ -80,7 +109,7 @@ public class LifecycleManagerArguments
         return lifecycleListeners;
     }
 
-    public void setConfigurationProvider(LifecycleConfigurationProviders configurationProvider)
+    public void setConfigurationProvider(ConfigurationProvider configurationProvider)
     {
         this.configurationProvider = configurationProvider;
     }
@@ -108,5 +137,13 @@ public class LifecycleManagerArguments
     public void setResourceLocators(Set<ResourceLocator> resourceLocators)
     {
         this.resourceLocators = ImmutableSet.copyOf(resourceLocators);
+    }
+
+    public void setConfigurationDocumentation(ConfigurationDocumentation configurationDocumentation) {
+        this.configurationDocumentation = configurationDocumentation;
+    }
+    
+    public ConfigurationDocumentation getConfigurationDocumentation() {
+        return configurationDocumentation;
     }
 }
