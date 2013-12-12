@@ -30,7 +30,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.GovernedResources;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -45,12 +45,12 @@ class InternalAutoBindModule extends AbstractModule
 {
     private final List<Class<?>> ignoreClasses;
     private final Injector injector;
-    private final ClasspathScanner classpathScanner;
+    private final GovernedResources governedResources;
 
-    InternalAutoBindModule(Injector injector, ClasspathScanner classpathScanner, Collection<Class<?>> ignoreClasses)
+    InternalAutoBindModule(Injector injector, GovernedResources governedResources, Collection<Class<?>> ignoreClasses)
     {
         this.injector = injector;
-        this.classpathScanner = classpathScanner;
+        this.governedResources = governedResources;
         Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
 
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -67,7 +67,7 @@ class InternalAutoBindModule extends AbstractModule
 
     private void bindAutoBindFields()
     {
-        for ( Field field : classpathScanner.getFields() )
+        for ( Field field : governedResources.getFields() )
         {
             if ( ignoreClasses.contains(field.getDeclaringClass()) )
             {
@@ -80,7 +80,7 @@ class InternalAutoBindModule extends AbstractModule
 
     private void bindAutoBindMethods()
     {
-        for ( Method method : classpathScanner.getMethods() )
+        for ( Method method : governedResources.getMethods() )
         {
             if ( ignoreClasses.contains(method.getDeclaringClass()) )
             {
@@ -93,7 +93,7 @@ class InternalAutoBindModule extends AbstractModule
 
     private void bindAutoBindConstructors()
     {
-        for ( Constructor constructor : classpathScanner.getConstructors() )
+        for ( Constructor constructor : governedResources.getConstructors() )
         {
             if ( ignoreClasses.contains(constructor.getDeclaringClass()) )
             {
@@ -145,7 +145,7 @@ class InternalAutoBindModule extends AbstractModule
     @SuppressWarnings("unchecked")
     private void bindAutoBindSingletons()
     {
-        for ( Class<?> clazz : classpathScanner.getClasses() )
+        for ( Class<?> clazz : governedResources.getClasses() )
         {
             if ( ignoreClasses.contains(clazz) || !clazz.isAnnotationPresent(AutoBindSingleton.class) )
             {
