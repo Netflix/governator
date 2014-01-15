@@ -27,6 +27,7 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.GovernedResources;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
@@ -56,7 +57,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class LifecycleInjector
 {
-    private final ClasspathScanner scanner;
+    private final GovernedResources governedResources;
     private final List<Module> modules;
     private final Collection<Class<?>> ignoreClasses;
     private final boolean ignoreAllClasses;
@@ -74,26 +75,26 @@ public class LifecycleInjector
     }
 
     /**
-     * If you need early access to the CLASSPATH scanner. For performance reasons, you should
-     * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
+     * If you need early access to the CLASSPATH governedResources. For performance reasons, you should
+     * pass the governedResources to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(GovernedResources)}.
      *
      * @param basePackages packages to recursively scan
-     * @return scanner
+     * @return governedResources
      */
-    public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)
+    public static GovernedResources createStandardClasspathScanner(Collection<String> basePackages)
     {
         return createStandardClasspathScanner(basePackages, null);
     }
 
     /**
-     * If you need early access to the CLASSPATH scanner. For performance reasons, you should
-     * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
+     * If you need early access to the CLASSPATH governedResources. For performance reasons, you should
+     * pass the governedResources to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(GovernedResources)}.
      *
      * @param basePackages packages to recursively scan
      * @param additionalAnnotations any additional annotations to scan for
-     * @return scanner
+     * @return governedResources
      */
-    public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages, List<Class<? extends Annotation>> additionalAnnotations)
+    public static GovernedResources createStandardClasspathScanner(Collection<String> basePackages, List<Class<? extends Annotation>> additionalAnnotations)
     {
         List<Class<? extends Annotation>> annotations = Lists.newArrayList();
         annotations.add(AutoBindSingleton.class);
@@ -179,26 +180,26 @@ public class LifecycleInjector
         if ( !ignoreAllClasses )
         {
             Collection<Class<?>>    localIgnoreClasses = Sets.newHashSet(ignoreClasses);
-            localModules.add(new InternalAutoBindModule(injector, scanner, localIgnoreClasses));
+            localModules.add(new InternalAutoBindModule(injector, governedResources, localIgnoreClasses));
         }
 
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
+    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, GovernedResources governedResources, Collection<String> basePackages, Stage stage)
     {
         stage = Preconditions.checkNotNull(stage, "stage cannot be null");
 
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
-        this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
+        this.governedResources = (governedResources != null) ? governedResources : createStandardClasspathScanner(basePackages);
 
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         injector = Guice.createInjector
         (
             stage,
-            new InternalBootstrapModule(this.scanner, bootstrapModule),
+            new InternalBootstrapModule(this.governedResources, bootstrapModule),
             new InternalLifecycleModule(lifecycleManagerRef)
         );
         lifecycleManager = injector.getInstance(LifecycleManager.class);

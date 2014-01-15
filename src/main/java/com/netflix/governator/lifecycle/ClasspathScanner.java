@@ -42,7 +42,7 @@ import com.google.common.collect.Sets;
 /**
  * Utility to find annotated classes
  */
-public class ClasspathScanner
+public class ClasspathScanner implements GovernedResources
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
     private final ClassLoader classLoader;
@@ -98,21 +98,25 @@ public class ClasspathScanner
     /**
      * @return the found classes
      */
+    @Override
     public Set<Class<?>> getClasses()
     {
         return classes;
     }
 
+    @Override
     public Set<Constructor> getConstructors()
     {
         return constructors;
     }
 
+    @Override
     public Set<Method> getMethods()
     {
         return methods;
     }
 
+    @Override
     public Set<Field> getFields()
     {
         return fields;

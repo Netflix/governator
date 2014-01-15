@@ -31,14 +31,14 @@ import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
-import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.GovernedResources;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import java.util.Set;
 
 class InternalBootstrapModule extends AbstractModule
 {
-    private final ClasspathScanner scanner;
+    private final GovernedResources governedResources;
     private final BootstrapModule bootstrapModule;
 
     private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
@@ -53,9 +53,9 @@ class InternalBootstrapModule extends AbstractModule
         }
     }
 
-    InternalBootstrapModule(ClasspathScanner scanner, BootstrapModule bootstrapModule)
+    InternalBootstrapModule(GovernedResources governedResources, BootstrapModule bootstrapModule)
     {
-        this.scanner = scanner;
+        this.governedResources = governedResources;
         this.bootstrapModule = bootstrapModule;
     }
 
@@ -81,14 +81,14 @@ class InternalBootstrapModule extends AbstractModule
 
     @Provides
     @Singleton
-    public ClasspathScanner getClasspathScanner()
+    public GovernedResources getClasspathScanner()
     {
-        return scanner;
+        return governedResources;
     }
 
     private void bindLoaders(BootstrapBinder binder)
     {
-        for ( Class<?> clazz : scanner.getClasses() )
+        for ( Class<?> clazz : governedResources.getClasses() )
         {
             if ( clazz.isAnnotationPresent(AutoBindSingleton.class) && ConfigurationProvider.class.isAssignableFrom(clazz) )
             {

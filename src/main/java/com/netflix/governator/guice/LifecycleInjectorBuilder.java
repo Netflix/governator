@@ -23,6 +23,7 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+import com.netflix.governator.lifecycle.GovernedResources;
 
 /**
  * Builder for a {@link LifecycleInjector}
@@ -109,8 +110,22 @@ public interface LifecycleInjectorBuilder
      * @param scanner the scanner to use
      * @return this
      */
+    @Deprecated
     public LifecycleInjectorBuilder usingClasspathScanner(ClasspathScanner scanner);
 
+    /**
+     * Normally, governator will use resources identified by an internal classpath scanner.
+     * This method allows for a custom set of resources to be used.
+     * NOTE: Any packages specifies via {@link #usingBasePackages(String...)} will
+     * be ignored if this method is called.
+     * NOTE: All class path scanning responsibilities will be up to the implemented of 
+     * GovernedResources.
+     * 
+     * @param scanner the scanner to use
+     * @return this
+     */
+    public LifecycleInjectorBuilder usingGovernedResources(GovernedResources resources);
+    
     /**
      * Set the Guice stage - the default is Production
      *
