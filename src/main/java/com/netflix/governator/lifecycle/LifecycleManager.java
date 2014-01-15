@@ -478,12 +478,6 @@ public class LifecycleManager implements Closeable
             {
                 return resource.annotationType();
             }
-
-            @Override
-            public String lookup() {
-                // TODO Auto-generated method stub
-                return null;
-            }
         };
     }
 
