@@ -57,7 +57,7 @@ public class DAGManager
         copy.keyToLifecycle.putAll(keyToLifecycle);
         copy.nonRoots.addAll(nonRoots);
 
-        for ( Object key : dependencies.keys() )
+        for ( Object key : dependencies.keySet() )
         {
             List<Object> objectsCopy = Lists.newArrayList(dependencies.get(key));
             copy.dependencies.putAll(key, objectsCopy);
