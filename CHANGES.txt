@@ -98,3 +98,4 @@ an error instead of stopping the app.
 now set the value to any base class/interface that you want to bind to. You can bind to
 generic base classes/interfaces by specifying the raw type (i.e.
 @AutoBindSingleton(List.class) for List<String>).
+
