@@ -1,11 +1,20 @@
-1.2.3 - xxxxxxxxxxxxx
-=====================
+1.2.3 - 1.2.6 - xxxxxxxxxxxxx
+==============================
 * Updated to use Guava 14
 
 * Issue 82: DAG builder wasn't handling bindings through interfaces. Integrated
 pull request that builds implicit dependencies. Also, as a side benefit, the
 PR reduces the size of the DAG by removing non warmup deps. Thanks to user
 wfhartford.
+
+* Pull 90: removed System.exit(-1) that can cause weird "Java VM exited abnormally
+
+* Pull 91: Improved abstraction for ConfigurationDocumentation so it be later
+exposed via a REST endpoint
+
+* Pull 94: bunch of useful binding annotations added
+
+* Issue 95: Revert lookup() so governator is buildable with Java6
 
 * Issue 96/Pull 97: DAGManager has memory leak. Thank you to user: romikk
 
