@@ -70,6 +70,17 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withAdditionalModules(Module... modules);
 
     /**
+     * Specify a root application module class from which a set of additional modules
+     * may be derived using module dependencies. Module dependencies are specified
+     * using @Inject on the module constructor and indicating the dependent modules
+     * as constructor arguments.
+     * 
+     * @param mainModule
+     * @return this
+     */
+    public LifecycleInjectorBuilder withRootModule(Class<?> mainModule);
+    
+    /**
      * Specify specific {@link AutoBindSingleton} classes that should NOT be bound in the main
      * binding phase
      *
