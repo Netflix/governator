@@ -17,13 +17,17 @@
 package com.netflix.governator.configuration;
 
 import com.google.common.base.Supplier;
+import com.google.inject.ImplementedBy;
 import com.netflix.governator.annotations.Configuration;
+import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
+
 import java.util.Date;
 
 /**
  * Abstraction for get configuration values to use for fields annotated
  * with {@link Configuration}
  */
+@ImplementedBy(LifecycleConfigurationProviders.class)
 public interface ConfigurationProvider
 {
     /**

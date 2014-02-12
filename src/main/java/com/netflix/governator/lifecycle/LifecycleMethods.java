@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.netflix.governator.annotations.Configuration;
+import com.netflix.governator.annotations.ConfigurationVariable;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import org.slf4j.Logger;
@@ -68,6 +69,7 @@ public class LifecycleMethods
         fieldAnnotationsBuilder.add(Configuration.class);
         fieldAnnotationsBuilder.add(Resource.class);
         fieldAnnotationsBuilder.add(Resources.class);
+        fieldAnnotationsBuilder.add(ConfigurationVariable.class);
         fieldAnnotations = fieldAnnotationsBuilder.build();
 
         ImmutableSet.Builder<Class<? extends Annotation>> classAnnotationsBuilder = ImmutableSet.builder();

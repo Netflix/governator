@@ -18,10 +18,12 @@ package com.netflix.governator.lifecycle;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
+import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.ConfigurationOwnershipPolicies;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
+import com.netflix.governator.lifecycle.mocks.ObjectWithConfigVariable;
 import com.netflix.governator.lifecycle.mocks.ObjectWithDynamicConfig;
 import com.netflix.governator.lifecycle.mocks.ObjectWithIgnoreTypeMismatchConfig;
 import com.netflix.governator.lifecycle.mocks.PreConfigurationChange;
@@ -43,10 +45,13 @@ public class TestConfiguration
         properties.setProperty("pre-config-test", "not-default");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        CompositeConfigurationProvider compositeProvider = new CompositeConfigurationProvider();
+        
+        arguments.setConfigurationProvider(compositeProvider);
+        compositeProvider.add(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager            manager = new LifecycleManager(arguments);
-        PreConfigurationChange      test = new PreConfigurationChange(arguments.getConfigurationProvider());
+        PreConfigurationChange      test = new PreConfigurationChange(compositeProvider);
         manager.add(test);
 
         manager.start();
@@ -66,7 +71,7 @@ public class TestConfiguration
         properties.setProperty("test.main", "2468");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager    manager = new LifecycleManager(arguments);
 
@@ -94,7 +99,7 @@ public class TestConfiguration
         properties.setProperty("test.dt", "1964-10-06");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(new PropertiesConfigurationProvider(properties));
+        arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
         LifecycleManager            manager = new LifecycleManager(arguments);
 
@@ -109,6 +114,33 @@ public class TestConfiguration
         Assert.assertEquals(obj.aString, "a is a");
     }
 
+    @Test
+    public void     testConfigWithVariable() throws Exception 
+    {
+        Properties properties = new Properties();
+        properties.setProperty("test.b", "true");
+        properties.setProperty("test.i", "101");
+        properties.setProperty("test.l", "201");
+        properties.setProperty("test.d", "301.4");
+        properties.setProperty("test.s", "b is b");
+        properties.setProperty("test.dt", "1965-10-06");
+
+        LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
+        arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
+
+        LifecycleManager            manager = new LifecycleManager(arguments);
+
+        ObjectWithConfigVariable obj = new ObjectWithConfigVariable("test");        
+        manager.add(obj);
+        manager.start();
+
+        Assert.assertEquals(obj.aBool, true);
+        Assert.assertEquals(obj.anInt, 101);
+        Assert.assertEquals(obj.aLong, 201);
+        Assert.assertEquals(obj.aDouble, 301.4);
+        Assert.assertEquals(obj.aString, "b is b");
+    }
+    
     @Test
     public void     testConfigTypeMismatchWithPropProvider() throws Exception
     {
@@ -142,7 +174,7 @@ public class TestConfiguration
     public void     testDynamicConfiguration() throws Exception
     {
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(ArchaiusConfigurationProvider
+        arguments.setConfigurationProvider(ArchaiusConfigurationProvider
                 .builder()
                     .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownsAll())
                 .build());
@@ -179,7 +211,7 @@ public class TestConfiguration
     
     private void testTypeMismatch(ConfigurationProvider provider) throws Exception {
         LifecycleManagerArguments arguments = new LifecycleManagerArguments();
-        arguments.getConfigurationProvider().add(provider);
+        arguments.setConfigurationProvider(provider);
 
         LifecycleManager manager = new LifecycleManager(arguments);
 

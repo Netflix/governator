@@ -16,12 +16,13 @@
 
 package com.netflix.governator.guice;
 
+import java.util.Collection;
+
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
-import java.util.Collection;
 
 /**
  * Builder for a {@link LifecycleInjector}
@@ -130,6 +131,13 @@ public interface LifecycleInjectorBuilder
      * {@link LifecycleInjector#createInjector()}
      *
      * @return Guice injector
+     * 
+     * @deprecated this API creates the "main" child injector.
+     * but it has the side effect of calling build() method 
+     * that will create a new LifecycleInjector.
+     * Instead, you should just build() LifecycleInjector object.
+     * then call LifecycleInjector.createInjector() directly.
      */
+    @Deprecated
     public Injector createInjector();
 }
