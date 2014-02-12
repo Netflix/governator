@@ -7,6 +7,8 @@ pull request that builds implicit dependencies. Also, as a side benefit, the
 PR reduces the size of the DAG by removing non warmup deps. Thanks to user
 wfhartford.
 
+* Issue 96/Pull 97: DAGManager has memory leak. Thank you to user: romikk
+
 1.2.2 - June 11, 2013
 =====================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
