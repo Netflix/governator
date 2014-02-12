@@ -60,15 +60,5 @@ public class ModuleDepdenciesTest {
             })
             .build()
             .createInjector();
-        
-        LifecycleManager manager = injector.getInstance(LifecycleManager.class);
-        Assert.assertEquals(counter.get(), 2);
-        manager.start();
-        try {
-            
-        }
-        finally {
-            manager.close();
-        }
     }
 }

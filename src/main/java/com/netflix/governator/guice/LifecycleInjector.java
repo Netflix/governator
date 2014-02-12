@@ -138,9 +138,7 @@ public class LifecycleInjector
      */
     public Injector createChildInjector(Collection<Module> modules)
     {
-        List<Module> finalModuleList = Lists.newArrayList();
-        if (discoveredModules != null)
-            finalModuleList.addAll(discoveredModules);
+        List<Module> finalModuleList = Lists.newArrayList(discoveredModules);
         finalModuleList.addAll(modules);
         return injector.createChildInjector(finalModuleList);
     }
