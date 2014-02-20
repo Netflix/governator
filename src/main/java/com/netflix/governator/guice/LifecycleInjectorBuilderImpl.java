@@ -36,6 +36,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private BootstrapModule bootstrapModule = null;
     private ClasspathScanner scanner = null;
     private Stage stage = Stage.PRODUCTION;
+    private Class<?> rootModule;
 
     @Override
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
@@ -77,6 +78,13 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
         return withAdditionalModules(ImmutableList.copyOf(modules));
     }
 
+    @Override
+    public LifecycleInjectorBuilder withRootModule(Class<?> rootModule) 
+    {
+        this.rootModule = rootModule;
+        return this;
+    }
+    
     @Override
     public LifecycleInjectorBuilder ignoringAutoBindClasses(Collection<Class<?>> ignoreClasses)
     {
@@ -121,7 +129,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, stage);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, stage, rootModule);
     }
 
     @Override
