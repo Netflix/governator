@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
@@ -25,10 +26,9 @@ import com.google.inject.spi.TypeListener;
 public class InternalModuleDependencyModule extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(InternalModuleDependencyModule.class);
     
-    private final List<Module> modules;
+    private final List<Module> modules = Lists.newArrayList();
     
-    public InternalModuleDependencyModule(List<Module> modules) {
-        this.modules = ImmutableList.copyOf(modules);
+    public InternalModuleDependencyModule() {
     }
 
     @Override
@@ -47,5 +47,9 @@ public class InternalModuleDependencyModule extends AbstractModule {
                 }
             }
         });
+    }
+    
+    public List<Module> getModules() {
+        return ImmutableList.copyOf(modules);
     }
 }

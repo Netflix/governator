@@ -207,16 +207,18 @@ public class LifecycleInjector
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
         
+        InternalModuleDependencyModule moduleDepdencyModule = new InternalModuleDependencyModule();
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         injector = Guice.createInjector
         (
             stage,
             new InternalBootstrapModule(this.scanner, bootstrapModule),
             new InternalLifecycleModule(lifecycleManagerRef),
-            new InternalModuleDependencyModule(this.discoveredModules)
+            moduleDepdencyModule
         );
         if (rootModule != null)
             injector.getInstance(rootModule);
+        this.discoveredModules.addAll(moduleDepdencyModule.getModules());
         lifecycleManager = injector.getInstance(LifecycleManager.class);
         lifecycleManagerRef.set(lifecycleManager);
     }
