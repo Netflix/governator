@@ -138,9 +138,7 @@ public class LifecycleInjector
      */
     public Injector createChildInjector(Collection<Module> modules)
     {
-        List<Module> finalModuleList = Lists.newArrayList(discoveredModules);
-        finalModuleList.addAll(modules);
-        return injector.createChildInjector(finalModuleList);
+        return injector.createChildInjector(modules);
     }
 
     /**
@@ -172,13 +170,25 @@ public class LifecycleInjector
      */
     public Injector createInjector(Collection<Module> additionalModules)
     {
-        if ( additionalModules == null )
+        // Add the discovered modules FIRST.  The discovered modules
+        // are added, and will subsequently be configured, in module dependency 
+        // order which will ensure that any singletons bound in these modules 
+        // will be created in the same order as the bind() calls are made.
+        // Note that the singleton ordering is only guaranteed for 
+        // singleton scope.
+        List<Module> localModules = Lists.newArrayList(discoveredModules);
+        
+        if ( additionalModules != null )
         {
-            additionalModules = Lists.newArrayList();
+            localModules.addAll(additionalModules);
         }
-        List<Module>            localModules = Lists.newArrayList(additionalModules);
+        
         localModules.addAll(modules);
 
+        // Finally, add the AutoBind module, which will use classpath scanning
+        // to creating singleton bindings.  These singletons will be instantiated
+        // in an indeterminate order but are guaranteed to occur AFTER singletons
+        // bound in any of the discovered modules.
         if ( !ignoreAllClasses )
         {
             Collection<Class<?>>    localIgnoreClasses = Sets.newHashSet(ignoreClasses);
