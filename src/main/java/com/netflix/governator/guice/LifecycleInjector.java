@@ -203,7 +203,7 @@ public class LifecycleInjector
             stage,
             new InternalBootstrapModule(this.scanner, bootstrapModule),
             new InternalLifecycleModule(lifecycleManagerRef),
-            new internalModuleDependencyModule(this.discoveredModules)
+            new InternalModuleDependencyModule(this.discoveredModules)
         );
         if (rootModule != null)
             injector.getInstance(rootModule);

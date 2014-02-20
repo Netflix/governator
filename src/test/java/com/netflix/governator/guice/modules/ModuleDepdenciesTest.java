@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import com.google.inject.AbstractModule;
@@ -34,6 +35,11 @@ public class ModuleDepdenciesTest {
         }
     }
     
+    @AfterMethod
+    public void afterEachTest() {
+        counter.set(0);
+    }
+    
     @Singleton
     public static class ModuleB extends AbstractModule {
         @Inject
@@ -51,13 +57,7 @@ public class ModuleDepdenciesTest {
     @Test
     public void testModuleDepdency() throws Exception {
         Injector injector = LifecycleInjector.builder()
-            .ignoringAllAutoBindClasses()
             .withRootModule(ModuleB.class)
-            .withBootstrapModule(new BootstrapModule() {
-                @Override
-                public void configure(BootstrapBinder binder) {
-                }
-            })
             .build()
             .createInjector();
     }
