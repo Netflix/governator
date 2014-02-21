@@ -31,14 +31,32 @@ public interface LifecycleInjectorBuilder
 {
     /**
      * Specify a bootstrap module
-     *
+     * 
      * @param module the module
      * @return this
      */
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module);
 
     /**
-     * Specify standard Guice modules for the main binding phase
+     * Specify additional bootstrap modules to use
+     * 
+     * @param modules modules
+     * @return this
+     */
+    public LifecycleInjectorBuilder withAdditionalBootstrapModules(BootstrapModule... modules);
+    
+    /**
+     * Specify additional bootstrap modules to use
+     * 
+     * @param modules modules
+     * @return this
+     */
+    public LifecycleInjectorBuilder withAdditionalBootstrapModules(Iterable<? extends BootstrapModule> modules);
+    
+    /**
+     * Specify standard Guice modules for the main binding phase.  Note that any
+     * modules provided in a previous call to withModules will be discarded.
+     * To add to the list of modules call {@link withAdditionalModules}
      *
      * @param modules modules
      * @return this
@@ -46,7 +64,9 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withModules(Module... modules);
 
     /**
-     * Specify standard Guice modules for the main binding phase
+     * Specify standard Guice modules for the main binding phase. Note that any
+     * modules provided in a previous call to withModules will be discarded.
+     * To add to the list of modules call {@link withAdditionalModules}
      *
      * @param modules modules
      * @return this

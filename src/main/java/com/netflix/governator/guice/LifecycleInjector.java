@@ -198,7 +198,7 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage, Class<?> rootModule)
+    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, ClasspathScanner scanner, Collection<String> basePackages, Stage stage, Class<?> rootModule)
     {
         stage = Preconditions.checkNotNull(stage, "stage cannot be null");
 
@@ -212,7 +212,7 @@ public class LifecycleInjector
         injector = Guice.createInjector
         (
             stage,
-            new InternalBootstrapModule(this.scanner, bootstrapModule),
+            new InternalBootstrapModule(this.scanner, bootstrapModules),
             new InternalLifecycleModule(lifecycleManagerRef),
             moduleDepdencyModule
         );
