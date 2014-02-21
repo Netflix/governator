@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
@@ -28,6 +29,9 @@ public class InternalModuleDependencyModule extends AbstractModule {
     
     private final List<Module> modules = Lists.newArrayList();
     
+    private static final String GUICE_PACKAGE_PREFX = "com.google.inject";
+    private static final String GOVERNATOR_PACKAGE_PREFIX = "com.netflix.governator.guice";
+    
     public InternalModuleDependencyModule() {
     }
 
@@ -40,6 +44,18 @@ public class InternalModuleDependencyModule extends AbstractModule {
                     encounter.register(new InjectionListener<I>() {
                         @Override
                         public void afterInjection(final I injectee) {
+                            if (null == injectee.getClass().getAnnotation(Singleton.class) &&
+                                null == injectee.getClass().getAnnotation(javax.inject.Singleton.class)) {
+                                LOG.info("Ignore module dependency : " + injectee.getClass().getCanonicalName() + " Module not @Singleton");
+                                return;
+                            }
+                            
+                            if (injectee.getClass().getCanonicalName().startsWith(GUICE_PACKAGE_PREFX) ||
+                                injectee.getClass().getCanonicalName().startsWith(GOVERNATOR_PACKAGE_PREFIX)) {
+                                LOG.info("Ignore module dependency : " + injectee.getClass().getCanonicalName() + " Internal modules are skipped");
+                                return;
+                            }
+                            
                             LOG.info("Found module dependency : " + injectee.getClass().getCanonicalName());
                             modules.add((Module)injectee);
                         }
