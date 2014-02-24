@@ -1,6 +1,9 @@
-package com.netflix.governator.guice.modules;
+/**
+ * This test is in an 'external' module to bypass the restriction that governator
+ * internal modules cannot be picked up via module depdency
+ */
+package com.netflix.external.governator.guice.modules;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -22,7 +25,6 @@ import com.google.inject.TypeLiteral;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
-import com.netflix.governator.lifecycle.LifecycleManager;
 
 public class ModuleDepdenciesTest {
     private static final Logger LOG = LoggerFactory.getLogger(ModuleDepdenciesTest.class);
@@ -101,7 +103,7 @@ public class ModuleDepdenciesTest {
     @Singleton
     public static class ModuleA1 extends AbstractModule {
         protected void configure() {
-            bind(A1.class);
+            bind(A1.class).asEagerSingleton();
         }
     }
     
@@ -113,7 +115,7 @@ public class ModuleDepdenciesTest {
         public ModuleA2(ModuleA1 moduleA3) {
         }
         protected void configure() {
-            bind(A2.class);
+            bind(A2.class).asEagerSingleton();
         }
     }
     
@@ -126,7 +128,7 @@ public class ModuleDepdenciesTest {
         public ModuleA3(ModuleA2 moduleA3) {
         }
         protected void configure() {
-            bind(A3.class);
+            bind(A3.class).asEagerSingleton();
         }
     }
     
@@ -140,7 +142,7 @@ public class ModuleDepdenciesTest {
         }
         
         protected void configure() {
-            bind(A4.class);
+            bind(A4.class).asEagerSingleton();
         }
     }
     
@@ -161,11 +163,13 @@ public class ModuleDepdenciesTest {
         {
             actual.clear();
             Injector injector = LifecycleInjector.builder()
+                    .inStage(Stage.PRODUCTION)
                     .withModules(modules)
                     .withBootstrapModule(bootstrap)
                     .build()
                     .createInjector();
             List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
+            LOG.info(integers.toString());
             Assert.assertEquals(integers, expected);
         }
         
@@ -174,11 +178,13 @@ public class ModuleDepdenciesTest {
         {
             actual.clear();
             Injector injector = LifecycleInjector.builder()
+                    .inStage(Stage.PRODUCTION)
                     .withModules(Lists.reverse(modules))
                     .withBootstrapModule(bootstrap)
                     .build()
                     .createInjector();
             List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
+            LOG.info(integers.toString());
             Assert.assertEquals(integers, Lists.reverse(expected));
         }
         
@@ -187,11 +193,13 @@ public class ModuleDepdenciesTest {
         {
             actual.clear();
             Injector injector = LifecycleInjector.builder()
+                    .inStage(Stage.PRODUCTION)
                     .withBootstrapModule(bootstrap)
                     .withRootModule(ModuleA4.class)
                     .build()
                     .createInjector();
             List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
+            LOG.info(integers.toString());
             Assert.assertEquals(integers, expected);
         }
         
