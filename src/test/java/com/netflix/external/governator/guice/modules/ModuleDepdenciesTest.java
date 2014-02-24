@@ -103,7 +103,7 @@ public class ModuleDepdenciesTest {
     @Singleton
     public static class ModuleA1 extends AbstractModule {
         protected void configure() {
-            bind(A1.class).asEagerSingleton();
+            bind(A1.class);
         }
     }
     
@@ -115,7 +115,7 @@ public class ModuleDepdenciesTest {
         public ModuleA2(ModuleA1 moduleA3) {
         }
         protected void configure() {
-            bind(A2.class).asEagerSingleton();
+            bind(A2.class);
         }
     }
     
@@ -128,7 +128,7 @@ public class ModuleDepdenciesTest {
         public ModuleA3(ModuleA2 moduleA3) {
         }
         protected void configure() {
-            bind(A3.class).asEagerSingleton();
+            bind(A3.class);
         }
     }
     
@@ -142,7 +142,7 @@ public class ModuleDepdenciesTest {
         }
         
         protected void configure() {
-            bind(A4.class).asEagerSingleton();
+            bind(A4.class);
         }
     }
     
