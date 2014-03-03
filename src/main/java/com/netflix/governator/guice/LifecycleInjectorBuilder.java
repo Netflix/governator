@@ -143,6 +143,17 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder usingClasspathScanner(ClasspathScanner scanner);
 
     /**
+     * When set to true the injector used for bootstraping is discarded and the injector
+     * returned by createInjector() becomes a root injector rather than a child injector.
+     * Using this method helps avoid several issues that can arrise from the use of 
+     * child injectors.
+     * 
+     * @param flag
+     * @return true
+     */
+    public LifecycleInjectorBuilder discardBootstrapInjector(boolean flag);
+    
+    /**
      * Set the Guice stage - the default is Production
      *
      * @param stage new stage

@@ -23,7 +23,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Binder;
 import com.google.inject.ConfigurationException;
 import com.google.inject.Module;
-import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.Dependency;
@@ -32,9 +31,11 @@ import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.annotations.WarmUp;
-import com.netflix.governator.configuration.ConfigurationDocumentation;
+import com.netflix.governator.guice.InternalBootstrapModule.LifecycleConfigurationProvidersProvider;
+import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.lifecycle.LifecycleManagerImpl;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 
@@ -44,7 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-class InternalLifecycleModule implements Module
+public class InternalLifecycleModule implements Module
 {
     private final Set<Dependency<?>> seen = new HashSet<Dependency<?>>();
 
@@ -72,6 +73,9 @@ class InternalLifecycleModule implements Module
     @Override
     public void configure(final Binder binder)
     {
+    	binder.bind(LifecycleManager.class).to(LifecycleManagerImpl.class).asEagerSingleton();
+        binder.bind(LifecycleConfigurationProviders.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
+        
         binder.bindListener
         (
             Matchers.any(),
@@ -87,6 +91,9 @@ class InternalLifecycleModule implements Module
                             @Override
                             public void afterInjection(T obj)
                             {
+                                if (obj.getClass().equals(LifecycleManagerImpl.class)) {
+                                    lifecycleManager.set((LifecycleManager)obj);
+                                }
                                 processInjectedObject(obj, type);
                             }
                         }

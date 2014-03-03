@@ -30,7 +30,6 @@ public class InternalModuleDependencyModule extends AbstractModule {
     private final List<Module> modules = Lists.newArrayList();
     
     private static final String GUICE_PACKAGE_PREFX = "com.google.inject";
-    private static final String GOVERNATOR_PACKAGE_PREFIX = "com.netflix.governator.guice";
     
     public InternalModuleDependencyModule() {
     }
@@ -50,12 +49,11 @@ public class InternalModuleDependencyModule extends AbstractModule {
                                 return;
                             }
                             
-                            if (injectee.getClass().getCanonicalName().startsWith(GUICE_PACKAGE_PREFX) ||
-                                injectee.getClass().getCanonicalName().startsWith(GOVERNATOR_PACKAGE_PREFIX)) {
+                            if (injectee.getClass().getCanonicalName().startsWith(GUICE_PACKAGE_PREFX)) {
                                 LOG.info("Ignore module dependency : " + injectee.getClass().getCanonicalName() + " Internal modules are skipped");
                                 return;
                             }
-                            
+
                             LOG.info("Found module dependency : " + injectee.getClass().getCanonicalName());
                             modules.add((Module)injectee);
                         }

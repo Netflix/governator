@@ -38,11 +38,11 @@ public class TestLifecycleManager
             private int     a = 0;
         };
 
-        LifecycleManager    manager = new LifecycleManager();
+        LifecycleManager    manager = new LifecycleManagerImpl();
         manager.add(goodObj);
         manager.start();
 
-        manager = new LifecycleManager();
+        manager = new LifecycleManagerImpl();
         manager.add(badObj);
         try
         {

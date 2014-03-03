@@ -34,17 +34,16 @@ import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
-import com.netflix.governator.lifecycle.LifecycleManager;
 
 import java.util.List;
 import java.util.Set;
 
-class InternalBootstrapModule extends AbstractModule
+public class InternalBootstrapModule extends AbstractModule
 {
     private final ClasspathScanner scanner;
     private final List<BootstrapModule> bootstrapModules;
 
-    private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
+    public static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
     {
         @Inject(optional = true)
         private Set<ConfigurationProvider> configurationProviders = Sets.newHashSet();
@@ -80,8 +79,6 @@ class InternalBootstrapModule extends AbstractModule
         }
 
         bindLoaders(bootstrapBinder);
-        binder().bind(LifecycleManager.class).asEagerSingleton();
-        binder().bind(LifecycleConfigurationProviders.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
     }
 
     @Provides

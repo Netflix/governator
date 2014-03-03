@@ -60,10 +60,12 @@ public class LifecycleInjector
     private final List<Module> modules;
     private final Collection<Class<?>> ignoreClasses;
     private final boolean ignoreAllClasses;
-    private final LifecycleManager lifecycleManager;
-    private final Injector injector;
+    private LifecycleManager lifecycleManager;
+    private Injector injector;
     private final List<Module> discoveredModules = Lists.newArrayList();
-
+    private final List<BootstrapModule> bootstrapModules;
+    private Stage stage;
+    
     /**
      * Create a new LifecycleInjector builder
      *
@@ -192,16 +194,42 @@ public class LifecycleInjector
         if ( !ignoreAllClasses )
         {
             Collection<Class<?>>    localIgnoreClasses = Sets.newHashSet(ignoreClasses);
-            localModules.add(new InternalAutoBindModule(injector, scanner, localIgnoreClasses));
+            localModules.add(new InternalAutoBindModule(
+                injector == null 
+                ? Guice.createInjector(stage, new InternalBootstrapModule(this.scanner, bootstrapModules)) 
+                : injector, scanner, localIgnoreClasses));
         }
+        
+        if (injector == null) {
+            AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
+            
+            List<Module> fullModuleList = Lists.newArrayList(
+                new InternalBootstrapModule(this.scanner, bootstrapModules),
+                new InternalLifecycleModule(lifecycleManagerRef)
+                );
+            
+            fullModuleList.addAll(localModules);
 
-        return createChildInjector(localModules);
+            injector = Guice.createInjector
+            (
+                stage,
+                fullModuleList
+            );
+            
+            lifecycleManager = lifecycleManagerRef.get();
+            return injector;
+        }
+        else {
+            return createChildInjector(localModules);
+        }
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, ClasspathScanner scanner, Collection<String> basePackages, Stage stage, Class<?> rootModule)
+    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, ClasspathScanner scanner, Collection<String> basePackages, Stage stage, Class<?> rootModule, boolean discardBootstrapInjector)
     {
         stage = Preconditions.checkNotNull(stage, "stage cannot be null");
 
+        this.stage = stage;
+        this.bootstrapModules = bootstrapModules;
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
@@ -209,17 +237,26 @@ public class LifecycleInjector
         
         InternalModuleDependencyModule moduleDepdencyModule = new InternalModuleDependencyModule();
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
-        injector = Guice.createInjector
-        (
-            stage,
-            new InternalBootstrapModule(this.scanner, bootstrapModules),
-            new InternalLifecycleModule(lifecycleManagerRef),
-            moduleDepdencyModule
-        );
-        if (rootModule != null)
-            injector.getInstance(rootModule);
-        this.discoveredModules.addAll(moduleDepdencyModule.getModules());
-        lifecycleManager = injector.getInstance(LifecycleManager.class);
-        lifecycleManagerRef.set(lifecycleManager);
+
+        if (discardBootstrapInjector) {
+            if (rootModule != null) {
+                Injector tempInjector = Guice.createInjector(moduleDepdencyModule);
+                tempInjector.getInstance(rootModule);
+                this.discoveredModules.addAll(moduleDepdencyModule.getModules());
+            }
+        }
+        else {
+            injector = Guice.createInjector
+            (
+                stage,
+                new InternalLifecycleModule(lifecycleManagerRef),
+                new InternalBootstrapModule(this.scanner, bootstrapModules),
+                moduleDepdencyModule
+            );
+            lifecycleManager = lifecycleManagerRef.get();
+            if (rootModule != null)
+                injector.getInstance(rootModule);
+            this.discoveredModules.addAll(moduleDepdencyModule.getModules());
+        }
     }
 }
