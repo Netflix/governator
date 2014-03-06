@@ -22,6 +22,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import com.google.inject.Binder;
 import com.google.inject.ConfigurationException;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
@@ -35,7 +36,6 @@ import com.netflix.governator.guice.InternalBootstrapModule.LifecycleConfigurati
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
-import com.netflix.governator.lifecycle.LifecycleManagerImpl;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 
@@ -45,8 +45,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class InternalLifecycleModule implements Module
 {
+    private static final Logger LOG = LoggerFactory.getLogger(InternalLifecycleModule.class);
+    
     private final Set<Dependency<?>> seen = new HashSet<Dependency<?>>();
 
     private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
@@ -70,10 +75,31 @@ public class InternalLifecycleModule implements Module
         this.lifecycleManager = lifecycleManager;
     }
 
+    /**
+     * This is a bit of a hack to ensure that LifecycleManager's singleton is
+     * created early in the singleton creation phase since interface bound
+     * singletons are created by Guice before concrete class singletons
+     * @author elandau
+     *
+     */
+    public static interface Initializer 
+    {
+    }
+    
+    public static class LifecycleManagerInitializer implements Initializer 
+    {
+        @Inject
+        public LifecycleManagerInitializer(LifecycleManager manager) 
+        {
+        }
+    }
+    
     @Override
     public void configure(final Binder binder)
     {
-    	binder.bind(LifecycleManager.class).to(LifecycleManagerImpl.class).asEagerSingleton();
+        // See docs at {@link LifecycleManagerInitializer}
+        binder.bind(Initializer.class).to(LifecycleManagerInitializer.class).asEagerSingleton();
+        binder.bind(LifecycleManager.class).asEagerSingleton();
         binder.bind(LifecycleConfigurationProviders.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
         
         binder.bindListener
@@ -84,20 +110,35 @@ public class InternalLifecycleModule implements Module
                 @Override
                 public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter)
                 {
-                    encounter.register
-                    (
-                        new InjectionListener<T>()
-                        {
-                            @Override
-                            public void afterInjection(T obj)
+                    if (type.getRawType().equals(LifecycleManager.class)) {
+                        encounter.register
+                        (
+                            new InjectionListener<T>()
                             {
-                                if (obj.getClass().equals(LifecycleManagerImpl.class)) {
-                                    lifecycleManager.set((LifecycleManager)obj);
+                                @Override
+                                public void afterInjection(T obj)
+                                {
+                                    if (!lifecycleManager.compareAndSet(null, (LifecycleManager)obj)) {
+                                        LOG.error("Duplicate LifecycleManager found");
+                                    }
                                 }
-                                processInjectedObject(obj, type);
                             }
-                        }
-                    );
+                        );
+                    }
+                    else 
+                    {
+                        encounter.register
+                        (
+                            new InjectionListener<T>()
+                            {
+                                @Override
+                                public void afterInjection(T obj)
+                                {
+                                    processInjectedObject(obj, type);
+                                }
+                            }
+                        );
+                    }
                 }
             }
         );
@@ -132,6 +173,9 @@ public class InternalLifecycleModule implements Module
                     throw new Error(e);
                 }
             }
+        }
+        else {
+            LOG.debug("LifecycleManager not created yet.  " + obj.getClass().getCanonicalName() + " will not be managed.");
         }
     }
 

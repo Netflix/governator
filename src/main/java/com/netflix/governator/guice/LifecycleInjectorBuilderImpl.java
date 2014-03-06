@@ -33,7 +33,6 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
     private Collection<String> basePackages = Lists.newArrayList();
     private boolean ignoreAllClasses = false;
-    private boolean discardBootstrapInjector = false;
     private List<BootstrapModule> bootstrapModules = Lists.newArrayList();
     private ClasspathScanner scanner = null;
     private Stage stage = Stage.PRODUCTION;
@@ -145,15 +144,9 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder discardBootstrapInjector(boolean flag) {
-        this.discardBootstrapInjector = flag;
-        return this;
-    }
-    
-    @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, rootModule, discardBootstrapInjector);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, rootModule);
     }
 
     @Override
