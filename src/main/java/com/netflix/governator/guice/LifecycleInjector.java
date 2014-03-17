@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
@@ -151,15 +152,15 @@ public class LifecycleInjector
             {
                 for ( Key key : bootstrapBinder.getBoundKeys() )
                 {
-                    Object instance = injector.getInstance(key);
+                    Provider instance = injector.getProvider(key);
                     //noinspection unchecked
-                    bind(key).toInstance(instance);
+                    bind(key).toProvider(instance);
                 }
                 for ( Class clazz : bootstrapBinder.getBoundClasses() )
                 {
-                    Object instance = injector.getInstance(clazz);
+                    Provider instance = injector.getProvider(clazz);
                     //noinspection unchecked
-                    bind(clazz).toInstance(instance);
+                    bind(clazz).toProvider(instance);
                 }
                 bindScope(LazySingleton.class, LazySingletonScope.get());
                 bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
