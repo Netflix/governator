@@ -40,6 +40,7 @@ class InternalBootstrapModule extends AbstractModule
 {
     private final ClasspathScanner scanner;
     private final BootstrapModule bootstrapModule;
+    private BootstrapBinder bootstrapBinder;
 
     private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
     {
@@ -59,6 +60,11 @@ class InternalBootstrapModule extends AbstractModule
         this.bootstrapModule = bootstrapModule;
     }
 
+    BootstrapBinder getBootstrapBinder()
+    {
+        return bootstrapBinder;
+    }
+
     @Override
     protected void configure()
     {
@@ -67,7 +73,7 @@ class InternalBootstrapModule extends AbstractModule
         bindScope(LazySingleton.class, LazySingletonScope.get());
         bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
 
-        BootstrapBinder         bootstrapBinder = new BootstrapBinder(binder());
+        bootstrapBinder = new BootstrapBinder(binder());
 
         if ( bootstrapModule != null )
         {
