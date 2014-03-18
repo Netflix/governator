@@ -25,7 +25,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.configuration.ConfigurationColumnWriter;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
@@ -34,18 +33,7 @@ import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 import com.netflix.governator.lifecycle.warmup.WarmUpDriver;
 import com.netflix.governator.lifecycle.warmup.WarmUpSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.annotation.Resources;
-import javax.naming.NamingException;
-import javax.validation.ConstraintViolation;
-import javax.validation.Path;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+
 import java.beans.Introspector;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -61,12 +49,26 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import javax.annotation.Resources;
+import javax.naming.NamingException;
+import javax.validation.ConstraintViolation;
+import javax.validation.Path;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Main instance management container
  */
-@Singleton
-public class LifecycleManager implements Closeable
-{
+public class LifecycleManager implements Closeable {
+
+
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
     private final List<PreDestroyRecord> preDestroys = new CopyOnWriteArrayList<PreDestroyRecord>();
@@ -667,3 +669,4 @@ public class LifecycleManager implements Closeable
         }
     }
 }
+

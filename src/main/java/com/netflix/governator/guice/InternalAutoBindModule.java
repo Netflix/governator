@@ -41,7 +41,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-class InternalAutoBindModule extends AbstractModule
+public class InternalAutoBindModule extends AbstractModule
 {
     private final List<Class<?>> ignoreClasses;
     private final Injector injector;

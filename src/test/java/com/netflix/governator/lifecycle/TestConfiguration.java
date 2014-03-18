@@ -50,7 +50,7 @@ public class TestConfiguration
         arguments.setConfigurationProvider(compositeProvider);
         compositeProvider.add(new PropertiesConfigurationProvider(properties));
 
-        LifecycleManager            manager = new LifecycleManager(arguments);
+        LifecycleManager            manager = new LifecycleManagerImpl(arguments);
         PreConfigurationChange      test = new PreConfigurationChange(compositeProvider);
         manager.add(test);
 
@@ -73,7 +73,7 @@ public class TestConfiguration
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
-        LifecycleManager    manager = new LifecycleManager(arguments);
+        LifecycleManager    manager = new LifecycleManagerImpl(arguments);
 
         SubclassedObjectWithConfig  obj = new SubclassedObjectWithConfig();
         manager.add(obj);
@@ -101,7 +101,7 @@ public class TestConfiguration
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
-        LifecycleManager            manager = new LifecycleManager(arguments);
+        LifecycleManager            manager = new LifecycleManagerImpl(arguments);
 
         ObjectWithConfig    obj = new ObjectWithConfig();
         manager.add(obj);
@@ -128,7 +128,7 @@ public class TestConfiguration
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
 
-        LifecycleManager            manager = new LifecycleManager(arguments);
+        LifecycleManager            manager = new LifecycleManagerImpl(arguments);
 
         ObjectWithConfigVariable obj = new ObjectWithConfigVariable("test");        
         manager.add(obj);
@@ -179,7 +179,7 @@ public class TestConfiguration
                     .withOwnershipPolicy(ConfigurationOwnershipPolicies.ownsAll())
                 .build());
 
-        LifecycleManager            manager = new LifecycleManager(arguments);
+        LifecycleManager            manager = new LifecycleManagerImpl(arguments);
 
         ObjectWithDynamicConfig    obj = new ObjectWithDynamicConfig();
         manager.add(obj);
@@ -213,7 +213,7 @@ public class TestConfiguration
         LifecycleManagerArguments arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(provider);
 
-        LifecycleManager manager = new LifecycleManager(arguments);
+        LifecycleManager manager = new LifecycleManagerImpl(arguments);
 
         ObjectWithIgnoreTypeMismatchConfig obj = new ObjectWithIgnoreTypeMismatchConfig();
         ObjectWithIgnoreTypeMismatchConfig nonGovernatedSample = new ObjectWithIgnoreTypeMismatchConfig();

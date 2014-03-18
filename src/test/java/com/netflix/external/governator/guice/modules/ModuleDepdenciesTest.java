@@ -22,32 +22,12 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
-import com.netflix.governator.guice.BootstrapBinder;
-import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
 
 public class ModuleDepdenciesTest {
     private static final Logger LOG = LoggerFactory.getLogger(ModuleDepdenciesTest.class);
     
     private static AtomicLong counter = new AtomicLong(0);
-    
-    @Singleton
-    public static class ModuleA extends AbstractModule {
-        public ModuleA() {
-            LOG.info("ModuleA created");
-        }
-        
-        @Override
-        protected void configure() {
-            LOG.info("ConfigureA");
-            counter.incrementAndGet();
-        }
-    }
-    
-    @AfterMethod
-    public void afterEachTest() {
-        counter.set(0);
-    }
     
     @Singleton
     public static class ModuleB extends AbstractModule {
@@ -72,38 +52,74 @@ public class ModuleDepdenciesTest {
     }
     
     @Singleton
-    public static class A1 {
+    public static class ModuleA extends AbstractModule {
+        public ModuleA() {
+            LOG.info("ModuleA created");
+        }
+        
+        @Override
+        protected void configure() {
+            LOG.info("ConfigureA");
+            counter.incrementAndGet();
+        }
+    }
+    
+    @AfterMethod
+    public void afterEachTest() {
+        counter.set(0);
+    }
+    
+    public static interface A1_base {
+    	
+    }
+    
+    public static interface A2_base {
+    	
+    }
+    
+    public static interface A3_base {
+    	
+    }
+    
+    public static interface A4_base {
+    	
+    }
+    
+    @Singleton
+    public static class A1 implements A1_base {
         @Inject 
         public A1(List<Integer> list) {
             list.add(1);
         }
     }
     @Singleton
-    public static class A2 {
+    public static class A2 implements A2_base  {
         @Inject 
         public A2(List<Integer> list) {
             list.add(2);
         }
     }
     @Singleton
-    public static class A3 {
+    public static class A3 implements A3_base {
         @Inject 
         public A3(List<Integer> list) {
             list.add(3);
         }
     }
+    
     @Singleton
-    public static class A4 {
+    public static class A4 implements A4_base {
         @Inject 
         public A4(List<Integer> list) {
             list.add(4);
         }
     }
-    
+
     @Singleton
     public static class ModuleA1 extends AbstractModule {
         protected void configure() {
-            bind(A1.class);
+//            bind(A1.class).asEagerSingleton();
+            bind(A1_base.class).to(A1.class).asEagerSingleton();
         }
     }
     
@@ -115,7 +131,7 @@ public class ModuleDepdenciesTest {
         public ModuleA2(ModuleA1 moduleA3) {
         }
         protected void configure() {
-            bind(A2.class);
+            bind(A2_base.class).to(A2.class).asEagerSingleton();
         }
     }
     
@@ -128,7 +144,7 @@ public class ModuleDepdenciesTest {
         public ModuleA3(ModuleA2 moduleA3) {
         }
         protected void configure() {
-            bind(A3.class);
+            bind(A3_base.class).to(A3.class).asEagerSingleton();
         }
     }
     
@@ -142,7 +158,7 @@ public class ModuleDepdenciesTest {
         }
         
         protected void configure() {
-            bind(A4.class);
+            bind(A4_base.class).to(A4.class).asEagerSingleton();
         }
     }
     
@@ -151,10 +167,10 @@ public class ModuleDepdenciesTest {
         final TypeLiteral<List<Integer>> listTypeLiteral = new TypeLiteral<List<Integer>>() {};
         final List<Integer> actual = Lists.newArrayList();
         final List<Module> modules = Lists.<Module>newArrayList(new ModuleA1(), new ModuleA2(), new ModuleA3(), new ModuleA4());
-        BootstrapModule bootstrap = new BootstrapModule() {
+        AbstractModule bootstrap = new AbstractModule() {
             @Override
-            public void configure(BootstrapBinder binder) {
-                binder.bind(listTypeLiteral).toInstance(actual);
+            public void configure() {
+                bind(listTypeLiteral).toInstance(actual);
             }
         };
         
@@ -165,7 +181,7 @@ public class ModuleDepdenciesTest {
             Injector injector = LifecycleInjector.builder()
                     .inStage(Stage.PRODUCTION)
                     .withModules(modules)
-                    .withBootstrapModule(bootstrap)
+                    .withAdditionalModules(bootstrap)
                     .build()
                     .createInjector();
             List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
@@ -180,7 +196,7 @@ public class ModuleDepdenciesTest {
             Injector injector = LifecycleInjector.builder()
                     .inStage(Stage.PRODUCTION)
                     .withModules(Lists.reverse(modules))
-                    .withBootstrapModule(bootstrap)
+                    .withAdditionalModules(bootstrap)
                     .build()
                     .createInjector();
             List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
@@ -194,7 +210,7 @@ public class ModuleDepdenciesTest {
             actual.clear();
             Injector injector = LifecycleInjector.builder()
                     .inStage(Stage.PRODUCTION)
-                    .withBootstrapModule(bootstrap)
+                    .withAdditionalModules(bootstrap)
                     .withRootModule(ModuleA4.class)
                     .build()
                     .createInjector();
