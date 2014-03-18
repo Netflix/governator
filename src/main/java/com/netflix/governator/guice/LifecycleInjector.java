@@ -70,7 +70,8 @@ public class LifecycleInjector
     private final LifecycleManager lifecycleManager;
     private final Injector injector;
     private final BootstrapBinder bootstrapBinder;
-
+    private final Stage stage;
+    
     /**
      * Create a new LifecycleInjector builder
      *
@@ -174,7 +175,7 @@ public class LifecycleInjector
         List<Module> localModules = Lists.newArrayList(modules);
         localModules.add(parentObjects);
         localModules.add(internalLifecycleModule);
-        return Guice.createInjector(localModules);
+        return Guice.createInjector(this.stage, localModules);
     }
 
     /**
@@ -224,13 +225,13 @@ public class LifecycleInjector
 
     LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
     {
-        stage = Preconditions.checkNotNull(stage, "stage cannot be null");
+        this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
 
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
-
+        
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(this.scanner, bootstrapModule);
         injector = Guice.createInjector
