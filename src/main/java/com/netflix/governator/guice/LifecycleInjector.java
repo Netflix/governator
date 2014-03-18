@@ -225,12 +225,12 @@ public class LifecycleInjector
 
     LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
     {
-        this.stage = stage = Preconditions.checkNotNull(stage, "stage cannot be null");
+        this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
-
+        
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(this.scanner, bootstrapModule);
         injector = Guice.createInjector
