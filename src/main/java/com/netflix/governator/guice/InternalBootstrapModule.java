@@ -17,6 +17,7 @@
 package com.netflix.governator.guice;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -34,13 +35,14 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import java.util.List;
 import java.util.Set;
 
 class InternalBootstrapModule extends AbstractModule
 {
     private final ClasspathScanner scanner;
-    private final BootstrapModule bootstrapModule;
     private BootstrapBinder bootstrapBinder;
+    private final List<BootstrapModule> bootstrapModules;
 
     private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
     {
@@ -54,10 +56,10 @@ class InternalBootstrapModule extends AbstractModule
         }
     }
 
-    InternalBootstrapModule(ClasspathScanner scanner, BootstrapModule bootstrapModule)
+    InternalBootstrapModule(ClasspathScanner scanner, List<BootstrapModule> bootstrapModules)
     {
         this.scanner = scanner;
-        this.bootstrapModule = bootstrapModule;
+        this.bootstrapModules = ImmutableList.copyOf(bootstrapModules);
     }
 
     BootstrapBinder getBootstrapBinder()
@@ -75,9 +77,11 @@ class InternalBootstrapModule extends AbstractModule
 
         bootstrapBinder = new BootstrapBinder(binder());
 
-        if ( bootstrapModule != null )
+        if ( bootstrapModules != null )
         {
-            bootstrapModule.configure(bootstrapBinder);
+            for (BootstrapModule bootstrapModule : bootstrapModules) {
+                bootstrapModule.configure(bootstrapBinder);
+            }
         }
 
         bindLoaders(bootstrapBinder);

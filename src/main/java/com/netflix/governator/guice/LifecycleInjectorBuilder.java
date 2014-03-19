@@ -16,13 +16,12 @@
 
 package com.netflix.governator.guice;
 
-import java.util.Collection;
-
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+import java.util.Collection;
 
 /**
  * Builder for a {@link LifecycleInjector}
@@ -31,14 +30,32 @@ public interface LifecycleInjectorBuilder
 {
     /**
      * Specify a bootstrap module
-     *
+     * 
      * @param module the module
      * @return this
      */
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module);
 
     /**
-     * Specify standard Guice modules for the main binding phase
+     * Specify additional bootstrap modules to use
+     * 
+     * @param modules modules
+     * @return this
+     */
+    public LifecycleInjectorBuilder withAdditionalBootstrapModules(BootstrapModule... modules);
+    
+    /**
+     * Specify additional bootstrap modules to use
+     * 
+     * @param modules modules
+     * @return this
+     */
+    public LifecycleInjectorBuilder withAdditionalBootstrapModules(Iterable<? extends BootstrapModule> modules);
+    
+    /**
+     * Specify standard Guice modules for the main binding phase.  Note that any
+     * modules provided in a previous call to withModules will be discarded.
+     * To add to the list of modules call {@link #withAdditionalModules}
      *
      * @param modules modules
      * @return this
@@ -46,7 +63,9 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withModules(Module... modules);
 
     /**
-     * Specify standard Guice modules for the main binding phase
+     * Specify standard Guice modules for the main binding phase. Note that any
+     * modules provided in a previous call to withModules will be discarded.
+     * To add to the list of modules call {@link #withAdditionalModules}
      *
      * @param modules modules
      * @return this
@@ -69,6 +88,17 @@ public interface LifecycleInjectorBuilder
      */
     public LifecycleInjectorBuilder withAdditionalModules(Module... modules);
 
+    /**
+     * Specify a root application module class from which a set of additional modules
+     * may be derived using module dependencies. Module dependencies are specified
+     * using @Inject on the module constructor and indicating the dependent modules
+     * as constructor arguments.
+     * 
+     * @param mainModule root application module
+     * @return this
+     */
+    public LifecycleInjectorBuilder withRootModule(Class<?> mainModule);
+    
     /**
      * Specify specific {@link AutoBindSingleton} classes that should NOT be bound in the main
      * binding phase
