@@ -6,14 +6,15 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.autobindmultiple.basic.BaseForMocks;
 import com.netflix.governator.autobindmultiple.generic.BaseForGenericMocks;
-import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Set;
 
-public class TestAutoBindMultiple
+public class TestAutoBindMultiple extends LifecycleInjectorBuilderProvider
 {
     @Singleton
     public static class Container
@@ -49,10 +50,10 @@ public class TestAutoBindMultiple
         }
     }
 
-    @Test
-    public void testBasic()
+    @Test(dataProvider = "builders")
+    public void testBasic(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector injector = LifecycleInjector.builder().usingBasePackages("com.netflix.governator.autobindmultiple.basic").createInjector();
+        Injector injector = lifecycleInjectorBuilder.usingBasePackages("com.netflix.governator.autobindmultiple.basic").createInjector();
         Container container = injector.getInstance(Container.class);
         Assert.assertEquals(container.getMocks().size(), 3);
         Iterable<String> transformed = Iterables.transform
@@ -70,10 +71,10 @@ public class TestAutoBindMultiple
         Assert.assertEquals(Sets.<String>newHashSet(transformed), Sets.newHashSet("A", "B", "C"));
     }
 
-    @Test
-    public void testGeneric()
+    @Test(dataProvider = "builders")
+    public void testGeneric(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector injector = LifecycleInjector.builder().usingBasePackages("com.netflix.governator.autobindmultiple.generic").createInjector();
+        Injector injector = lifecycleInjectorBuilder.usingBasePackages("com.netflix.governator.autobindmultiple.generic").createInjector();
         GenericContainer container = injector.getInstance(GenericContainer.class);
         Assert.assertEquals(container.getMocks().size(), 3);
         Iterable<Integer> transformed = Iterables.transform

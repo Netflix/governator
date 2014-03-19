@@ -36,9 +36,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private List<BootstrapModule> bootstrapModules = Lists.newArrayList();
     private ClasspathScanner scanner = null;
     private Stage stage = Stage.PRODUCTION;
+    @SuppressWarnings("deprecation")
+    private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
     private Class<?> rootModule;
 
-    @Override
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
     {
         this.bootstrapModules = ImmutableList.of(module);
@@ -137,6 +138,13 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode)
+    {
+        this.mode = mode;
+        return this;
+    }
+
+    @Override
     public LifecycleInjectorBuilder inStage(Stage stage)
     {
         this.stage = stage;
@@ -146,7 +154,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, rootModule);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, rootModule);
     }
 
     @Override

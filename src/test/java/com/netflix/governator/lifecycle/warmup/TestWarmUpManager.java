@@ -22,7 +22,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleManagerArguments;
 import org.testng.Assert;
@@ -32,12 +33,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public class TestWarmUpManager
+public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
 {
-    @Test
-    public void testPostStart() throws Exception
+    @Test(dataProvider = "builders")
+    public void testPostStart(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder().createInjector();
+        Injector injector = lifecycleInjectorBuilder.createInjector();
         injector.getInstance(LifecycleManager.class).start();
 
         injector.getInstance(Dag1.A.class);
@@ -58,8 +59,8 @@ public class TestWarmUpManager
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    @Test
-    public void testErrors() throws Exception
+    @Test(dataProvider = "builders")
+    public void testErrors(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         AbstractModule module = new AbstractModule()
         {
@@ -71,7 +72,7 @@ public class TestWarmUpManager
         };
         try
         {
-            LifecycleInjector.builder().withModules(module).createInjector().getInstance(LifecycleManager.class).start();
+            lifecycleInjectorBuilder.withModules(module).createInjector().getInstance(LifecycleManager.class).start();
             Assert.fail("Should have thrown WarmUpException");
         }
         catch ( WarmUpException e )
@@ -84,8 +85,8 @@ public class TestWarmUpManager
         }
     }
 
-    @Test
-    public void testDag1MultiModule() throws Exception
+    @Test(dataProvider = "builders")
+    public void testDag1MultiModule(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<AbstractModule> modules = Arrays.asList(
             new AbstractModule()
@@ -113,7 +114,7 @@ public class TestWarmUpManager
                 }
             }
                                                           );
-        Injector injector = LifecycleInjector.builder().withModules(modules).build().createInjector();
+        Injector injector = lifecycleInjectorBuilder.withModules(modules).build().createInjector();
         injector.getInstance(LifecycleManager.class).start();
         Recorder recorder = injector.getInstance(Recorder.class);
 
@@ -129,8 +130,8 @@ public class TestWarmUpManager
         assertOrdering(recorder, "A", "C");
     }
 
-    @Test
-    public void testDagInterfaceModule() throws Exception
+    @Test(dataProvider = "builders")
+    public void testDagInterfaceModule(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final Module dag1Module = new AbstractModule()
         {
@@ -142,7 +143,7 @@ public class TestWarmUpManager
                 bind(DagInterface.C.class).to(DagInterface.CImpl.class);
             }
         };
-        Injector injector = LifecycleInjector.builder().withModules(dag1Module).build().createInjector();
+        Injector injector = lifecycleInjectorBuilder.withModules(dag1Module).build().createInjector();
         injector.getInstance(LifecycleManager.class).start();
         Recorder recorder = injector.getInstance(Recorder.class);
 
@@ -158,10 +159,10 @@ public class TestWarmUpManager
         assertOrdering(recorder, "A", "C");
     }
 
-    @Test
-    public void testDag1() throws Exception
+    @Test(dataProvider = "builders")
+    public void testDag1(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder().createInjector();
+        Injector injector = lifecycleInjectorBuilder.createInjector();
         injector.getInstance(Dag1.A.class);
         injector.getInstance(LifecycleManager.class).start();
         Recorder recorder = injector.getInstance(Recorder.class);
@@ -178,10 +179,10 @@ public class TestWarmUpManager
         assertOrdering(recorder, "A", "C");
     }
 
-    @Test
-    public void testDag2() throws Exception
+    @Test(dataProvider = "builders")
+    public void testDag2(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder().createInjector();
+        Injector injector = lifecycleInjectorBuilder.createInjector();
         injector.getInstance(Dag2.A1.class);
         injector.getInstance(Dag2.A2.class);
         injector.getInstance(Dag2.A3.class);
@@ -221,10 +222,10 @@ public class TestWarmUpManager
         assertOrdering(recorder, "B4", "C3");
     }
 
-    @Test
-    public void testDag3() throws Exception
+    @Test(dataProvider = "builders")
+    public void testDag3(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder().createInjector();
+        Injector injector = lifecycleInjectorBuilder.createInjector();
         injector.getInstance(Dag3.A.class);
         injector.getInstance(LifecycleManager.class).start();
         Recorder recorder = injector.getInstance(Recorder.class);
@@ -246,25 +247,22 @@ public class TestWarmUpManager
         assertOrdering(recorder, "B", "D");
     }
 
-    @Test
-    public void testDag4() throws Exception
+    @Test(dataProvider = "builders")
+    public void testDag4(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector
-            .builder()
-            .withModules
-                (
-                    new Module()
+        Injector injector = lifecycleInjectorBuilder
+            .withModules(new Module()
+                {
+                    @Override
+                    public void configure(Binder binder)
                     {
-                        @Override
-                        public void configure(Binder binder)
-                        {
-                            RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
-                            recorderSleepSettings.setBaseSleepFor("E", 1, TimeUnit.MILLISECONDS);
-                            recorderSleepSettings.setRandomize(false);
-                            binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
-                        }
+                        RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
+                        recorderSleepSettings.setBaseSleepFor("E", 1, TimeUnit.MILLISECONDS);
+                        recorderSleepSettings.setRandomize(false);
+                        binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
                     }
-                )
+                }
+                        )
             .createInjector();
         injector.getInstance(Dag4.A.class);
         injector.getInstance(LifecycleManager.class).start();
@@ -281,10 +279,10 @@ public class TestWarmUpManager
         assertOrdering(recorder, "A", "B");
     }
 
-    @Test
-    public void testFlat() throws Exception
+    @Test(dataProvider = "builders")
+    public void testFlat(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder().createInjector();
+        Injector injector = lifecycleInjectorBuilder.createInjector();
         Recorder recorder = injector.getInstance(Recorder.class);
         injector.getInstance(Flat.A.class).recorder = recorder;
         injector.getInstance(Flat.B.class).recorder = recorder;
@@ -299,24 +297,21 @@ public class TestWarmUpManager
         Assert.assertTrue(recorder.getRecordings().indexOf("B") >= 0);
     }
 
-    @Test
-    public void testStuck() throws Exception
+    @Test(dataProvider = "builders")
+    public void testStuck(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector
-            .builder()
-            .withModules
-                (
-                    new Module()
+        Injector injector = lifecycleInjectorBuilder
+            .withModules(new Module()
+                {
+                    @Override
+                    public void configure(Binder binder)
                     {
-                        @Override
-                        public void configure(Binder binder)
-                        {
-                            RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
-                            recorderSleepSettings.setBaseSleepFor("C", 1, TimeUnit.DAYS);
-                            binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
-                        }
+                        RecorderSleepSettings recorderSleepSettings = new RecorderSleepSettings();
+                        recorderSleepSettings.setBaseSleepFor("C", 1, TimeUnit.DAYS);
+                        binder.bind(RecorderSleepSettings.class).toInstance(recorderSleepSettings);
                     }
-                )
+                }
+                        )
             .createInjector();
         injector.getInstance(Dag1.A.class);
         boolean succeeded = injector.getInstance(LifecycleManager.class).start(5, TimeUnit.SECONDS);

@@ -35,13 +35,13 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleManager;
-
 import java.util.List;
 import java.util.Set;
 
 class InternalBootstrapModule extends AbstractModule
 {
     private final ClasspathScanner scanner;
+    private BootstrapBinder bootstrapBinder;
     private final List<BootstrapModule> bootstrapModules;
 
     private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
@@ -62,6 +62,11 @@ class InternalBootstrapModule extends AbstractModule
         this.bootstrapModules = ImmutableList.copyOf(bootstrapModules);
     }
 
+    BootstrapBinder getBootstrapBinder()
+    {
+        return bootstrapBinder;
+    }
+
     @Override
     protected void configure()
     {
@@ -70,7 +75,7 @@ class InternalBootstrapModule extends AbstractModule
         bindScope(LazySingleton.class, LazySingletonScope.get());
         bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
 
-        BootstrapBinder         bootstrapBinder = new BootstrapBinder(binder());
+        bootstrapBinder = new BootstrapBinder(binder());
 
         if ( bootstrapModules != null )
         {

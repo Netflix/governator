@@ -17,23 +17,24 @@
 package com.netflix.governator.guice;
 
 import com.google.inject.Injector;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.guice.mocks.ObjectWithConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Properties;
 
-public class TestInjectedConfiguration
+public class TestInjectedConfiguration extends LifecycleInjectorBuilderProvider
 {
-    @Test
-    public void     testConfigurationProvider() throws Exception
+    @Test(dataProvider = "builders")
+    public void     testConfigurationProvider(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final Properties    properties = new Properties();
         properties.setProperty("a", "1");
         properties.setProperty("b", "2");
         properties.setProperty("c", "3");
 
-        Injector            injector = LifecycleInjector.builder()
+        Injector            injector = lifecycleInjectorBuilder
             .withBootstrapModule
             (
                 new BootstrapModule()

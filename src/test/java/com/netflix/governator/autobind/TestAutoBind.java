@@ -22,20 +22,22 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.guice.AutoBindProvider;
 import com.netflix.governator.guice.AutoBinds;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Collections;
 
-public class TestAutoBind
+public class TestAutoBind extends LifecycleInjectorBuilderProvider
 {
-    @Test
-    public void     testSimple()
+    @Test(dataProvider = "builders")
+    public void     testSimple(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
@@ -46,8 +48,7 @@ public class TestAutoBind
             }
         };
 
-        Injector injector = LifecycleInjector
-            .builder()
+        Injector injector = lifecycleInjectorBuilder
             .ignoringAutoBindClasses(Collections.<Class<?>>singleton(ObjectWithCustomAutoBind.class))
             .withBootstrapModule
             (
@@ -66,12 +67,11 @@ public class TestAutoBind
         Assert.assertEquals(instance.getString(), "a is a");
     }
 
-    @Test
-    public void     testCustom()
+    @Test(dataProvider = "builders")
+    public void     testCustom(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         @SuppressWarnings("RedundantCast")
-        Injector injector = LifecycleInjector
-            .builder()
+        Injector injector = lifecycleInjectorBuilder
             .ignoringAutoBindClasses(Lists.newArrayList((Class<?>)SimpleAutoBind.class, (Class<?>)SimpleWithMultipleAutoBinds.class, (Class<?>)SimpleWithFieldAutoBind.class, (Class<?>)SimpleWithMethodAutoBind.class))
             .withBootstrapModule
             (
@@ -91,8 +91,8 @@ public class TestAutoBind
         Assert.assertEquals(instance.getInjectable().getValue(), 1234);
     }
 
-    @Test
-    public void     testMultiple()
+    @Test(dataProvider = "builders")
+    public void     testMultiple(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
@@ -103,8 +103,7 @@ public class TestAutoBind
             }
         };
 
-        Injector injector = LifecycleInjector
-            .builder()
+        Injector injector = lifecycleInjectorBuilder
             .ignoringAutoBindClasses(Collections.<Class<?>>singleton(ObjectWithCustomAutoBind.class))
             .withBootstrapModule
             (
@@ -126,8 +125,8 @@ public class TestAutoBind
         Assert.assertEquals(instance.getArg4().getParameter(), "four");
     }
 
-    @Test
-    public void     testField()
+    @Test(dataProvider = "builders")
+    public void     testField(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
@@ -138,8 +137,7 @@ public class TestAutoBind
             }
         };
 
-        Injector injector = LifecycleInjector
-            .builder()
+        Injector injector = lifecycleInjectorBuilder
             .ignoringAutoBindClasses(Collections.<Class<?>>singleton(ObjectWithCustomAutoBind.class))
             .withBootstrapModule
             (
@@ -161,8 +159,8 @@ public class TestAutoBind
         Assert.assertEquals(instance.field2.getParameter(), "field2");
     }
 
-    @Test
-    public void     testMethod()
+    @Test(dataProvider = "builders")
+    public void     testMethod(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
         {
@@ -173,8 +171,7 @@ public class TestAutoBind
             }
         };
 
-        Injector injector = LifecycleInjector
-            .builder()
+        Injector injector = lifecycleInjectorBuilder
             .ignoringAutoBindClasses(Collections.<Class<?>>singleton(ObjectWithCustomAutoBind.class))
             .withBootstrapModule
                 (

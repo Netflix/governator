@@ -16,13 +16,12 @@
 
 package com.netflix.governator.guice;
 
-import java.util.Collection;
-
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+import java.util.Collection;
 
 /**
  * Builder for a {@link LifecycleInjector}
@@ -56,7 +55,7 @@ public interface LifecycleInjectorBuilder
     /**
      * Specify standard Guice modules for the main binding phase.  Note that any
      * modules provided in a previous call to withModules will be discarded.
-     * To add to the list of modules call {@link withAdditionalModules}
+     * To add to the list of modules call {@link #withAdditionalModules}
      *
      * @param modules modules
      * @return this
@@ -66,7 +65,7 @@ public interface LifecycleInjectorBuilder
     /**
      * Specify standard Guice modules for the main binding phase. Note that any
      * modules provided in a previous call to withModules will be discarded.
-     * To add to the list of modules call {@link withAdditionalModules}
+     * To add to the list of modules call {@link #withAdditionalModules}
      *
      * @param modules modules
      * @return this
@@ -95,7 +94,7 @@ public interface LifecycleInjectorBuilder
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
      * 
-     * @param mainModule
+     * @param mainModule root application module
      * @return this
      */
     public LifecycleInjectorBuilder withRootModule(Class<?> mainModule);
@@ -149,6 +148,14 @@ public interface LifecycleInjectorBuilder
      * @return this
      */
     public LifecycleInjectorBuilder inStage(Stage stage);
+
+    /**
+     * Set the lifecycle injector mode - default is {@link LifecycleInjectorMode#REAL_CHILD_INJECTORS}
+     *
+     * @param mode new mode
+     * @return this
+     */
+    public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode);
 
     /**
      * Build and return the injector

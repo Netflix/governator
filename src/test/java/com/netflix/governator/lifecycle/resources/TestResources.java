@@ -1,9 +1,11 @@
 package com.netflix.governator.lifecycle.resources;
 
 import com.google.inject.Injector;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.lifecycle.ResourceLocator;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -12,10 +14,10 @@ import java.awt.*;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestResources
+public class TestResources extends LifecycleInjectorBuilderProvider
 {
-    @Test
-    public void basicTest() throws Exception
+    @Test(dataProvider = "builders")
+    public void basicTest(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final AtomicInteger classResourceCount = new AtomicInteger(0);
         final ResourceLocator resourceLocator = new ResourceLocator()
@@ -52,9 +54,7 @@ public class TestResources
                 return null;
             }
         };
-        Injector injector = LifecycleInjector
-            .builder()
-            .withBootstrapModule
+        Injector injector = lifecycleInjectorBuilder.withBootstrapModule
             (
                 new BootstrapModule()
                 {
@@ -75,8 +75,8 @@ public class TestResources
         Assert.assertEquals(classResourceCount.get(), 1);
     }
 
-    @Test
-    public void testChained() throws Exception
+    @Test(dataProvider = "builders")
+    public void testChained(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final AtomicInteger resourceLocator1Count = new AtomicInteger(0);
         final AtomicInteger resourceLocator2Count = new AtomicInteger(0);
@@ -99,9 +99,7 @@ public class TestResources
                 return nextInChain.locate(resource, nextInChain);
             }
         };
-        Injector injector = LifecycleInjector
-            .builder()
-            .withBootstrapModule
+        Injector injector = lifecycleInjectorBuilder.withBootstrapModule
             (
                 new BootstrapModule()
                 {

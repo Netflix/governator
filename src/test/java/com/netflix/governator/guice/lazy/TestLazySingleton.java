@@ -21,14 +21,16 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.mocks.AnnotatedLazySingletonObject;
 import com.netflix.governator.guice.mocks.LazySingletonObject;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TestLazySingleton
+public class TestLazySingleton extends LifecycleInjectorBuilderProvider
 {
     public static class InjectedProvider
     {
@@ -61,11 +63,10 @@ public class TestLazySingleton
         LazySingletonObject.postConstructCount.set(0);
     }
 
-    @Test
-    public void testUsingAnnotation()
+    @Test(dataProvider = "builders")
+    public void testUsingAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector    injector = LifecycleInjector.builder()
-            .createInjector();
+        Injector    injector = lifecycleInjectorBuilder.createInjector();
 
         Assert.assertEquals(AnnotatedLazySingletonObject.constructorCount.get(), 0);
         Assert.assertEquals(AnnotatedLazySingletonObject.postConstructCount.get(), 0);
@@ -81,11 +82,10 @@ public class TestLazySingleton
         Assert.assertSame(instance, instance2);
     }
 
-    @Test
-    public void testUsingInWithProviderAndAnnotation()
+    @Test(dataProvider = "builders")
+    public void testUsingInWithProviderAndAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector    injector = LifecycleInjector.builder()
-            .createInjector();
+        Injector    injector = lifecycleInjectorBuilder.createInjector();
 
         Assert.assertEquals(AnnotatedLazySingletonObject.constructorCount.get(), 0);
         Assert.assertEquals(AnnotatedLazySingletonObject.postConstructCount.get(), 0);
@@ -105,10 +105,10 @@ public class TestLazySingleton
         Assert.assertSame(instance, instance2);
     }
 
-    @Test
-    public void testUsingIn()
+    @Test(dataProvider = "builders")
+    public void testUsingIn(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector    injector = LifecycleInjector.builder()
+        Injector    injector = lifecycleInjectorBuilder
             .withModules
             (
                 new Module()
@@ -136,10 +136,10 @@ public class TestLazySingleton
         Assert.assertSame(instance, instance2);
     }
 
-    @Test
-    public void testUsingInWithProvider()
+    @Test(dataProvider = "builders")
+    public void testUsingInWithProvider(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector    injector = LifecycleInjector.builder()
+        Injector    injector = lifecycleInjectorBuilder
             .withModules
             (
                 new Module()

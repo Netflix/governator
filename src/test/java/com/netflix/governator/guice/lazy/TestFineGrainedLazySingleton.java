@@ -21,7 +21,9 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.mocks.AnnotatedFineGrainedLazySingletonObject;
 import com.netflix.governator.guice.mocks.LazySingletonObject;
 import org.testng.Assert;
@@ -31,7 +33,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
-public class TestFineGrainedLazySingleton
+public class TestFineGrainedLazySingleton extends LifecycleInjectorBuilderProvider
 {
     public static class InjectedAnnotatedProvider
     {
@@ -94,11 +96,10 @@ public class TestFineGrainedLazySingleton
         Assert.assertEquals(AnnotatedFineGrainedLazySingletonObject.constructorCount.get(), 1);
     }
 
-    @Test
-    public void testUsingAnnotation()
+    @Test(dataProvider = "builders")
+    public void testUsingAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector    injector = LifecycleInjector.builder()
-            .createInjector();
+        Injector    injector = lifecycleInjectorBuilder.createInjector();
 
         Assert.assertEquals(AnnotatedFineGrainedLazySingletonObject.constructorCount.get(), 0);
         Assert.assertEquals(AnnotatedFineGrainedLazySingletonObject.postConstructCount.get(), 0);
@@ -114,11 +115,10 @@ public class TestFineGrainedLazySingleton
         Assert.assertSame(instance, instance2);
     }
 
-    @Test
-    public void testUsingInWithProviderAndAnnotation()
+    @Test(dataProvider = "builders")
+    public void testUsingInWithProviderAndAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
-        Injector    injector = LifecycleInjector.builder()
-            .createInjector();
+        Injector    injector = lifecycleInjectorBuilder.createInjector();
 
         Assert.assertEquals(AnnotatedFineGrainedLazySingletonObject.constructorCount.get(), 0);
         Assert.assertEquals(AnnotatedFineGrainedLazySingletonObject.postConstructCount.get(), 0);
