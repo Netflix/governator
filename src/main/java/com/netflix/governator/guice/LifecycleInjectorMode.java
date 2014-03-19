@@ -18,6 +18,13 @@ package com.netflix.governator.guice;
 
 public enum LifecycleInjectorMode
 {
+    /**
+     * @deprecated using Guice child injectors has unwanted side effects. It also makes some patterns (e.g. injecting the Injector) difficult
+     */
     REAL_CHILD_INJECTORS,
+
+    /**
+     * In this mode {@link LifecycleInjector} no longer uses Guice child injectors. Instead, bootstrap objects are copied into a new injector
+     */
     SIMULATED_CHILD_INJECTORS
 }
