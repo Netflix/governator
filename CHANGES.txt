@@ -1,4 +1,4 @@
-1.2.3 - 1.2.6 - xxxxxxxxxxxxx
+1.2.3 - 1.2.8 - xxxxxxxxxxxxx
 ==============================
 * Updated to use Guava 14
 
