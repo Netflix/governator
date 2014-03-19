@@ -19,14 +19,16 @@ package com.netflix.governator.lifecycle;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Collection;
 
-public class TestInjectedLifecycleListener
+public class TestInjectedLifecycleListener extends LifecycleInjectorBuilderProvider
 {
     public interface TestInterface
     {
@@ -59,10 +61,10 @@ public class TestInjectedLifecycleListener
         }
     }
 
-    @Test
-    public void     testInjectedLifecycleListener() throws Exception
+    @Test(dataProvider = "builders")
+    public void     testInjectedLifecycleListener(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder()
+        Injector injector = lifecycleInjectorBuilder
             .withBootstrapModule
             (
                 new BootstrapModule()

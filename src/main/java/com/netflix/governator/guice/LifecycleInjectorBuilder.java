@@ -120,6 +120,14 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder inStage(Stage stage);
 
     /**
+     * Set the lifecycle injector mode - default is {@link LifecycleInjectorMode#REAL_CHILD_INJECTORS}
+     *
+     * @param mode new mode
+     * @return this
+     */
+    public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode);
+
+    /**
      * Build and return the injector
      *
      * @return LifecycleInjector

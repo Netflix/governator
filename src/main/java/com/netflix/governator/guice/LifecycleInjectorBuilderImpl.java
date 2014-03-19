@@ -36,8 +36,8 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private BootstrapModule bootstrapModule = null;
     private ClasspathScanner scanner = null;
     private Stage stage = Stage.PRODUCTION;
+    private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
 
-    @Override
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
     {
         this.bootstrapModule = module;
@@ -112,6 +112,13 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode)
+    {
+        this.mode = mode;
+        return this;
+    }
+
+    @Override
     public LifecycleInjectorBuilder inStage(Stage stage)
     {
         this.stage = stage;
@@ -121,7 +128,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, stage);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModule, scanner, basePackages, stage, mode);
     }
 
     @Override

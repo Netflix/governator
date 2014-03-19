@@ -2,7 +2,9 @@ package com.netflix.governator.lifecycle.resources;
 
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
+import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -11,12 +13,12 @@ import org.testng.annotations.Test;
  * @author Alexey Krylov (lexx)
  * @since 19.02.13
  */
-public class Jsr250SupportTest
+public class Jsr250SupportTest extends LifecycleInjectorBuilderProvider
 {
-    @Test
-    public void testJsr250EnabledService() throws Exception
+    @Test(dataProvider = "builders")
+    public void testJsr250EnabledService(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        Injector injector = LifecycleInjector.builder().createInjector();
+        Injector injector = lifecycleInjectorBuilder.createInjector();
         Jsr250EnabledService jsr250EnabledService = injector.getInstance(Jsr250EnabledService.class);
 
         injector.getInstance(LifecycleManager.class).start();

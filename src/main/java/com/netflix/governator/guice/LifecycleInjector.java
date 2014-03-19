@@ -71,6 +71,7 @@ public class LifecycleInjector
     private final Injector injector;
     private final BootstrapBinder bootstrapBinder;
     private final Stage stage;
+    private final LifecycleInjectorMode mode;
 
     /**
      * Create a new LifecycleInjector builder
@@ -146,36 +147,11 @@ public class LifecycleInjector
      */
     public Injector createChildInjector(Collection<Module> modules)
     {
-        AbstractModule parentObjects = new AbstractModule()
+        if ( mode == LifecycleInjectorMode.REAL_CHILD_INJECTORS )
         {
-            @Override
-            protected void configure()
-            {
-                for ( Key key : bootstrapBinder.getBoundKeys() )
-                {
-                    Provider instance = injector.getProvider(key);
-                    //noinspection unchecked
-                    bind(key).toProvider(instance);
-                }
-                for ( Class clazz : bootstrapBinder.getBoundClasses() )
-                {
-                    Provider instance = injector.getProvider(clazz);
-                    //noinspection unchecked
-                    bind(clazz).toProvider(instance);
-                }
-                bindScope(LazySingleton.class, LazySingletonScope.get());
-                bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
-                bind(LifecycleManager.class).toInstance(lifecycleManager);
-            }
-        };
-
-        AtomicReference<LifecycleManager> lifecycleManagerAtomicReference = new AtomicReference<LifecycleManager>(lifecycleManager);
-        InternalLifecycleModule internalLifecycleModule = new InternalLifecycleModule(lifecycleManagerAtomicReference);
-
-        List<Module> localModules = Lists.newArrayList(modules);
-        localModules.add(parentObjects);
-        localModules.add(internalLifecycleModule);
-        return Guice.createInjector(stage, localModules);
+            return injector.createChildInjector(modules);
+        }
+        return createSimulatedChildInjector(modules);
     }
 
     /**
@@ -223,8 +199,9 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage)
+    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, BootstrapModule bootstrapModule, ClasspathScanner scanner, Collection<String> basePackages, Stage stage, LifecycleInjectorMode mode)
     {
+        this.mode = Preconditions.checkNotNull(mode, "mode cannot be null");
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
@@ -240,5 +217,39 @@ public class LifecycleInjector
         lifecycleManager = injector.getInstance(LifecycleManager.class);
         lifecycleManagerRef.set(lifecycleManager);
         bootstrapBinder = internalBootstrapModule.getBootstrapBinder();
+    }
+
+    private Injector createSimulatedChildInjector(Collection<Module> modules)
+    {
+        AbstractModule parentObjects = new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                for ( Key key : bootstrapBinder.getBoundKeys() )
+                {
+                    Provider instance = injector.getProvider(key);
+                    //noinspection unchecked
+                    bind(key).toProvider(instance);
+                }
+                for ( Class clazz : bootstrapBinder.getBoundClasses() )
+                {
+                    Provider instance = injector.getProvider(clazz);
+                    //noinspection unchecked
+                    bind(clazz).toProvider(instance);
+                }
+                bindScope(LazySingleton.class, LazySingletonScope.get());
+                bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
+                bind(LifecycleManager.class).toInstance(lifecycleManager);
+            }
+        };
+
+        AtomicReference<LifecycleManager> lifecycleManagerAtomicReference = new AtomicReference<LifecycleManager>(lifecycleManager);
+        InternalLifecycleModule internalLifecycleModule = new InternalLifecycleModule(lifecycleManagerAtomicReference);
+
+        List<Module> localModules = Lists.newArrayList(modules);
+        localModules.add(parentObjects);
+        localModules.add(internalLifecycleModule);
+        return Guice.createInjector(stage, localModules);
     }
 }
