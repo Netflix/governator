@@ -1,14 +1,14 @@
 package com.netflix.governator.lifecycle;
 
-import java.lang.reflect.Field;
-import java.util.Map;
-
 import com.google.common.collect.Maps;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.ConfigurationVariable;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
+
+import java.lang.reflect.Field;
+import java.util.Map;
 
 public class DefaultConfigurationMapper implements ConfigurationMapper {
     @Override

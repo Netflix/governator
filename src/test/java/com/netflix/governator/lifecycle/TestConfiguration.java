@@ -17,24 +17,13 @@
 package com.netflix.governator.lifecycle;
 
 import com.netflix.config.ConfigurationManager;
-import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
-import com.netflix.governator.configuration.CompositeConfigurationProvider;
-import com.netflix.governator.configuration.ConfigurationOwnershipPolicies;
-import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.configuration.PropertiesConfigurationProvider;
-import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
-import com.netflix.governator.lifecycle.mocks.ObjectWithConfigVariable;
-import com.netflix.governator.lifecycle.mocks.ObjectWithDynamicConfig;
-import com.netflix.governator.lifecycle.mocks.ObjectWithIgnoreTypeMismatchConfig;
-import com.netflix.governator.lifecycle.mocks.PreConfigurationChange;
-import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
+import com.netflix.governator.configuration.*;
+import com.netflix.governator.lifecycle.mocks.*;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class TestConfiguration
 {
@@ -69,6 +58,7 @@ public class TestConfiguration
         properties.setProperty("test.d", "300.4");
         properties.setProperty("test.s", "a is a");
         properties.setProperty("test.main", "2468");
+        properties.setProperty("test.obj", "[1,2,3,4]");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
@@ -85,6 +75,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDouble, 300.4);
         Assert.assertEquals(obj.aString, "a is a");
         Assert.assertEquals(obj.mainInt, 2468);
+        Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
     }
 
     @Test
@@ -97,6 +88,7 @@ public class TestConfiguration
         properties.setProperty("test.d", "300.4");
         properties.setProperty("test.s", "a is a");
         properties.setProperty("test.dt", "1964-10-06");
+        properties.setProperty("test.obj", "[1,2,3,4]");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
@@ -112,6 +104,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aLong, 200);
         Assert.assertEquals(obj.aDouble, 300.4);
         Assert.assertEquals(obj.aString, "a is a");
+        Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
     }
 
     @Test
@@ -124,6 +117,7 @@ public class TestConfiguration
         properties.setProperty("test.d", "301.4");
         properties.setProperty("test.s", "b is b");
         properties.setProperty("test.dt", "1965-10-06");
+        properties.setProperty("test.obj", "[1,2,3,4]");
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
@@ -139,6 +133,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aLong, 201);
         Assert.assertEquals(obj.aDouble, 301.4);
         Assert.assertEquals(obj.aString, "b is b");
+        Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
     }
     
     @Test
@@ -191,20 +186,23 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
         Assert.assertEquals(obj.aDynamicDate.get(), null);
-        
+        Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(5, 6, 7));
+
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.b", "false");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.i", "101");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.l", "201");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.d", "301.4");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.s", "a is b");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.dt", "1964-11-06");
+        ConfigurationManager.getConfigInstance().setProperty("test.dynamic.obj", "[1,2,3,4]");
 
         Assert.assertEquals(obj.aDynamicBool.get(), Boolean.FALSE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(101));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(201L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is b");
-        
+        Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(1, 2, 3, 4));
+
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Assert.assertEquals(obj.aDynamicDate.get(), formatter.parse("1964-11-06"));
     }

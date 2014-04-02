@@ -22,6 +22,8 @@ import com.netflix.config.ConfigurationManager;
 import com.netflix.config.DynamicPropertyFactory;
 import com.netflix.config.PropertyWrapper;
 import org.apache.commons.configuration.AbstractConfiguration;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +31,7 @@ import java.util.Map;
 /**
  * Configuration provider backed by Netflix Archaius (https://github.com/Netflix/archaius)
  */
-public class ArchaiusConfigurationProvider implements ConfigurationProvider
+public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationProvider implements ConfigurationProvider
 {
     private final Map<String, String> variableValues;
     private final AbstractConfiguration configurationManager;
@@ -42,6 +44,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
         private AbstractConfiguration configurationManager = ConfigurationManager.getConfigInstance();
         private DynamicPropertyFactory propertyFactory = DynamicPropertyFactory.getInstance();
         private ConfigurationOwnershipPolicy ownershipPolicy = ConfigurationOwnershipPolicies.ownsAll();
+        private ObjectMapper objectMapper = new ObjectMapper();
 
         /**
          * Set of variables to use when expanding property key names
@@ -78,6 +81,12 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
         public Builder withOwnershipPolicy(ConfigurationOwnershipPolicy policy)
         {
             this.ownershipPolicy = policy;
+            return this;
+        }
+
+        public Builder withObjectMapper(ObjectMapper objectMapper)
+        {
+            this.objectMapper = objectMapper;
             return this;
         }
 
@@ -137,6 +146,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
     @Deprecated
     public ArchaiusConfigurationProvider(Map<String, String> variableValues)
     {
+        super(new ObjectMapper());
         this.variableValues = Maps.newHashMap(variableValues);
         this.configurationManager = ConfigurationManager.getConfigInstance();
         this.propertyFactory = DynamicPropertyFactory.getInstance();
@@ -152,6 +162,7 @@ public class ArchaiusConfigurationProvider implements ConfigurationProvider
 
     private ArchaiusConfigurationProvider(Builder builder)
     {
+        super(builder.objectMapper);
         this.variableValues = builder.variableValues;
         this.configurationManager = builder.configurationManager;
         this.propertyFactory = builder.propertyFactory;

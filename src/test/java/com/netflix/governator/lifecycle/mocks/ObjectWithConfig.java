@@ -17,7 +17,10 @@
 package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.annotations.Configuration;
+
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class ObjectWithConfig
 {
@@ -38,4 +41,7 @@ public class ObjectWithConfig
 
     @Configuration("test.dt")
     public Date aDate = null;
+
+    @Configuration(value = "test.obj")
+    public List<Integer> ints = Arrays.asList(5,6,7);
 }

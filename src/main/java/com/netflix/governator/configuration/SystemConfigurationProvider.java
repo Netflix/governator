@@ -18,13 +18,15 @@ package com.netflix.governator.configuration;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import java.util.Date;
 import java.util.Map;
 
 /**
  * ConfigurationProvider backed by the system properties
  */
-public class SystemConfigurationProvider implements ConfigurationProvider
+public class SystemConfigurationProvider extends AbstractObjectConfigurationProvider implements ConfigurationProvider
 {
     private final Map<String, String> variableValues;
 
@@ -35,6 +37,12 @@ public class SystemConfigurationProvider implements ConfigurationProvider
 
     public SystemConfigurationProvider(Map<String, String> variableValues)
     {
+        this(variableValues, new ObjectMapper());
+    }
+
+    public SystemConfigurationProvider(Map<String, String> variableValues, ObjectMapper objectMapper)
+    {
+        super(objectMapper);
         this.variableValues = Maps.newHashMap(variableValues);
     }
 
