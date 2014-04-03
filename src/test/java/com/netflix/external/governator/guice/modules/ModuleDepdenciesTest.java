@@ -30,6 +30,8 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
 {
     private static final Logger LOG = LoggerFactory.getLogger(ModuleDepdenciesTest.class);
 
+    private static final TypeLiteral<List<Integer>> LIST_TYPE_LITERAL = new TypeLiteral<List<Integer>>() { };
+    
     private static AtomicLong counter = new AtomicLong(0);
 
     @Singleton
@@ -183,9 +185,6 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
     @Test(dataProvider = "builders")
     public void confirmBindingSingletonOrder(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        final TypeLiteral<List<Integer>> listTypeLiteral = new TypeLiteral<List<Integer>>()
-        {
-        };
         final List<Integer> actual = Lists.newArrayList();
         final List<Module> modules = Lists.<Module>newArrayList(new ModuleA1(), new ModuleA2(), new ModuleA3(), new ModuleA4());
         BootstrapModule bootstrap = new BootstrapModule()
@@ -193,40 +192,58 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
             @Override
             public void configure(BootstrapBinder binder)
             {
-                binder.bind(listTypeLiteral).toInstance(actual);
+                binder.bind(LIST_TYPE_LITERAL).toInstance(actual);
             }
         };
 
         // Confirm that singletons are created in binding order
         final List<Integer> expected = Lists.newArrayList(1, 2, 3, 4);
+        Injector injector = lifecycleInjectorBuilder.inStage(Stage.PRODUCTION).withModules(modules).withBootstrapModule(bootstrap).build().createInjector();
+        Assert.assertEquals(actual, expected);
+    }
+
+    @Test(dataProvider = "builders")
+    public void confirmBindingReverseSingletonOrder(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
+    {
+        final List<Integer> actual = Lists.newArrayList();
+        final List<Module> modules = Lists.<Module>newArrayList(new ModuleA1(), new ModuleA2(), new ModuleA3(), new ModuleA4());
+        BootstrapModule bootstrap = new BootstrapModule()
         {
-            actual.clear();
-            Injector injector = lifecycleInjectorBuilder.inStage(Stage.PRODUCTION).withModules(modules).withBootstrapModule(bootstrap).build().createInjector();
-            List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
-            LOG.info(integers.toString());
-            Assert.assertEquals(integers, expected);
-        }
+            @Override
+            public void configure(BootstrapBinder binder)
+            {
+                binder.bind(LIST_TYPE_LITERAL).toInstance(actual);
+            }
+        };
 
         // Reverse the order of modules in the list to confirm that singletons
         // are now created in reverse order
+        final List<Integer> expected = Lists.newArrayList(1, 2, 3, 4);
+        Injector injector = lifecycleInjectorBuilder.inStage(Stage.PRODUCTION).withModules(Lists.reverse(modules)).withBootstrapModule(bootstrap).build().createInjector();
+        LOG.info(actual.toString());
+        Assert.assertEquals(actual, Lists.reverse(expected));
+    }
+    
+    @Test(dataProvider = "builders") 
+    public void confirmMultiWithModuleClasses(LifecycleInjectorBuilder lifecycleInjectorBuilder) 
+    {
+        final List<Integer> actual = Lists.newArrayList();
+        BootstrapModule bootstrap = new BootstrapModule()
         {
-            actual.clear();
-            Injector injector = lifecycleInjectorBuilder.inStage(Stage.PRODUCTION).withModules(Lists.reverse(modules)).withBootstrapModule(bootstrap).build().createInjector();
-            List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
-            LOG.info(integers.toString());
-            Assert.assertEquals(integers, Lists.reverse(expected));
-        }
+            @Override
+            public void configure(BootstrapBinder binder)
+            {
+                binder.bind(LIST_TYPE_LITERAL).toInstance(actual);
+            }
+        };
 
-        // Now add the modules using module dependency order and confirm singletons are
-        // created in the proper order
-        {
-            actual.clear();
-            Injector injector = lifecycleInjectorBuilder.inStage(Stage.PRODUCTION).withBootstrapModule(bootstrap).withRootModule(ModuleA4.class).build().createInjector();
-            List<Integer> integers = injector.getInstance(Key.get(listTypeLiteral));
-            LOG.info(integers.toString());
-            Assert.assertEquals(integers, expected);
-        }
-
-
+        Injector injector = lifecycleInjectorBuilder
+                .inStage(Stage.PRODUCTION)
+                .withModuleClasses(ModuleA2.class, ModuleA3.class)
+                .withBootstrapModule(bootstrap).build().createInjector();
+        
+        final List<Integer> expected = Lists.newArrayList(1, 2, 3);
+        LOG.info(actual.toString());
+        Assert.assertEquals(actual, expected);
     }
 }
