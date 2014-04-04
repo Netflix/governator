@@ -38,7 +38,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private Stage stage = Stage.PRODUCTION;
     @SuppressWarnings("deprecation")
     private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
-    private Class<?> rootModule;
+    private List<Class<? extends Module>> moduleClasses = ImmutableList.of();
 
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
     {
@@ -47,19 +47,18 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withAdditionalBootstrapModules(BootstrapModule... additionalBootstrapModules) {
+    public LifecycleInjectorBuilder withAdditionalBootstrapModules(BootstrapModule... additionalBootstrapModules) 
+    {
         return withAdditionalBootstrapModules(ImmutableList.copyOf(additionalBootstrapModules));
     }
 
     @Override
-    public LifecycleInjectorBuilder withAdditionalBootstrapModules(Iterable<? extends BootstrapModule> additionalBootstrapModules) {
-        ImmutableList.Builder<BootstrapModule> builder = ImmutableList.builder();
-        if ( this.bootstrapModules != null )
-        {
-            builder.addAll(this.bootstrapModules);
-        }
-        builder.addAll(additionalBootstrapModules);
-        this.bootstrapModules = builder.build();
+    public LifecycleInjectorBuilder withAdditionalBootstrapModules(Iterable<? extends BootstrapModule> additionalBootstrapModules) 
+    {
+        this.bootstrapModules = ImmutableList.<BootstrapModule>builder()
+                .addAll(this.bootstrapModules)
+                .addAll(additionalBootstrapModules)
+                .build();
         return this;
     }
 
@@ -80,13 +79,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withAdditionalModules(Iterable<? extends Module> additionalModules)
     {
-        ImmutableList.Builder<Module> builder = ImmutableList.builder();
-        if ( this.modules != null )
-        {
-            builder.addAll(this.modules);
-        }
-        builder.addAll(additionalModules);
-        this.modules = builder.build();
+        this.modules = ImmutableList.<Module>builder()
+                .addAll(this.modules)
+                .addAll(additionalModules)
+                .build();
         return this;
     }
 
@@ -99,10 +95,49 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withRootModule(Class<?> rootModule) 
     {
-        this.rootModule = rootModule;
-        return this;
+        return withModuleClass((Class<? extends Module>) rootModule);
     }
     
+    @Override
+    public LifecycleInjectorBuilder withModuleClass(Class<? extends Module> module) 
+    {
+        this.moduleClasses = ImmutableList.<Class<? extends Module>>of(module);
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withModuleClasses(Iterable<Class<? extends Module>> modules) 
+    {
+        this.moduleClasses = ImmutableList.<Class<? extends Module>>copyOf(modules);
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withModuleClasses(Class<? extends Module> ... modules) 
+    {
+        this.moduleClasses = ImmutableList.<Class<? extends Module>>copyOf(modules);
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withAdditionalModuleClasses(Iterable<Class<? extends Module>> modules) 
+    {
+        this.moduleClasses = ImmutableList.<Class<? extends Module>>builder()
+                .addAll(this.moduleClasses)
+                .addAll(modules)
+                .build();
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<? extends Module> ... modules) {
+        this.moduleClasses = ImmutableList.<Class<? extends Module>>builder()
+                .addAll(this.moduleClasses)
+                .addAll(Lists.newArrayList(modules))
+                .build();
+        return this;
+    }
+
     @Override
     public LifecycleInjectorBuilder ignoringAutoBindClasses(Collection<Class<?>> ignoreClasses)
     {
@@ -154,7 +189,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, rootModule);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, moduleClasses);
     }
 
     @Override
@@ -167,5 +202,4 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     LifecycleInjectorBuilderImpl()
     {
     }
-
 }

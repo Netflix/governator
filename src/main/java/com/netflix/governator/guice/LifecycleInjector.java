@@ -213,7 +213,9 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
 
-    LifecycleInjector(List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, ClasspathScanner scanner, Collection<String> basePackages, Stage stage, LifecycleInjectorMode mode, Class<?> rootModule)
+    LifecycleInjector(
+            List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, 
+            ClasspathScanner scanner, Collection<String> basePackages, Stage stage, LifecycleInjectorMode mode, List<Class<? extends Module>> moduleClasses)
     {
         this.mode = Preconditions.checkNotNull(mode, "mode cannot be null");
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
@@ -232,8 +234,9 @@ public class LifecycleInjector
             new InternalLifecycleModule(lifecycleManagerRef),
             moduleDepdencyModule
         );
-        if (rootModule != null)
-            injector.getInstance(rootModule);
+        for (Class<? extends Module> moduleClass : moduleClasses) {
+            injector.getInstance(moduleClass);
+        }
         this.discoveredModules.addAll(moduleDepdencyModule.getModules());
         lifecycleManager = injector.getInstance(LifecycleManager.class);
         lifecycleManagerRef.set(lifecycleManager);
