@@ -23,6 +23,8 @@ injector instead of a real Guice child injector. Using Guice child injectors
 has unwanted side effects. It also makes some patterns (e.g. injecting the 
 Injector) difficult.
 
+* Support adding multiple Module classes
+
 1.2.2 - June 11, 2013
 =====================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
