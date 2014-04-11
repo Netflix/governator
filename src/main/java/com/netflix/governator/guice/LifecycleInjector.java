@@ -33,6 +33,7 @@ import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
+import com.netflix.governator.guice.runner.LifecycleRunner;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import javax.annotation.Resource;
@@ -176,7 +177,7 @@ public class LifecycleInjector
     {
         return createInjector(Arrays.asList(modules));
     }
-
+    
     /**
      * Create the main injector
      *
@@ -241,6 +242,10 @@ public class LifecycleInjector
         lifecycleManager = injector.getInstance(LifecycleManager.class);
         lifecycleManagerRef.set(lifecycleManager);
         bootstrapBinder = internalBootstrapModule.getBootstrapBinder();
+        
+        if (null != injector.getExistingBinding(Key.get(LifecycleRunner.class))) {
+            createInjector().getInstance(LifecycleRunner.class);
+        }
     }
 
     private Injector createSimulatedChildInjector(Collection<Module> modules)
