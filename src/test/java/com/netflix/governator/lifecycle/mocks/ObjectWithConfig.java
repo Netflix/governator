@@ -18,9 +18,7 @@ package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.annotations.Configuration;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class ObjectWithConfig
 {
@@ -44,4 +42,7 @@ public class ObjectWithConfig
 
     @Configuration(value = "test.obj")
     public List<Integer> ints = Arrays.asList(5,6,7);
+
+    @Configuration(value = "test.mapOfMaps")
+    public Map<String, Map<String, String>> mapOfMaps = new HashMap<String, Map<String, String>>();
 }

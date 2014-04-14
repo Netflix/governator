@@ -27,6 +27,14 @@ import java.util.*;
 
 public class TestConfiguration
 {
+
+    private static final String MAP_OF_MAPS_STRING = "{\"foo\": {\"bar\": \"baz\"}}";
+    private static final Map<String, Map<String, String>> MAP_OF_MAPS_OBJ = new HashMap<String, Map<String, String>>();
+    static {
+        MAP_OF_MAPS_OBJ.put("foo", new HashMap<String, String>());
+        MAP_OF_MAPS_OBJ.get("foo").put("bar", "baz");
+    }
+
     @Test
     public void     testPreConfiguration() throws Exception
     {
@@ -59,6 +67,7 @@ public class TestConfiguration
         properties.setProperty("test.s", "a is a");
         properties.setProperty("test.main", "2468");
         properties.setProperty("test.obj", "[1,2,3,4]");
+        properties.setProperty("test.mapOfMaps", MAP_OF_MAPS_STRING);
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
@@ -76,6 +85,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aString, "a is a");
         Assert.assertEquals(obj.mainInt, 2468);
         Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
+        Assert.assertEquals(obj.mapOfMaps, MAP_OF_MAPS_OBJ);
     }
 
     @Test
@@ -89,6 +99,7 @@ public class TestConfiguration
         properties.setProperty("test.s", "a is a");
         properties.setProperty("test.dt", "1964-10-06");
         properties.setProperty("test.obj", "[1,2,3,4]");
+        properties.setProperty("test.mapOfMaps", MAP_OF_MAPS_STRING);
 
         LifecycleManagerArguments   arguments = new LifecycleManagerArguments();
         arguments.setConfigurationProvider(new PropertiesConfigurationProvider(properties));
@@ -105,6 +116,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDouble, 300.4);
         Assert.assertEquals(obj.aString, "a is a");
         Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
+        Assert.assertEquals(obj.mapOfMaps, MAP_OF_MAPS_OBJ);
     }
 
     @Test
@@ -187,6 +199,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
         Assert.assertEquals(obj.aDynamicDate.get(), null);
         Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(5, 6, 7));
+        Assert.assertEquals(obj.aDynamicMapOfMaps.get(), Collections.emptyMap());
 
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.b", "false");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.i", "101");
@@ -195,6 +208,7 @@ public class TestConfiguration
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.s", "a is b");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.dt", "1964-11-06");
         ConfigurationManager.getConfigInstance().setProperty("test.dynamic.obj", "[1,2,3,4]");
+        ConfigurationManager.getConfigInstance().setProperty("test.dynamic.mapOfMaps", MAP_OF_MAPS_STRING);
 
         Assert.assertEquals(obj.aDynamicBool.get(), Boolean.FALSE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(101));
@@ -202,6 +216,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is b");
         Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(1, 2, 3, 4));
+        Assert.assertEquals(obj.aDynamicMapOfMaps.get(), MAP_OF_MAPS_OBJ);
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Assert.assertEquals(obj.aDynamicDate.get(), formatter.parse("1964-11-06"));
