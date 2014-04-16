@@ -15,7 +15,6 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Stopwatch;
 import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
 import com.netflix.governator.guice.runner.TerminationEvent;
 import com.netflix.governator.guice.runner.events.SelfDestructingTerminationEvent;
 import com.netflix.governator.guice.runner.standalone.StandaloneRunnerModule;

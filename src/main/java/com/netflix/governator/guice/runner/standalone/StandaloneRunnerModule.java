@@ -1,6 +1,7 @@
 package com.netflix.governator.guice.runner.standalone;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
@@ -114,8 +115,8 @@ public class StandaloneRunnerModule implements BootstrapModule {
                 if (mainClass != null) 
                     injector.getInstance(mainClass);
                 
-                Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("GovernatorStandaloneTerminator-%d").build())
-                    .execute(new Runnable() {
+                final ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("GovernatorStandaloneTerminator-%d").build());
+                executor.execute(new Runnable() {
                         @Override
                         public void run() {
                             LOG.info("Waiting for terminate event");
@@ -126,7 +127,7 @@ public class StandaloneRunnerModule implements BootstrapModule {
                             }
                             LOG.info("Terminating application");
                             manager.close();
-                            System.exit(0);
+                            executor.shutdown();
                         }
                     });
             } 
