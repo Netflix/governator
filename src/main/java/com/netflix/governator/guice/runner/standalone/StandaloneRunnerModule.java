@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -113,7 +114,7 @@ public class StandaloneRunnerModule implements BootstrapModule {
                 if (mainClass != null) 
                     injector.getInstance(mainClass);
                 
-                Executors.newSingleThreadExecutor() // new ThreadFactoryBuilder().setDaemon(true).build())
+                Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("GovernatorStandaloneTerminator-%d").build())
                     .execute(new Runnable() {
                         @Override
                         public void run() {
