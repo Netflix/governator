@@ -176,7 +176,7 @@ public class LifecycleInjector
     {
         return createInjector(Arrays.asList(modules));
     }
-
+    
     /**
      * Create the main injector
      *
