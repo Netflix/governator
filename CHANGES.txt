@@ -18,6 +18,8 @@ exposed via a REST endpoint
 
 * Issue 96/Pull 97: DAGManager has memory leak. Thank you to user: romikk
 
+* Added concept of an application runner
+
 * Change LifecycleInjector to optionally use a simulated child 
 injector instead of a real Guice child injector. Using Guice child injectors 
 has unwanted side effects. It also makes some patterns (e.g. injecting the 
