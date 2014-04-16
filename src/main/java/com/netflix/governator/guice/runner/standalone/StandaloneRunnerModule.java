@@ -1,6 +1,7 @@
 package com.netflix.governator.guice.runner.standalone;
 
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 
@@ -18,8 +19,8 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.guice.runner.LifecycleRunner;
-import com.netflix.governator.guice.runner.TerminateEvent;
-import com.netflix.governator.guice.runner.events.BlockingTerminateEvent;
+import com.netflix.governator.guice.runner.TerminationEvent;
+import com.netflix.governator.guice.runner.events.BlockingTerminationEvent;
 import com.netflix.governator.lifecycle.LifecycleManager;
 
 /**
@@ -36,7 +37,7 @@ public class StandaloneRunnerModule implements BootstrapModule {
     public static class Builder {
         private List<String> args = Lists.newArrayList();
         private Class<?> main;
-        private TerminateEvent terminateEvent;
+        private TerminationEvent terminateEvent;
         
         /**
          * Specify optional command line arguments to be injected.  The arguments can be injected
@@ -64,10 +65,10 @@ public class StandaloneRunnerModule implements BootstrapModule {
         
         /**
          * Specify an externally provided {@link TerminationEvent}.  If not specified
-         * the default {@link BlockingTerminateEvent} will be used.
+         * the default {@link BlockingTerminationEvent} will be used.
          * @param event
          */
-        public Builder withTerminateEvent(TerminateEvent event) {
+        public Builder withTerminateEvent(TerminationEvent event) {
             this.terminateEvent = event;
             return this;
         }
@@ -84,19 +85,19 @@ public class StandaloneRunnerModule implements BootstrapModule {
     @LazySingleton
     public static class StandaloneFramework implements LifecycleRunner {
         @Inject
-        Injector injector ;
+        private Injector injector ;
         
         @Inject
-        LifecycleManager manager;
+        private LifecycleManager manager;
         
         @Inject(optional=true)
-        @Main Class<?> mainClass;
+        private @Main Class<?> mainClass;
         
         @Inject(optional=true)
-        @Main List<String> args;
+        private @Main List<String> args;
         
         @Inject
-        @Main TerminateEvent terminateEvent;
+        private @Main TerminationEvent terminateEvent;
         
         /**
          * This is the application's main 'run' loop. which blocks on the termination event
@@ -110,22 +111,31 @@ public class StandaloneRunnerModule implements BootstrapModule {
                 if (mainClass != null) 
                     injector.getInstance(mainClass);
                 
-                LOG.info("Waiting for terminate event");
-                terminateEvent.await();
+                Executors.newSingleThreadExecutor() // new ThreadFactoryBuilder().setDaemon(true).build())
+                    .execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            LOG.info("Waiting for terminate event");
+                            try {
+                                terminateEvent.await();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            LOG.info("Terminating application");
+                            manager.close();
+                            System.exit(0);
+                        }
+                    });
             } 
             catch (Exception e) {
                 LOG.error("Error executing application ", e);
-            }
-            finally {
-                LOG.info("Terminating application");
-                manager.close();
             }
         }
     }
 
     private final List<String> args;
     private final Class<?> main;
-    private final TerminateEvent terminateEvent;
+    private final TerminationEvent terminateEvent;
     
     public StandaloneRunnerModule(String[] args, Class<?> main) {
         this.args = ImmutableList.copyOf(args);
@@ -151,8 +161,8 @@ public class StandaloneRunnerModule implements BootstrapModule {
         }
         
         if (terminateEvent == null)
-            binder.bind(TerminateEvent.class).annotatedWith(Main.class).to(BlockingTerminateEvent.class);
+            binder.bind(TerminationEvent.class).annotatedWith(Main.class).to(BlockingTerminationEvent.class);
         else 
-            binder.bind(TerminateEvent.class).annotatedWith(Main.class).toInstance(terminateEvent);
+            binder.bind(TerminationEvent.class).annotatedWith(Main.class).toInstance(terminateEvent);
     }
 }

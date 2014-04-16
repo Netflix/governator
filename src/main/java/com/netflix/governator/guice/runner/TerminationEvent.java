@@ -9,7 +9,7 @@ package com.netflix.governator.guice.runner;
  *
  * TODO: Add additional listeners of the termination event
  */
-public interface TerminateEvent {
+public interface TerminationEvent {
     /**
      * Block until the termination event is fired.
      * 
@@ -20,10 +20,10 @@ public interface TerminateEvent {
     /**
      * Fire the termination event.
      */
-    public void set();
+    public void terminate();
     
     /**
      * @return True if the termination event was set.
      */
-    public boolean isSet();
+    public boolean isTerminated();
 }

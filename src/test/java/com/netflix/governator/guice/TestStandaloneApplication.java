@@ -15,6 +15,8 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Stopwatch;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.netflix.governator.guice.runner.TerminationEvent;
 import com.netflix.governator.guice.runner.events.SelfDestructingTerminationEvent;
 import com.netflix.governator.guice.runner.standalone.StandaloneRunnerModule;
 
@@ -45,8 +47,10 @@ public class TestStandaloneApplication {
     }
     
     @Test
-    public void shouldCreateSingletonAndExitAfter1Second() {
+    public void shouldCreateSingletonAndExitAfter1Second() throws Exception {
         Stopwatch sw = new Stopwatch().start();
+        
+        final TerminationEvent event = new SelfDestructingTerminationEvent(1, TimeUnit.SECONDS);
         LifecycleInjector.builder()
             // Example of a singleton that will be created
             .withAdditionalModules(new AbstractModule() {
@@ -57,10 +61,11 @@ public class TestStandaloneApplication {
             })
             .withAdditionalBootstrapModules(
                 StandaloneRunnerModule.builder()
-                    .withTerminateEvent(new SelfDestructingTerminationEvent(1, TimeUnit.SECONDS))
+                    .withTerminateEvent(event)
                     .build())
             .build();
         
+        event.await();
         long elapsed = sw.elapsed(TimeUnit.MILLISECONDS);
         LOG.info("Elapsed: " + elapsed);
         Assert.assertTrue(initCalled.get());
@@ -69,5 +74,23 @@ public class TestStandaloneApplication {
         
         LOG.info("Exit main");
 
+    }
+    
+    public static void main(String args[]) {
+        final TerminationEvent event = new SelfDestructingTerminationEvent(1, TimeUnit.SECONDS);
+        LifecycleInjector.builder()
+            // Example of a singleton that will be created
+            .withAdditionalModules(new AbstractModule() {
+                @Override
+                protected void configure() {
+                    bind(SomeSingleton.class).asEagerSingleton();
+                }
+            })
+            .withAdditionalBootstrapModules(
+                StandaloneRunnerModule.builder()
+                    .withTerminateEvent(event)
+                    .build())
+            .build();
+        
     }
 }

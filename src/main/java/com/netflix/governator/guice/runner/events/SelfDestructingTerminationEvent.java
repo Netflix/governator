@@ -10,13 +10,13 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * after a specified amount of time has elapsed, causing the application to exit.
  * @author elandau
  */
-public class SelfDestructingTerminationEvent extends BlockingTerminateEvent {
+public class SelfDestructingTerminationEvent extends BlockingTerminationEvent {
     public SelfDestructingTerminationEvent(final long timeout, final TimeUnit units) {
         Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setDaemon(true).build())
             .schedule(new Runnable() {
                 @Override
                 public void run() {
-                    set();
+                    terminate();
                 }
             }, timeout, units);
     }
