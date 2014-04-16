@@ -15,7 +15,9 @@ public class BlockingTerminationEvent implements TerminationEvent {
     
     @Override
     public synchronized void await() throws InterruptedException {
-        this.wait();
+        while (!isTerminated) {
+            this.wait();
+        }
     }
 
     @Override

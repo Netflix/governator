@@ -50,8 +50,7 @@ public class InternalModuleDependencyModule extends AbstractModule {
                                 return;
                             }
                             
-                            if (injectee.getClass().getCanonicalName().startsWith(GUICE_PACKAGE_PREFX) ||
-                                injectee.getClass().getCanonicalName().startsWith(GOVERNATOR_PACKAGE_PREFIX)) {
+                            if (injectee.getClass().getCanonicalName().startsWith(GUICE_PACKAGE_PREFX)) {
                                 LOG.info("Ignore module dependency : " + injectee.getClass().getCanonicalName() + " Internal modules are skipped");
                                 return;
                             }

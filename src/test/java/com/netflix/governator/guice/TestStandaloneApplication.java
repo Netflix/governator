@@ -63,7 +63,8 @@ public class TestStandaloneApplication {
                 StandaloneRunnerModule.builder()
                     .withTerminateEvent(event)
                     .build())
-            .build();
+            .build()
+            .createInjector();
         
         event.await();
         long elapsed = sw.elapsed(TimeUnit.MILLISECONDS);
@@ -90,7 +91,8 @@ public class TestStandaloneApplication {
                 StandaloneRunnerModule.builder()
                     .withTerminateEvent(event)
                     .build())
-            .build();
+            .build()
+            .createInjector();
         
     }
 }

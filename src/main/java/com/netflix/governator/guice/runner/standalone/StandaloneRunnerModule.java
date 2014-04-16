@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
@@ -149,9 +151,18 @@ public class StandaloneRunnerModule implements BootstrapModule {
         this.terminateEvent = builder.terminateEvent;
     }
 
+    @Singleton
+    public static class MainInjectorModule extends AbstractModule {
+        @Override
+        protected void configure() {
+            bind(LifecycleRunner.class).to(StandaloneFramework.class).asEagerSingleton();
+        }
+    }
+    
     @Override
     public void configure(BootstrapBinder binder) {
-        binder.bind(LifecycleRunner.class).to(StandaloneFramework.class);
+        binder.bind(MainInjectorModule.class);
+        
         if (main != null) {
             binder.bind(main).in(LazySingletonScope.get());
             binder.bind(new TypeLiteral<Class<?>>() {}).annotatedWith(Main.class).toInstance(main);
