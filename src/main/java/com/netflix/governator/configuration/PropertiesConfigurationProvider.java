@@ -27,7 +27,7 @@ import java.util.Properties;
 /**
  * ConfigurationProvider backed by a {#link Properties}
  */
-public class PropertiesConfigurationProvider extends AbstractObjectConfigurationProvider implements ConfigurationProvider
+public class PropertiesConfigurationProvider extends AbstractObjectConfigurationProvider
 {
     private final Properties properties;
     private final Map<String, String> variableValues;
@@ -42,7 +42,7 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
 
     public PropertiesConfigurationProvider(Properties properties, Map<String, String> variableValues)
     {
-        this(properties, variableValues, new ObjectMapper());
+        this(properties, variableValues, null);
     }
 
     public PropertiesConfigurationProvider(Properties properties, Map<String, String> variableValues,

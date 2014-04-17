@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * ConfigurationProvider backed by the system properties
  */
-public class SystemConfigurationProvider extends AbstractObjectConfigurationProvider implements ConfigurationProvider
+public class SystemConfigurationProvider extends AbstractObjectConfigurationProvider
 {
     private final Map<String, String> variableValues;
 
@@ -37,7 +37,7 @@ public class SystemConfigurationProvider extends AbstractObjectConfigurationProv
 
     public SystemConfigurationProvider(Map<String, String> variableValues)
     {
-        this(variableValues, new ObjectMapper());
+        this(variableValues, null);
     }
 
     public SystemConfigurationProvider(Map<String, String> variableValues, ObjectMapper objectMapper)

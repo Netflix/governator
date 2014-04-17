@@ -18,8 +18,16 @@ public abstract class AbstractObjectConfigurationProvider implements Configurati
 
     private final ObjectMapper mapper;
 
+    protected AbstractObjectConfigurationProvider() {
+        this(null);
+    }
+
     protected AbstractObjectConfigurationProvider(ObjectMapper mapper) {
-        this.mapper = mapper;
+        if (mapper == null) {
+            this.mapper = new ObjectMapper();
+        } else {
+            this.mapper = mapper;
+        }
         this.logger = LoggerFactory.getLogger(getClass());
     }
 

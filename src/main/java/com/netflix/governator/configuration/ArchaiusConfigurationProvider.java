@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * Configuration provider backed by Netflix Archaius (https://github.com/Netflix/archaius)
  */
-public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationProvider implements ConfigurationProvider
+public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationProvider
 {
     private final Map<String, String> variableValues;
     private final AbstractConfiguration configurationManager;
@@ -146,7 +146,6 @@ public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationPr
     @Deprecated
     public ArchaiusConfigurationProvider(Map<String, String> variableValues)
     {
-        super(new ObjectMapper());
         this.variableValues = Maps.newHashMap(variableValues);
         this.configurationManager = ConfigurationManager.getConfigInstance();
         this.propertyFactory = DynamicPropertyFactory.getInstance();
