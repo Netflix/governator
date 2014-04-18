@@ -91,4 +91,15 @@ public interface ConfigurationProvider
      * @return value
      */
     public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue);
+
+    /**
+     * Return the given configuration as an object of the given type.
+     *
+     * @param key             configuration key
+     * @param defaultValue    value to return when key is not found
+     * @param objectType      Class of the configuration to return
+     * @param <T>             type of the configuration to return
+     * @return the object for this configuration.
+     */
+    public <T> Supplier<T> getObjectSupplier(ConfigurationKey key, T defaultValue, Class<T> objectType);
 }

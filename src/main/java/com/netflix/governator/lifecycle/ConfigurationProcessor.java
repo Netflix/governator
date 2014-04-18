@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.Map;
 
@@ -60,12 +61,21 @@ class ConfigurationProcessor
                 if ( Supplier.class.isAssignableFrom(field.getType()) )
                 {
                     ParameterizedType type = (ParameterizedType)field.getGenericType();
-                    Class<?> actualType = (Class<?>)type.getActualTypeArguments()[0];
+                    Type actualType = type.getActualTypeArguments()[0];
+                    Class<?> actualClass;
+                    if (actualType instanceof Class) {
+                        actualClass = (Class<?>) actualType;
+                    } else if (actualType instanceof ParameterizedType) {
+                        actualClass = (Class<?>) ((ParameterizedType) actualType).getRawType();
+                    } else {
+                        throw new UnsupportedOperationException("Supplier parameter type " + actualType
+                                + " not supported (" + field.getName() + ")");
+                    }
                     Supplier<?> current = (Supplier<?>)field.get(obj);
-                    value = getConfigurationSupplier(field, key, actualType, current);
+                    value = getConfigurationSupplier(field, key, actualClass, current);
                     if ( value == null )
                     {
-                        log.error("Field type not supported: " + actualType + " (" + field.getName() + ")");
+                        log.error("Field type not supported: " + actualClass + " (" + field.getName() + ")");
                         field = null;
                     }
                 }
@@ -130,6 +140,7 @@ class ConfigurationProcessor
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Supplier<?> getConfigurationSupplier(final Field field, final ConfigurationKey key, final Class<?> type, Supplier<?> current)
     {
         if ( String.class.isAssignableFrom(type) )
@@ -158,8 +169,8 @@ class ConfigurationProcessor
         }
         else
         {
-            log.error("Field type not supported: " + type + " (" + field.getName() + ")");
-            return null;
+            /* Try to deserialize */
+            return configurationProvider.getObjectSupplier(key, current.get(), (Class<Object>) type);
         }
     }
 

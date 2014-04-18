@@ -147,4 +147,16 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
         return null;
     }
 
+    @Override
+    public <T> Supplier<T> getObjectSupplier(ConfigurationKey key, T defaultValue, Class<T> objectType)
+    {
+        for ( ConfigurationProvider provider : providers )
+        {
+            if ( provider.has(key) )
+            {
+                return provider.getObjectSupplier(key, defaultValue, objectType);
+            }
+        }
+        return null;
+    }
 }

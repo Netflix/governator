@@ -1,9 +1,11 @@
 package com.netflix.governator.lifecycle.mocks;
 
-import java.util.Date;
-
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.ConfigurationVariable;
+
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 public class ObjectWithConfigVariable {
     @ConfigurationVariable(name="name")
@@ -26,7 +28,10 @@ public class ObjectWithConfigVariable {
 
     @Configuration("${name}.dt")
     public Date aDate = null;
-    
+
+    @Configuration(value = "${name}.obj")
+    public List<Integer> ints = Arrays.asList(5, 6, 7);
+
     public ObjectWithConfigVariable(String name) {
         this.name = name;
     }

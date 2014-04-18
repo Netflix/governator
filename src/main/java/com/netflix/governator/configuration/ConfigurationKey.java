@@ -107,4 +107,9 @@ public class ConfigurationKey
 
         return builder.build();
     }
+
+    @Override
+    public String toString() {
+        return rawKey;
+    }
 }
