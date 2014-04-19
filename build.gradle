@@ -1,7 +1,12 @@
 // Establish version and status
 ext.githubProjectName = rootProject.name // Change if github project name is not the same as the root project's name
-group = "com.netflix.${githubProjectName}"
 
+ext {
+	jettyVersion="7.4.1.v20110513"
+	jerseyVersion="1.7"
+}
+
+	
 buildscript {
     repositories {
         mavenLocal()
@@ -26,27 +31,51 @@ apply from: file('gradle/release.gradle')
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
-test {
-    useTestNG()
+subprojects {
+	group = "com.netflix.${githubProjectName}"
+
+	test {
+	    useTestNG()
+	}
+
+	dependencies {
+	    compile     'javax.inject:javax.inject:1'
+	    compile     'com.google.guava:guava:14.0.1'
+	    compile     'org.slf4j:slf4j-api:1.6.3'
+	    compile     'org.hibernate:hibernate-validator:4.1.0.Final'
+	    compile     'org.apache.xbean:xbean-finder:3.11.1'
+	    compile     'org.apache.xbean:xbean-bundleutils:3.11.1'
+	    compile     'asm:asm-all:3.2'
+	    compile     'com.google.inject:guice:3.0'
+	    compile     'com.google.inject.extensions:guice-multibindings:3.0'
+	    compile     'com.netflix.archaius:archaius-core:0.5.12'
+	    compile     'com.google.inject.extensions:guice-grapher:3.0'    // should be provided - only if you want graphing
+	
+	    // if you are using Java 7 you can remove this and switch to the JDK version
+	    compile     'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
+	
+	    testCompile 'org.testng:testng:6.1.1'
+	    testCompile 'org.mockito:mockito-core:1.8.5'
+	    testCompile 'org.slf4j:slf4j-log4j12:1.6.1'
+	}
 }
 
-dependencies {
-    compile     'javax.inject:javax.inject:1'
-    compile     'com.google.guava:guava:14.0.1'
-    compile     'org.slf4j:slf4j-api:1.6.3'
-    compile     'org.hibernate:hibernate-validator:4.1.0.Final'
-    compile     'org.apache.xbean:xbean-finder:3.11.1'
-    compile     'org.apache.xbean:xbean-bundleutils:3.11.1'
-    compile     'asm:asm-all:3.2'
-    compile     'com.google.inject:guice:3.0'
-    compile     'com.google.inject.extensions:guice-multibindings:3.0'
-    compile     'com.netflix.archaius:archaius-core:0.5.12'
-    compile     'com.google.inject.extensions:guice-grapher:3.0'    // should be provided - only if you want graphing
+project(':governator') {
+	apply plugin: 'java'
+	dependencies {
+		
+	}
+}
 
-    // if you are using Java 7 you can remove this and switch to the JDK version
-    compile     'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
-
-    testCompile 'org.testng:testng:6.1.1'
-    testCompile 'org.mockito:mockito-core:1.8.5'
-    testCompile 'org.slf4j:slf4j-log4j12:1.6.1'
+project(':governator-jetty') {
+	apply plugin: 'java'
+	dependencies {
+        compile  project(':governator')
+        compile     "org.eclipse.jetty:jetty-server:$jettyVersion"
+        compile     "org.eclipse.jetty:jetty-servlet:$jettyVersion"
+        compile     "com.sun.jersey:jersey-server:$jerseyVersion"
+        compile     "com.sun.jersey:jersey-core:$jerseyVersion"
+        compile     "com.sun.jersey.contribs:jersey-guice:$jerseyVersion"
+        compile     'javax.servlet:servlet-api:2.5'
+	}
 }

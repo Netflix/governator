@@ -1,1 +1,4 @@
 rootProject.name='governator'
+include 'governator-core'
+include 'governator-jetty'
+project(':governator-core').name = 'governator'
