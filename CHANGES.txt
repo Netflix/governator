@@ -27,6 +27,8 @@ Injector) difficult.
 
 * Support adding multiple Module classes
 
+* Converting to muli-module project
+
 1.2.2 - June 11, 2013
 =====================
 * Issue 59: Add support for multi binding via AutoBindSingleton.
