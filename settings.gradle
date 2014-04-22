@@ -1,1 +1,3 @@
 rootProject.name='governator'
+include 'governator-core'
+project(':governator-core').name = 'governator'
