@@ -16,7 +16,6 @@
 
 package com.netflix.governator.guice;
 
-import com.google.common.collect.Sets;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.MembersInjector;
@@ -42,15 +41,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Set;
 
 public class BootstrapBinder implements Binder
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Binder binder;
-    private final Set<Key<?>> boundKeys = Sets.newHashSet();
-    private final Set<Class<?>> boundClasses = Sets.newHashSet();
-
+    
     @Override
     public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors)
     {
@@ -98,7 +94,6 @@ public class BootstrapBinder implements Binder
     @Override
     public <T> LinkedBindingBuilder<T> bind(Key<T> key)
     {
-        boundKeys.add(key);
         warnOnSpecialized(key.getTypeLiteral().getRawType());
         return binder.bind(key);
     }
@@ -106,7 +101,6 @@ public class BootstrapBinder implements Binder
     @Override
     public <T> AnnotatedBindingBuilder<T> bind(TypeLiteral<T> typeLiteral)
     {
-        boundKeys.add(Key.get(typeLiteral));
         warnOnSpecialized(typeLiteral.getRawType());
         return binder.bind(typeLiteral);
     }
@@ -114,7 +108,6 @@ public class BootstrapBinder implements Binder
     @Override
     public <T> AnnotatedBindingBuilder<T> bind(Class<T> type)
     {
-        boundClasses.add(type);
         warnOnSpecialized(type);
         return binder.bind(type);
     }
@@ -242,16 +235,6 @@ public class BootstrapBinder implements Binder
     BootstrapBinder(Binder binder)
     {
         this.binder = binder;
-    }
-
-    Set<Key<?>> getBoundKeys()
-    {
-        return boundKeys;
-    }
-
-    Set<Class<?>> getBoundClasses()
-    {
-        return boundClasses;
     }
 
     private<T> void    warnOnSpecialized(Class<T> clazz)

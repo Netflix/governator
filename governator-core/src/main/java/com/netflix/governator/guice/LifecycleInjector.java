@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binding;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -38,10 +39,14 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * <p>
@@ -250,21 +255,23 @@ public class LifecycleInjector
             @Override
             protected void configure()
             {
-                for ( Key key : bootstrapBinder.getBoundKeys() )
-                {
-                    Provider instance = injector.getProvider(key);
-                    //noinspection unchecked
-                    bind(key).toProvider(instance);
+                // Manually copy bindings from the bootstrap injector to the simulated child injector.
+                Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
+                for (Entry<Key<?>, Binding<?>> binding : bindings.entrySet()) {
+                    Class<?> cls = binding.getKey().getTypeLiteral().getRawType();
+                    if (   Module.class.isAssignableFrom(cls)
+                        || Injector.class.isAssignableFrom(cls)
+                        || Stage.class.isAssignableFrom(cls)
+                        || Logger.class.isAssignableFrom(cls)
+                        ) {
+                        continue;
+                    }
+                    Provider provider = binding.getValue().getProvider();
+                    bind(binding.getKey()).toProvider(provider);
                 }
-                for ( Class clazz : bootstrapBinder.getBoundClasses() )
-                {
-                    Provider instance = injector.getProvider(clazz);
-                    //noinspection unchecked
-                    bind(clazz).toProvider(instance);
-                }
+                
                 bindScope(LazySingleton.class, LazySingletonScope.get());
                 bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
-                bind(LifecycleManager.class).toInstance(lifecycleManager);
             }
         };
 
