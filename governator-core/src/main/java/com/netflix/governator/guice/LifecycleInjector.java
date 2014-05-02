@@ -39,7 +39,6 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
