@@ -95,7 +95,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withRootModule(Class<?> rootModule) 
     {
-        return withModuleClass((Class<Module>) rootModule);
+        return withModuleClass((Class<? extends Module>) rootModule);
     }
     
     @Override

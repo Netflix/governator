@@ -61,7 +61,7 @@ project(':governator') {
     }
 }
 
-project(':governator-junit') {
+project(':governator-test-junit') {
     apply plugin: 'java'
     dependencies {
         compile     project(':governator')
