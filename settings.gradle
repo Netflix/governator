@@ -1,3 +1,4 @@
 rootProject.name='governator'
 include 'governator-core'
+include 'governator-test-junit'
 project(':governator-core').name = 'governator'

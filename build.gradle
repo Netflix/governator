@@ -55,8 +55,17 @@ subprojects {
 }
 
 project(':governator') {
-	apply plugin: 'java'
-	dependencies {
-		
-	}
+    apply plugin: 'java'
+    dependencies {
+        
+    }
+}
+
+project(':governator-test-junit') {
+    apply plugin: 'java'
+    dependencies {
+        compile     project(':governator')
+        compile     "junit:junit-dep:4.+"
+    
+    }
 }
