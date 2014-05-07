@@ -28,6 +28,7 @@ import com.google.inject.grapher.graphviz.GraphvizRenderer;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -82,6 +83,33 @@ public class Grapher
         for (int i = 0; i < classes.length; i++) {
             roots[i] = Key.get(classes[i]);
         }
+    }
+
+    /**
+     * Creates a new Grapher.
+     *
+     * @param injector the Injector whose dependency graph will be generated
+     * @param packages names of {@code Package}s for the roots of the graph
+     */
+    @Inject
+    public Grapher(Injector injector, String... packages) {
+        this.injector = injector;
+        // Scan all the injection bindings to find the root keys
+        Set<Key<?>> keys = new HashSet<Key<?>>();
+        for (Key<?> k : injector.getAllBindings().keySet()) {
+            Package classPackage = k.getTypeLiteral().getRawType().getPackage();
+            if (classPackage == null) {
+                continue;
+            }
+            String packageName = classPackage.getName();
+            for (String p : packages) {
+                if (packageName.startsWith(p)) {
+                    keys.add(k);
+                    break;
+                }
+            }
+        }
+        this.roots = keys.toArray(new Key<?>[keys.size()]);
     }
 
     /*
