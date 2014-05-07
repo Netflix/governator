@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2013, 2014 Netflix, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public interface LifecycleInjectorBuilder
 {
     /**
      * Specify a bootstrap module
-     * 
+     *
      * @param module the module
      * @return this
      */
@@ -38,20 +38,20 @@ public interface LifecycleInjectorBuilder
 
     /**
      * Specify additional bootstrap modules to use
-     * 
+     *
      * @param modules modules
      * @return this
      */
     public LifecycleInjectorBuilder withAdditionalBootstrapModules(BootstrapModule... modules);
-    
+
     /**
      * Specify additional bootstrap modules to use
-     * 
+     *
      * @param modules modules
      * @return this
      */
     public LifecycleInjectorBuilder withAdditionalBootstrapModules(Iterable<? extends BootstrapModule> modules);
-    
+
     /**
      * Specify standard Guice modules for the main binding phase.  Note that any
      * modules provided in a previous call to withModules will be discarded.
@@ -93,74 +93,74 @@ public interface LifecycleInjectorBuilder
      * may be derived using module dependencies. Module dependencies are specified
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
-     * 
+     *
      * @param mainModule root application module
      * @return this
      */
     @Deprecated
     public LifecycleInjectorBuilder withRootModule(Class<?> mainModule);
-    
+
     /**
-     * Specify a module class from which a set of additional modules may be derived 
+     * Specify a module class from which a set of additional modules may be derived
      * using module dependencies. Module dependencies are specified
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
-     * 
+     *
      * @param module root application module
      * @return this
      */
     public LifecycleInjectorBuilder withModuleClass(Class<? extends Module> module);
-    
+
     /**
-     * Specify a set of module classes from which a set of additional modules may be derived 
+     * Specify a set of module classes from which a set of additional modules may be derived
      * using module dependencies. Module dependencies are specified
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
-     * 
+     *
      * Note that any existing modules that were added will be removed by this call
-     * 
-     * @param module root application module
+     *
+     * @param modules root application modules
      * @return this
      */
     public LifecycleInjectorBuilder withModuleClasses(Iterable<Class<? extends Module>> modules);
-    
+
     /**
-     * Specify a set of module classes from which a set of additional modules may be derived 
+     * Specify a set of module classes from which a set of additional modules may be derived
      * using module dependencies. Module dependencies are specified
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
-     * 
+     *
      * Note that any existing modules that were added will be removed by this call
-     * 
-     * @param module root application module
+     *
+     * @param modules root application modules
      * @return this
      */
     public LifecycleInjectorBuilder withModuleClasses(Class<? extends Module> ... modules);
-    
+
     /**
-     * Specify a set of module classes from which a set of additional modules may be derived 
+     * Specify a set of module classes from which a set of additional modules may be derived
      * using module dependencies. Module dependencies are specified
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
-     * 
+     *
      * Note that any existing modules that were added will be removed by this call
-     * @param module root application module
+     * @param modules root application modules
      * @return this
      */
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Iterable<Class<? extends Module>> modules);
-    
+
     /**
-     * Specify a set of module classes from which a set of additional modules may be derived 
+     * Specify a set of module classes from which a set of additional modules may be derived
      * using module dependencies. Module dependencies are specified
      * using @Inject on the module constructor and indicating the dependent modules
      * as constructor arguments.
-     * 
-     * @param module root application module
+     *
+     * @param modules root application modules
      * @return this
      */
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<? extends Module> ... modules);
-    
-    
+
+
     /**
      * Specify specific {@link AutoBindSingleton} classes that should NOT be bound in the main
      * binding phase
@@ -231,9 +231,9 @@ public interface LifecycleInjectorBuilder
      * {@link LifecycleInjector#createInjector()}
      *
      * @return Guice injector
-     * 
+     *
      * @deprecated this API creates the "main" child injector.
-     * but it has the side effect of calling build() method 
+     * but it has the side effect of calling build() method
      * that will create a new LifecycleInjector.
      * Instead, you should just build() LifecycleInjector object.
      * then call LifecycleInjector.createInjector() directly.
