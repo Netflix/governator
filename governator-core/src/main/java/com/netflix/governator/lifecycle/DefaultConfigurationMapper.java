@@ -10,7 +10,12 @@ import com.netflix.governator.configuration.ConfigurationProvider;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DefaultConfigurationMapper implements ConfigurationMapper {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultConfigurationMapper.class);
+    
     @Override
     public void mapConfiguration(
             ConfigurationProvider configurationProvider, 
@@ -36,7 +41,12 @@ public class DefaultConfigurationMapper implements ConfigurationMapper {
         ConfigurationProcessor configurationProcessor = new ConfigurationProcessor(configurationProvider, configurationDocumentation);
         for ( Field configurationField : methods.fieldsFor(Configuration.class) )
         {
-            configurationProcessor.assignConfiguration(obj, configurationField, overrides);
+            try {
+                configurationProcessor.assignConfiguration(obj, configurationField, overrides);
+            }
+            catch (Exception e) {
+                throw new Exception(String.format("Failed to bind property '%s' for instance of '%s'", configurationField.getName(), obj.getClass().getCanonicalName()), e);
+            }
         }
     }
 

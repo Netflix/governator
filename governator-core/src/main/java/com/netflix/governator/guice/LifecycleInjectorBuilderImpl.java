@@ -20,7 +20,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -113,9 +117,18 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withModuleClasses(Class<? extends Module> ... modules) 
+    public LifecycleInjectorBuilder withModuleClasses(Class<?> ... modules) 
     {
-        this.moduleClasses = ImmutableList.<Class<? extends Module>>copyOf(modules);
+        this.moduleClasses = ImmutableList.<Class<? extends Module>>copyOf(
+            Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
+                @SuppressWarnings("unchecked")
+                @Override
+                @Nullable
+                public Class<? extends Module> apply(@Nullable Class<?> input) {
+                    return (Class<? extends Module>) input;
+                }
+            }
+        ));
         return this;
     }
 
@@ -130,10 +143,17 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<? extends Module> ... modules) {
+    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules) {
         this.moduleClasses = ImmutableList.<Class<? extends Module>>builder()
                 .addAll(this.moduleClasses)
-                .addAll(Lists.newArrayList(modules))
+                .addAll(Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    @Nullable
+                    public Class<? extends Module> apply(@Nullable Class<?> input) {
+                        return (Class<? extends Module>) input;
+                    }
+                }))
                 .build();
         return this;
     }

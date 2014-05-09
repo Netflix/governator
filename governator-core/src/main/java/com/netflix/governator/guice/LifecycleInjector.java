@@ -28,7 +28,10 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.Scope;
+import com.google.inject.Scopes;
 import com.google.inject.Stage;
+import com.google.inject.spi.DefaultBindingScopingVisitor;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
@@ -38,6 +41,7 @@ import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
+
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
@@ -152,12 +156,25 @@ public class LifecycleInjector
      */
     public Injector createChildInjector(Collection<Module> modules)
     {
+        Injector childInjector;
+        
         //noinspection deprecation
         if ( mode == LifecycleInjectorMode.REAL_CHILD_INJECTORS )
         {
-            return injector.createChildInjector(modules);
+            childInjector = injector.createChildInjector(modules);
         }
-        return createSimulatedChildInjector(modules);
+        else 
+        {
+            childInjector = createSimulatedChildInjector(modules);
+        }
+        
+        // For DEVELOPMENT stage we actually do want to eagerly create singletons
+        // explicitly bound in a guice module
+        if (stage.equals(Stage.DEVELOPMENT)) 
+        {
+            forceCreateEagerSingletons(childInjector);
+        }
+        return childInjector;
     }
 
     /**
@@ -216,6 +233,27 @@ public class LifecycleInjector
 
         return createChildInjector(localModules);
     }
+ 
+    /**
+     * Explicit singleton bindings are not eagerly created when running in Stage.DEVELOPMENT.
+     * This method iterates through all explicit bindings (though a guice module) for singletons
+     * and creates them eagerly after the injector was created.
+     * @param injector
+     */
+    public static void forceCreateEagerSingletons(Injector injector) {
+        for (final Binding<?> binding : injector.getBindings().values()) {
+            binding.acceptScopingVisitor(new DefaultBindingScopingVisitor<Void>() {
+
+                @Override
+                public Void visitScope(Scope scope) {
+                    if (scope.equals(Scopes.SINGLETON)) {
+                        binding.getProvider().get();
+                    }
+                    return null;
+                }
+            });
+        }
+    }
 
     LifecycleInjector(
             List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, 
@@ -254,6 +292,9 @@ public class LifecycleInjector
             @Override
             protected void configure()
             {
+                bindScope(LazySingleton.class, LazySingletonScope.get());
+                bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
+                
                 // Manually copy bindings from the bootstrap injector to the simulated child injector.
                 Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
                 for (Entry<Key<?>, Binding<?>> binding : bindings.entrySet()) {
@@ -268,9 +309,6 @@ public class LifecycleInjector
                     Provider provider = binding.getValue().getProvider();
                     bind(binding.getKey()).toProvider(provider);
                 }
-                
-                bindScope(LazySingleton.class, LazySingletonScope.get());
-                bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
             }
         };
 
