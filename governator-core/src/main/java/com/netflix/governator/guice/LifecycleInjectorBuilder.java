@@ -135,7 +135,7 @@ public interface LifecycleInjectorBuilder
      * @param module root application module
      * @return this
      */
-    public LifecycleInjectorBuilder withModuleClasses(Class<? extends Module> ... modules);
+    public LifecycleInjectorBuilder withModuleClasses(Class<?> ... modules);
     
     /**
      * Specify a set of module classes from which a set of additional modules may be derived 
@@ -158,7 +158,7 @@ public interface LifecycleInjectorBuilder
      * @param module root application module
      * @return this
      */
-    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<? extends Module> ... modules);
+    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules);
     
     
     /**
