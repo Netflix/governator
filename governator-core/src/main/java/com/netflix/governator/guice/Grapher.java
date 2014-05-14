@@ -64,7 +64,6 @@ public class Grapher
      * @param injector the Injector whose dependency graph will be generated
      * @param keys {@code Key}s for the roots of the graph
      */
-    @Inject
     public Grapher(Injector injector, Key<?>... keys) {
         this.injector = injector;
         this.roots = keys;
@@ -76,7 +75,6 @@ public class Grapher
      * @param injector the Injector whose dependency graph will be generated
      * @param classes {@code Class}es for the roots of the graph
      */
-    @Inject
     public Grapher(Injector injector, Class<?>... classes) {
         this.injector = injector;
         this.roots = new Key<?>[classes.length];
@@ -91,7 +89,6 @@ public class Grapher
      * @param injector the Injector whose dependency graph will be generated
      * @param packages names of {@code Package}s for the roots of the graph
      */
-    @Inject
     public Grapher(Injector injector, String... packages) {
         this.injector = injector;
         // Scan all the injection bindings to find the root keys
