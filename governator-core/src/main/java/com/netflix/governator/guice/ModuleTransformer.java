@@ -11,6 +11,6 @@ import com.google.inject.Module;
  * @author elandau
  *
  */
-public interface ModuleFilter {
+public interface ModuleTransformer {
     public Collection<Module> call(Collection<Module> modules);
 }

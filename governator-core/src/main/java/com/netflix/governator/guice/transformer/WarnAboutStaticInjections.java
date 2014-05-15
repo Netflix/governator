@@ -1,4 +1,4 @@
-package com.netflix.governator.guice.filters;
+package com.netflix.governator.guice.transformer;
 
 import java.util.Collection;
 
@@ -10,9 +10,9 @@ import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.spi.StaticInjectionRequest;
-import com.netflix.governator.guice.ModuleFilter;
+import com.netflix.governator.guice.ModuleTransformer;
 
-public class WarnAboutStaticInjections implements ModuleFilter {
+public class WarnAboutStaticInjections implements ModuleTransformer {
     private static Logger LOG = LoggerFactory.getLogger(WarnAboutStaticInjections.class);
     
     @Override

@@ -220,37 +220,37 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode);
 
     /**
-     * Just before creating the injector all the modules will run through the filter.
-     * Filters will be executed in the order in which withModuleFilter
+     * Just before creating the injector all the modules will run through the transformer.
+     * Transformers will be executed in the order in which withModuleTransformer
      * is called.  Note that once the first filter is called subsequent calls will only be 
      * given the previous set of filtered modules.
      * 
-     * @param filter
+     * @param transformer
      * @return this
      */
-    public LifecycleInjectorBuilder withModuleFilter(ModuleFilter filter);
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer transformer);
     
     /**
      * Just before creating the injector all the modules will run through the filter.
-     * Filters will be executed in the order in which withModuleFilter
+     * Transformers will be executed in the order in which withModuleTransformer
      * is called.  Note that once the first filter is called subsequent calls will only be 
      * given the previous set of filtered modules.
      * 
-     * @param filter
+     * @param transformer
      * @return this
      */
-    public LifecycleInjectorBuilder withModuleFilters(Collection<? extends ModuleFilter> filter);
+    public LifecycleInjectorBuilder withModuleTransformer(Collection<? extends ModuleTransformer> transformer);
 
     /**
      * Just before creating the injector all the modules will run through the filter.
-     * Filters will be executed in the order in which withModuleFilter
+     * Transformers will be executed in the order in which withModuleTransformer
      * is called.  Note that once the first filter is called subsequent calls will only be 
      * given the previous set of filtered modules.
      * 
-     * @param filter
+     * @param transformer
      * @return this
      */
-    public LifecycleInjectorBuilder withModuleTransforms(ModuleFilter... filter);
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer... transformer);
 
     /**
      * Action to perform after the injector is created.  Note that post injection actions

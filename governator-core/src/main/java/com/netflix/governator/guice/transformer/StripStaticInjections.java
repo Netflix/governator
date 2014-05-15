@@ -1,4 +1,4 @@
-package com.netflix.governator.guice.filters;
+package com.netflix.governator.guice.transformer;
 
 import java.util.Collection;
 import java.util.List;
@@ -10,9 +10,9 @@ import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.spi.StaticInjectionRequest;
-import com.netflix.governator.guice.ModuleFilter;
+import com.netflix.governator.guice.ModuleTransformer;
 
-public class StripStaticInjections implements ModuleFilter {
+public class StripStaticInjections implements ModuleTransformer {
     @Override
     public Collection<Module> call(Collection<Module> modules) {
         final List<Element> noStatics = Lists.newArrayList();

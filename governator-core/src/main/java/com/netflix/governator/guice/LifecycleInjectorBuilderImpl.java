@@ -44,7 +44,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
     private List<Class<? extends Module>> moduleClasses = ImmutableList.of();
     private List<PostInjectorAction> actions = ImmutableList.of();
-    private List<ModuleFilter> filters = ImmutableList.of();
+    private List<ModuleTransformer> transformers = ImmutableList.of();
 
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
     {
@@ -221,10 +221,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withModuleFilter(ModuleFilter filter) {
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer filter) {
         if (filter != null) {
-            this.filters = ImmutableList.<ModuleFilter>builder()
-                .addAll(this.filters)
+            this.transformers = ImmutableList.<ModuleTransformer>builder()
+                .addAll(this.transformers)
                 .add(filter)
                 .build();
         }
@@ -232,10 +232,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withModuleFilters(Collection<? extends ModuleFilter> filters) {
-        if (this.filters != null) {
-            this.filters = ImmutableList.<ModuleFilter>builder()
-                .addAll(this.filters)
+    public LifecycleInjectorBuilder withModuleTransformer(Collection<? extends ModuleTransformer> filters) {
+        if (this.transformers != null) {
+            this.transformers = ImmutableList.<ModuleTransformer>builder()
+                .addAll(this.transformers)
                 .addAll(filters)
                 .build();
         }
@@ -243,10 +243,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withModuleTransforms(ModuleFilter... filters) {
-        if (this.filters != null) {
-            this.filters = ImmutableList.<ModuleFilter>builder()
-                .addAll(this.filters)
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer... filters) {
+        if (this.transformers != null) {
+            this.transformers = ImmutableList.<ModuleTransformer>builder()
+                .addAll(this.transformers)
                 .addAll(ImmutableList.copyOf(filters))
                 .build();
         }
@@ -285,7 +285,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, moduleClasses, filters, actions);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, moduleClasses, transformers, actions);
     }
 
     @Override

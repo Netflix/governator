@@ -79,7 +79,7 @@ public class LifecycleInjector
     private final LifecycleInjectorMode mode;
     private final List<Module> discoveredModules = Lists.newArrayList();
     private ImmutableList<PostInjectorAction> actions;
-    private ImmutableList<ModuleFilter> filters;
+    private ImmutableList<ModuleTransformer> filters;
 
     /**
      * Create a new LifecycleInjector builder
@@ -158,7 +158,7 @@ public class LifecycleInjector
         Injector childInjector;
         
         Collection<Module> localModules = modules;
-        for (ModuleFilter filter  : filters) {
+        for (ModuleTransformer filter  : filters) {
             localModules = filter.call(localModules);
         }
         //noinspection deprecation
@@ -245,7 +245,7 @@ public class LifecycleInjector
             Stage stage, 
             LifecycleInjectorMode mode, 
             List<Class<? extends Module>> moduleClasses, 
-            List<ModuleFilter> transforms, 
+            List<ModuleTransformer> transforms, 
             List<PostInjectorAction> actions)
     {
         this.mode = Preconditions.checkNotNull(mode, "mode cannot be null");
