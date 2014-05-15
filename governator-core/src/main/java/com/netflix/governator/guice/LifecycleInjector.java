@@ -79,7 +79,7 @@ public class LifecycleInjector
     private final LifecycleInjectorMode mode;
     private final List<Module> discoveredModules = Lists.newArrayList();
     private ImmutableList<PostInjectorAction> actions;
-    private ImmutableList<ModuleTransformer> filters;
+    private ImmutableList<ModuleTransformer> transformers;
 
     /**
      * Create a new LifecycleInjector builder
@@ -158,8 +158,8 @@ public class LifecycleInjector
         Injector childInjector;
         
         Collection<Module> localModules = modules;
-        for (ModuleTransformer filter  : filters) {
-            localModules = filter.call(localModules);
+        for (ModuleTransformer transformer  : transformers) {
+            localModules = transformer.call(localModules);
         }
         //noinspection deprecation
         if ( mode == LifecycleInjectorMode.REAL_CHILD_INJECTORS )
@@ -255,7 +255,7 @@ public class LifecycleInjector
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
         this.actions = ImmutableList.copyOf(actions);
-        this.filters = ImmutableList.copyOf(transforms);
+        this.transformers = ImmutableList.copyOf(transforms);
         InternalModuleDependencyModule moduleDepdencyModule = new InternalModuleDependencyModule();
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(this.scanner, bootstrapModules);
