@@ -220,6 +220,63 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode);
 
     /**
+     * Just before creating the injector all the modules will run through the filter.
+     * Filters will be executed in the order in which withModuleFilter
+     * is called.  Note that once the first filter is called subsequent calls will only be 
+     * given the previous set of filtered modules.
+     * 
+     * @param filter
+     * @return this
+     */
+    public LifecycleInjectorBuilder withModuleFilter(ModuleFilter filter);
+    
+    /**
+     * Just before creating the injector all the modules will run through the filter.
+     * Filters will be executed in the order in which withModuleFilter
+     * is called.  Note that once the first filter is called subsequent calls will only be 
+     * given the previous set of filtered modules.
+     * 
+     * @param filter
+     * @return this
+     */
+    public LifecycleInjectorBuilder withModuleFilters(Collection<? extends ModuleFilter> filter);
+
+    /**
+     * Just before creating the injector all the modules will run through the filter.
+     * Filters will be executed in the order in which withModuleFilter
+     * is called.  Note that once the first filter is called subsequent calls will only be 
+     * given the previous set of filtered modules.
+     * 
+     * @param filter
+     * @return this
+     */
+    public LifecycleInjectorBuilder withModuleTransforms(ModuleFilter... filter);
+
+    /**
+     * Action to perform after the injector is created.  Note that post injection actions
+     * are performed in the same order as calls to withPostInjectorAction
+     * @param action
+     * @return
+     */
+    public LifecycleInjectorBuilder withPostInjectorAction(PostInjectorAction action);
+    
+    /**
+     * Actions to perform after the injector is created.  Note that post injection actions
+     * are performed in the same order as calls to withPostInjectorAction
+     * @param action
+     * @return
+     */
+    public LifecycleInjectorBuilder withPostInjectorActions(Collection<? extends PostInjectorAction> action);
+
+    /**
+     * Actions to perform after the injector is created.  Note that post injection actions
+     * are performed in the same order as calls to withPostInjectorAction
+     * @param action
+     * @return
+     */
+    public LifecycleInjectorBuilder withPostInjectorActions(PostInjectorAction... actions);
+
+    /**
      * Build and return the injector
      *
      * @return LifecycleInjector
@@ -240,4 +297,5 @@ public interface LifecycleInjectorBuilder
      */
     @Deprecated
     public Injector createInjector();
+
 }
