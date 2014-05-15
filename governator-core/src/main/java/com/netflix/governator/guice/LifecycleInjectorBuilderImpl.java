@@ -43,6 +43,8 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @SuppressWarnings("deprecation")
     private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
     private List<Class<? extends Module>> moduleClasses = ImmutableList.of();
+    private List<PostInjectorAction> actions = ImmutableList.of();
+    private List<ModuleTransformer> transformers = ImmutableList.of();
 
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
     {
@@ -59,10 +61,13 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withAdditionalBootstrapModules(Iterable<? extends BootstrapModule> additionalBootstrapModules) 
     {
-        this.bootstrapModules = ImmutableList.<BootstrapModule>builder()
-                .addAll(this.bootstrapModules)
-                .addAll(additionalBootstrapModules)
-                .build();
+        if (additionalBootstrapModules != null) 
+        {
+            this.bootstrapModules = ImmutableList.<BootstrapModule>builder()
+                    .addAll(this.bootstrapModules)
+                    .addAll(additionalBootstrapModules)
+                    .build();
+        }
         return this;
     }
 
@@ -76,17 +81,22 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withModules(Iterable<? extends Module> modules)
     {
-        this.modules = ImmutableList.copyOf(modules);
+        if (modules != null) 
+        {
+            this.modules = ImmutableList.copyOf(modules);
+        }
         return this;
     }
 
     @Override
     public LifecycleInjectorBuilder withAdditionalModules(Iterable<? extends Module> additionalModules)
     {
-        this.modules = ImmutableList.<Module>builder()
-                .addAll(this.modules)
-                .addAll(additionalModules)
-                .build();
+        if (additionalModules != null) {
+            this.modules = ImmutableList.<Module>builder()
+                    .addAll(this.modules)
+                    .addAll(additionalModules)
+                    .build();
+        }
         return this;
     }
 
@@ -99,13 +109,17 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withRootModule(Class<?> rootModule) 
     {
+        if (rootModule == null)
+            return this;
         return withModuleClass((Class<? extends Module>) rootModule);
     }
     
     @Override
     public LifecycleInjectorBuilder withModuleClass(Class<? extends Module> module) 
     {
-        this.moduleClasses = ImmutableList.<Class<? extends Module>>of(module);
+        if (module != null) {
+            this.moduleClasses = ImmutableList.<Class<? extends Module>>of(module);
+        }
         return this;
     }
 
@@ -207,9 +221,71 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer filter) {
+        if (filter != null) {
+            this.transformers = ImmutableList.<ModuleTransformer>builder()
+                .addAll(this.transformers)
+                .add(filter)
+                .build();
+        }
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withModuleTransformer(Collection<? extends ModuleTransformer> filters) {
+        if (this.transformers != null) {
+            this.transformers = ImmutableList.<ModuleTransformer>builder()
+                .addAll(this.transformers)
+                .addAll(filters)
+                .build();
+        }
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer... filters) {
+        if (this.transformers != null) {
+            this.transformers = ImmutableList.<ModuleTransformer>builder()
+                .addAll(this.transformers)
+                .addAll(ImmutableList.copyOf(filters))
+                .build();
+        }
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withPostInjectorAction(PostInjectorAction action) {
+        this.actions = ImmutableList.<PostInjectorAction>builder()
+            .addAll(this.actions)
+            .add(action)
+            .build();
+        return this;
+    }
+    
+    @Override
+    public LifecycleInjectorBuilder withPostInjectorActions(Collection<? extends PostInjectorAction> actions) {
+        if (actions != null) {
+            this.actions = ImmutableList.<PostInjectorAction>builder()
+                .addAll(this.actions)
+                .addAll(actions)
+                .build();
+        }
+        return this;
+    }
+    
+    @Override
+    public LifecycleInjectorBuilder withPostInjectorActions(PostInjectorAction... actions) {
+        this.actions = ImmutableList.<PostInjectorAction>builder()
+            .addAll(this.actions)
+            .addAll(ImmutableList.copyOf(actions))
+            .build();
+        return this;
+    }
+    
+    @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, moduleClasses);
+        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, moduleClasses, transformers, actions);
     }
 
     @Override

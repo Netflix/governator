@@ -28,10 +28,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
-import com.google.inject.Scope;
-import com.google.inject.Scopes;
 import com.google.inject.Stage;
-import com.google.inject.spi.DefaultBindingScopingVisitor;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
@@ -81,6 +78,8 @@ public class LifecycleInjector
     private final Stage stage;
     private final LifecycleInjectorMode mode;
     private final List<Module> discoveredModules = Lists.newArrayList();
+    private ImmutableList<PostInjectorAction> actions;
+    private ImmutableList<ModuleTransformer> transformers;
 
     /**
      * Create a new LifecycleInjector builder
@@ -158,22 +157,24 @@ public class LifecycleInjector
     {
         Injector childInjector;
         
+        Collection<Module> localModules = modules;
+        for (ModuleTransformer transformer  : transformers) {
+            localModules = transformer.call(localModules);
+        }
         //noinspection deprecation
         if ( mode == LifecycleInjectorMode.REAL_CHILD_INJECTORS )
         {
-            childInjector = injector.createChildInjector(modules);
+            childInjector = injector.createChildInjector(localModules);
         }
         else 
         {
-            childInjector = createSimulatedChildInjector(modules);
+            childInjector = createSimulatedChildInjector(localModules);
         }
         
-        // For DEVELOPMENT stage we actually do want to eagerly create singletons
-        // explicitly bound in a guice module
-        if (stage.equals(Stage.DEVELOPMENT)) 
-        {
-            forceCreateEagerSingletons(childInjector);
+        for (PostInjectorAction action : actions) {
+            action.call(childInjector);
         }
+        
         return childInjector;
     }
 
@@ -234,30 +235,18 @@ public class LifecycleInjector
         return createChildInjector(localModules);
     }
  
-    /**
-     * Explicit singleton bindings are not eagerly created when running in Stage.DEVELOPMENT.
-     * This method iterates through all explicit bindings (though a guice module) for singletons
-     * and creates them eagerly after the injector was created.
-     * @param injector
-     */
-    public static void forceCreateEagerSingletons(Injector injector) {
-        for (final Binding<?> binding : injector.getBindings().values()) {
-            binding.acceptScopingVisitor(new DefaultBindingScopingVisitor<Void>() {
-
-                @Override
-                public Void visitScope(Scope scope) {
-                    if (scope.equals(Scopes.SINGLETON)) {
-                        binding.getProvider().get();
-                    }
-                    return null;
-                }
-            });
-        }
-    }
-
     LifecycleInjector(
-            List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, 
-            ClasspathScanner scanner, Collection<String> basePackages, Stage stage, LifecycleInjectorMode mode, List<Class<? extends Module>> moduleClasses)
+            List<Module> modules, 
+            Collection<Class<?>> ignoreClasses, 
+            boolean ignoreAllClasses, 
+            List<BootstrapModule> bootstrapModules, 
+            ClasspathScanner scanner, 
+            Collection<String> basePackages, 
+            Stage stage, 
+            LifecycleInjectorMode mode, 
+            List<Class<? extends Module>> moduleClasses, 
+            List<ModuleTransformer> transforms, 
+            List<PostInjectorAction> actions)
     {
         this.mode = Preconditions.checkNotNull(mode, "mode cannot be null");
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
@@ -265,7 +254,8 @@ public class LifecycleInjector
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
-        
+        this.actions = ImmutableList.copyOf(actions);
+        this.transformers = ImmutableList.copyOf(transforms);
         InternalModuleDependencyModule moduleDepdencyModule = new InternalModuleDependencyModule();
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(this.scanner, bootstrapModules);
