@@ -11,7 +11,7 @@ public class TestPostInjectAction {
     public void testPostInjectReport() {
         GrapherAction action = new GrapherAction();
         LifecycleInjector.builder()
-            .withPostCreateInjectorAction(action)
+            .withPostInjectorAction(action)
         .build()
         .createInjector();
         
