@@ -45,7 +45,7 @@ public class TestStandaloneApplication {
         shutdownCalled.set(false);
     }
     
-    @Test
+    @Test(enabled=false)
     public void shouldCreateSingletonAndExitAfter1Second() throws Exception {
         Stopwatch sw = new Stopwatch().start();
         
