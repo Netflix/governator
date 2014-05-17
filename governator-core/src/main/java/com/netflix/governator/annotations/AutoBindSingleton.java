@@ -55,4 +55,10 @@ public @interface AutoBindSingleton
      * @return true/false
      */
     boolean multiple() default false;
+    
+    /**
+     * If true, instances will be created eagerly.
+     * @return
+     */
+    boolean eager() default true;
 }
