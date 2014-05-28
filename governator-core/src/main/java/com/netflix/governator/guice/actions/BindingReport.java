@@ -21,6 +21,10 @@ public class BindingReport implements PostInjectorAction {
         this.label = label;
     }
     
+    public BindingReport() {
+        this(">>>> GUICE BINDING REPORT <<<<");
+    }
+    
     @Override
     public void call(Injector injector) {
         LOG.info("Bindings for " + label);
