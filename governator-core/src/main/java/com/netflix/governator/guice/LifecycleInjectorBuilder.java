@@ -1,5 +1,5 @@
 /*
- * Copyright 2013, 2014 Netflix, Inc.
+ * Copyright 2013 Netflix, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ public interface LifecycleInjectorBuilder
      * @param modules root application modules
      * @return this
      */
-    public LifecycleInjectorBuilder withModuleClasses(Class<? extends Module> ... modules);
+    public LifecycleInjectorBuilder withModuleClasses(Class<?> ... modules);
 
     /**
      * Specify a set of module classes from which a set of additional modules may be derived
@@ -158,8 +158,7 @@ public interface LifecycleInjectorBuilder
      * @param modules root application modules
      * @return this
      */
-    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<? extends Module> ... modules);
-
+    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules);
 
     /**
      * Specify specific {@link AutoBindSingleton} classes that should NOT be bound in the main
@@ -220,6 +219,63 @@ public interface LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode);
 
     /**
+     * Just before creating the injector all the modules will run through the transformer.
+     * Transformers will be executed in the order in which withModuleTransformer
+     * is called.  Note that once the first filter is called subsequent calls will only be
+     * given the previous set of filtered modules.
+     *
+     * @param transformer
+     * @return this
+     */
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer transformer);
+
+    /**
+     * Just before creating the injector all the modules will run through the filter.
+     * Transformers will be executed in the order in which withModuleTransformer
+     * is called.  Note that once the first filter is called subsequent calls will only be
+     * given the previous set of filtered modules.
+     *
+     * @param transformer
+     * @return this
+     */
+    public LifecycleInjectorBuilder withModuleTransformer(Collection<? extends ModuleTransformer> transformer);
+
+    /**
+     * Just before creating the injector all the modules will run through the filter.
+     * Transformers will be executed in the order in which withModuleTransformer
+     * is called.  Note that once the first filter is called subsequent calls will only be
+     * given the previous set of filtered modules.
+     *
+     * @param transformer
+     * @return this
+     */
+    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer... transformer);
+
+    /**
+     * Action to perform after the injector is created.  Note that post injection actions
+     * are performed in the same order as calls to withPostInjectorAction
+     * @param action
+     * @return
+     */
+    public LifecycleInjectorBuilder withPostInjectorAction(PostInjectorAction action);
+
+    /**
+     * Actions to perform after the injector is created.  Note that post injection actions
+     * are performed in the same order as calls to withPostInjectorAction
+     * @param action
+     * @return
+     */
+    public LifecycleInjectorBuilder withPostInjectorActions(Collection<? extends PostInjectorAction> action);
+
+    /**
+     * Actions to perform after the injector is created.  Note that post injection actions
+     * are performed in the same order as calls to withPostInjectorAction
+     * @param action
+     * @return
+     */
+    public LifecycleInjectorBuilder withPostInjectorActions(PostInjectorAction... actions);
+
+    /**
      * Build and return the injector
      *
      * @return LifecycleInjector
@@ -240,4 +296,5 @@ public interface LifecycleInjectorBuilder
      */
     @Deprecated
     public Injector createInjector();
+
 }

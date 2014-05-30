@@ -76,7 +76,7 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
     @Test(dataProvider = "builders")
     public void testModuleDependency(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
-        lifecycleInjectorBuilder.withRootModule(ModuleB.class).build().createInjector();
+        lifecycleInjectorBuilder.withAdditionalModuleClasses(ModuleB.class).build().createInjector();
     }
 
     @Singleton

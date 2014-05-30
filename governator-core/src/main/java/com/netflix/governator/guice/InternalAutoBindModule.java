@@ -23,14 +23,20 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.Scope;
+import com.google.inject.ScopeAnnotation;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
+import com.google.inject.binder.ScopedBindingBuilder;
 import com.google.inject.internal.MoreTypes;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
+import com.netflix.governator.guice.lazy.LazySingleton;
+import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -195,12 +201,12 @@ class InternalAutoBindModule extends AbstractModule
                 {
                     Multibinder<?> multibinder = Multibinder.newSetBinder(binder(), (Class)foundBindingClass);
                     //noinspection unchecked
-                    multibinder.addBinding().to((Class)clazz).asEagerSingleton();
+                    applyScope(multibinder.addBinding().to((Class)clazz), clazz, annotation);
                 }
                 else
                 {
                     //noinspection unchecked
-                    binder().bind((Class)foundBindingClass).to(clazz).asEagerSingleton();
+                    applyScope(binder().bind((Class)foundBindingClass).to(clazz), clazz, annotation);
                 }
             }
             else if ( foundBindingClass instanceof Type )
@@ -210,12 +216,12 @@ class InternalAutoBindModule extends AbstractModule
                 {
                     Multibinder<?> multibinder = Multibinder.newSetBinder(binder(), typeLiteral);
                     //noinspection unchecked
-                    multibinder.addBinding().to((Class)clazz).asEagerSingleton();
+                    applyScope(multibinder.addBinding().to((Class)clazz), clazz, annotation);
                 }
                 else
                 {
                     //noinspection unchecked
-                    binder().bind(typeLiteral).to(clazz).asEagerSingleton();
+                	applyScope(binder().bind(typeLiteral).to(clazz), clazz, annotation);
                 }
             }
             else
@@ -226,10 +232,35 @@ class InternalAutoBindModule extends AbstractModule
         else
         {
             Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) must have either value or baseClass set");
-            binder().bind(clazz).asEagerSingleton();
+            applyScope(binder().bind(clazz), clazz, annotation);
         }
     }
 
+    private void applyScope(ScopedBindingBuilder builder, Class<?> clazz, AutoBindSingleton annotation) {
+        if (hasScopeAnnotation(clazz)) {
+            // Honor scoped annotations first
+        }
+        else if (annotation.eager())
+    	{
+    		builder.asEagerSingleton();
+    	}
+    	else 
+    	{
+    	    builder.in(LazySingletonScope.get());
+    	}
+    }
+    
+    private boolean hasScopeAnnotation(Class<?> clazz) {
+    	Annotation scopeAnnotation = null;
+    	for (Annotation annot : clazz.getAnnotations()) {
+    		if (annot.annotationType().isAnnotationPresent(ScopeAnnotation.class)) {
+    			Preconditions.checkState(scopeAnnotation == null, "Multiple scopes not allowed");
+    			scopeAnnotation = annot;
+    		}
+    	}
+    	return scopeAnnotation != null;
+    }
+    
     private Class<?> getAnnotationBaseClass(AutoBindSingleton annotation)
     {
         Class<?> annotationValue = annotation.value();

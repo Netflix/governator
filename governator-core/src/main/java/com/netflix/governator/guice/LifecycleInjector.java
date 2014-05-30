@@ -38,6 +38,7 @@ import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
+
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,6 +78,8 @@ public class LifecycleInjector
     private final Stage stage;
     private final LifecycleInjectorMode mode;
     private final List<Module> discoveredModules = Lists.newArrayList();
+    private ImmutableList<PostInjectorAction> actions;
+    private ImmutableList<ModuleTransformer> transformers;
 
     /**
      * Create a new LifecycleInjector builder
@@ -152,12 +155,27 @@ public class LifecycleInjector
      */
     public Injector createChildInjector(Collection<Module> modules)
     {
+        Injector childInjector;
+        
+        Collection<Module> localModules = modules;
+        for (ModuleTransformer transformer  : transformers) {
+            localModules = transformer.call(localModules);
+        }
         //noinspection deprecation
         if ( mode == LifecycleInjectorMode.REAL_CHILD_INJECTORS )
         {
-            return injector.createChildInjector(modules);
+            childInjector = injector.createChildInjector(localModules);
         }
-        return createSimulatedChildInjector(modules);
+        else 
+        {
+            childInjector = createSimulatedChildInjector(localModules);
+        }
+        
+        for (PostInjectorAction action : actions) {
+            action.call(childInjector);
+        }
+        
+        return childInjector;
     }
 
     /**
@@ -216,10 +234,19 @@ public class LifecycleInjector
 
         return createChildInjector(localModules);
     }
-
+ 
     LifecycleInjector(
-            List<Module> modules, Collection<Class<?>> ignoreClasses, boolean ignoreAllClasses, List<BootstrapModule> bootstrapModules, 
-            ClasspathScanner scanner, Collection<String> basePackages, Stage stage, LifecycleInjectorMode mode, List<Class<? extends Module>> moduleClasses)
+            List<Module> modules, 
+            Collection<Class<?>> ignoreClasses, 
+            boolean ignoreAllClasses, 
+            List<BootstrapModule> bootstrapModules, 
+            ClasspathScanner scanner, 
+            Collection<String> basePackages, 
+            Stage stage, 
+            LifecycleInjectorMode mode, 
+            List<Class<? extends Module>> moduleClasses, 
+            List<ModuleTransformer> transforms, 
+            List<PostInjectorAction> actions)
     {
         this.mode = Preconditions.checkNotNull(mode, "mode cannot be null");
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
@@ -227,7 +254,8 @@ public class LifecycleInjector
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
         this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
-        
+        this.actions = ImmutableList.copyOf(actions);
+        this.transformers = ImmutableList.copyOf(transforms);
         InternalModuleDependencyModule moduleDepdencyModule = new InternalModuleDependencyModule();
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(this.scanner, bootstrapModules);
@@ -254,6 +282,9 @@ public class LifecycleInjector
             @Override
             protected void configure()
             {
+                bindScope(LazySingleton.class, LazySingletonScope.get());
+                bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
+                
                 // Manually copy bindings from the bootstrap injector to the simulated child injector.
                 Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
                 for (Entry<Key<?>, Binding<?>> binding : bindings.entrySet()) {
@@ -268,9 +299,6 @@ public class LifecycleInjector
                     Provider provider = binding.getValue().getProvider();
                     bind(binding.getKey()).toProvider(provider);
                 }
-                
-                bindScope(LazySingleton.class, LazySingletonScope.get());
-                bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
             }
         };
 
