@@ -1,6 +1,10 @@
 package com.netflix.governator.guice;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 import junit.framework.Assert;
 
@@ -31,11 +35,29 @@ public class TestPostInjectAction {
         
     }
     
+    private String testName;
+    
+    @BeforeMethod
+    public void handleTestMethodName(Method method)
+    {
+        testName = method.getName(); 
+    }
+    
+    @Singleton
+    public static class Transitive {
+        private static AtomicInteger counter = new AtomicInteger();
+        
+        public Transitive() {
+            counter.incrementAndGet();
+        }
+    }
+    
     @Singleton
     public static class FooImpl implements Foo {
         private static AtomicInteger counter = new AtomicInteger();
         
-        public FooImpl() {
+        @Inject
+        public FooImpl(Provider<Transitive> transitive) {
             counter.incrementAndGet();
         }
     }
@@ -43,7 +65,8 @@ public class TestPostInjectAction {
     public static class FooNotAnnotated implements Foo {
         private static AtomicInteger counter = new AtomicInteger();
         
-        public FooNotAnnotated() {
+        @Inject
+        public FooNotAnnotated(Provider<Transitive> transitive) {
             counter.incrementAndGet();
         }
     }
@@ -52,6 +75,7 @@ public class TestPostInjectAction {
     public void before() {
         FooImpl.counter.set(0);
         FooNotAnnotated.counter.set(0);
+        Transitive.counter.set(0);
     }
     
     @Test
@@ -59,7 +83,7 @@ public class TestPostInjectAction {
         LifecycleInjector.builder()
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
-            .withPostInjectorAction(new BindingReport())
+            .withPostInjectorAction(new BindingReport(testName))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .withModules(new AbstractModule() {
                 @Override
@@ -71,12 +95,13 @@ public class TestPostInjectAction {
         .createInjector();
         
         Assert.assertEquals(1, FooImpl.counter.get());
+        Assert.assertEquals(0, Transitive.counter.get());
     }
     
     @Test
     public void testInterfaceSingleton() {
         LifecycleInjector.builder()
-            .withPostInjectorAction(new BindingReport())
+            .withPostInjectorAction(new BindingReport(testName))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
@@ -90,12 +115,31 @@ public class TestPostInjectAction {
         .createInjector();
         
         Assert.assertEquals(1, FooImpl.counter.get());
+        Assert.assertEquals(0, Transitive.counter.get());
+    }
+    
+    @Test
+    public void testInterfaceSingletonProductionStage() {
+        LifecycleInjector.builder()
+            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new CreateAllBoundSingletons())
+            .withModules(new AbstractModule() {
+                @Override
+                protected void configure() {
+                    bind(Foo.class).to(FooImpl.class);
+                }
+            })
+        .build()
+        .createInjector();
+        
+        Assert.assertEquals(1, FooImpl.counter.get());
+        Assert.assertEquals(1, Transitive.counter.get());
     }
     
     @Test
     public void testScopedSingleton() {
         LifecycleInjector.builder()
-            .withPostInjectorAction(new BindingReport())
+            .withPostInjectorAction(new BindingReport(testName))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
@@ -109,6 +153,9 @@ public class TestPostInjectAction {
         .createInjector();
         
         Assert.assertEquals(1, FooNotAnnotated.counter.get());
+        Assert.assertEquals(0, Transitive.counter.get());
     }
+    
+    
 
 }
