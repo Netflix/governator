@@ -36,15 +36,18 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 class InternalLifecycleModule implements Module
 {
-    private final Set<Dependency<?>> seen = new HashSet<Dependency<?>>();
+    // this really serves as a Set purpose.
+    // put dummy boolean as Map value.
+    // value is really not important here.
+    private final ConcurrentHashMap<Dependency<?>, Boolean> seen = new ConcurrentHashMap<Dependency<?>, Boolean>();
 
     private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
         .newBuilder()
@@ -172,7 +175,8 @@ class InternalLifecycleModule implements Module
         List<Dependency<?>> dependencies = injectionPoint.getDependencies();
         for ( Dependency<?> dependency : dependencies )
         {
-            if ( !seen.add(dependency) )
+            Boolean prev = seen.putIfAbsent(dependency, Boolean.TRUE);
+            if ( prev != null )
             {
                 continue;
             }
