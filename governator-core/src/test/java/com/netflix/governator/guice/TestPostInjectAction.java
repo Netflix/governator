@@ -133,7 +133,7 @@ public class TestPostInjectAction {
         .createInjector();
         
         Assert.assertEquals(1, FooImpl.counter.get());
-        Assert.assertEquals(1, Transitive.counter.get());
+        Assert.assertEquals(0, Transitive.counter.get());
     }
     
     @Test

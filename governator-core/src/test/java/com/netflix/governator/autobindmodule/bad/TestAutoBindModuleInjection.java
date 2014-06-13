@@ -1,34 +1,38 @@
-package com.netflix.governator.autobind.moduleinjection;
+package com.netflix.governator.autobindmodule.bad;
 
 import javax.inject.Inject;
 
 import org.testng.annotations.Test;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.CreationException;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.LifecycleInjector;
 
 public class TestAutoBindModuleInjection {
-    public static class FooModule extends AbstractModule {
-        @Override
-        protected void configure() {
-        }
+    public static class Foo {
+        
     }
     
     @AutoBindSingleton
     public static class MyModule extends AbstractModule {
+        
         @Inject
-        MyModule(FooModule foo) {
+        MyModule(Foo foo) {
+            
         }
         
         @Override
         protected void configure() {
+            // TODO Auto-generated method stub
+            
         }
+        
     }
     
-    @Test
-    public void shouldInjectModule() {
-        LifecycleInjector.builder().usingBasePackages("com.netflix.governator.autobind.moduleinjection")
+    @Test(expectedExceptions=CreationException.class)
+    public void shouldFailToInjectIntoModule() {
+        LifecycleInjector.builder().usingBasePackages(TestAutoBindModuleInjection.class.getPackage().getName())
             .build()
             .createInjector();
         
