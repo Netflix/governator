@@ -30,6 +30,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.binder.ScopedBindingBuilder;
 import com.google.inject.internal.MoreTypes;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.spi.Dependency;
+import com.google.inject.spi.InjectionPoint;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
@@ -174,6 +176,16 @@ class InternalAutoBindModule extends AbstractModule
                 Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for Modules");
 
                 Class<Module> moduleClass = (Class<Module>)clazz;
+                
+                // Restrict @AutoBindSingleton modules to only allow injection of other modules
+                // Otherwise we risk JIT pulling in objects for which bindings have not yet
+                // been specified on the main injector
+                InjectionPoint ip = InjectionPoint.forConstructorOf(moduleClass);
+                for (Dependency dep : ip.getDependencies()) {
+                    Preconditions.checkState(
+                            Module.class.isAssignableFrom(dep.getKey().getTypeLiteral().getRawType()),
+                            "Only Modules may be injected into a Module");
+                }
                 Module module = injector.getInstance(moduleClass);
                 binder().install(module);
             }

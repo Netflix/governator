@@ -16,6 +16,20 @@
 
 package com.netflix.governator.guice;
 
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
+
+import javax.annotation.Resource;
+import javax.annotation.Resources;
+
+import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -29,24 +43,16 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Stage;
+import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.Multibinder;
 import com.netflix.governator.annotations.AutoBindSingleton;
+import com.netflix.governator.guice.annotations.Bootstrap;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
-import javax.annotation.Resource;
-import javax.annotation.Resources;
-
-import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 /**
  * <p>
@@ -89,6 +95,57 @@ public class LifecycleInjector
     public static LifecycleInjectorBuilder builder()
     {
         return new LifecycleInjectorBuilderImpl();
+    }
+    
+    /**
+     * This is a shortcut to using the LifecycleInjectorBuilder using annotations.
+     * 
+     * Using bootstrap a main application class can simply be annotated with 
+     * custom annotations that are mapped to {@link LifecycleInjectorBuilderSuite}'s.
+     * Each annotations can then map to a subsystem or feature that is enabled on 
+     * the main application.
+     * 
+     * @param main Main application bootstrap class
+     * @return The created injector
+     */
+    @Beta
+    public static Injector bootstrap(Class<?> main) {
+        
+        List<Module> modules = Lists.newArrayList();
+        
+        LifecycleInjectorBuilder builder = LifecycleInjector.builder();
+        Set<Class<? extends LifecycleInjectorBuilderSuite>> suites = Sets.newLinkedHashSet();
+        // Iterate through all annotations of the main class and convert them into
+        // LifecycleInjectorBuilderSuite's that are applied to the one injector.
+        for (final Annotation annot : main.getDeclaredAnnotations()) {
+            final Class<? extends Annotation> type = annot.annotationType();
+            Bootstrap bootstrap = type.getAnnotation(Bootstrap.class);
+            if (bootstrap != null) {
+                suites.add(bootstrap.value());
+
+                modules.add(new AbstractModule() {
+                    @SuppressWarnings({ "unchecked", "rawtypes" })
+                    @Override
+                    protected void configure() {
+                        bind(Key.get(type)).toProvider(new Provider() {
+                            @Override
+                            public Object get() {
+                                return annot;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Create and apply all suites
+        Injector injector = Guice.createInjector(modules);
+        for (Class<? extends LifecycleInjectorBuilderSuite> suiteBootstrap : suites) {
+            injector.getInstance(suiteBootstrap).configure(builder);
+        }
+        
+        // Finally, create and return the injector
+        return builder.build().createInjector();
     }
 
     /**

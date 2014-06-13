@@ -16,6 +16,7 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Stage;
 import com.netflix.governator.guice.actions.BindingReport;
+import com.netflix.governator.guice.actions.CreateAllBoundSingletons;
 
 public class TestTransitiveNonLazySingletons {
     
@@ -56,7 +57,7 @@ public class TestTransitiveNonLazySingletons {
     }
     
     @Test
-    public void shouldNotCreateLazyTransitiveSingletonWithChildInjector() {
+    public void shouldNotCreateLazyTransitiveSingleton_Production_Child() {
         Injector injector = LifecycleInjector.builder()
                 .withModules(new AbstractModule() {
                     @Override
@@ -73,7 +74,7 @@ public class TestTransitiveNonLazySingletons {
     }
     
     @Test
-    public void testIncorrectCreationOfTransitiveSingletonWithNoChildInjector() {
+    public void shouldCreateAllSingletons_Production_NoChild() {
         Injector injector = LifecycleInjector.builder()
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
             .withModules(new AbstractModule() {
@@ -91,7 +92,7 @@ public class TestTransitiveNonLazySingletons {
     }
     
     @Test
-    public void testNoTransitiveSingletonCreation() {
+    public void shouldNotCreateLazyTransitiveSingleton_Development_NoChild() {
         Injector injector = LifecycleInjector.builder()
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
@@ -109,4 +110,42 @@ public class TestTransitiveNonLazySingletons {
         Assert.assertEquals(1,  ThisShouldBeEager.counter.get());
     }
     
+    @Test
+    public void shouldNotCreateAnyNonEagerSingletons_Development_NoChild() {
+        Injector injector = LifecycleInjector.builder()
+                .inStage(Stage.DEVELOPMENT)
+                .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
+                .withModules(new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(ThisShouldBeEager.class);
+                    }
+                })
+                .withPostInjectorAction(new BindingReport(testName))
+                .build()
+                .createInjector();
+            
+            Assert.assertEquals(0,  ThisShouldBeLazy.counter.get());
+            Assert.assertEquals(0,  ThisShouldBeEager.counter.get());
+    }
+    
+    @Test
+    public void shouldPostCreateAllBoundNonTransitiveSingletons_Development_NoChild() {
+        Injector injector = LifecycleInjector.builder()
+                .inStage(Stage.DEVELOPMENT)
+                .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
+                .withModules(new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(ThisShouldBeEager.class);
+                    }
+                })
+                .withPostInjectorAction(new BindingReport(testName))
+                .withPostInjectorAction(new CreateAllBoundSingletons())
+                .build()
+                .createInjector();
+            
+            Assert.assertEquals(0,  ThisShouldBeLazy.counter.get());
+            Assert.assertEquals(1,  ThisShouldBeEager.counter.get());
+    }
 }
