@@ -82,7 +82,7 @@ public class Grapher
             out.write(graph());
         }
         finally {
-            Closeables.close(out, false);
+            Closeables.close(out, true);
         }
     }
 
