@@ -16,39 +16,37 @@ import com.netflix.governator.lifecycle.LifecycleManager;
  * 1.  Mechanism to customize the configuration via external modules.
  * 2.  Auto shutdown the lifecycle manager when a test ends
  * 3.  Methods to test whether certain bindings were heard and injected
- * 
+ *
  * Usage
- * 
+ *
  * <pre>
- * {@code
  * public class MyUnitTest {
- *     @Rule
+ *     &#64;Rule
  *     public LifecycleTester tester = new LifecycleTester(new MyTestSuite());
- *     
- *     @Test
+ *
+ *     &#64;Test
  *     public void test() {
- *         // Test specific setup 
+ *         // Test specific setup
  *         tester.builder().
  *             withAdditionalModule(new TheModuleImTesting());
- *         
+ *
  *         // Creates the injector and start LifecycleManager
  *         tester.start();
- *         
+ *
  *         // Your test code goes here
- *         
+ *
  *     } // On termination the LifecycleTester will shutdown LifecycleManager
  * }
- * 
- * }
+ *
  * </pre>
- * 
- * public static class 
+ *
+ * public static class
  * @author elandau
  */
 public class LifecycleTester extends ExternalResource {
     private LifecycleInjectorBuilder builder;
     private Injector injector;
-    
+
     public LifecycleTester(List<LifecycleInjectorBuilderSuite> suites) {
         builder = LifecycleInjector.builder();
         if (suites != null) {
@@ -57,14 +55,14 @@ public class LifecycleTester extends ExternalResource {
             }
         }
     }
-    
+
     public LifecycleTester(LifecycleInjectorBuilderSuite ... suites) {
         this(Lists.newArrayList(suites));
     }
-    
+
     /**
-     * 
-     * @return
+     *
+     * @return the new Injector
      */
     public Injector start() {
         injector = builder.build().createInjector();
@@ -76,11 +74,11 @@ public class LifecycleTester extends ExternalResource {
         }
         return injector;
     }
-    
+
     public LifecycleInjectorBuilder builder() {
         return builder;
     }
-    
+
     public <T> T getInstance(Class<T> type) {
         return injector.getInstance(type);
     }

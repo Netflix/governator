@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2013, 2014 Netflix, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.google.common.io.Closeables;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.grapher.GrapherModule;
 import com.google.inject.grapher.InjectorGrapher;
 import com.google.inject.grapher.graphviz.GraphvizModule;
@@ -27,7 +28,8 @@ import com.google.inject.grapher.graphviz.GraphvizRenderer;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
-
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * An object that can generate a graph showing a Guice Dependency Injection graph.
@@ -35,12 +37,11 @@ import java.io.PrintWriter;
  * @see <a href="http://www.graphviz.org/">GraphViz</a>
  * @see <a href="http://code.google.com/p/google-guice/wiki/Grapher">Guice Grapher</a>
  * @see <a href="http://code.google.com/p/jrfonseca/wiki/XDot">XDot, an interactive viewer for Dot files</a>
- * @author $Author: slanning $
- * @version $Revision: #1 $
  */
 public class Grapher
 {
     private final Injector injector;
+    private final Key<?>[] roots;
 
     /*
      * Constructors
@@ -54,6 +55,58 @@ public class Grapher
     @Inject
     public Grapher(Injector injector) {
         this.injector = injector;
+        this.roots = null;
+    }
+
+    /**
+     * Creates a new Grapher.
+     *
+     * @param injector the Injector whose dependency graph will be generated
+     * @param keys {@code Key}s for the roots of the graph
+     */
+    public Grapher(Injector injector, Key<?>... keys) {
+        this.injector = injector;
+        this.roots = keys;
+    }
+
+    /**
+     * Creates a new Grapher.
+     *
+     * @param injector the Injector whose dependency graph will be generated
+     * @param classes {@code Class}es for the roots of the graph
+     */
+    public Grapher(Injector injector, Class<?>... classes) {
+        this.injector = injector;
+        this.roots = new Key<?>[classes.length];
+        for (int i = 0; i < classes.length; i++) {
+            roots[i] = Key.get(classes[i]);
+        }
+    }
+
+    /**
+     * Creates a new Grapher.
+     *
+     * @param injector the Injector whose dependency graph will be generated
+     * @param packages names of {@code Package}s for the roots of the graph
+     */
+    public Grapher(Injector injector, String... packages) {
+        this.injector = injector;
+        // Scan all the injection bindings to find the root keys
+        Set<Key<?>> keys = new HashSet<Key<?>>();
+        for (Key<?> k : injector.getAllBindings().keySet()) {
+            Package classPackage = k.getTypeLiteral().getRawType().getPackage();
+            if (classPackage == null) {
+                continue;
+            }
+            String packageName = classPackage.getName();
+            for (String p : packages) {
+                if (packageName.startsWith(p)) {
+                    keys.add(k);
+                    break;
+                }
+            }
+        }
+        this.roots = keys.toArray(new Key<?>[keys.size()]);
     }
 
     /*
@@ -97,7 +150,11 @@ public class Grapher
         Injector localInjector = Guice.createInjector(new GrapherModule(), new GraphvizModule());
         GraphvizRenderer renderer = localInjector.getInstance(GraphvizRenderer.class);
         renderer.setOut(out).setRankdir("TB");
-        localInjector.getInstance(InjectorGrapher.class).of(injector).graph();
+        InjectorGrapher g = localInjector.getInstance(InjectorGrapher.class).of(injector);
+        if (roots != null) {
+            g.rootedAt(roots);
+        }
+        g.graph();
         return fixupGraph(baos.toString("UTF-8"));
     }
 
@@ -113,13 +170,14 @@ public class Grapher
     }
 
     private String hideClassPaths(String s) {
-      s = s.replaceAll("\\w[a-z\\d_\\.]+\\.([A-Z][A-Za-z\\d_]*)", "");
+      s = s.replaceAll("\\w[a-z\\d_\\.]+\\.([A-Z][A-Za-z\\d_\\$]*)", "$1");
       s = s.replaceAll("value=[\\w-]+", "random");
       return s;
    }
 
     private String fixGrapherBug(String s) {
       s = s.replaceAll("style=invis", "style=solid");
+      s = s.replaceAll("margin=(\\S+), ", "margin=\"$1\", ");
       return s;
    }
 
