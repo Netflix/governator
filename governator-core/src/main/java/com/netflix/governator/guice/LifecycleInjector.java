@@ -43,8 +43,6 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Stage;
-import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.annotations.Bootstrap;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
@@ -80,10 +78,8 @@ public class LifecycleInjector
     private final boolean ignoreAllClasses;
     private final LifecycleManager lifecycleManager;
     private final Injector injector;
-    private final BootstrapBinder bootstrapBinder;
     private final Stage stage;
     private final LifecycleInjectorMode mode;
-    private final List<Module> discoveredModules = Lists.newArrayList();
     private ImmutableList<PostInjectorAction> actions;
     private ImmutableList<ModuleTransformer> transformers;
 
@@ -270,8 +266,7 @@ public class LifecycleInjector
         // will be created in the same order as the bind() calls are made.
         // Note that the singleton ordering is only guaranteed for 
         // singleton scope.
-        List<Module> localModules = Lists.newArrayList(discoveredModules);
-        
+        List<Module> localModules = Lists.newArrayList();
         if ( additionalModules != null )
         {
             localModules.addAll(additionalModules);
@@ -301,7 +296,6 @@ public class LifecycleInjector
             Collection<String> basePackages, 
             Stage stage, 
             LifecycleInjectorMode mode, 
-            List<Class<? extends Module>> moduleClasses, 
             List<ModuleTransformer> transforms, 
             List<PostInjectorAction> actions)
     {
@@ -313,23 +307,16 @@ public class LifecycleInjector
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
         this.actions = ImmutableList.copyOf(actions);
         this.transformers = ImmutableList.copyOf(transforms);
-        InternalModuleDependencyModule moduleDepdencyModule = new InternalModuleDependencyModule();
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(this.scanner, bootstrapModules);
         injector = Guice.createInjector
         (
             stage,
             internalBootstrapModule,
-            new InternalLifecycleModule(lifecycleManagerRef),
-            moduleDepdencyModule
+            new InternalLifecycleModule(lifecycleManagerRef)
         );
-        for (Class<? extends Module> moduleClass : moduleClasses) {
-            injector.getInstance(moduleClass);
-        }
-        this.discoveredModules.addAll(moduleDepdencyModule.getModules());
         lifecycleManager = injector.getInstance(LifecycleManager.class);
         lifecycleManagerRef.set(lifecycleManager);
-        bootstrapBinder = internalBootstrapModule.getBootstrapBinder();
     }
 
     private Injector createSimulatedChildInjector(Collection<Module> modules)

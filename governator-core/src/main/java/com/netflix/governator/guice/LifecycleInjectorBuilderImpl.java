@@ -33,7 +33,7 @@ import com.netflix.governator.lifecycle.ClasspathScanner;
 
 class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
 {
-    private List<Module> modules = Lists.newArrayList();
+    private ModuleListBuilder modules = new ModuleListBuilder();
     private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
     private Collection<String> basePackages = Lists.newArrayList();
     private boolean ignoreAllClasses = false;
@@ -42,7 +42,6 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private Stage stage = Stage.PRODUCTION;
     @SuppressWarnings("deprecation")
     private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
-    private List<Class<? extends Module>> moduleClasses = ImmutableList.of();
     private List<PostInjectorAction> actions = ImmutableList.of();
     private List<ModuleTransformer> transformers = ImmutableList.of();
 
@@ -74,7 +73,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withModules(Module... modules)
     {
-        this.modules = ImmutableList.copyOf(modules);
+        this.modules = new ModuleListBuilder().includeModules(ImmutableList.copyOf(modules));
         return this;
     }
 
@@ -83,7 +82,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     {
         if (modules != null) 
         {
-            this.modules = ImmutableList.copyOf(modules);
+            this.modules = new ModuleListBuilder().includeModules(modules);
         }
         return this;
     }
@@ -92,10 +91,12 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withAdditionalModules(Iterable<? extends Module> additionalModules)
     {
         if (additionalModules != null) {
-            this.modules = ImmutableList.<Module>builder()
-                    .addAll(this.modules)
-                    .addAll(additionalModules)
-                    .build();
+            try {
+                this.modules.includeModules(additionalModules)
+                        .build();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         return this;
     }
@@ -118,7 +119,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     public LifecycleInjectorBuilder withModuleClass(Class<? extends Module> module) 
     {
         if (module != null) {
-            this.moduleClasses = ImmutableList.<Class<? extends Module>>of(module);
+            this.modules.include(module);
         }
         return this;
     }
@@ -126,14 +127,16 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withModuleClasses(Iterable<Class<? extends Module>> modules) 
     {
-        this.moduleClasses = ImmutableList.<Class<? extends Module>>copyOf(modules);
+        if (modules != null) {
+            this.modules.include(modules);
+        }
         return this;
     }
 
     @Override
     public LifecycleInjectorBuilder withModuleClasses(Class<?> ... modules) 
     {
-        this.moduleClasses = ImmutableList.<Class<? extends Module>>copyOf(
+        this.modules.include(ImmutableList.<Class<? extends Module>>copyOf(
             Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
                 @SuppressWarnings("unchecked")
                 @Override
@@ -142,24 +145,20 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
                     return (Class<? extends Module>) input;
                 }
             }
-        ));
+        )));
         return this;
     }
 
     @Override
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Iterable<Class<? extends Module>> modules) 
     {
-        this.moduleClasses = ImmutableList.<Class<? extends Module>>builder()
-                .addAll(this.moduleClasses)
-                .addAll(modules)
-                .build();
+        this.modules.include(modules);
         return this;
     }
 
     @Override
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules) {
-        this.moduleClasses = ImmutableList.<Class<? extends Module>>builder()
-                .addAll(this.moduleClasses)
+        this.modules.include(ImmutableList.<Class<? extends Module>>builder()
                 .addAll(Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
                     @SuppressWarnings("unchecked")
                     @Override
@@ -168,7 +167,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
                         return (Class<? extends Module>) input;
                     }
                 }))
-                .build();
+                .build());
         return this;
     }
 
@@ -285,7 +284,11 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjector build()
     {
-        return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, moduleClasses, transformers, actions);
+        try {
+            return new LifecycleInjector(modules.build(), ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, transformers, actions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
