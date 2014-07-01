@@ -159,7 +159,29 @@ public interface LifecycleInjectorBuilder
      * @return this
      */
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules);
-
+    
+    /**
+     * When using module dependencies ignore the specified classes
+     * 
+     * @param modules to exclude
+     * @return this
+     */
+    public LifecycleInjectorBuilder withoutModuleClasses(Iterable<Class<? extends Module>> modules);
+    
+    /**
+     * When using module dependencies ignore the specified classes
+     * @param modules to exclude
+     * @return this
+     */
+    public LifecycleInjectorBuilder withoutModuleClasses(Class<? extends Module> ... modules);
+    
+    /**
+     * When using module dependencies ignore the specified class
+     * @param module to exclude
+     * @return this
+     */
+    public LifecycleInjectorBuilder withoutModuleClass(Class<? extends Module> module);
+    
     /**
      * Specify specific {@link AutoBindSingleton} classes that should NOT be bound in the main
      * binding phase
