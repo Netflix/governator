@@ -157,7 +157,8 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules) {
+    public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules) 
+    {
         this.modules.include(ImmutableList.<Class<? extends Module>>builder()
                 .addAll(Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
                     @SuppressWarnings("unchecked")
@@ -168,6 +169,27 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
                     }
                 }))
                 .build());
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withoutModuleClasses(Class<? extends Module> ... modules) 
+    {
+        this.modules.exclude(ImmutableList.copyOf(modules));
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withoutModuleClass(Class<? extends Module> module) 
+    {
+        this.modules.exclude(module);
+        return this;
+    }
+
+    @Override
+    public LifecycleInjectorBuilder withoutModuleClasses(Iterable<Class<? extends Module>> modules) 
+    {
+        this.modules.exclude(modules);
         return this;
     }
 

@@ -94,22 +94,17 @@ public class ModuleListBuilder {
                 
                 // If @Inject is present then instantiate using that constructor and manually inject
                 // the dependencies.  Note that a null will be injected for excluded modules
-                LOG.info("Look for constructors of " + type.getName());
-                for (Constructor<?> c : type.getDeclaredConstructors()) {
-                    LOG.info("Constructor : " + c.toString());
-                    if (null != c.getAnnotation(Inject.class) ||
-                        null != c.getAnnotation(javax.inject.Inject.class)) {
-                        List<Dependency<?>> deps = InjectionPoint.forConstructor(c).getDependencies();
-                        deps.size();
-                        
-                        List<Object> args = Lists.newArrayList(deps.size());
-                        for (Dependency<?> dep : deps) {
-                            args.add(includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance());
-                        }
-                        c.setAccessible(true);
-                        instance = (Module) c.newInstance(args.toArray());
-                        return instance;
+                InjectionPoint ip = InjectionPoint.forConstructorOf(type);
+                if (ip != null) {
+                    Constructor c = (Constructor) ip.getMember();
+                    List<Dependency<?>> deps = ip.getDependencies();
+                    List<Object> args = Lists.newArrayList(deps.size());
+                    for (Dependency<?> dep : deps) {
+                        args.add(includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance());
                     }
+                    c.setAccessible(true);
+                    instance = (Module) c.newInstance(args.toArray());
+                    return instance;
                 }
                 
                 // If no @Inject then just create a new instance using default constructor
@@ -262,6 +257,14 @@ public class ModuleListBuilder {
         excludes.add(m);
         return this;
     }
+    
+    public ModuleListBuilder exclude(Iterable<Class<? extends Module>> modules) {
+        for (Class<? extends Module> module : modules) {
+            excludes.add(module);
+        }
+        return this;
+    }
+
     
     public ModuleListBuilder replace(Class<? extends Module> m1, Class<? extends Module> m2) {
         replacements.put(m1, m2);

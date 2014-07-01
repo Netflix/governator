@@ -184,7 +184,7 @@ class InternalAutoBindModule extends AbstractModule
                 for (Dependency dep : ip.getDependencies()) {
                     Preconditions.checkState(
                             Module.class.isAssignableFrom(dep.getKey().getTypeLiteral().getRawType()),
-                            "Only Modules may be injected into a Module");
+                            "Only Modules may be injected into a Module.  Can't inject '" + dep.getKey() + "' into '" + moduleClass.getName() + "'");
                 }
                 Module module = injector.getInstance(moduleClass);
                 binder().install(module);
