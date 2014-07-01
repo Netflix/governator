@@ -29,12 +29,12 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 
 /**
  * Implementation of a Runner module that should be used for runtime applications.
- * 
+ *
  * @author elandau
  */
 public class StandaloneRunnerModule implements BootstrapModule {
     private static Logger LOG = LoggerFactory.getLogger(StandaloneRunnerModule.class);
-    
+
     /**
      * This builder simplifies creation of the module in main()
      */
@@ -42,23 +42,23 @@ public class StandaloneRunnerModule implements BootstrapModule {
         private List<String> args = Lists.newArrayList();
         private Class<?> main;
         private TerminationEvent terminateEvent;
-        
+
         /**
          * Specify optional command line arguments to be injected.  The arguments can be injected
-         * as 
-         * 
-         * {@code
-         *      @Main List<String>
-         * }
+         * as
+         *
+         * <code>
+         *      &#64;Main List<String>
+         * </code>
          * @param args
          */
         public Builder withArgs(String[] args) {
             this.args.addAll(Lists.newArrayList(args));
             return this;
         }
-        
+
         /**
-         * Specify an optional main class to instantiate.  Alternatively the 
+         * Specify an optional main class to instantiate.  Alternatively the
          * main class can be added as an eager singleton
          * @param main
          */
@@ -66,7 +66,7 @@ public class StandaloneRunnerModule implements BootstrapModule {
             this.main = main;
             return this;
         }
-        
+
         /**
          * Specify an externally provided {@link TerminationEvent}.  If not specified
          * the default {@link BlockingTerminationEvent} will be used.
@@ -76,33 +76,33 @@ public class StandaloneRunnerModule implements BootstrapModule {
             this.terminateEvent = event;
             return this;
         }
-        
+
         public StandaloneRunnerModule build() {
             return new StandaloneRunnerModule(this);
         }
     }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     @LazySingleton
     public static class StandaloneFramework implements LifecycleRunner {
         @Inject
         private Injector injector ;
-        
+
         @Inject
         private LifecycleManager manager;
-        
+
         @Inject(optional=true)
         private @Main Class<?> mainClass;
-        
+
         @Inject(optional=true)
         private @Main List<String> args;
-        
+
         @Inject
         private @Main TerminationEvent terminateEvent;
-        
+
         /**
          * This is the application's main 'run' loop. which blocks on the termination event
          */
@@ -111,10 +111,10 @@ public class StandaloneRunnerModule implements BootstrapModule {
             try {
                 LOG.info("Starting application");
                 manager.start();
-                
-                if (mainClass != null) 
+
+                if (mainClass != null)
                     injector.getInstance(mainClass);
-                
+
                 final ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("GovernatorStandaloneTerminator-%d").build());
                 executor.execute(new Runnable() {
                         @Override
@@ -130,7 +130,7 @@ public class StandaloneRunnerModule implements BootstrapModule {
                             executor.shutdown();
                         }
                     });
-            } 
+            }
             catch (Exception e) {
                 LOG.error("Error executing application ", e);
             }
@@ -140,13 +140,13 @@ public class StandaloneRunnerModule implements BootstrapModule {
     private final List<String> args;
     private final Class<?> main;
     private final TerminationEvent terminateEvent;
-    
+
     public StandaloneRunnerModule(String[] args, Class<?> main) {
         this.args = ImmutableList.copyOf(args);
         this.main = main;
         this.terminateEvent = null;
     }
-    
+
     private StandaloneRunnerModule(Builder builder) {
         this.args = builder.args;
         this.main = builder.main;
@@ -160,11 +160,11 @@ public class StandaloneRunnerModule implements BootstrapModule {
             bind(LifecycleRunner.class).to(StandaloneFramework.class).asEagerSingleton();
         }
     }
-    
+
     @Override
     public void configure(BootstrapBinder binder) {
         binder.bind(MainInjectorModule.class);
-        
+
         if (main != null) {
             binder.bind(main).in(LazySingletonScope.get());
             binder.bind(new TypeLiteral<Class<?>>() {}).annotatedWith(Main.class).toInstance(main);
@@ -172,10 +172,10 @@ public class StandaloneRunnerModule implements BootstrapModule {
         if (args != null) {
             binder.bind(new TypeLiteral<List<String>>() {}).annotatedWith(Main.class).toInstance(args);
         }
-        
+
         if (terminateEvent == null)
             binder.bind(TerminationEvent.class).annotatedWith(Main.class).to(BlockingTerminationEvent.class);
-        else 
+        else
             binder.bind(TerminationEvent.class).annotatedWith(Main.class).toInstance(terminateEvent);
     }
 }
