@@ -57,9 +57,9 @@ public class TestConcurrentSingleton {
         @Inject
         public NonConcurrentSingleton(Recorder recorder) throws InterruptedException {
             recorder.record(getClass());
-            LOG.info("Child1 start");
+            LOG.info("NonConcurrentSingleton start");
             TimeUnit.SECONDS.sleep(1);
-            LOG.info("Child1 end");
+            LOG.info("NonConcurrentSingleton end");
         }
     }
     
