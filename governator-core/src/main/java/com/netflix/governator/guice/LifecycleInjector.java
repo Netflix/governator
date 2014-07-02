@@ -134,6 +134,10 @@ public class LifecycleInjector
             }
         }
         
+        if (Module.class.isAssignableFrom(main)){
+            builder.withAdditionalModuleClasses(main);
+        }
+        
         // Create and apply all suites
         Injector injector = Guice.createInjector(modules);
         for (Class<? extends LifecycleInjectorBuilderSuite> suiteBootstrap : suites) {

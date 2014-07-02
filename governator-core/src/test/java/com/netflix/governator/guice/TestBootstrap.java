@@ -28,7 +28,7 @@ public class TestBootstrap {
     @Documented
     @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE})
-    @Bootstrap(value=ApplicationBootstrap.class)
+    @Bootstrap(ApplicationBootstrap.class)
     public static @interface Multiple {
         String name();
     }
@@ -54,7 +54,10 @@ public class TestBootstrap {
     }
 
     @Application(name="foo")
-    public static class MyApplication {
+    public static class MyApplication extends AbstractModule {
+        @Override
+        protected void configure() {
+        }
     }
     
     @Test
