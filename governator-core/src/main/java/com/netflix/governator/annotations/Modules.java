@@ -6,9 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import com.google.inject.Module;
+import com.netflix.governator.guice.annotations.Bootstrap;
+import com.netflix.governator.guice.bootstrap.ModulesBootstrap;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@Bootstrap(ModulesBootstrap.class)
 public @interface Modules {
     /**
      * Modules to include
