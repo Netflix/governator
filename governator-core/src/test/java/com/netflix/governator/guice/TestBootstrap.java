@@ -66,18 +66,8 @@ public class TestBootstrap {
     }
 
     @Application(name="foo")
-    @Modules(include=InitModule.class)
+    @Modules(include={InitModule.class})
     public static class MyApplication {
-        private AtomicInteger counter;
-        @Inject
-        public MyApplication(@Named("init") AtomicInteger counter) {
-            this.counter = counter;
-        }
-        @PostConstruct
-        public void initialize() {
-            counter.incrementAndGet();
-        }
-        
     }
     
     @Test
@@ -85,8 +75,6 @@ public class TestBootstrap {
         Injector injector = LifecycleInjector.bootstrap(MyApplication.class);
         String appName = injector.getInstance(Key.get(String.class, Names.named("application")));
         Assert.assertEquals("foo", appName);
-        AtomicInteger ai = injector.getInstance(Key.get(AtomicInteger.class, Names.named("init")));
-        Assert.assertEquals(1, ai.get());
     }
 
 }
