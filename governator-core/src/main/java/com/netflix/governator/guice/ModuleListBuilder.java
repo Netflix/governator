@@ -7,15 +7,14 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.collections.Lists;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
@@ -96,9 +95,9 @@ public class ModuleListBuilder {
                 // the dependencies.  Note that a null will be injected for excluded modules
                 InjectionPoint ip = InjectionPoint.forConstructorOf(type);
                 if (ip != null) {
-                    Constructor c = (Constructor) ip.getMember();
+                    Constructor<?> c = (Constructor<?>) ip.getMember();
                     List<Dependency<?>> deps = ip.getDependencies();
-                    List<Object> args = Lists.newArrayList(deps.size());
+                    List<Object> args = Lists.<Object>newArrayList(deps.size());
                     for (Dependency<?> dep : deps) {
                         args.add(includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance());
                     }
