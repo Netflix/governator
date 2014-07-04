@@ -42,6 +42,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.ProvisionException;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.annotations.Bootstrap;
@@ -94,20 +95,29 @@ public class LifecycleInjector
     }
     
     /**
-     * This is a shortcut to using the LifecycleInjectorBuilder using annotations.
+     * This is a shortcut to configuring the LifecycleInjectorBuilder using annotations.
      * 
      * Using bootstrap a main application class can simply be annotated with 
      * custom annotations that are mapped to {@link LifecycleInjectorBuilderSuite}'s.
      * Each annotations can then map to a subsystem or feature that is enabled on 
-     * the main application.
+     * the main application.  Suites are installed in the order in which they are defined.
      * 
+     * @see {@link Bootstrap}
      * @param main Main application bootstrap class
      * @return The created injector
      */
     @Beta
-    public static Injector bootstrap(Class<?> main) {
+    public static Injector bootstrap(Class<?> main, LifecycleInjectorBuilderSuite... externalSuites) {
         
         List<Module> modules = Lists.newArrayList();
+        
+        if (Module.class.isAssignableFrom(main)) {
+            try {
+                modules.add((Module)main.newInstance());
+            } catch (Exception e) {
+                throw new ProvisionException("Failed to create module for main class '" + main.getName() + "'");
+            }
+        }
         
         LifecycleInjectorBuilder builder = LifecycleInjector.builder();
         Set<Class<? extends LifecycleInjectorBuilderSuite>> suites = Sets.newLinkedHashSet();
@@ -134,6 +144,12 @@ public class LifecycleInjector
             }
         }
         
+        if (externalSuites != null) {
+            for (LifecycleInjectorBuilderSuite suite : externalSuites) {
+                suite.configure(builder);
+            }
+        }
+
         // Create and apply all suites
         Injector injector = Guice.createInjector(modules);
         for (Class<? extends LifecycleInjectorBuilderSuite> suiteBootstrap : suites) {
@@ -141,9 +157,7 @@ public class LifecycleInjector
         }
         
         // Finally, create and return the injector
-        Injector realInjector = builder.build().createInjector();
-        realInjector.getInstance(main);
-        return realInjector;
+        return builder.build().createInjector();
     }
 
     /**
