@@ -162,12 +162,13 @@ public class TestConcurrentSingleton {
         injector.getInstance(IParent.class);
         Recorder recorder = injector.getInstance(Recorder.class);
         
+        long getMainThreadId = Thread.currentThread().getId();
         Assert.assertEquals(5, recorder.getUniqueThreadCount());
         Assert.assertEquals(1, recorder.getTypeCount(SlowChild1.class));
         Assert.assertEquals(1, recorder.getTypeCount(SlowChild2.class));
         Assert.assertEquals(0, recorder.getTypeCount(SlowChild3.class));        // Only the provider was injected
         Assert.assertEquals(2, recorder.getTypeCount(NonSingletonChild.class));
-        Assert.assertEquals(1, recorder.getThreadId(NonConcurrentSingleton.class));
+        Assert.assertEquals(getMainThreadId, recorder.getThreadId(NonConcurrentSingleton.class));
         
     }
 }
