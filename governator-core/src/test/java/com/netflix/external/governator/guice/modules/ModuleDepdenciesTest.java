@@ -131,12 +131,12 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
     @Singleton
     public static class ModuleA2 extends AbstractModule
     {
-        public ModuleA2()
+        @Inject
+        public ModuleA2(ModuleA1 moduleA1)
         {
         }
 
-        @Inject
-        public ModuleA2(ModuleA1 moduleA3)
+        public ModuleA2()
         {
         }
 

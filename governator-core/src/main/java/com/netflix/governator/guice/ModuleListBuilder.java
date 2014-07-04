@@ -7,16 +7,16 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.collections.Lists;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.ProvisionException;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
 import com.netflix.governator.annotations.Modules;
@@ -94,22 +94,30 @@ public class ModuleListBuilder {
                 
                 // If @Inject is present then instantiate using that constructor and manually inject
                 // the dependencies.  Note that a null will be injected for excluded modules
-                InjectionPoint ip = InjectionPoint.forConstructorOf(type);
-                if (ip != null) {
-                    Constructor c = (Constructor) ip.getMember();
-                    List<Dependency<?>> deps = ip.getDependencies();
-                    List<Object> args = Lists.newArrayList(deps.size());
-                    for (Dependency<?> dep : deps) {
-                        args.add(includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance());
+                try {
+                    InjectionPoint ip = InjectionPoint.forConstructorOf(type);
+                    if (ip != null) {
+                        Constructor<?> c = (Constructor<?>) ip.getMember();
+                        List<Dependency<?>> deps = ip.getDependencies();
+                        if (!deps.isEmpty()) {
+                            Object[] args = new Object[deps.size()];
+                            for (Dependency<?> dep : deps) {
+                                args[dep.getParameterIndex()] = includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance();
+                            }
+                            c.setAccessible(true);
+                            
+                            instance = (Module) c.newInstance(args);
+                            return instance;
+                        }
                     }
-                    c.setAccessible(true);
-                    instance = (Module) c.newInstance(args.toArray());
+                    
+                    // If no @Inject then just create a new instance using default constructor
+                    instance = type.newInstance();
                     return instance;
                 }
-                
-                // If no @Inject then just create a new instance using default constructor
-                instance = type.newInstance();
-                return instance;
+                catch (Exception e) {
+                    throw new ProvisionException("Failed to create module '" + type.getName() + "'", e);
+                }
             }
             finally {
                 if (instance != null) {
