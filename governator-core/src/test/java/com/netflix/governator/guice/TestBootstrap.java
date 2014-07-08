@@ -6,9 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Named;
-
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -67,7 +64,11 @@ public class TestBootstrap {
 
     @Application(name="foo")
     @Modules(include={InitModule.class})
-    public static class MyApplication {
+    public static class MyApplication extends AbstractModule {
+        @Override
+        protected void configure() {
+            bind(String.class).annotatedWith(Names.named("bar")).toInstance("test");
+        }
     }
     
     @Test
@@ -75,6 +76,7 @@ public class TestBootstrap {
         Injector injector = LifecycleInjector.bootstrap(MyApplication.class);
         String appName = injector.getInstance(Key.get(String.class, Names.named("application")));
         Assert.assertEquals("foo", appName);
+        Assert.assertEquals("test", injector.getInstance(Key.get(String.class, Names.named("bar"))));
     }
 
 }

@@ -111,14 +111,6 @@ public class LifecycleInjector
         
         List<Module> modules = Lists.newArrayList();
         
-        if (Module.class.isAssignableFrom(main)) {
-            try {
-                modules.add((Module)main.newInstance());
-            } catch (Exception e) {
-                throw new ProvisionException("Failed to create module for main class '" + main.getName() + "'");
-            }
-        }
-        
         LifecycleInjectorBuilder builder = LifecycleInjector.builder();
         Set<Class<? extends LifecycleInjectorBuilderSuite>> suites = Sets.newLinkedHashSet();
         // Iterate through all annotations of the main class and convert them into
@@ -154,6 +146,14 @@ public class LifecycleInjector
         Injector injector = Guice.createInjector(modules);
         for (Class<? extends LifecycleInjectorBuilderSuite> suiteBootstrap : suites) {
             injector.getInstance(suiteBootstrap).configure(builder);
+        }
+        
+        if (Module.class.isAssignableFrom(main)) {
+            try {
+                builder.withAdditionalModuleClasses(main);
+            } catch (Exception e) {
+                throw new ProvisionException("Failed to create module for main class '" + main.getName() + "'");
+            }
         }
         
         // Finally, create and return the injector
