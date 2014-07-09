@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.ProvisionException;
 import com.google.inject.spi.Dependency;
@@ -65,7 +66,7 @@ public class ModuleListBuilder {
             this.instance = module;
         }
         
-        public Module getInstance() throws Exception {
+        public Module getInstance(Injector injector) throws Exception {
             try {
                 // Already created
                 if (instance != null) {
@@ -82,14 +83,14 @@ public class ModuleListBuilder {
                 if (replacements.containsKey(type)) {
                     Class<? extends Module> replacement = replacements.get(type);
                     LOG.info("Replacing module '" + type + "' with '" + replacement.getClass().getName() + "'");
-                    return includes.get(replacements.get(type)).getInstance();
+                    return includes.get(replacements.get(type)).getInstance(injector);
                 }
                 
                 // Create all of this modules dependencies.  This includes both @Modules and injected
                 // dependencies
                 for (Class<? extends Module> dep : getIncludeList()) {
                     ModuleProvider provider = includes.get(dep);
-                    provider.getInstance();
+                    provider.getInstance(injector);
                 }
                 
                 // If @Inject is present then instantiate using that constructor and manually inject
@@ -102,7 +103,13 @@ public class ModuleListBuilder {
                         if (!deps.isEmpty()) {
                             Object[] args = new Object[deps.size()];
                             for (Dependency<?> dep : deps) {
-                                args[dep.getParameterIndex()] = includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance();
+                                Class<?> type = dep.getKey().getTypeLiteral().getRawType();
+                                if (Module.class.isAssignableFrom(type)) {
+                                    args[dep.getParameterIndex()] = includes.get(dep.getKey().getTypeLiteral().getRawType()).getInstance(injector);
+                                }
+                                else {
+                                    args[dep.getParameterIndex()] = injector.getInstance(dep.getKey());
+                                }
                             }
                             c.setAccessible(true);
                             
@@ -140,9 +147,6 @@ public class ModuleListBuilder {
                     Class<?> depType = dep.getKey().getTypeLiteral().getRawType();
                     if (Module.class.isAssignableFrom(depType)) {
                         builder.add((Class<? extends Module>) depType);
-                    }
-                    else {
-                        throw new RuntimeException("Only modules may be injected into other modules");
                     }
                 }
             }
@@ -299,9 +303,9 @@ public class ModuleListBuilder {
         }
     }
     
-    List<Module> build() throws Exception {
+    List<Module> build(Injector injector) throws Exception {
         for (ModuleProvider provider : providers) {
-            provider.getInstance();
+            provider.getInstance(injector);
         }
         return resolvedModules;
     }

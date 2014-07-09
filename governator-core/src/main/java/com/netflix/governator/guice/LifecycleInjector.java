@@ -121,16 +121,29 @@ public class LifecycleInjector
             if (bootstrap != null) {
                 suites.add(bootstrap.value());
 
+                // We need this special provider because of generics crap
+                @SuppressWarnings("rawtypes")
+                final Provider annotProvider = new Provider() {
+                        @Override
+                        public Object get() {
+                            return annot;
+                        }
+                    };
+                    
+                // Makes the annotation injectable into Modules
+                builder.withAdditionalBootstrapModules(new BootstrapModule() {
+                    @Override
+                    public void configure(BootstrapBinder binder) {
+                        binder.bind(Key.get(type)).toProvider(annotProvider);
+                    }
+                });
+                
+                // Makes the annotation injectable into LifecycleInjectorBuilderSuite
                 modules.add(new AbstractModule() {
-                    @SuppressWarnings({ "unchecked", "rawtypes" })
+                    @SuppressWarnings({ "unchecked" })
                     @Override
                     protected void configure() {
-                        bind(Key.get(type)).toProvider(new Provider() {
-                            @Override
-                            public Object get() {
-                                return annot;
-                            }
-                        });
+                        bind(Key.get(type)).toProvider(annotProvider);
                     }
                 });
             }
@@ -304,7 +317,7 @@ public class LifecycleInjector
     }
  
     LifecycleInjector(
-            List<Module> modules, 
+            ModuleListBuilder modules, 
             Collection<Class<?>> ignoreClasses, 
             boolean ignoreAllClasses, 
             List<BootstrapModule> bootstrapModules, 
@@ -319,7 +332,6 @@ public class LifecycleInjector
         this.stage = Preconditions.checkNotNull(stage, "stage cannot be null");
         this.ignoreAllClasses = ignoreAllClasses;
         this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
-        this.modules = ImmutableList.copyOf(modules);
         this.scanner = (scanner != null) ? scanner : createStandardClasspathScanner(basePackages);
         this.actions = ImmutableList.copyOf(actions);
         this.transformers = ImmutableList.copyOf(transforms);
@@ -331,6 +343,11 @@ public class LifecycleInjector
             internalBootstrapModule,
             new InternalLifecycleModule(lifecycleManagerRef)
         );
+        try {
+            this.modules = modules.build(injector);
+        } catch (Exception e) {
+            throw new ProvisionException("Unable to resolve list of modules", e);
+        }
         lifecycleManager = injector.getInstance(LifecycleManager.class);
         lifecycleManagerRef.set(lifecycleManager);
     }

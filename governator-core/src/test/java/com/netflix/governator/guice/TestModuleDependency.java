@@ -13,6 +13,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
 import com.google.inject.Module;
 import com.netflix.governator.annotations.Modules;
 
@@ -55,7 +56,7 @@ public class TestModuleDependency {
     public void shouldImportAnnotatedDependency() throws Exception {
         List<Module> modules = new ModuleListBuilder()
             .include(AnnotatedModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules, AnnotatedModuleDependency.class, AnnotatedModule.class);
     }
@@ -64,7 +65,7 @@ public class TestModuleDependency {
     public void shouldImportInjectedDependency() throws Exception{
         List<Module> modules = new ModuleListBuilder()
             .include(InjectedModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules, InjectedModuleDependency.class, InjectedModule.class);
     }
@@ -74,7 +75,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(AnnotatedModule.class)
             .exclude(AnnotatedModuleDependency.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules, AnnotatedModule.class);
     }
@@ -84,7 +85,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(AnnotatedModule.class)
             .exclude(AnnotatedModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules);
     }
@@ -94,7 +95,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(InjectedModule.class)
             .exclude(InjectedModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules);
     }
@@ -104,7 +105,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(InjectedModule.class)
             .exclude(InjectedModuleDependency.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules, InjectedModule.class);
     }
@@ -114,7 +115,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(AnnotatedModule.class)
             .replace(AnnotatedModule.class, ReplacementAnnotatedModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules, ReplacementAnnotatedModuleDependency.class, ReplacementAnnotatedModule.class);
     }
@@ -124,7 +125,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(AnnotatedModule.class)
             .replace(AnnotatedModuleDependency.class, ReplacementAnnotatedModuleDependency.class)
-            .build();
+            .build(Guice.createInjector());
     
         assertEquals(modules, ReplacementAnnotatedModuleDependency.class, AnnotatedModule.class);
     }
@@ -134,7 +135,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(InjectedModule.class)
             .replace(InjectedModule.class, ReplacementInjectedModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         assertEquals(modules, ReplacementInjectedModuleDependency.class, ReplacementInjectedModule.class);
         
@@ -145,7 +146,7 @@ public class TestModuleDependency {
         List<Module> modules = new ModuleListBuilder()
             .include(InjectedModule.class)
             .replace(InjectedModuleDependency.class, ReplacementInjectedModuleDependency.class)
-            .build();
+            .build(Guice.createInjector());
     
         assertEquals(modules, ReplacementInjectedModuleDependency.class, InjectedModule.class);
     }
@@ -154,7 +155,7 @@ public class TestModuleDependency {
     public void shouldIncludeMultipleLevels() throws Exception{
         List<Module> modules = new ModuleListBuilder()
             .include(ParentAnnotatedModule.class)
-            .build();
+            .build(Guice.createInjector());
     
         assertEquals(modules, AnnotatedModuleDependency.class, AnnotatedModule.class, ParentAnnotatedModule.class);
     }
@@ -167,7 +168,7 @@ public class TestModuleDependency {
                 protected void configure() {
                 }
             })
-            .build();
+            .build(Guice.createInjector());
         
         Assert.assertEquals(1, modules.size());
     }
@@ -181,7 +182,7 @@ public class TestModuleDependency {
                 }
             })
             .exclude(AbstractModule.class)
-            .build();
+            .build(Guice.createInjector());
         
         Assert.assertEquals(1, modules.size());
     }
