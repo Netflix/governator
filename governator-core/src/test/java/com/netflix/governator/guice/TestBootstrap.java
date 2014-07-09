@@ -56,6 +56,11 @@ public class TestBootstrap {
     }
     
     public static class InitModule extends AbstractModule {
+        @Inject
+        InitModule(Application application) {
+            Assert.assertEquals("foo", application.name());
+        }
+        
         @Override
         protected void configure() {
             bind(AtomicInteger.class).annotatedWith(Names.named("init")).toInstance(new AtomicInteger());

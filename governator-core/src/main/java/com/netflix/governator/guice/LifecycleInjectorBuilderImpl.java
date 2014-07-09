@@ -92,8 +92,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     {
         if (additionalModules != null) {
             try {
-                this.modules.includeModules(additionalModules)
-                        .build();
+                this.modules.includeModules(additionalModules);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -307,7 +306,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     public LifecycleInjector build()
     {
         try {
-            return new LifecycleInjector(modules.build(), ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, transformers, actions);
+            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, transformers, actions);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
