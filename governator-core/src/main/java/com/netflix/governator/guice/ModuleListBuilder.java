@@ -79,13 +79,6 @@ public class ModuleListBuilder {
                     return null;
                 }
                 
-                // TODO: Guard from circular dependencies
-                if (replacements.containsKey(type)) {
-                    Class<? extends Module> replacement = replacements.get(type);
-                    LOG.info("Replacing module '" + type + "' with '" + replacement.getClass().getName() + "'");
-                    return includes.get(replacements.get(type)).getInstance(injector);
-                }
-                
                 // Create all of this modules dependencies.  This includes both @Modules and injected
                 // dependencies
                 for (Class<? extends Module> dep : getIncludeList()) {
@@ -173,10 +166,6 @@ public class ModuleListBuilder {
     // Map of seen class to the provider.  Note that this map will not include any module
     // that is a simple 
     private Map<Class<? extends Module>, ModuleProvider> includes = Maps.newIdentityHashMap();
-    
-    // Map of modules classes and their replacement module
-    // TODO: Identify circular dependencies
-    private Map<Class<? extends Module>, Class<? extends Module>> replacements = Maps.newIdentityHashMap();
     
     // Set of module classes to exclude
     private Set<Class<? extends Module>> excludes = Sets.newIdentityHashSet();
@@ -277,19 +266,6 @@ public class ModuleListBuilder {
         return this;
     }
 
-    
-    public ModuleListBuilder replace(Class<? extends Module> m1, Class<? extends Module> m2) {
-        replacements.put(m1, m2);
-        include(m2);
-        return this;
-    }
-    
-    public ModuleListBuilder replace(Class<? extends Module> m1, Module m2) {
-        replacements.put(m1, m2.getClass());
-        include(m2);
-        return this;
-    }
-    
     private void registerModule(Module m) {
         if (m.getClass().isAnonymousClass()) {
             resolvedModules.add(m);
