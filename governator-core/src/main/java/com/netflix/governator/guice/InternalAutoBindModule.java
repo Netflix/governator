@@ -16,6 +16,19 @@
 
 package com.netflix.governator.guice;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
@@ -23,7 +36,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.Scope;
 import com.google.inject.ScopeAnnotation;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
@@ -35,22 +47,13 @@ import com.google.inject.spi.InjectionPoint;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
-import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 class InternalAutoBindModule extends AbstractModule
 {
+    private static final Logger LOG = LoggerFactory.getLogger(InternalAutoBindModule.class);
+    
     private final List<Class<?>> ignoreClasses;
     private final Injector injector;
     private final ClasspathScanner classpathScanner;
@@ -167,6 +170,7 @@ class InternalAutoBindModule extends AbstractModule
                 Preconditions.checkState(annotation.baseClass() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Providers");
                 Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for Providers");
 
+                LOG.info("Installing @AutoBindSingleton " + clazz.getName());
                 ProviderBinderUtil.bind(binder(), (Class<javax.inject.Provider>)clazz, Scopes.SINGLETON);
             }
             else if ( Module.class.isAssignableFrom(clazz) )
@@ -187,6 +191,7 @@ class InternalAutoBindModule extends AbstractModule
                             "Only Modules may be injected into a Module.  Can't inject '" + dep.getKey() + "' into '" + moduleClass.getName() + "'");
                 }
                 Module module = injector.getInstance(moduleClass);
+                LOG.info("Installing @AutoBindSingleton annotated module : " + module.getClass().getName());
                 binder().install(module);
             }
             else
@@ -198,6 +203,8 @@ class InternalAutoBindModule extends AbstractModule
 
     private void bindAutoBindSingleton(AutoBindSingleton annotation, Class<?> clazz)
     {
+        LOG.info("Installing @AutoBindSingleton " + clazz.getName());
+        
         Class<?> annotationBaseClass = getAnnotationBaseClass(annotation);
         if ( annotationBaseClass != AutoBindSingleton.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
         {
@@ -213,12 +220,21 @@ class InternalAutoBindModule extends AbstractModule
                 {
                     Multibinder<?> multibinder = Multibinder.newSetBinder(binder(), (Class)foundBindingClass);
                     //noinspection unchecked
-                    applyScope(multibinder.addBinding().to((Class)clazz), clazz, annotation);
+                    applyScope(
+                        multibinder
+                            .addBinding()
+                            .to((Class)clazz), 
+                        clazz, annotation);
                 }
                 else
                 {
                     //noinspection unchecked
-                    applyScope(binder().bind((Class)foundBindingClass).to(clazz), clazz, annotation);
+                    applyScope(
+                        binder()
+                            .withSource(getCurrentStackElement())
+                            .bind((Class)foundBindingClass)
+                            .to(clazz),
+                        clazz, annotation);
                 }
             }
             else if ( foundBindingClass instanceof Type )
@@ -228,12 +244,20 @@ class InternalAutoBindModule extends AbstractModule
                 {
                     Multibinder<?> multibinder = Multibinder.newSetBinder(binder(), typeLiteral);
                     //noinspection unchecked
-                    applyScope(multibinder.addBinding().to((Class)clazz), clazz, annotation);
+                    applyScope(
+                        multibinder
+                            .addBinding()
+                            .to((Class)clazz),
+                        clazz, annotation);
                 }
                 else
                 {
                     //noinspection unchecked
-                	applyScope(binder().bind(typeLiteral).to(clazz), clazz, annotation);
+                	applyScope(
+            	        binder()
+            	            .withSource(getCurrentStackElement())
+            	            .bind(typeLiteral).to(clazz), 
+        	            clazz, annotation);
                 }
             }
             else
@@ -244,8 +268,16 @@ class InternalAutoBindModule extends AbstractModule
         else
         {
             Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) must have either value or baseClass set");
-            applyScope(binder().bind(clazz), clazz, annotation);
+            applyScope(
+                    binder()
+                        .withSource(getCurrentStackElement())
+                        .bind(clazz), 
+                    clazz, annotation);
         }
+    }
+    
+    private StackTraceElement getCurrentStackElement() {
+        return Thread.currentThread().getStackTrace()[1];
     }
 
     private void applyScope(ScopedBindingBuilder builder, Class<?> clazz, AutoBindSingleton annotation) {

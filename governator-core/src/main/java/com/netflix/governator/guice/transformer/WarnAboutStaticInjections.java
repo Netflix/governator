@@ -21,7 +21,7 @@ public class WarnAboutStaticInjections implements ModuleTransformer {
             element.acceptVisitor(new DefaultElementVisitor<Void>() {
                 @Override 
                 public Void visit(StaticInjectionRequest request) {
-                    LOG.info("You shouldn't be using static injection at: " + request.getSource());
+                    LOG.warn("You shouldn't be using static injection at: " + request.getSource());
                     return null;
                 }
             });

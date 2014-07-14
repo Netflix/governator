@@ -111,47 +111,6 @@ public class TestModuleDependency {
     }
     
     @Test
-    public void shouldReplaceAnnotatedModule() throws Exception{
-        List<Module> modules = new ModuleListBuilder()
-            .include(AnnotatedModule.class)
-            .replace(AnnotatedModule.class, ReplacementAnnotatedModule.class)
-            .build(Guice.createInjector());
-        
-        assertEquals(modules, ReplacementAnnotatedModuleDependency.class, ReplacementAnnotatedModule.class);
-    }
-    
-    @Test
-    public void shouldReplaceAnnotatedModuleWithDependency() throws Exception{
-        List<Module> modules = new ModuleListBuilder()
-            .include(AnnotatedModule.class)
-            .replace(AnnotatedModuleDependency.class, ReplacementAnnotatedModuleDependency.class)
-            .build(Guice.createInjector());
-    
-        assertEquals(modules, ReplacementAnnotatedModuleDependency.class, AnnotatedModule.class);
-    }
-    
-    @Test
-    public void shouldReplaceInjectedModule() throws Exception{
-        List<Module> modules = new ModuleListBuilder()
-            .include(InjectedModule.class)
-            .replace(InjectedModule.class, ReplacementInjectedModule.class)
-            .build(Guice.createInjector());
-        
-        assertEquals(modules, ReplacementInjectedModuleDependency.class, ReplacementInjectedModule.class);
-        
-    }
-    
-    @Test
-    public void shouldReplaceInjectedModuleWithDependency() throws Exception{
-        List<Module> modules = new ModuleListBuilder()
-            .include(InjectedModule.class)
-            .replace(InjectedModuleDependency.class, ReplacementInjectedModuleDependency.class)
-            .build(Guice.createInjector());
-    
-        assertEquals(modules, ReplacementInjectedModuleDependency.class, InjectedModule.class);
-    }
-    
-    @Test
     public void shouldIncludeMultipleLevels() throws Exception{
         List<Module> modules = new ModuleListBuilder()
             .include(ParentAnnotatedModule.class)

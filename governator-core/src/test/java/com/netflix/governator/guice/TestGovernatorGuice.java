@@ -16,6 +16,11 @@
 
 package com.netflix.governator.guice;
 
+import java.util.List;
+
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -26,16 +31,23 @@ import com.google.inject.Key;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
-import com.netflix.governator.guice.mocks.*;
+import com.netflix.governator.guice.mocks.ObjectWithGenericInterface;
+import com.netflix.governator.guice.mocks.SimpleContainer;
+import com.netflix.governator.guice.mocks.SimpleEagerSingleton;
+import com.netflix.governator.guice.mocks.SimpleGenericInterface;
+import com.netflix.governator.guice.mocks.SimpleInterface;
+import com.netflix.governator.guice.mocks.SimplePojo;
+import com.netflix.governator.guice.mocks.SimplePojoAlt;
+import com.netflix.governator.guice.mocks.SimpleProvider;
+import com.netflix.governator.guice.mocks.SimpleProviderAlt;
+import com.netflix.governator.guice.mocks.SimpleSingleton;
+import com.netflix.governator.guice.mocks.UnreferencedSingleton;
 import com.netflix.governator.guice.modules.ObjectA;
 import com.netflix.governator.guice.modules.ObjectB;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleState;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import java.util.List;
 
 public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
 {
