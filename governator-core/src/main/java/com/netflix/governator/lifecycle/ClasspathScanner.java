@@ -45,7 +45,7 @@ import com.google.common.collect.Sets;
 public class ClasspathScanner
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
-    private final ClassLoader classLoader;
+    protected final ClassLoader classLoader;
     
     private final Set<Class<?>> classes;
     private final Set<Constructor> constructors;
