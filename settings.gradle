@@ -1,5 +1,6 @@
 rootProject.name='governator'
 include 'governator-core'
 include 'governator-servlet'
+include 'governator-commons-cli'
 include 'governator-test-junit'
 project(':governator-core').name = 'governator'
