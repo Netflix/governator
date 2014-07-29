@@ -165,7 +165,7 @@ public class LifecycleInjector
             try {
                 builder.withAdditionalModuleClasses(main);
             } catch (Exception e) {
-                throw new ProvisionException("Failed to create module for main class '" + main.getName() + "'");
+                throw new ProvisionException("Failed to create module for main class '" + main.getName() + "'", e);
             }
         }
         
