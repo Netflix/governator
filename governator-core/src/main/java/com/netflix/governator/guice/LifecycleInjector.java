@@ -24,10 +24,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 import javax.annotation.Resource;
 import javax.annotation.Resources;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
@@ -73,6 +75,8 @@ import com.netflix.governator.lifecycle.LifecycleManager;
  */
 public class LifecycleInjector
 {
+    private static final Logger LOG = LoggerFactory.getLogger(LifecycleInjector.class);
+    
     private final ClasspathScanner scanner;
     private final List<Module> modules;
     private final Collection<Class<?>> ignoreClasses;
@@ -117,6 +121,7 @@ public class LifecycleInjector
         // LifecycleInjectorBuilderSuite's that are applied to the one injector.
         for (final Annotation annot : main.getDeclaredAnnotations()) {
             final Class<? extends Annotation> type = annot.annotationType();
+            LOG.info("Found bootstrap annotation : " + type.getName());
             Bootstrap bootstrap = type.getAnnotation(Bootstrap.class);
             if (bootstrap != null) {
                 suites.add(bootstrap.value());
@@ -134,7 +139,7 @@ public class LifecycleInjector
                 builder.withAdditionalBootstrapModules(new BootstrapModule() {
                     @Override
                     public void configure(BootstrapBinder binder) {
-                        binder.bind(Key.get(type)).toProvider(annotProvider);
+                        binder.withSource("LifecycleInjector.bootstrap()").bind(Key.get(type)).toProvider(annotProvider);
                     }
                 });
                 
@@ -370,6 +375,7 @@ public class LifecycleInjector
                         || Injector.class.isAssignableFrom(cls)
                         || Stage.class.isAssignableFrom(cls)
                         || Logger.class.isAssignableFrom(cls)
+                        || java.util.logging.Logger.class.isAssignableFrom(cls)
                         ) {
                         continue;
                     }
