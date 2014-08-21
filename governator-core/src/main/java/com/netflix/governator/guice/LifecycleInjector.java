@@ -136,12 +136,12 @@ public class LifecycleInjector
                     };
                     
                 // Makes the annotation injectable into Modules
-                builder.withAdditionalBootstrapModules(new BootstrapModule() {
-                    @Override
-                    public void configure(BootstrapBinder binder) {
-                        binder.withSource("LifecycleInjector.bootstrap()").bind(Key.get(type)).toProvider(annotProvider);
-                    }
-                });
+//                builder.withAdditionalBootstrapModules(new BootstrapModule() {
+//                    @Override
+//                    public void configure(BootstrapBinder binder) {
+//                        binder.withSource("LifecycleInjector.bootstrap()").bind(Key.get(type)).toProvider(annotProvider);
+//                    }
+//                });
                 
                 // Makes the annotation injectable into LifecycleInjectorBuilderSuite
                 modules.add(new AbstractModule() {
