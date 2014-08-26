@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import com.google.inject.Stage;
+import com.netflix.governator.guice.LifecycleInjectorBuilderSuite;
 import com.netflix.governator.guice.LifecycleInjectorMode;
 import com.netflix.governator.guice.ModuleTransformer;
 import com.netflix.governator.guice.PostInjectorAction;
@@ -19,13 +20,42 @@ import com.netflix.governator.guice.bootstrap.GovernatorBootstrap;
 @Target({ElementType.TYPE})
 @Bootstrap(GovernatorBootstrap.class)
 public @interface GovernatorConfiguration {
+    /**
+     * Turn on class path scanning for @AutoBindSingleton
+     * @return
+     */
     boolean enableAutoBindSingleton() default false;
 
+    /**
+     * Change the {@link Stage} for the main injector.  By default we use DEVELOPMENT
+     * stage is it provides the most deterministic behavior for transitive lazy
+     * singleton instantiation.
+     * @return
+     */
     Stage stage() default Stage.DEVELOPMENT;
 
+    /**
+     * Simulated child injectors is the prefered mode but can be changed here 
+     * back to REAL_CHILD_INJECTORS.
+     * @return
+     */
     LifecycleInjectorMode mode() default LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS;
 
+    /**
+     * Additional Suites to install which do not have an {@link Bootstrap} annotation.
+     * @return
+     */
+    Class<? extends LifecycleInjectorBuilderSuite>[] suites() default {};
+    
+    /**
+     * Actions to perform after the injector is created
+     * @return
+     */
     Class<? extends PostInjectorAction>[] actions() default {};
 
+    /**
+     * {@link ModuleTransform} operations to perform on the final list of modules
+     * @return
+     */
     Class<? extends ModuleTransformer>[] transformers() default {};
 }
