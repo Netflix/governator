@@ -46,6 +46,12 @@ public class TestBootstrap {
         
         @Override
         public void configure(LifecycleInjectorBuilder builder) {
+            builder.withAdditionalBootstrapModules(new BootstrapModule() {
+                @Override
+                public void configure(BootstrapBinder binder) {
+                    binder.bind(Application.class).toInstance(application);
+                }
+            });
             builder.withModules(new AbstractModule() {
                 @Override
                 protected void configure() {
