@@ -1,7 +1,5 @@
 package com.netflix.governator.guice.serviceloader;
 
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -10,12 +8,14 @@ import junit.framework.Assert;
 
 import org.testng.annotations.Test;
 
-import com.google.inject.Binding;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.google.inject.util.Types;
+import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
 
 public class ServiceLoaderTest {
     public static class BoundServiceImpl implements TestService {
@@ -71,5 +71,13 @@ public class ServiceLoaderTest {
             Assert.assertTrue(service.isInjected());
             System.out.println("   " + service.getClass().getName());
         }
+    }
+    
+    @Test
+    public void testServiceLoadedModules() {
+        LifecycleInjectorBuilder builder = LifecycleInjector.builder();
+        new ServiceLoaderSuite().configure(builder);
+        Injector injector = builder.build().createInjector();
+        Assert.assertEquals("loaded",  injector.getInstance(Key.get(String.class, Names.named(MyServiceLoadedModule.class.getSimpleName()))));
     }
 }
