@@ -1,8 +1,8 @@
 package com.netflix.governator.guice.main;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.ProvisionException;
 import com.netflix.governator.guice.LifecycleInjector;
-import com.netflix.governator.guice.SimpleLifecycleInjectorBuilderSuite;
 
 /**
  * Main class for loading a bootstrap configuration via main().  When running an application set
@@ -44,7 +44,7 @@ public class BootstrapMain {
     public static void main(final String args[]) {
         try {
             Class<?> mainClass = Class.forName(args[0]);
-            LifecycleInjector.bootstrap(mainClass, new SimpleLifecycleInjectorBuilderSuite() {
+            LifecycleInjector.bootstrap(mainClass, new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(Arguments.class).toInstance(new Arguments(args));

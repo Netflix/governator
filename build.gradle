@@ -66,7 +66,6 @@ project(':governator-test-junit') {
     dependencies {
         compile     project(':governator')
         compile     "junit:junit-dep:4.+"
-    
     }
 }
 
@@ -86,6 +85,5 @@ project(':governator-commons-cli') {
         compile     project(':governator')
         compile     "commons-cli:commons-cli:1.2"
         compile     "junit:junit-dep:4.+"
-    
     }
 }

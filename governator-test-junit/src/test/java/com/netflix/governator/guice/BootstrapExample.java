@@ -37,7 +37,7 @@ public class BootstrapExample {
     
     @Test
     public void testFooSuiteInstalled() {
-        tester.withSuite(Suites.from(FooSuite.class));
+        tester.withExternalBindings(new FooSuite());
         tester.start();
         
         String foo = tester.getInstance(String.class);

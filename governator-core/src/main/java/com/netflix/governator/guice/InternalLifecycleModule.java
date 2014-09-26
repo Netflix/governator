@@ -16,13 +16,19 @@
 
 package com.netflix.governator.guice;
 
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
-import com.google.inject.Binder;
+import com.google.inject.AbstractModule;
 import com.google.inject.ConfigurationException;
-import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.Dependency;
@@ -36,58 +42,38 @@ import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 import com.netflix.governator.lifecycle.warmup.DAGManager;
 
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
-
-class InternalLifecycleModule implements Module
-{
+class InternalLifecycleModule extends AbstractModule {
     // this really serves as a Set purpose.
     // put dummy boolean as Map value.
     // value is really not important here.
-    private final ConcurrentHashMap<Dependency<?>, Boolean> seen = new ConcurrentHashMap<Dependency<?>, Boolean>();
+    private final CopyOnWriteArraySet<Dependency<?>> seen = new CopyOnWriteArraySet<Dependency<?>>();
 
     private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
         .newBuilder()
         .softValues()
-        .build
-            (
-                new CacheLoader<Class<?>, LifecycleMethods>()
-                {
-                    @Override
-                    public LifecycleMethods load(Class<?> key) throws Exception
-                    {
-                        return new LifecycleMethods(key);
-                    }
-                }
-            );
+        .build(new CacheLoader<Class<?>, LifecycleMethods>(){
+            @Override
+            public LifecycleMethods load(Class<?> key) throws Exception {
+                return new LifecycleMethods(key);
+            }});
+    
     private final AtomicReference<LifecycleManager> lifecycleManager;
 
-    InternalLifecycleModule(AtomicReference<LifecycleManager> lifecycleManager)
-    {
+    InternalLifecycleModule(AtomicReference<LifecycleManager> lifecycleManager) {
         this.lifecycleManager = lifecycleManager;
     }
 
     @Override
-    public void configure(final Binder binder)
-    {
-        binder.bindListener
-        (
+    public void configure() {
+        bindListener(
             Matchers.any(),
-            new TypeListener()
-            {
+            new TypeListener(){
                 @Override
-                public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter)
-                {
-                    encounter.register
-                    (
-                        new InjectionListener<T>()
-                        {
+                public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter) {
+                    encounter.register(
+                        new InjectionListener<T>() {
                             @Override
-                            public void afterInjection(T obj)
-                            {
+                            public void afterInjection(T obj) {
                                 processInjectedObject(obj, type);
                             }
                         }
@@ -97,41 +83,33 @@ class InternalLifecycleModule implements Module
         );
     }
 
-    private <T> void processInjectedObject(T obj, TypeLiteral<T> type)
-    {
+    private <T> void processInjectedObject(T obj, TypeLiteral<T> type){
         LifecycleManager manager = lifecycleManager.get();
-        if ( manager != null )
-        {
-            for ( LifecycleListener listener : manager.getListeners() )
-            {
+        if ( manager != null ) {
+            for ( LifecycleListener listener : manager.getListeners() ) {
                 listener.objectInjected(type, obj);
             }
 
             Class<?> clazz = obj.getClass();
             LifecycleMethods methods = getLifecycleMethods(clazz);
 
-            if ( warmUpIsInDag(clazz, type) )
-            {
+            if ( warmUpIsInDag(clazz, type) ) {
                 addDependencies(manager, obj, type, methods);
             }
 
-            if ( methods.hasLifecycleAnnotations() )
-            {
-                try
-                {
+            if ( methods.hasLifecycleAnnotations() ) {
+                try {
                     manager.add(obj, methods);
                 }
-                catch ( Exception e )
-                {
+                catch ( Exception e ) {
                     throw new Error(e);
                 }
             }
         }
     }
 
-    private void addDependencies(LifecycleManager manager, Object obj, TypeLiteral<?> type, LifecycleMethods methods)
-    {
-        DAGManager              dagManager = manager.getDAGManager();
+    private void addDependencies(LifecycleManager manager, Object obj, TypeLiteral<?> type, LifecycleMethods methods) {
+        DAGManager dagManager = manager.getDAGManager();
         dagManager.addObjectMapping(type, obj, methods);
 
         applyInjectionPoint(getConstructorInjectionPoint(type), dagManager, type);
@@ -141,23 +119,18 @@ class InternalLifecycleModule implements Module
         }
     }
 
-    private boolean warmUpIsInDag(Class<?> clazz, TypeLiteral<?> type)
-    {
+    private boolean warmUpIsInDag(Class<?> clazz, TypeLiteral<?> type) {
         LifecycleMethods methods = getLifecycleMethods(clazz);
-        if ( methods.methodsFor(WarmUp.class).size() > 0 )
-        {
+        if ( methods.methodsFor(WarmUp.class).size() > 0 ) {
             return true;
         }
 
-        if ( warmUpIsInDag(getConstructorInjectionPoint(type)) )
-        {
+        if ( warmUpIsInDag(getConstructorInjectionPoint(type)) ) {
             return true;
         }
 
-        for ( InjectionPoint injectionPoint : getMethodInjectionPoints(type) )
-        {
-            if ( warmUpIsInDag(injectionPoint) )
-            {
+        for ( InjectionPoint injectionPoint : getMethodInjectionPoints(type) ) {
+            if ( warmUpIsInDag(injectionPoint) ) {
                 return true;
             }
         }
@@ -167,78 +140,57 @@ class InternalLifecycleModule implements Module
 
     private boolean warmUpIsInDag(InjectionPoint injectionPoint)
     {
-        if ( injectionPoint == null )
-        {
+        if ( injectionPoint == null ) {
             return false;
         }
 
         List<Dependency<?>> dependencies = injectionPoint.getDependencies();
-        for ( Dependency<?> dependency : dependencies )
-        {
-            Boolean prev = seen.putIfAbsent(dependency, Boolean.TRUE);
-            if ( prev != null )
-            {
-                continue;
-            }
-
-            if ( warmUpIsInDag(dependency.getKey().getTypeLiteral().getRawType(), dependency.getKey().getTypeLiteral()) )
-            {
-                return true;
+        for ( Dependency<?> dependency : dependencies ) {
+            if (seen.add(dependency)) {
+                if ( warmUpIsInDag(dependency.getKey().getTypeLiteral().getRawType(), dependency.getKey().getTypeLiteral()) ) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    private Set<InjectionPoint> getMethodInjectionPoints(TypeLiteral<?> type)
-    {
-        try
-        {
+    private Set<InjectionPoint> getMethodInjectionPoints(TypeLiteral<?> type) {
+        try {
             return InjectionPoint.forInstanceMethodsAndFields(type);
         }
-        catch ( NullPointerException e )
-        {
+        catch ( NullPointerException e ) {
             // ignore - unfortunately this is happening inside of Guice
         }
-        catch ( ConfigurationException e )
-        {
+        catch ( ConfigurationException e ) {
             // ignore
         }
         return Sets.newHashSet();
     }
 
-    private InjectionPoint getConstructorInjectionPoint(TypeLiteral<?> type)
-    {
-        try
-        {
+    private InjectionPoint getConstructorInjectionPoint(TypeLiteral<?> type) {
+        try {
             return InjectionPoint.forConstructorOf(type);
         }
-        catch ( ConfigurationException e )
-        {
+        catch ( ConfigurationException e ) {
             // ignore
         }
         return null;
     }
 
-    private void applyInjectionPoint(InjectionPoint injectionPoint, DAGManager dagManager, TypeLiteral<?> type)
-    {
-        if ( injectionPoint != null )
-        {
-            List<Dependency<?>> dependencies = injectionPoint.getDependencies();
-            for ( Dependency<?> dependency : dependencies )
-            {
+    private void applyInjectionPoint(InjectionPoint injectionPoint, DAGManager dagManager, TypeLiteral<?> type) {
+        if ( injectionPoint != null ) {
+            for ( Dependency<?> dependency : injectionPoint.getDependencies() ) {
                 dagManager.addDependency(type, dependency.getKey().getTypeLiteral());
             }
         }
     }
 
-    private LifecycleMethods getLifecycleMethods(Class<?> clazz)
-    {
-        try
-        {
+    private LifecycleMethods getLifecycleMethods(Class<?> clazz) {
+        try {
             return lifecycleMethods.get(clazz);
         }
-        catch ( ExecutionException e )
-        {
+        catch ( ExecutionException e ) {
             throw new RuntimeException(e);
         }
     }

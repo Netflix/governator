@@ -6,6 +6,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -18,6 +20,26 @@ import com.netflix.governator.annotations.Modules;
 import com.netflix.governator.guice.annotations.Bootstrap;
 
 public class TestBootstrap {
+    private static final Logger LOG = LoggerFactory.getLogger(TestBootstrap.class);
+    
+    public static class TestAction implements PostInjectorAction {
+        private boolean injected = false;
+        private final String name;
+        public TestAction(String name) {
+            this.name = name;
+        }
+        @Override
+        public void call(Injector injector) {
+            LOG.info("TestAction: " + name);
+            injected = true;
+        }
+        String getName() {
+            return name;
+        }
+        boolean isInjected() {
+            return injected;
+        }
+    }
     
     @Documented
     @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
@@ -30,12 +52,12 @@ public class TestBootstrap {
     @Documented
     @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE})
-    @Bootstrap(ApplicationBootstrap.class)
-    public static @interface Multiple {
+    @Bootstrap(Application2Bootstrap.class)
+    public static @interface Application2 {
         String name();
     }
 
-    public static class ApplicationBootstrap implements LifecycleInjectorBuilderSuite {
+    public static class ApplicationBootstrap implements BootstrapModule {
 
         private Application application;
         
@@ -43,21 +65,24 @@ public class TestBootstrap {
         public ApplicationBootstrap(Application application) {
             this.application = application;
         }
-        
+
         @Override
-        public void configure(LifecycleInjectorBuilder builder) {
-            builder.withAdditionalBootstrapModules(new BootstrapModule() {
-                @Override
-                public void configure(BootstrapBinder binder) {
-                    binder.bind(Application.class).toInstance(application);
-                }
-            });
-            builder.withModules(new AbstractModule() {
+        public void configure(BootstrapBinder binder) {
+            binder.bindPostInjectorAction().toInstance(new TestAction(getClass().getSimpleName()));
+            binder.bind(Application.class).toInstance(application);
+            binder.include(new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(String.class).annotatedWith(Names.named("application")).toInstance(application.name());
                 }
             });
+        }
+    }
+    
+    public static class Application2Bootstrap implements BootstrapModule {
+        @Override
+        public void configure(BootstrapBinder binder) {
+            binder.bindPostInjectorAction().toInstance(new TestAction(getClass().getSimpleName()));
         }
     }
     
@@ -74,6 +99,7 @@ public class TestBootstrap {
     }
 
     @Application(name="foo")
+    @Application2(name="goo")
     @Modules(include={InitModule.class})
     public static class MyApplication extends AbstractModule {
         @Override

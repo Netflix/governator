@@ -76,7 +76,8 @@ public class ServiceLoaderTest {
     @Test
     public void testServiceLoadedModules() {
         LifecycleInjectorBuilder builder = LifecycleInjector.builder();
-        new ServiceLoaderSuite().configure(builder);
+        builder.withAdditionalBootstrapModules(new ServiceLoaderBootstrapModule());
+        
         Injector injector = builder.build().createInjector();
         Assert.assertEquals("loaded",  injector.getInstance(Key.get(String.class, Names.named(MyServiceLoadedModule.class.getSimpleName()))));
     }

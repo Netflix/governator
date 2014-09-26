@@ -244,7 +244,6 @@ public class ModuleListBuilder {
             for (Class<? extends Module> dep : provider.getExcludeList()) {
                 exclude(dep);
             }
-            
         }
 
         // Add to list of known modules.  We do this after all dependencies

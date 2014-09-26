@@ -3,10 +3,10 @@ package com.netflix.governator.guice.bootstrap;
 import javax.inject.Inject;
 
 import com.netflix.governator.annotations.Modules;
-import com.netflix.governator.guice.LifecycleInjectorBuilder;
-import com.netflix.governator.guice.LifecycleInjectorBuilderSuite;
+import com.netflix.governator.guice.BootstrapBinder;
+import com.netflix.governator.guice.BootstrapModule;
 
-public class ModulesBootstrap implements LifecycleInjectorBuilderSuite {
+public class ModulesBootstrap implements BootstrapModule {
     private final Modules modules;
     
     @Inject
@@ -15,12 +15,9 @@ public class ModulesBootstrap implements LifecycleInjectorBuilderSuite {
     }
     
     @Override
-    public void configure(LifecycleInjectorBuilder builder) {
-        builder.withAdditionalModuleClasses(modules.include())
-               .withoutModuleClasses(modules.exclude());
-        
-        // TODO: overrides
-        
+    public void configure(BootstrapBinder binder) {
+        binder.include(modules.include());
+        binder.exclude(modules.exclude());
     }
 
 }
