@@ -45,7 +45,7 @@ import com.google.common.collect.Sets;
 public class ClasspathScanner
 {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
-    private final ClassLoader classLoader;
+    protected final ClassLoader classLoader;
     
     private final Set<Class<?>> classes;
     private final Set<Constructor> constructors;
@@ -78,14 +78,8 @@ public class ClasspathScanner
         Set<Constructor>    localConstructors = Sets.newHashSet();
         Set<Method>         localMethods = Sets.newHashSet();
         Set<Field>          localFields = Sets.newHashSet();
-        if ( basePackages.size() == 0 )
-        {
-            log.warn("No base packages specified - no classpath scanning will be done");
-        }
-        else
-        {
-            doScanning(basePackages, annotations, localClasses, localConstructors, localMethods, localFields);
-        }
+
+        doScanning(basePackages, annotations, localClasses, localConstructors, localMethods, localFields);
 
         classes = ImmutableSet.copyOf(localClasses);
         constructors = ImmutableSet.copyOf(localConstructors);
@@ -118,8 +112,13 @@ public class ClasspathScanner
         return fields;
     }
 
-    private void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields)
+    protected void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields)
     {
+        if ( basePackages.size() == 0 )
+        {
+            log.warn("No base packages specified - no classpath scanning will be done");
+            return;
+        }
         try
         {
             List<Archive> archives = Lists.newArrayList();
