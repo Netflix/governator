@@ -74,6 +74,16 @@ public class BootstrapBinder implements Binder
         }
     }
 
+    private String getBindingLocation() {
+    	StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+    	for (int i = 1; i < stack.length ; i++) {
+    		StackTraceElement elem = stack[i];
+    		if (!elem.getClassName().equals(BootstrapBinder.class.getCanonicalName()))
+    			return elem.toString();
+    	}
+    	return stack[0].toString();
+    }
+
     @Override
     public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors)
     {
@@ -142,51 +152,51 @@ public class BootstrapBinder implements Binder
     public <T> LinkedBindingBuilder<T> bind(Key<T> key)
     {
         warnOnSpecialized(key.getTypeLiteral().getRawType());
-        return binder.bind(key);
+        return binder.withSource(getBindingLocation()).bind(key);
     }
-
+    
     @Override
     public <T> AnnotatedBindingBuilder<T> bind(TypeLiteral<T> typeLiteral)
     {
         warnOnSpecialized(typeLiteral.getRawType());
-        return binder.bind(typeLiteral);
+        return binder.withSource(getBindingLocation()).bind(typeLiteral);
     }
 
     @Override
     public <T> AnnotatedBindingBuilder<T> bind(Class<T> type)
     {
         warnOnSpecialized(type);
-        return binder.bind(type);
+        return binder.withSource(getBindingLocation()).bind(type);
     }
 
     @Override
     public AnnotatedConstantBindingBuilder bindConstant()
     {
-        return binder.bindConstant();
+        return binder.withSource(getBindingLocation()).bindConstant();
     }
 
     @Override
     public <T> void requestInjection(TypeLiteral<T> type, T instance)
     {
-        binder.requestInjection(type, instance);
+        binder.withSource(getBindingLocation()).requestInjection(type, instance);
     }
 
     @Override
     public void requestInjection(Object instance)
     {
-        binder.requestInjection(instance);
+        binder.withSource(getBindingLocation()).requestInjection(instance);
     }
 
     @Override
     public void requestStaticInjection(Class<?>... types)
     {
-        binder.requestStaticInjection(types);
+        binder.withSource(getBindingLocation()).requestStaticInjection(types);
     }
 
     @Override
     public void install(Module module)
     {
-        binder.install(module);
+        binder.withSource(getBindingLocation()).install(module);
     }
     
     public void include(Class<? extends Module> module) {
@@ -207,6 +217,10 @@ public class BootstrapBinder implements Binder
 
     public void includeModules(Collection<? extends Module> modules) {
         this.modules.includeModules(modules);
+    }
+
+    public void includeModules(Module ... modules) {
+        this.modules.includeModules(Lists.newArrayList(modules));
     }
 
     public void exclude(Class<? extends Module> module) {
@@ -286,7 +300,7 @@ public class BootstrapBinder implements Binder
     @Override
     public void bindListener(Matcher<? super TypeLiteral<?>> typeMatcher, TypeListener listener)
     {
-        binder.bindListener(typeMatcher, listener);
+        binder.withSource(getBindingLocation()).bindListener(typeMatcher, listener);
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.netflix.governator.guice;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -45,6 +46,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
+import com.google.inject.Scopes;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
@@ -108,6 +110,25 @@ public class LifecycleInjector
         return bootstrap(main, null, externalBootstrapModules);
     }
     
+    @SuppressWarnings("unused")
+	private static BootstrapModule forAnnotation(final Annotation annot) {
+        final Class<? extends Annotation> type = annot.annotationType();
+    	return new BootstrapModule() {
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			@Override
+			public void configure(BootstrapBinder binder) {
+	            binder.bind(Key.get(type))
+	                .toProvider(new Provider() {
+	                    @Override
+	                    public Object get() {
+	                        return annot;
+	                    }
+	                })
+	                .in(Scopes.SINGLETON);
+			}
+    	};
+    }
+    
     /**
      * This is a shortcut to configuring the LifecycleInjectorBuilder using annotations.
      * 
@@ -144,6 +165,7 @@ public class LifecycleInjector
                     install(externalBindings);
                 
                 Multibinder<BootstrapModule> bootstrapModules = Multibinder.newSetBinder(binder(), BootstrapModule.class);
+                Multibinder<LifecycleInjectorBuilderSuite> suites = Multibinder.newSetBinder(binder(), LifecycleInjectorBuilderSuite.class);
                 
                 if (externalBootstrapModules != null) {
                     for (final BootstrapModule bootstrapModule : externalBootstrapModules) {
@@ -157,15 +179,42 @@ public class LifecycleInjector
                 // their BootstrapModules
                 for (final Annotation annot : main.getDeclaredAnnotations()) {
                     final Class<? extends Annotation> type = annot.annotationType();
-                    LOG.info("Found bootstrap annotation : " + type.getName());
+                    LOG.info("Found bootstrap annotation {}", type.getName());
                     Bootstrap bootstrap = type.getAnnotation(Bootstrap.class);
                     if (bootstrap != null) {
-                        bootstrapModules
-                            .addBinding()
-                            .to(bootstrap.value())
-                            .asEagerSingleton();
+                    	boolean added = false;
+                    	// This is a suite
+                    	if (!bootstrap.value().equals(Bootstrap.NullLifecycleInjectorBuilderSuite.class)) {
+                            LOG.info("Adding Suite {}", bootstrap.bootstrap());
+                    		suites
+	                            .addBinding()
+	                            .to(bootstrap.value())
+	                            .asEagerSingleton();
+                    		added = true;
+                    	}
+                    	// This is a bootstrap module
+                    	if (!bootstrap.bootstrap().equals(Bootstrap.NullBootstrapModule.class)) {
+                    		Preconditions.checkState(added==false, bootstrap.annotationType().getName() + " already added as a LifecycleInjectorBuilderSuite");
+                    		added = true;
+                            LOG.info("Adding BootstrapModule {}", bootstrap.bootstrap());
+	                        bootstrapModules
+	                            .addBinding()
+	                            .to(bootstrap.bootstrap())
+	                            .asEagerSingleton();
+	                        // Make this annotation injectable into any plain Module
+	                        builder.withAdditionalBootstrapModules(forAnnotation(annot));
+                    	}
+                    	// This is a plain guice module
+                    	if (!bootstrap.module().equals(Bootstrap.NullModule.class)) {
+                    		Preconditions.checkState(added==false, bootstrap.annotationType().getName() + " already added as a BootstrapModule");
+                    		added = true;
+                            LOG.info("Adding Module {}", bootstrap.bootstrap());
+	                        builder.withAdditionalModuleClasses(bootstrap.module());
+	                        // Make the annotation injectable into the module
+	                        builder.withAdditionalBootstrapModules(forAnnotation(annot));
+                    	}
                             
-                        // Makes the annotation injectable into BootstrapModule
+                        // Makes the annotation injectable into LifecycleInjectorBuilderSuite
                         bind(Key.get(type))
                             .toProvider(new Provider() {
                                 @Override
@@ -173,19 +222,27 @@ public class LifecycleInjector
                                     return annot;
                                 }
                             })
-                            .asEagerSingleton();
+                            .in(Scopes.SINGLETON);
                     }
                 }
             }
         });
         
+        // First, give all LifecycleInjectorBuilderSuite's priority 
+        Set<LifecycleInjectorBuilderSuite> suites = injector.getInstance(Key.get(new TypeLiteral<Set<LifecycleInjectorBuilderSuite>>() {}));
+        for (LifecycleInjectorBuilderSuite suite : suites) {
+        	suite.configure(builder);
+        }
+        
+        // Next, install BootstrapModule's
         builder.withAdditionalBootstrapModules(injector.getInstance(Key.get(new TypeLiteral<Set<BootstrapModule>>() {})));
         
+        // The main class is added last so it can override any bindings from the BootstrapModule's and LifecycleInjectorBuilderSuite's
         if (Module.class.isAssignableFrom(main)) {
             try {
                 builder.withAdditionalModuleClasses(main);
             } catch (Exception e) {
-                throw new ProvisionException("Failed to create module for main class '" + main.getName() + "'", e);
+                throw new ProvisionException(String.format("Failed to create module for main class '%s'", main.getName()), e);
             }
         }
         
@@ -198,6 +255,7 @@ public class LifecycleInjector
      * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
      *
      * @param basePackages packages to recursively scan
+     * @param b 
      * @return scanner
      */
     public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)
@@ -340,13 +398,14 @@ public class LifecycleInjector
     {
         this.scanner = (builder.getClasspathScanner() != null) 
                 ? builder.getClasspathScanner() 
-                : createStandardClasspathScanner(builder.getBasePackages());
+                : createStandardClasspathScanner(builder.isDisableAutoBinding() ? Collections.<String>emptyList() : builder.getBasePackages());
                 
         AtomicReference<LifecycleManager> lifecycleManagerRef = new AtomicReference<LifecycleManager>();
         InternalBootstrapModule internalBootstrapModule = new InternalBootstrapModule(
                 ImmutableList.<BootstrapModule>builder()
                     .addAll(builder.getBootstrapModules())
                     .add(new LoadersBootstrapModule(scanner))
+                    .add(new InternalAutoBindModuleBootstrapModule(scanner, builder.getIgnoreClasses()))
                     .build(),
                 scanner, 
                 builder.getStage(),

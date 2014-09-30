@@ -7,7 +7,7 @@ package com.netflix.governator.guice;
  * 
  * @author elandau
  * 
- * @deprecated This class is deprecated in favor of using {@link BootstrapModule}.  All the 
+ * @deprecated This class is deprecated in favor of using {@link BootstrapModule} or just {@link Module}.  All the 
  * {@link LifecycleInjectorBuilder} functionality is now available via the {@link BootstrapBinder}
  * passed to {@link BootstrapModule}
  */

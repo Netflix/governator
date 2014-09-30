@@ -17,7 +17,7 @@ import com.netflix.governator.guice.bootstrap.GovernatorBootstrap;
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@Bootstrap(GovernatorBootstrap.class)
+@Bootstrap(bootstrap=GovernatorBootstrap.class)
 public @interface GovernatorConfiguration {
     /**
      * Turn on class path scanning for @AutoBindSingleton

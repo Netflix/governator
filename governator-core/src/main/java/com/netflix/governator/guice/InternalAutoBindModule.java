@@ -23,14 +23,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -42,8 +41,6 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.binder.ScopedBindingBuilder;
 import com.google.inject.internal.MoreTypes;
 import com.google.inject.multibindings.Multibinder;
-import com.google.inject.spi.Dependency;
-import com.google.inject.spi.InjectionPoint;
 import com.google.inject.util.Types;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
@@ -54,7 +51,7 @@ class InternalAutoBindModule extends AbstractModule
 {
     private static final Logger LOG = LoggerFactory.getLogger(InternalAutoBindModule.class);
     
-    private final List<Class<?>> ignoreClasses;
+    private final Set<Class<?>> ignoreClasses;
     private final Injector injector;
     private final ClasspathScanner classpathScanner;
 
@@ -64,7 +61,7 @@ class InternalAutoBindModule extends AbstractModule
         this.classpathScanner = classpathScanner;
         Preconditions.checkNotNull(ignoreClasses, "ignoreClasses cannot be null");
 
-        this.ignoreClasses = ImmutableList.copyOf(ignoreClasses);
+        this.ignoreClasses = ImmutableSet.copyOf(ignoreClasses);
     }
 
     @Override
@@ -175,24 +172,8 @@ class InternalAutoBindModule extends AbstractModule
             }
             else if ( Module.class.isAssignableFrom(clazz) )
             {
-                Preconditions.checkState(annotation.value() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Modules");
-                Preconditions.checkState(annotation.baseClass() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Modules");
-                Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for Modules");
-
-                Class<Module> moduleClass = (Class<Module>)clazz;
-                
-                // Restrict @AutoBindSingleton modules to only allow injection of other modules
-                // Otherwise we risk JIT pulling in objects for which bindings have not yet
-                // been specified on the main injector
-                InjectionPoint ip = InjectionPoint.forConstructorOf(moduleClass);
-                for (Dependency dep : ip.getDependencies()) {
-                    Preconditions.checkState(
-                            Module.class.isAssignableFrom(dep.getKey().getTypeLiteral().getRawType()),
-                            "Only Modules may be injected into a Module.  Can't inject '" + dep.getKey() + "' into '" + moduleClass.getName() + "'");
-                }
-                Module module = injector.getInstance(moduleClass);
-                LOG.info("Installing @AutoBindSingleton annotated module : " + module.getClass().getName());
-                binder().install(module);
+                // Modules are handled by {@link InteranlAutoBindModuleBootstrapModule}
+                continue;
             }
             else
             {
