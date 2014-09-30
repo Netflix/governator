@@ -6,9 +6,9 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.netflix.governator.lifecycle.LifecycleManager;
 
@@ -45,20 +45,21 @@ import com.netflix.governator.lifecycle.LifecycleManager;
  * @author elandau
  */
 public class LifecycleTester extends ExternalResource {
-    private LifecycleInjectorBuilderSuite[] suites;
+    private BootstrapModule[] suites;
     private Injector injector;
     private Class<?> bootstrap;
     private LifecycleInjectorBuilder builder;
+    private Module externalModule;
     
-    public LifecycleTester(List<LifecycleInjectorBuilderSuite> suites) {
-        this.suites = suites.toArray(new LifecycleInjectorBuilderSuite[suites.size()]);
+    public LifecycleTester(List<BootstrapModule> suites) {
+        this.suites = suites.toArray(new BootstrapModule[suites.size()]);
     }
 
-    public LifecycleTester(LifecycleInjectorBuilderSuite ... suites) {
+    public LifecycleTester(BootstrapModule ... suites) {
         this.suites = suites;
     }
     
-    public LifecycleTester(Class bootstrap, LifecycleInjectorBuilderSuite ... suites) {
+    public LifecycleTester(Class bootstrap, BootstrapModule ... suites) {
         this.bootstrap = bootstrap;
         this.suites = suites;
     }
@@ -69,16 +70,10 @@ public class LifecycleTester extends ExternalResource {
      */
     public Injector start() {
         if (bootstrap != null) {
-            injector = LifecycleInjector.bootstrap(bootstrap, suites);
+            injector = LifecycleInjector.bootstrap(bootstrap, externalModule, suites);
         }
         else {
             builder = LifecycleInjector.builder();
-            builder = LifecycleInjector.builder();
-            if (suites != null) {
-                for (LifecycleInjectorBuilderSuite suite : suites) {
-                    suite.configure(builder);
-                }
-            }
             injector = builder.build().createInjector();
         }
         LifecycleManager manager = injector.getInstance(LifecycleManager.class);
@@ -90,17 +85,21 @@ public class LifecycleTester extends ExternalResource {
         return injector;
     }
 
-    public LifecycleTester withSuite(LifecycleInjectorBuilderSuite suite) {
+    public LifecycleTester withBootstrapModule(BootstrapModule bootstrapModule) {
         if (this.suites == null || this.suites.length == 0) {
-            this.suites = new LifecycleInjectorBuilderSuite[] { suite };
+            this.suites = new BootstrapModule[] { bootstrapModule };
         }
         else {
             this.suites = Arrays.copyOf(this.suites, this.suites.length + 1);
-            this.suites[this.suites.length-1] = suite;
+            this.suites[this.suites.length-1] = bootstrapModule;
         }
         return this;
     }
     
+    public LifecycleTester withExternalBindings(Module module) {
+        this.externalModule = module;
+        return this;
+    }
     public LifecycleInjectorBuilder builder() {
         return builder;
     }

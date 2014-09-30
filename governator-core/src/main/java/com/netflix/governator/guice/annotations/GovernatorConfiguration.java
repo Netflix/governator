@@ -6,7 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import com.google.inject.Stage;
-import com.netflix.governator.guice.LifecycleInjectorBuilderSuite;
 import com.netflix.governator.guice.LifecycleInjectorMode;
 import com.netflix.governator.guice.ModuleTransformer;
 import com.netflix.governator.guice.PostInjectorAction;
@@ -18,7 +17,7 @@ import com.netflix.governator.guice.bootstrap.GovernatorBootstrap;
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@Bootstrap(GovernatorBootstrap.class)
+@Bootstrap(bootstrap=GovernatorBootstrap.class)
 public @interface GovernatorConfiguration {
     /**
      * Turn on class path scanning for @AutoBindSingleton
@@ -41,12 +40,6 @@ public @interface GovernatorConfiguration {
      */
     LifecycleInjectorMode mode() default LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS;
 
-    /**
-     * Additional Suites to install which do not have an {@link Bootstrap} annotation.
-     * @return
-     */
-    Class<? extends LifecycleInjectorBuilderSuite>[] suites() default {};
-    
     /**
      * Actions to perform after the injector is created
      * @return

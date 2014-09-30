@@ -16,6 +16,15 @@
 
 package com.netflix.governator.guice;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.Collection;
+
+import org.aopalliance.intercept.MethodInterceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.MembersInjector;
@@ -36,17 +45,45 @@ import com.google.inject.spi.TypeListener;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.ResourceLocator;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 
 public class BootstrapBinder implements Binder
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Binder binder;
+    private Stage stage;
+    private LifecycleInjectorMode mode;
+    private ModuleListBuilder modules;
+    private boolean disableAutoBinding;
     
+    BootstrapBinder(Binder binder, Stage stage, LifecycleInjectorMode mode, ModuleListBuilder modules, Collection<PostInjectorAction> actions, Collection<ModuleTransformer> transformers, boolean disableAutoBinding)
+    {
+        this.binder = binder;
+        this.mode = mode;
+        this.stage = stage;
+        this.modules = modules;
+        
+        Multibinder<ModuleTransformer> transformerBinder = Multibinder.newSetBinder(binder, ModuleTransformer.class);
+        Multibinder<PostInjectorAction> actionBinder = Multibinder.newSetBinder(binder, PostInjectorAction.class);
+        
+        for (PostInjectorAction action : actions) {
+            actionBinder.addBinding().toInstance(action);
+        }
+        
+        for (ModuleTransformer transformer : transformers) {
+            transformerBinder.addBinding().toInstance(transformer);
+        }
+    }
+
+    private String getBindingLocation() {
+    	StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+    	for (int i = 1; i < stack.length ; i++) {
+    		StackTraceElement elem = stack[i];
+    		if (!elem.getClassName().equals(BootstrapBinder.class.getCanonicalName()))
+    			return elem.toString();
+    	}
+    	return stack[0].toString();
+    }
+
     @Override
     public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors)
     {
@@ -57,6 +94,26 @@ public class BootstrapBinder implements Binder
     public void bindScope(Class<? extends Annotation> annotationType, Scope scope)
     {
         binder.bindScope(annotationType, scope);
+    }
+
+    /**
+     * Bind actions to perform after the injector is created.
+     * 
+     * @return a binding builder used to add a new element in the set.
+     */
+    public LinkedBindingBuilder<PostInjectorAction> bindPostInjectorAction()
+    {
+        return Multibinder.newSetBinder(binder, PostInjectorAction.class).addBinding();
+    }
+
+    /**
+     * Bind module transform operations to perform on the final list of modul.
+     * 
+     * @return a binding builder used to add a new element in the set.
+     */
+    public LinkedBindingBuilder<ModuleTransformer> bindModuleTransformer()
+    {
+        return Multibinder.newSetBinder(binder, ModuleTransformer.class).addBinding();
     }
 
     /**
@@ -95,53 +152,97 @@ public class BootstrapBinder implements Binder
     public <T> LinkedBindingBuilder<T> bind(Key<T> key)
     {
         warnOnSpecialized(key.getTypeLiteral().getRawType());
-        return binder.bind(key);
+        return binder.withSource(getBindingLocation()).bind(key);
     }
-
+    
     @Override
     public <T> AnnotatedBindingBuilder<T> bind(TypeLiteral<T> typeLiteral)
     {
         warnOnSpecialized(typeLiteral.getRawType());
-        return binder.bind(typeLiteral);
+        return binder.withSource(getBindingLocation()).bind(typeLiteral);
     }
 
     @Override
     public <T> AnnotatedBindingBuilder<T> bind(Class<T> type)
     {
         warnOnSpecialized(type);
-        return binder.bind(type);
+        return binder.withSource(getBindingLocation()).bind(type);
     }
 
     @Override
     public AnnotatedConstantBindingBuilder bindConstant()
     {
-        return binder.bindConstant();
+        return binder.withSource(getBindingLocation()).bindConstant();
     }
 
     @Override
     public <T> void requestInjection(TypeLiteral<T> type, T instance)
     {
-        binder.requestInjection(type, instance);
+        binder.withSource(getBindingLocation()).requestInjection(type, instance);
     }
 
     @Override
     public void requestInjection(Object instance)
     {
-        binder.requestInjection(instance);
+        binder.withSource(getBindingLocation()).requestInjection(instance);
     }
 
     @Override
     public void requestStaticInjection(Class<?>... types)
     {
-        binder.requestStaticInjection(types);
+        binder.withSource(getBindingLocation()).requestStaticInjection(types);
     }
 
     @Override
     public void install(Module module)
     {
-        binder.install(module);
+        binder.withSource(getBindingLocation()).install(module);
+    }
+    
+    public void include(Class<? extends Module> module) {
+        this.modules.include(module);
+    }
+    
+    public void include(Class<? extends Module> ... modules) {
+        this.modules.include(Lists.newArrayList(modules));
+    }
+    
+    public void include(Collection<Class<? extends Module>> modules) {
+        this.modules.include(modules);
+    }
+    
+    public void include(Module module) {
+        this.modules.include(module);
     }
 
+    public void includeModules(Collection<? extends Module> modules) {
+        this.modules.includeModules(modules);
+    }
+
+    public void includeModules(Module ... modules) {
+        this.modules.includeModules(Lists.newArrayList(modules));
+    }
+
+    public void exclude(Class<? extends Module> module) {
+        this.modules.exclude(module);
+    }
+    
+    public void exclude(Class<? extends Module> ... modules) {
+        this.modules.exclude(Lists.newArrayList(modules));
+    }
+    
+    public void exclude(Collection<Class<? extends Module>> modules) {
+        this.modules.exclude(modules);
+    }
+    
+    public void inStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public void inMode(LifecycleInjectorMode mode) {
+        this.mode = mode;
+    }
+    
     @Override
     public Stage currentStage()
     {
@@ -199,7 +300,7 @@ public class BootstrapBinder implements Binder
     @Override
     public void bindListener(Matcher<? super TypeLiteral<?>> typeMatcher, TypeListener listener)
     {
-        binder.bindListener(typeMatcher, listener);
+        binder.withSource(getBindingLocation()).bindListener(typeMatcher, listener);
     }
 
     @Override
@@ -209,7 +310,7 @@ public class BootstrapBinder implements Binder
     }
 
     @Override
-    public Binder skipSources(Class... classesToSkip)
+    public Binder skipSources(@SuppressWarnings("rawtypes") Class... classesToSkip)
     {
         return binder.skipSources(classesToSkip);
     }
@@ -232,9 +333,8 @@ public class BootstrapBinder implements Binder
         binder.disableCircularProxies();
     }
 
-    BootstrapBinder(Binder binder)
-    {
-        this.binder = binder;
+    public void disableAutoBinding() {
+        disableAutoBinding = true;
     }
 
     private<T> void    warnOnSpecialized(Class<T> clazz)
@@ -251,5 +351,17 @@ public class BootstrapBinder implements Binder
         {
             log.warn("You should use the specialized binding method for ResourceLocator");
         }
+    }
+    
+    Stage getStage() {
+        return stage;
+    }
+    
+    LifecycleInjectorMode getMode() {
+        return mode;
+    }
+
+    boolean isDisabledAutoBinding() {
+        return disableAutoBinding;
     }
 }

@@ -36,12 +36,12 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private ModuleListBuilder modules = new ModuleListBuilder();
     private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
     private Collection<String> basePackages = Lists.newArrayList();
-    private boolean ignoreAllClasses = false;
+    private boolean disableAutoBinding = false;
     private List<BootstrapModule> bootstrapModules = Lists.newArrayList();
     private ClasspathScanner scanner = null;
     private Stage stage = Stage.PRODUCTION;
     @SuppressWarnings("deprecation")
-    private LifecycleInjectorMode mode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
+    private LifecycleInjectorMode lifecycleInjectorMode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
     private List<PostInjectorAction> actions = ImmutableList.of();
     private List<ModuleTransformer> transformers = ImmutableList.of();
 
@@ -202,7 +202,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder ignoringAllAutoBindClasses()
     {
-        this.ignoreAllClasses = true;
+        this.disableAutoBinding = true;
         return this;
     }
 
@@ -229,7 +229,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @Override
     public LifecycleInjectorBuilder withMode(LifecycleInjectorMode mode)
     {
-        this.mode = mode;
+        this.lifecycleInjectorMode = mode;
         return this;
     }
 
@@ -306,7 +306,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     public LifecycleInjector build()
     {
         try {
-            return new LifecycleInjector(modules, ignoreClasses, ignoreAllClasses, bootstrapModules, scanner, basePackages, stage, mode, transformers, actions);
+            if (this.scanner == null)
+                this.scanner = LifecycleInjector.createStandardClasspathScanner(basePackages);
+
+            return new LifecycleInjector(this);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -322,4 +325,45 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     LifecycleInjectorBuilderImpl()
     {
     }
+    
+    ModuleListBuilder getModuleListBuilder() {
+        return modules;
+    }
+    
+    Collection<Class<?>> getIgnoreClasses() {
+        return ignoreClasses;
+    }
+    
+    Collection<String> getBasePackages() {
+        return basePackages;
+    }
+    
+    List<BootstrapModule> getBootstrapModules() {
+        return bootstrapModules;
+    }
+    
+    ClasspathScanner getClasspathScanner() {
+        return scanner;
+    }
+    
+    Stage getStage() {
+        return stage;
+    }
+    
+    LifecycleInjectorMode getLifecycleInjectorMode() {
+        return lifecycleInjectorMode;
+    }
+    
+    List<PostInjectorAction> getPostInjectorActions() {
+        return actions;
+    }
+    
+    List<ModuleTransformer> getModuleTransformers() {
+        return transformers;
+    }
+
+    boolean isDisableAutoBinding() {
+        return this.disableAutoBinding;
+    }
+
 }

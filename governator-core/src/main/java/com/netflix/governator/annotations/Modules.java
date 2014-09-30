@@ -11,7 +11,7 @@ import com.netflix.governator.guice.bootstrap.ModulesBootstrap;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Bootstrap(ModulesBootstrap.class)
+@Bootstrap(bootstrap=ModulesBootstrap.class)
 public @interface Modules {
     /**
      * Modules to include

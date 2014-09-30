@@ -14,10 +14,10 @@ public class Example {
     
     }
     
-    public static class FooSuite implements LifecycleInjectorBuilderSuite {
+    public static class FooSuite implements BootstrapModule {
         @Override
-        public void configure(LifecycleInjectorBuilder builder) {
-            builder.withAdditionalModules(new AbstractModule() {
+        public void configure(BootstrapBinder binder) {
+            binder.include(new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(Foo.class).to(FooImpl.class);

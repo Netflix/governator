@@ -138,7 +138,7 @@ public class ConcurrentProviders {
                                                 Thread.currentThread().interrupt();
                                                 throw new ProvisionException("interrupted during provision");
                                             } catch (ExecutionException e) {
-                                                throw (RuntimeException) e.getCause();
+                                                throw new RuntimeException(e.getCause());
                                             }
                                         }
                                     });
