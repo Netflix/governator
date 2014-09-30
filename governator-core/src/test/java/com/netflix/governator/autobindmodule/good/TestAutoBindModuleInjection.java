@@ -18,7 +18,18 @@ public class TestAutoBindModuleInjection {
     @AutoBindSingleton
     public static class MyModule extends AbstractModule {
         @Inject
-        MyModule(FooModule foo) {
+        private MyModule(FooModule foo) {
+        }
+        
+        @Override
+        protected void configure() {
+        }
+    }
+    
+    @AutoBindSingleton
+    public static class MyModule2 extends AbstractModule {
+        @Inject
+        private MyModule2() {
         }
         
         @Override

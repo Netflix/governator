@@ -92,6 +92,7 @@ public class ModuleListBuilder {
                     InjectionPoint ip = InjectionPoint.forConstructorOf(type);
                     if (ip != null) {
                         Constructor<?> c = (Constructor<?>) ip.getMember();
+                        c.setAccessible(true);
                         List<Dependency<?>> deps = ip.getDependencies();
                         if (!deps.isEmpty()) {
                             Object[] args = new Object[deps.size()];
@@ -109,11 +110,21 @@ public class ModuleListBuilder {
                             instance = (Module) c.newInstance(args);
                             return instance;
                         }
+                        else {
+                        	return instance = (Module) c.newInstance();
+                        }
                     }
                     
-                    // If no @Inject then just create a new instance using default constructor
-                    instance = type.newInstance();
-                    return instance;
+                    // Empty constructor
+                    Constructor<?> c = type.getConstructor();
+                    if (c != null) {
+	                    c.setAccessible(true);
+	                    return (Module) c.newInstance();
+                    }
+                    // Default constructor
+                    else {
+                    	return type.newInstance();
+                    }
                 }
                 catch (Exception e) {
                     throw new ProvisionException("Failed to create module '" + type.getName() + "'", e);
