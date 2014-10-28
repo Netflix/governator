@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -24,6 +25,7 @@ import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderWithExtensionVisitor;
 import com.google.inject.spi.Toolable;
 import com.netflix.governator.annotations.NonConcurrent;
+import com.netflix.governator.lifecycle.MetricsReporter;
 
 /**
  * Utility class for creating Providers that allow for concurrent instantiation
@@ -77,6 +79,7 @@ public class ConcurrentProviders {
         return new ProviderWithExtensionVisitor<T>() {
             private volatile T instance;
             private Injector injector;
+            private MetricsReporter metricsReporter;
             
             public T get() {
                 if ( instance == null ) {
@@ -117,7 +120,13 @@ public class ConcurrentProviders {
                                     suppliers.add(new Supplier() {
                                         @Override
                                         public Object get() {
-                                            return injector.getInstance(dep.getKey());
+                                            final long startTime = System.nanoTime();
+                                            try {
+                                                return injector.getInstance(dep.getKey());
+                                            }
+                                            finally {
+                                                metricsReporter.noteConstructTime(dep.getKey(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+                                            }
                                         }
                                     });
                                 }
@@ -125,8 +134,13 @@ public class ConcurrentProviders {
                                     final Future<?> future = executor.submit(new Callable<Object>() {
                                         @Override
                                         public Object call() throws Exception {
-                                            System.out.println("Creating : " + dep.getKey());
-                                            return injector.getInstance(dep.getKey());
+                                            final long startTime = System.nanoTime();
+                                            try {
+                                                return injector.getInstance(dep.getKey());
+                                            }
+                                            finally {
+                                                metricsReporter.noteConstructTime(dep.getKey(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+                                            }
                                         }
                                     });
                                     suppliers.add(new Supplier() {
@@ -177,7 +191,6 @@ public class ConcurrentProviders {
                 Annotation[] annots = constructor.getParameterAnnotations()[parameterIndex];
                 if (annots != null) {
                     for (Annotation annot : annots) {
-                        System.out.println(parameterIndex + " " + annot);
                         if (annot.annotationType().equals(NonConcurrent.class)) {
                             return false;
                         }
@@ -198,8 +211,9 @@ public class ConcurrentProviders {
             
             @Inject
             @Toolable
-            void initialize(Injector injector) {
+            void initialize(Injector injector, MetricsReporter metricsReporter) {
                 this.injector = injector;
+                this.metricsReporter = metricsReporter;
             }
         };
     }

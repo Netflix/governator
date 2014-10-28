@@ -59,6 +59,9 @@ public class TestAutoBindSingletonScopes {
                 .build()
                 .createInjector();
         
+        injector.getInstance(AutoBindEagerSingleton.class);
+        injector.getInstance(AutoBindEagerSingleton.class);
+        
         Assert.assertEquals(1, AutoBindEagerSingleton.counter.get());
         Assert.assertEquals(0, AutoBindNotEagerSingleton.counter.get());
         Assert.assertEquals(0, AutoBindLazySingleton.counter.get());
@@ -71,6 +74,9 @@ public class TestAutoBindSingletonScopes {
                 .usingBasePackages("com.netflix.governator.autobind.scopes")
                 .build()
                 .createInjector();
+        
+        injector.getInstance(AutoBindEagerSingleton.class);
+        injector.getInstance(AutoBindEagerSingleton.class);
         
         Assert.assertEquals(1, AutoBindEagerSingleton.counter.get());
         Assert.assertEquals(0, AutoBindNotEagerSingleton.counter.get());
@@ -86,6 +92,9 @@ public class TestAutoBindSingletonScopes {
                 .build()
                 .createInjector();
         
+        injector.getInstance(AutoBindEagerSingleton.class);
+        injector.getInstance(AutoBindEagerSingleton.class);
+        
         Assert.assertEquals(1, AutoBindEagerSingleton.counter.get());
         Assert.assertEquals(0, AutoBindNotEagerSingleton.counter.get());
         Assert.assertEquals(0, AutoBindLazySingleton.counter.get());
@@ -99,6 +108,9 @@ public class TestAutoBindSingletonScopes {
                 .usingBasePackages("com.netflix.governator.autobind.scopes")
                 .build()
                 .createInjector();
+        
+        injector.getInstance(AutoBindEagerSingleton.class);
+        injector.getInstance(AutoBindEagerSingleton.class);
         
         Assert.assertEquals(1, AutoBindEagerSingleton.counter.get());
         Assert.assertEquals(0, AutoBindNotEagerSingleton.counter.get());
