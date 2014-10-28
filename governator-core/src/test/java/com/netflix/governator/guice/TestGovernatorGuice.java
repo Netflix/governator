@@ -44,6 +44,7 @@ import com.netflix.governator.guice.mocks.SimpleSingleton;
 import com.netflix.governator.guice.mocks.UnreferencedSingleton;
 import com.netflix.governator.guice.modules.ObjectA;
 import com.netflix.governator.guice.modules.ObjectB;
+import com.netflix.governator.lifecycle.DefaultLifecycleListener;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
@@ -97,7 +98,7 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
     public void     testAutoBindSingletonVsSingleton(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<Object>        objects = Lists.newArrayList();
-        final LifecycleListener   listener = new LifecycleListener()
+        final LifecycleListener   listener = new DefaultLifecycleListener()
         {
             @Override
             public <T> void objectInjected(TypeLiteral<T> type, T obj)

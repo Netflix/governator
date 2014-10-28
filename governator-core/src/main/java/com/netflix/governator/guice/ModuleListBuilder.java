@@ -108,23 +108,25 @@ public class ModuleListBuilder {
                             c.setAccessible(true);
                             
                             instance = (Module) c.newInstance(args);
-                            return instance;
                         }
                         else {
-                        	return instance = (Module) c.newInstance();
+                        	instance = (Module) c.newInstance();
                         }
                     }
-                    
-                    // Empty constructor
-                    Constructor<?> c = type.getConstructor();
-                    if (c != null) {
-	                    c.setAccessible(true);
-	                    return (Module) c.newInstance();
-                    }
-                    // Default constructor
                     else {
-                    	return type.newInstance();
+	                    // Empty constructor
+	                    Constructor<?> c = type.getConstructor();
+	                    if (c != null) {
+		                    c.setAccessible(true);
+		                    instance = (Module) c.newInstance();
+	                    }
+	                    // Default constructor
+	                    else {
+	                    	instance = type.newInstance();
+	                    }
                     }
+                    injector.injectMembers(instance);
+                    return instance;
                 }
                 catch (Exception e) {
                     throw new ProvisionException("Failed to create module '" + type.getName() + "'", e);
