@@ -2,7 +2,9 @@ package com.netflix.governator.guice.concurrent;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -10,14 +12,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
+import com.google.inject.TypeLiteral;
 import com.google.inject.spi.BindingTargetVisitor;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
@@ -25,7 +28,7 @@ import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderWithExtensionVisitor;
 import com.google.inject.spi.Toolable;
 import com.netflix.governator.annotations.NonConcurrent;
-import com.netflix.governator.lifecycle.MetricsReporter;
+import com.netflix.governator.lifecycle.LifecycleListener;
 
 /**
  * Utility class for creating Providers that allow for concurrent instantiation
@@ -79,7 +82,7 @@ public class ConcurrentProviders {
         return new ProviderWithExtensionVisitor<T>() {
             private volatile T instance;
             private Injector injector;
-            private MetricsReporter metricsReporter;
+            private Set<LifecycleListener> listeners = Collections.emptySet();
             
             public T get() {
                 if ( instance == null ) {
@@ -101,6 +104,11 @@ public class ConcurrentProviders {
             private T create() {
                 // Look for an @Inject constructor or just create a new instance if not found
                 InjectionPoint injectionPoint = InjectionPoint.forConstructorOf(type);
+                final long startTime = System.nanoTime();
+                
+                for (LifecycleListener listener : listeners) {
+                    listener.objectInjecting(TypeLiteral.get(type));
+                }
                 if (injectionPoint != null) {
                     List<Dependency<?>> deps = injectionPoint.getDependencies();
                     if (deps.size() > 0) {
@@ -117,30 +125,13 @@ public class ConcurrentProviders {
                             // Iterate all constructor dependencies and get and instance from the Injector
                             for (final Dependency<?> dep : deps) {
                                 if (!isConcurrent(constructor, dep.getParameterIndex())) {
-                                    suppliers.add(new Supplier() {
-                                        @Override
-                                        public Object get() {
-                                            final long startTime = System.nanoTime();
-                                            try {
-                                                return injector.getInstance(dep.getKey());
-                                            }
-                                            finally {
-                                                metricsReporter.noteConstructTime(dep.getKey(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-                                            }
-                                        }
-                                    });
+                                    suppliers.add(getCreator(dep.getKey()));
                                 }
                                 else {
                                     final Future<?> future = executor.submit(new Callable<Object>() {
                                         @Override
                                         public Object call() throws Exception {
-                                            final long startTime = System.nanoTime();
-                                            try {
-                                                return injector.getInstance(dep.getKey());
-                                            }
-                                            finally {
-                                                metricsReporter.noteConstructTime(dep.getKey(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-                                            }
+                                            return getCreator(dep.getKey()).get();
                                         }
                                     });
                                     suppliers.add(new Supplier() {
@@ -170,7 +161,12 @@ public class ConcurrentProviders {
                             
                             // Look for the @Inject constructor and invoke it.
                             try {
-                                return (T)constructor.newInstance(params.toArray());
+                                T obj = (T)constructor.newInstance(params.toArray());
+                                long duration = System.nanoTime() - startTime;
+                                for (LifecycleListener listener : listeners) {
+                                    listener.objectInjected((TypeLiteral<T>)TypeLiteral.get(type), obj, duration, TimeUnit.NANOSECONDS);
+                                }
+                                return obj;
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -180,10 +176,17 @@ public class ConcurrentProviders {
                         }
                     }
                 }
+                
                 try {
-                    return type.newInstance();
+                    T obj = type.newInstance();
+                    long duration = System.nanoTime() - startTime;
+                    for (LifecycleListener listener : listeners) {
+                        listener.objectInjected((TypeLiteral<T>)TypeLiteral.get(type), obj, duration, TimeUnit.NANOSECONDS);
+                    }
+                    return obj;
                 } catch (Exception e) {
-                    throw new ProvisionException("interrupted during provision", e);
+                    e.printStackTrace();
+                    throw new ProvisionException("Error constructing object of type " + type.getName(), e);
                 }
             }
             
@@ -211,10 +214,33 @@ public class ConcurrentProviders {
             
             @Inject
             @Toolable
-            void initialize(Injector injector, MetricsReporter metricsReporter) {
+            void initialize(Injector injector) {
                 this.injector = injector;
-                this.metricsReporter = metricsReporter;
             }
+            
+            @Inject(optional = true) 
+            void setListeners(Set<LifecycleListener> listeners) {
+                this.listeners = listeners;
+            }
+            
+            public <S> Supplier<S> getCreator(final Key<S> key) {
+                return new Supplier<S>() {
+                    @Override
+                    public S get() {
+                        final long startTime = System.nanoTime();
+                        for (LifecycleListener listener : listeners) {
+                            listener.objectInjecting(key.getTypeLiteral());
+                        }
+                        S obj = injector.getInstance(key);
+                        final long duration = System.nanoTime() - startTime;
+                        for (LifecycleListener listener : listeners) {
+                            listener.objectInjected(key.getTypeLiteral(), obj, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+                        }
+                        return obj;
+                    }
+                };
+            }
+
         };
     }
 }

@@ -22,9 +22,13 @@ import com.google.inject.AbstractModule;
 import com.google.inject.ImplementedBy;
 import com.google.inject.Injector;
 import com.netflix.governator.annotations.NonConcurrent;
+import com.netflix.governator.guice.BootstrapBinder;
+import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorMode;
+import com.netflix.governator.guice.actions.BindingReport;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
+import com.netflix.governator.lifecycle.LoggingLifecycleListener;
 
 public class TestConcurrentSingleton {
     private static Logger LOG = LoggerFactory.getLogger(TestConcurrentSingleton.class);
@@ -148,7 +152,14 @@ public class TestConcurrentSingleton {
     @Test
     public void shouldInitInterfaceInParallel() {
         Injector injector = LifecycleInjector.builder()
+                .withPostInjectorAction(new BindingReport("Report"))
                 .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
+                .withAdditionalBootstrapModules(new BootstrapModule() {
+                    @Override
+                    public void configure(BootstrapBinder binder) {
+                        binder.bindLifecycleListener().to(LoggingLifecycleListener.class);
+                    }
+                })
                 .withModules(new AbstractModule() {
                     @Override
                     protected void configure() {
