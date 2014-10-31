@@ -16,14 +16,14 @@
 
 package com.netflix.governator.configuration;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Supplier;
-import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 
 /**
  * A configuration provider that composites multiple providers. The first
@@ -70,91 +70,91 @@ public class CompositeConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public Supplier<Boolean> getBooleanSupplier(ConfigurationKey key, Boolean defaultValue)
+    public Property<Boolean> getBooleanProperty(ConfigurationKey key, Boolean defaultValue)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getBooleanSupplier(key, defaultValue);
+                return provider.getBooleanProperty(key, defaultValue);
             }
         }
         return null;
     }
 
     @Override
-    public Supplier<Integer> getIntegerSupplier(ConfigurationKey key, Integer defaultValue)
+    public Property<Integer> getIntegerProperty(ConfigurationKey key, Integer defaultValue)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getIntegerSupplier(key, defaultValue);
+                return provider.getIntegerProperty(key, defaultValue);
             }
         }
         return null;
     }
 
     @Override
-    public Supplier<Long> getLongSupplier(ConfigurationKey key, Long defaultValue)
+    public Property<Long> getLongProperty(ConfigurationKey key, Long defaultValue)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getLongSupplier(key, defaultValue);
+                return provider.getLongProperty(key, defaultValue);
             }
         }
         return null;
     }
 
     @Override
-    public Supplier<Double> getDoubleSupplier(ConfigurationKey key, Double defaultValue)
+    public Property<Double> getDoubleProperty(ConfigurationKey key, Double defaultValue)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getDoubleSupplier(key, defaultValue);
+                return provider.getDoubleProperty(key, defaultValue);
             }
         }
         return null;
     }
 
     @Override
-    public Supplier<String> getStringSupplier(ConfigurationKey key, String defaultValue)
+    public Property<String> getStringProperty(ConfigurationKey key, String defaultValue)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getStringSupplier(key, defaultValue);
+                return provider.getStringProperty(key, defaultValue);
             }
         }
         return null;
     }
 
     @Override
-    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue)
+    public Property<Date> getDateProperty(ConfigurationKey key, Date defaultValue)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getDateSupplier(key, defaultValue);
+                return provider.getDateProperty(key, defaultValue);
             }
         }
         return null;
     }
 
     @Override
-    public <T> Supplier<T> getObjectSupplier(ConfigurationKey key, T defaultValue, Class<T> objectType)
+    public <T> Property<T> getObjectProperty(ConfigurationKey key, T defaultValue, Class<T> objectType)
     {
         for ( ConfigurationProvider provider : providers )
         {
             if ( provider.has(key) )
             {
-                return provider.getObjectSupplier(key, defaultValue, objectType);
+                return provider.getObjectProperty(key, defaultValue, objectType);
             }
         }
         return null;

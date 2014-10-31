@@ -16,17 +16,18 @@
 
 package com.netflix.governator.lifecycle;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
+import com.netflix.governator.configuration.Property;
+
 import org.apache.commons.configuration.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -58,7 +59,7 @@ class ConfigurationProcessor
         {
             try
             {
-                if ( Supplier.class.isAssignableFrom(field.getType()) )
+                if ( Property.class.isAssignableFrom(field.getType()) )
                 {
                     ParameterizedType type = (ParameterizedType)field.getGenericType();
                     Type actualType = type.getActualTypeArguments()[0];
@@ -68,11 +69,11 @@ class ConfigurationProcessor
                     } else if (actualType instanceof ParameterizedType) {
                         actualClass = (Class<?>) ((ParameterizedType) actualType).getRawType();
                     } else {
-                        throw new UnsupportedOperationException("Supplier parameter type " + actualType
+                        throw new UnsupportedOperationException("Property parameter type " + actualType
                                 + " not supported (" + field.getName() + ")");
                     }
-                    Supplier<?> current = (Supplier<?>)field.get(obj);
-                    value = getConfigurationSupplier(field, key, actualClass, current);
+                    Property<?> current = (Property<?>)field.get(obj);
+                    value = getConfigurationProperty(field, key, actualClass, current);
                     if ( value == null )
                     {
                         log.error("Field type not supported: " + actualClass + " (" + field.getName() + ")");
@@ -81,15 +82,15 @@ class ConfigurationProcessor
                 }
                 else
                 {
-                    Supplier<?> supplier = getConfigurationSupplier(field, key, field.getType(), Suppliers.ofInstance(field.get(obj)));
-                    if ( supplier == null )
+                    Property<?> property = getConfigurationProperty(field, key, field.getType(), Property.from(field.get(obj)));
+                    if ( property == null )
                     {
                         log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
                         field = null;
                     }
                     else
                     {
-                        value = supplier.get();
+                        value = property.get();
                     }
                 }
             }
@@ -108,9 +109,9 @@ class ConfigurationProcessor
         if ( field != null )
         {
             String defaultValue;
-            if ( Supplier.class.isAssignableFrom(field.getType()) )
+            if ( Property.class.isAssignableFrom(field.getType()) )
             {
-                defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
+                defaultValue = String.valueOf(((Property<?>)field.get(obj)).get());
             }
             else
             {
@@ -123,9 +124,9 @@ class ConfigurationProcessor
                 field.set(obj, value);
 
                 documentationValue = String.valueOf(value);
-                if ( Supplier.class.isAssignableFrom(field.getType()) )
+                if ( Property.class.isAssignableFrom(field.getType()) )
                 {
-                    documentationValue = String.valueOf(((Supplier<?>)value).get());
+                    documentationValue = String.valueOf(((Property<?>)value).get());
                 }
                 else
                 {
@@ -141,36 +142,36 @@ class ConfigurationProcessor
     }
 
     @SuppressWarnings("unchecked")
-    private Supplier<?> getConfigurationSupplier(final Field field, final ConfigurationKey key, final Class<?> type, Supplier<?> current)
+    private Property<?> getConfigurationProperty(final Field field, final ConfigurationKey key, final Class<?> type, Property<?> current)
     {
         if ( String.class.isAssignableFrom(type) )
         {
-            return configurationProvider.getStringSupplier(key, (String)current.get());
+            return configurationProvider.getStringProperty(key, (String)current.get());
         }
         else if ( Boolean.class.isAssignableFrom(type) || Boolean.TYPE.isAssignableFrom(type) )
         {
-            return configurationProvider.getBooleanSupplier(key, (Boolean)current.get());
+            return configurationProvider.getBooleanProperty(key, (Boolean)current.get());
         }
         else if ( Integer.class.isAssignableFrom(type) || Integer.TYPE.isAssignableFrom(type) )
         {
-            return configurationProvider.getIntegerSupplier(key, (Integer)current.get());
+            return configurationProvider.getIntegerProperty(key, (Integer)current.get());
         }
         else if ( Long.class.isAssignableFrom(type) || Long.TYPE.isAssignableFrom(type) )
         {
-            return configurationProvider.getLongSupplier(key, (Long)current.get());
+            return configurationProvider.getLongProperty(key, (Long)current.get());
         }
         else if ( Double.class.isAssignableFrom(type) || Double.TYPE.isAssignableFrom(type) )
         {
-            return configurationProvider.getDoubleSupplier(key, (Double)current.get());
+            return configurationProvider.getDoubleProperty(key, (Double)current.get());
         }
         else if ( Date.class.isAssignableFrom(type) )
         {
-            return configurationProvider.getDateSupplier(key, (Date)current.get());
+            return configurationProvider.getDateProperty(key, (Date)current.get());
         }
         else
         {
             /* Try to deserialize */
-            return configurationProvider.getObjectSupplier(key, current.get(), (Class<Object>) type);
+            return configurationProvider.getObjectProperty(key, current.get(), (Class<Object>) type);
         }
     }
 
