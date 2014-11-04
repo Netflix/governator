@@ -16,6 +16,7 @@
 
 package com.netflix.governator.lifecycle;
 
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
@@ -36,6 +37,8 @@ import java.util.Map;
 
 class ConfigurationProcessor
 {
+    private final static Logger LOG = LoggerFactory.getLogger(ConfigurationProcessor.class);
+    
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationDocumentation configurationDocumentation;
@@ -55,86 +58,111 @@ class ConfigurationProcessor
         Object value = null;
 
         boolean has = configurationProvider.has(key);
-        if ( has )
-        {
-            try
-            {
-                if ( Property.class.isAssignableFrom(field.getType()) )
-                {
+        if ( has ) {
+            try {
+                if ( Property.class.isAssignableFrom(field.getType()) ) {
                     ParameterizedType type = (ParameterizedType)field.getGenericType();
                     Type actualType = type.getActualTypeArguments()[0];
                     Class<?> actualClass;
                     if (actualType instanceof Class) {
                         actualClass = (Class<?>) actualType;
-                    } else if (actualType instanceof ParameterizedType) {
+                    } 
+                    else if (actualType instanceof ParameterizedType) {
                         actualClass = (Class<?>) ((ParameterizedType) actualType).getRawType();
-                    } else {
+                    } 
+                    else {
                         throw new UnsupportedOperationException("Property parameter type " + actualType
                                 + " not supported (" + field.getName() + ")");
                     }
                     Property<?> current = (Property<?>)field.get(obj);
                     value = getConfigurationProperty(field, key, actualClass, current);
-                    if ( value == null )
-                    {
+                    if ( value == null ) {
                         log.error("Field type not supported: " + actualClass + " (" + field.getName() + ")");
                         field = null;
                     }
                 }
-                else
-                {
+                else if (Supplier.class.isAssignableFrom(field.getType())) {
+                    LOG.warn("@Configuration annotated Supplier<?> support at '{}.{}' will be removed in the next release.  Please use Property<?> instead",
+                            obj.getClass().getName(), field.getName());
+                    
+                    ParameterizedType type = (ParameterizedType)field.getGenericType();
+                    Type actualType = type.getActualTypeArguments()[0];
+                    Class<?> actualClass;
+                    if (actualType instanceof Class) {
+                        actualClass = (Class<?>) actualType;
+                    } 
+                    else if (actualType instanceof ParameterizedType) {
+                        actualClass = (Class<?>) ((ParameterizedType) actualType).getRawType();
+                    } 
+                    else {
+                        throw new UnsupportedOperationException("Property parameter type " + actualType
+                                + " not supported (" + field.getName() + ")");
+                    }
+                    final Supplier<?> current = (Supplier<?>)field.get(obj);
+                    final Property prop = getConfigurationProperty(field, key, actualClass, new Property() {
+                        @Override
+                        public Object get() {
+                            return current.get();
+                        }
+                    });
+                    
+                    value = new Supplier() {
+                        @Override
+                        public Object get() {
+                            return prop.get();
+                        }
+                    };
+                    if ( value == null ) {
+                        log.error("Field type not supported: " + actualClass + " (" + field.getName() + ")");
+                        field = null;
+                    }
+                }
+                else {
                     Property<?> property = getConfigurationProperty(field, key, field.getType(), Property.from(field.get(obj)));
-                    if ( property == null )
-                    {
+                    if ( property == null ) {
                         log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
                         field = null;
                     }
-                    else
-                    {
+                    else {
                         value = property.get();
                     }
                 }
             }
-            catch ( IllegalArgumentException e )
-            {
+            catch ( IllegalArgumentException e ) {
                 ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
                 field = null;
             }
-            catch ( ConversionException e )
-            {
+            catch ( ConversionException e )  {
                 ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
                 field = null;
             }
         }
 
-        if ( field != null )
-        {
+        if ( field != null ) {
             String defaultValue;
-            if ( Property.class.isAssignableFrom(field.getType()) )
-            {
+            if ( Property.class.isAssignableFrom(field.getType()) ) {
                 defaultValue = String.valueOf(((Property<?>)field.get(obj)).get());
             }
-            else
-            {
+            else if (Supplier.class.isAssignableFrom(field.getType())) {
+                defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
+            }
+            else {
                 defaultValue = String.valueOf(field.get(obj));
             }
 
             String documentationValue;
-            if ( has )
-            {
+            if ( has ) {
                 field.set(obj, value);
 
                 documentationValue = String.valueOf(value);
-                if ( Property.class.isAssignableFrom(field.getType()) )
-                {
+                if ( Property.class.isAssignableFrom(field.getType()) )  {
                     documentationValue = String.valueOf(((Property<?>)value).get());
                 }
-                else
-                {
+                else {
                     documentationValue = String.valueOf(documentationValue);
                 }
             }
-            else
-            {
+            else {
                 documentationValue = "";
             }
             configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
