@@ -16,13 +16,13 @@
 
 package com.netflix.governator.configuration;
 
-import com.google.common.base.Supplier;
-import com.google.common.collect.Maps;
-import org.codehaus.jackson.map.ObjectMapper;
-
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+
+import org.codehaus.jackson.map.ObjectMapper;
+
+import com.google.common.collect.Maps;
 
 /**
  * ConfigurationProvider backed by a {#link Properties}
@@ -71,9 +71,9 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
     }
 
     @Override
-    public Supplier<Boolean> getBooleanSupplier(final ConfigurationKey key, final Boolean defaultValue)
+    public Property<Boolean> getBooleanProperty(final ConfigurationKey key, final Boolean defaultValue)
     {
-        return new Supplier<Boolean>()
+        return new Property<Boolean>()
         {
             @Override
             public Boolean get()
@@ -89,9 +89,9 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
     }
 
     @Override
-    public Supplier<Integer> getIntegerSupplier(final ConfigurationKey key, final Integer defaultValue)
+    public Property<Integer> getIntegerProperty(final ConfigurationKey key, final Integer defaultValue)
     {
-        return new Supplier<Integer>()
+        return new Property<Integer>()
         {
             @Override
             public Integer get()
@@ -108,9 +108,9 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
     }
 
     @Override
-    public Supplier<Long> getLongSupplier(final ConfigurationKey key, final Long defaultValue)
+    public Property<Long> getLongProperty(final ConfigurationKey key, final Long defaultValue)
     {
-        return new Supplier<Long>()
+        return new Property<Long>()
         {
             @Override
             public Long get()
@@ -127,9 +127,9 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
     }
 
     @Override
-    public Supplier<Double> getDoubleSupplier(final ConfigurationKey key, final Double defaultValue)
+    public Property<Double> getDoubleProperty(final ConfigurationKey key, final Double defaultValue)
     {
-        return new Supplier<Double>()
+        return new Property<Double>()
         {
             @Override
             public Double get()
@@ -146,9 +146,9 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
     }
 
     @Override
-    public Supplier<String> getStringSupplier(final ConfigurationKey key, final String defaultValue)
+    public Property<String> getStringProperty(final ConfigurationKey key, final String defaultValue)
     {
-        return new Supplier<String>()
+        return new Property<String>()
         {
             @Override
             public String get()
@@ -164,8 +164,8 @@ public class PropertiesConfigurationProvider extends AbstractObjectConfiguration
     }
 
     @Override
-    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue)
+    public Property<Date> getDateProperty(ConfigurationKey key, Date defaultValue)
     {
-        return new DateWithDefaultSupplier(getStringSupplier(key, null), defaultValue);
+        return new DateWithDefaultProperty(getStringProperty(key, null), defaultValue);
     }
 }

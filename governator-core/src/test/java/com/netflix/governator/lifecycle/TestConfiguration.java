@@ -19,11 +19,13 @@ package com.netflix.governator.lifecycle;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.configuration.*;
 import com.netflix.governator.lifecycle.mocks.*;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Properties;
 
 public class TestConfiguration
 {
@@ -194,9 +196,11 @@ public class TestConfiguration
 
         Assert.assertEquals(obj.aDynamicBool.get(), Boolean.TRUE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(1));
+        Assert.assertEquals(obj.anDynamicInt2.get(), new Integer(1));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(2L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
+        Assert.assertEquals(obj.aDynamicString2.get(), "a is a");
         Assert.assertEquals(obj.aDynamicDate.get(), null);
         Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(5, 6, 7));
         Assert.assertEquals(obj.aDynamicMapOfMaps.get(), Collections.emptyMap());
@@ -212,9 +216,11 @@ public class TestConfiguration
 
         Assert.assertEquals(obj.aDynamicBool.get(), Boolean.FALSE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(101));
+        Assert.assertEquals(obj.anDynamicInt2.get(), new Integer(101));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(201L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is b");
+        Assert.assertEquals(obj.aDynamicString2.get(), "a is b");
         Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(1, 2, 3, 4));
         Assert.assertEquals(obj.aDynamicMapOfMaps.get(), MAP_OF_MAPS_OBJ);
 

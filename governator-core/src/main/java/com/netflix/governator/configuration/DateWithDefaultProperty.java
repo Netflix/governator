@@ -16,28 +16,28 @@
 
 package com.netflix.governator.configuration;
 
-import com.google.common.base.Supplier;
-import javax.xml.bind.DatatypeConverter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 
+import javax.xml.bind.DatatypeConverter;
+
 /**
- * Special supplier that converts a string date to a Date
+ * Special Property that converts a string date to a Date
  *
  * @author elandau
  */
-public class DateWithDefaultSupplier implements Supplier<Date>
+public class DateWithDefaultProperty extends Property<Date>
 {
     private final Date defaultValue;
-    private final Supplier<String> supplier;
+    private final Property<String> property;
     private final DateFormat formatter;
 
-    public DateWithDefaultSupplier(Supplier<String> supplier, Date defaultValue)
+    public DateWithDefaultProperty(Property<String> property, Date defaultValue)
     {
         this.defaultValue = defaultValue;
-        this.supplier = supplier;
+        this.property = property;
 
         formatter = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
         formatter.setLenient(false);
@@ -46,7 +46,7 @@ public class DateWithDefaultSupplier implements Supplier<Date>
     @Override
     public Date get()
     {
-        String current = supplier.get();
+        String current = property.get();
         if ( current != null )
         {
             Date newDate = parseDate(current);
