@@ -443,6 +443,14 @@ public class LifecycleManager implements Closeable
                 return (resource.name().length() == 0) ? siteName : resource.name();
             }
 
+            /**
+             * Method needed for eventual java7 compatibility
+             */
+            public String lookup()
+            {
+                return name();
+            }
+
             @Override
             public Class type()
             {
