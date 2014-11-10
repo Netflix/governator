@@ -65,7 +65,7 @@ project(':governator-test-junit') {
     apply plugin: 'java'
     dependencies {
         compile     project(':governator')
-        compile     "junit:junit-dep:4.11"
+        compile     "junit:junit:4.11"
     }
 }
 
@@ -75,7 +75,6 @@ project(':governator-servlet') {
         compile     project(':governator')
         compile     'javax.servlet:servlet-api:2.5'
         compile     'com.google.inject.extensions:guice-servlet:3.0'
-        compile     "junit:junit-dep:4.11"
     }
 }
 
@@ -84,6 +83,5 @@ project(':governator-commons-cli') {
     dependencies {
         compile     project(':governator')
         compile     "commons-cli:commons-cli:1.2"
-        compile     "junit:junit-dep:4.11"
     }
 }
