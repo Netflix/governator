@@ -16,6 +16,7 @@
 
 package com.netflix.governator.configuration;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.config.DynamicPropertyFactory;
@@ -64,7 +65,7 @@ public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationPr
         }
 
         /**
-         * Dynamic property factory to use for Property<?> attributes.  Defaults to DynamicPropertyFactory.getInstance()
+         * Dynamic property factory to use for Supplier<?> attributes.  Defaults to DynamicPropertyFactory.getInstance()
          */
         public Builder withPropertyFactory(DynamicPropertyFactory propertyFactory)
         {
@@ -116,15 +117,15 @@ public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationPr
     }
 
     /**
-     * Adapter to convert Archaius internal PropertyWrapper to a Governator Property object
+     * Adapter to convert Archaius internal PropertyWrapper to a standard Guava supplier
      *
      * @author elandau
      */
-    public static class PropertyWrapperProperty<T> extends Property<T>
+    public static class PropertyWrapperSupplier<T> implements Supplier<T>
     {
         private final PropertyWrapper<T> wrapper;
 
-        public PropertyWrapperProperty(PropertyWrapper<T> wrapper)
+        public PropertyWrapperSupplier(PropertyWrapper<T> wrapper)
         {
             this.wrapper = wrapper;
         }
@@ -167,39 +168,39 @@ public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationPr
         this.ownershipPolicy = builder.ownershipPolicy;
     }
 
-    protected static Property<?> getDynamicProperty(Class<?> type, String key, String defaultValue, DynamicPropertyFactory propertyFactory)
+    protected static Supplier<?> getDynamicSupplier(Class<?> type, String key, String defaultValue, DynamicPropertyFactory propertyFactory)
     {
         if ( type.isAssignableFrom(String.class) )
         {
-            return new PropertyWrapperProperty<String>(
+            return new PropertyWrapperSupplier<String>(
                 propertyFactory.getStringProperty(
                     key,
                     defaultValue));
         }
         else if ( type.isAssignableFrom(Integer.class) )
         {
-            return new PropertyWrapperProperty<Integer>(
+            return new PropertyWrapperSupplier<Integer>(
                 propertyFactory.getIntProperty(
                     key,
                     defaultValue == null ? 0 : Integer.parseInt(defaultValue)));
         }
         else if ( type.isAssignableFrom(Double.class) )
         {
-            return new PropertyWrapperProperty<Double>(
+            return new PropertyWrapperSupplier<Double>(
                 propertyFactory.getDoubleProperty(
                     key,
                     defaultValue == null ? 0.0 : Double.parseDouble(defaultValue)));
         }
         else if ( type.isAssignableFrom(Long.class) )
         {
-            return new PropertyWrapperProperty<Long>(
+            return new PropertyWrapperSupplier<Long>(
                 propertyFactory.getLongProperty(
                     key,
                     defaultValue == null ? 0L : Long.parseLong(defaultValue)));
         }
         else if ( type.isAssignableFrom(Boolean.class) )
         {
-            return new PropertyWrapperProperty<Boolean>(
+            return new PropertyWrapperSupplier<Boolean>(
                 propertyFactory.getBooleanProperty(
                     key,
                     defaultValue == null ? false : Boolean.parseBoolean(defaultValue)));
@@ -225,53 +226,53 @@ public class ArchaiusConfigurationProvider extends AbstractObjectConfigurationPr
     }
 
     @Override
-    public Property<Boolean> getBooleanProperty(ConfigurationKey key, Boolean defaultValue)
+    public Supplier<Boolean> getBooleanSupplier(ConfigurationKey key, Boolean defaultValue)
     {
-        return new PropertyWrapperProperty<Boolean>(
+        return new PropertyWrapperSupplier<Boolean>(
             propertyFactory.getBooleanProperty(
                 key.getKey(variableValues),
                 defaultValue));
     }
 
     @Override
-    public Property<Integer> getIntegerProperty(ConfigurationKey key, Integer defaultValue)
+    public Supplier<Integer> getIntegerSupplier(ConfigurationKey key, Integer defaultValue)
     {
-        return new PropertyWrapperProperty<Integer>(
+        return new PropertyWrapperSupplier<Integer>(
             propertyFactory.getIntProperty(
                 key.getKey(variableValues),
                 defaultValue));
     }
 
     @Override
-    public Property<Long> getLongProperty(ConfigurationKey key, Long defaultValue)
+    public Supplier<Long> getLongSupplier(ConfigurationKey key, Long defaultValue)
     {
-        return new PropertyWrapperProperty<Long>(
+        return new PropertyWrapperSupplier<Long>(
             propertyFactory.getLongProperty(
                 key.getKey(variableValues),
                 defaultValue));
     }
 
     @Override
-    public Property<Double> getDoubleProperty(ConfigurationKey key, Double defaultValue)
+    public Supplier<Double> getDoubleSupplier(ConfigurationKey key, Double defaultValue)
     {
-        return new PropertyWrapperProperty<Double>(
+        return new PropertyWrapperSupplier<Double>(
             propertyFactory.getDoubleProperty(
                 key.getKey(variableValues),
                 defaultValue));
     }
 
     @Override
-    public Property<String> getStringProperty(ConfigurationKey key, String defaultValue)
+    public Supplier<String> getStringSupplier(ConfigurationKey key, String defaultValue)
     {
-        return new PropertyWrapperProperty<String>(
+        return new PropertyWrapperSupplier<String>(
             propertyFactory.getStringProperty(
                 key.getKey(variableValues),
                 defaultValue));
     }
 
     @Override
-    public Property<Date> getDateProperty(ConfigurationKey key, Date defaultValue)
+    public Supplier<Date> getDateSupplier(ConfigurationKey key, Date defaultValue)
     {
-        return new DateWithDefaultProperty(getStringProperty(key, null), defaultValue);
+        return new DateWithDefaultSupplier(getStringSupplier(key, null), defaultValue);
     }
 }

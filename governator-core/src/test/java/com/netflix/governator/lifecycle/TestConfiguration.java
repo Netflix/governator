@@ -19,13 +19,11 @@ package com.netflix.governator.lifecycle;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.governator.configuration.*;
 import com.netflix.governator.lifecycle.mocks.*;
-
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Properties;
 
 public class TestConfiguration
 {

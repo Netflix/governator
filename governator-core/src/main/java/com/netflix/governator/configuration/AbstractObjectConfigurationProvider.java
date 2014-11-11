@@ -1,10 +1,11 @@
 package com.netflix.governator.configuration;
 
-import java.io.IOException;
-
+import com.google.common.base.Supplier;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Implements the deserialization part of {@link ConfigurationProvider} to simplify implementations.
@@ -31,12 +32,12 @@ public abstract class AbstractObjectConfigurationProvider implements Configurati
     }
 
     @Override
-    public <T> Property<T> getObjectProperty(
+    public <T> Supplier<T> getObjectSupplier(
             final ConfigurationKey key, final T defaultValue, final Class<T> objectType) {
-        return new Property<T>() {
+        return new Supplier<T>() {
             @Override
             public T get() {
-                String serialized = getStringProperty(key, null).get();
+                String serialized = getStringSupplier(key, null).get();
                 if (serialized == null || serialized.length() == 0) {
                     return defaultValue;
                 }
