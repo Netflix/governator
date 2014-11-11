@@ -306,9 +306,6 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     public LifecycleInjector build()
     {
         try {
-            if (this.scanner == null)
-                this.scanner = LifecycleInjector.createStandardClasspathScanner(basePackages);
-
             return new LifecycleInjector(this);
         } catch (Exception e) {
             throw new RuntimeException(e);
