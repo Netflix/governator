@@ -69,6 +69,7 @@ class InternalBootstrapModule extends AbstractModule
         this.actions = actions;
         this.transformers = transformers;
         this.bootstrapModules = bootstrapModules;
+        this.disableAutoBinding = disableAutoBinding;
     }
 
     BootstrapBinder getBootstrapBinder()
