@@ -106,6 +106,8 @@ public class WarmUpTask extends RecursiveAction
         }
         else
         {
+            Thread.currentThread().setContextClassLoader(obj.getClass().getClassLoader());
+            
             warmUpDriver.setState(obj, LifecycleState.WARMING_UP);
 
             LifecycleMethods    lifecycleMethods = dagManager.getLifecycleMethods(node.getKey());
