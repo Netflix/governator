@@ -1,18 +1,17 @@
 package com.netflix.governator.configuration;
 
-import com.google.common.base.Supplier;
+import java.io.IOException;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * Implements the deserialization part of {@link ConfigurationProvider} to simplify implementations.
  *
  * Created by jad.naous on 4/2/14.
  */
-public abstract class AbstractObjectConfigurationProvider implements ConfigurationProvider {
+public abstract class AbstractObjectConfigurationProvider extends DefaultConfigurationProvider {
 
     private final Logger logger;
 
@@ -32,9 +31,8 @@ public abstract class AbstractObjectConfigurationProvider implements Configurati
     }
 
     @Override
-    public <T> Supplier<T> getObjectSupplier(
-            final ConfigurationKey key, final T defaultValue, final Class<T> objectType) {
-        return new Supplier<T>() {
+    public <T> Property<T> getObjectProperty(final ConfigurationKey key,  final T defaultValue, final Class<T> objectType) {
+        return new Property<T>() {
             @Override
             public T get() {
                 String serialized = getStringSupplier(key, null).get();
