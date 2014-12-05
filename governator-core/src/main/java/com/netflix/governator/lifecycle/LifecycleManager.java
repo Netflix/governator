@@ -486,10 +486,6 @@ public class LifecycleManager implements Closeable
             {
                 return resource.annotationType();
             }
-
-            public String lookup() {
-                return name();
-            }
         };
     }
 
