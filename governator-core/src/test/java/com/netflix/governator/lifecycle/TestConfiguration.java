@@ -194,9 +194,11 @@ public class TestConfiguration
 
         Assert.assertEquals(obj.aDynamicBool.get(), Boolean.TRUE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(1));
+        Assert.assertEquals(obj.anDynamicInt2.get(), new Integer(1));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(2L));
         Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
+        Assert.assertEquals(obj.aDynamicString2.get(), "a is a");
         Assert.assertEquals(obj.aDynamicDate.get(), null);
         Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(5, 6, 7));
         Assert.assertEquals(obj.aDynamicMapOfMaps.get(), Collections.emptyMap());

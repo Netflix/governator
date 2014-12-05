@@ -20,17 +20,17 @@ public class LoggingLifecycleListener implements LifecycleListener {
     public void stateChanged(Object obj, LifecycleState newState) {
     }
 
-    @Override
-    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration,
-            TimeUnit units) {
-        LOG.info("Injected {} in {} {}", new Object[]{
-                type.toString(), 
-                TimeUnit.MILLISECONDS.convert(duration, TimeUnit.NANOSECONDS), 
-                TimeUnit.MILLISECONDS});
-    }
-
-    @Override
-    public <T> void objectInjecting(TypeLiteral<T> type) {
-        LOG.info("Injecting {}", new Object[]{type.toString()});
-    }
+//    @Override
+//    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration,
+//            TimeUnit units) {
+//        LOG.info("Injected {} in {} {}", new Object[]{
+//                type.toString(), 
+//                TimeUnit.MILLISECONDS.convert(duration, TimeUnit.NANOSECONDS), 
+//                TimeUnit.MILLISECONDS});
+//    }
+//
+//    @Override
+//    public <T> void objectInjecting(TypeLiteral<T> type) {
+//        LOG.info("Injecting {}", new Object[]{type.toString()});
+//    }
 }

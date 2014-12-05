@@ -19,6 +19,7 @@ package com.netflix.governator.lifecycle.mocks;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.netflix.governator.annotations.Configuration;
+import com.netflix.governator.configuration.Property;
 
 import java.util.*;
 
@@ -28,12 +29,16 @@ public class ObjectWithDynamicConfig
     public Supplier<Boolean> aDynamicBool = Suppliers.ofInstance(true);
     @Configuration(value = "test.dynamic.i")
     public Supplier<Integer> anDynamicInt = Suppliers.ofInstance(1);
+    @Configuration(value = "test.dynamic.i")
+    public Property<Integer> anDynamicInt2 = Property.from(1);
     @Configuration(value = "test.dynamic.l")
     public Supplier<Long> aDynamicLong = Suppliers.ofInstance(2L);
     @Configuration(value = "test.dynamic.d")
     public Supplier<Double> aDynamicDouble = Suppliers.ofInstance(3.4);
     @Configuration(value = "test.dynamic.s")
     public Supplier<String> aDynamicString = Suppliers.ofInstance("a is a");
+    @Configuration(value = "test.dynamic.s")
+    public Property<String> aDynamicString2 = Property.from("a is a");
     @Configuration(value = "test.dynamic.dt")
     public Supplier<Date> aDynamicDate = Suppliers.ofInstance(null);
     @Configuration(value = "test.dynamic.obj")
