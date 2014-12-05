@@ -9,7 +9,6 @@ public class DefaultLifecycleListener implements LifecycleListener {
     public <T> void objectInjected(TypeLiteral<T> type, T obj) {
     }
 
-    @Override
     public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration, TimeUnit units) {
     }
 
@@ -17,7 +16,6 @@ public class DefaultLifecycleListener implements LifecycleListener {
     public void stateChanged(Object obj, LifecycleState newState) {
     }
 
-    @Override
     public <T> void objectInjecting(TypeLiteral<T> type) {
     }
 }

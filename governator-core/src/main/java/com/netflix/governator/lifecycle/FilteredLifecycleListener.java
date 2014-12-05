@@ -94,19 +94,19 @@ public class FilteredLifecycleListener implements LifecycleListener
         return false;
     }
 
-    @Override
-    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration, TimeUnit units) {
-        if ( isInPackages(obj) )
-        {
-            listener.objectInjected(type, obj, duration, units);
-        }
-    }
-
-    @Override
-    public <T> void objectInjecting(TypeLiteral<T> type) {
-        if ( isInPackages(type.getRawType()) )
-        {
-            listener.objectInjecting(type);
-        }
-    }
+//    @Override
+//    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration, TimeUnit units) {
+//        if ( isInPackages(obj) )
+//        {
+//            listener.objectInjected(type, obj, duration, units);
+//        }
+//    }
+//
+//    @Override
+//    public <T> void objectInjecting(TypeLiteral<T> type) {
+//        if ( isInPackages(type.getRawType()) )
+//        {
+//            listener.objectInjecting(type);
+//        }
+//    }
 }
