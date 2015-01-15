@@ -39,7 +39,7 @@ subprojects {
 	    compile     'org.hibernate:hibernate-validator:4.1.0.Final'
 	    compile     'org.apache.xbean:xbean-finder:3.11.1'
 	    compile     'org.apache.xbean:xbean-bundleutils:3.11.1'
-	    compile     'asm:asm-all:3.2'
+	    compile     'asm:asm-all:3.3.1'
 	    compile     'com.google.inject:guice:3.0'
 	    compile     'com.google.inject.extensions:guice-multibindings:3.0'
 	    compile     'com.netflix.archaius:archaius-core:0.5.12'
