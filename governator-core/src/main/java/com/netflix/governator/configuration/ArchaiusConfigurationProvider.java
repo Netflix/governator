@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.configuration.AbstractConfiguration;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.google.common.collect.Maps;
 import com.netflix.config.ConfigurationManager;

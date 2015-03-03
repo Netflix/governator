@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Binder;
+import com.google.inject.Binding;
 import com.google.inject.Key;
 import com.google.inject.MembersInjector;
 import com.google.inject.Module;
@@ -40,6 +41,7 @@ import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.matcher.Matcher;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.Message;
+import com.google.inject.spi.ProvisionListener;
 import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -304,6 +306,11 @@ public class BootstrapBinder implements Binder
     }
 
     @Override
+    public void bindListener(Matcher<? super Binding<?>> bindingMatcher, ProvisionListener... listeners) {
+        binder.withSource(getBindingLocation()).bindListener(bindingMatcher, listeners);
+    }
+
+    @Override
     public Binder withSource(Object source)
     {
         return binder.withSource(source);
@@ -331,6 +338,16 @@ public class BootstrapBinder implements Binder
     public void disableCircularProxies()
     {
         binder.disableCircularProxies();
+    }
+
+    @Override
+    public void requireAtInjectOnConstructors() {
+        binder.requireAtInjectOnConstructors();
+    }
+
+    @Override
+    public void requireExactBindingAnnotations() {
+        binder.requireExactBindingAnnotations();
     }
 
     public void disableAutoBinding() {
