@@ -41,6 +41,9 @@ public class TestPostInjectAction {
     public void handleTestMethodName(Method method)
     {
         testName = method.getName(); 
+        FooImpl.counter.set(0);
+        FooNotAnnotated.counter.set(0);
+        Transitive.counter.set(0);
     }
     
     @Singleton
@@ -69,13 +72,6 @@ public class TestPostInjectAction {
         public FooNotAnnotated(Provider<Transitive> transitive) {
             counter.incrementAndGet();
         }
-    }
-    
-    @BeforeMethod
-    public void before() {
-        FooImpl.counter.set(0);
-        FooNotAnnotated.counter.set(0);
-        Transitive.counter.set(0);
     }
     
     @Test
@@ -133,7 +129,7 @@ public class TestPostInjectAction {
         .createInjector();
         
         Assert.assertEquals(1, FooImpl.counter.get());
-        Assert.assertEquals(0, Transitive.counter.get());
+        Assert.assertEquals(1, Transitive.counter.get());
     }
     
     @Test

@@ -16,12 +16,11 @@
 
 package com.netflix.governator.configuration;
 
-import com.google.common.base.Supplier;
-import com.google.common.collect.Maps;
-import org.codehaus.jackson.map.ObjectMapper;
-
 import java.util.Date;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
 
 /**
  * ConfigurationProvider backed by the system properties

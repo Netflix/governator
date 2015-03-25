@@ -25,6 +25,8 @@ import java.lang.annotation.Target;
 /**
  * Marks a field as a configuration item. Governator will auto-assign the value based
  * on the {@link #value()} of the annotation via the set {@link ConfigurationProvider}.
+ * 
+ * @deprecated All configuration based features in governator will soon be removed in favor of Archaius 2.0
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)

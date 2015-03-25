@@ -2,14 +2,17 @@ package com.netflix.governator.configuration;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Implements the deserialization part of {@link ConfigurationProvider} to simplify implementations.
  *
  * Created by jad.naous on 4/2/14.
+ * 
+ * @deprecated Deprecated in favor of using Archaius 2.x
  */
 public abstract class AbstractObjectConfigurationProvider extends DefaultConfigurationProvider {
 

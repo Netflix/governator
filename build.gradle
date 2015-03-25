@@ -42,12 +42,14 @@ subprojects {
 	    compile     'asm:asm-all:3.2'
 	    compile     'com.google.inject:guice:3.0'
 	    compile     'com.google.inject.extensions:guice-multibindings:3.0'
-	    compile     'com.netflix.archaius:archaius-core:0.5.12'
+	    compile     'com.fasterxml.jackson.core:jackson-core:2.4.3'
+            compile     'com.fasterxml.jackson.core:jackson-databind:2.4.3'
+
 	    compile     'com.google.inject.extensions:guice-grapher:3.0'    // should be provided - only if you want graphing
 	
 	    // if you are using Java 7 you can remove this and switch to the JDK version
 	    compile     'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
-	
+
 	    testCompile 'org.testng:testng:6.1.1'
 	    testCompile 'org.mockito:mockito-core:1.8.5'
 	    testCompile 'org.slf4j:slf4j-log4j12:1.6.1'
@@ -75,6 +77,16 @@ project(':governator-servlet') {
         compile     project(':governator')
         compile     'javax.servlet:servlet-api:2.5'
         compile     'com.google.inject.extensions:guice-servlet:3.0'
+    }
+}
+
+project(':governator-archaius') {
+    apply plugin: 'java'
+    dependencies {
+        compile     project(':governator')
+        compile     'com.netflix.archaius:archaius-core:0.6.5'
+
+        testCompile project(':governator').sourceSets.test.output
     }
 }
 

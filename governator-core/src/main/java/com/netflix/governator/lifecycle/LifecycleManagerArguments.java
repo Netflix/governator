@@ -16,19 +16,27 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Singleton;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.guice.LifecycleAnnotationProcessor;
 import com.netflix.governator.lifecycle.warmup.WarmUpException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class LifecycleManagerArguments
 {
     private static final Logger             log = LoggerFactory.getLogger(LifecycleManagerArguments.class);
@@ -73,18 +81,20 @@ public class LifecycleManagerArguments
             return DEFAULT_WARM_UP_PADDING_MS;
         }
     };
+    
+    @Inject
+    private Set<LifecycleAnnotationProcessor> processors;
 
     @Inject
     public LifecycleManagerArguments(
             ConfigurationDocumentation configurationDocumentation,
-            ConfigurationMapper configurationMapper,
-            ConfigurationProvider configurationProvider) 
+            ConfigurationMapper configurationMapper) 
     {
         this.configurationDocumentation = configurationDocumentation;
         this.configurationMapper = configurationMapper;
-        this.configurationProvider = configurationProvider;
     }
     
+    @Deprecated
     public LifecycleManagerArguments() {
         this.configurationDocumentation = new ConfigurationDocumentation();
         this.configurationProvider = new LifecycleConfigurationProviders();
@@ -146,4 +156,9 @@ public class LifecycleManagerArguments
     public ConfigurationDocumentation getConfigurationDocumentation() {
         return configurationDocumentation;
     }
+    
+    public Collection<LifecycleAnnotationProcessor> getAnnotationProcessors() {
+        return processors == null ? Collections.<LifecycleAnnotationProcessor>emptyList() : processors;
+    }
+
 }
