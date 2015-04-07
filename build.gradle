@@ -1,31 +1,22 @@
+plugins {
+    id 'nebula.netflixoss' version '2.2.9'
+}
+
 // Establish version and status
 ext.githubProjectName = rootProject.name // Change if github project name is not the same as the root project's name
 
-buildscript {
+subprojects {
+    apply plugin: 'nebula.netflixoss'
+    apply plugin: 'java'
+
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+
     repositories {
         mavenLocal()
-        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
+        jcenter()
     }
-    apply from: file('gradle/buildscript.gradle'), to: buildscript 
-}
 
-allprojects {
-    repositories { 
-        mavenLocal()
-        mavenCentral() // maven { url: 'http://jcenter.bintray.com' }
-    }
-}
-
-apply from: file('gradle/convention.gradle')
-apply from: file('gradle/maven.gradle')
-//apply from: file('gradle/check.gradle')
-//apply from: file('gradle/license.gradle')
-apply from: file('gradle/release.gradle')
-
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-
-subprojects {
 	group = "com.netflix.${githubProjectName}"
 
 	test {
@@ -55,14 +46,10 @@ subprojects {
 }
 
 project(':governator') {
-    apply plugin: 'java'
-    dependencies {
-        
-    }
+
 }
 
 project(':governator-test-junit') {
-    apply plugin: 'java'
     dependencies {
         compile     project(':governator')
         compile     "junit:junit:4.11"
@@ -70,7 +57,6 @@ project(':governator-test-junit') {
 }
 
 project(':governator-servlet') {
-    apply plugin: 'java'
     dependencies {
         compile     project(':governator')
         compile     'javax.servlet:servlet-api:2.5'
@@ -79,7 +65,6 @@ project(':governator-servlet') {
 }
 
 project(':governator-commons-cli') {
-    apply plugin: 'java'
     dependencies {
         compile     project(':governator')
         compile     "commons-cli:commons-cli:1.2"
