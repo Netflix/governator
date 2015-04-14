@@ -43,9 +43,6 @@ class InternalLifecycleModule extends AbstractModule {
 
     public static class LifecycleInjectionListener implements TypeListener {
 
-        // this really serves as a Set purpose.
-        // put dummy boolean as Map value.
-        // value is really not important here.
         private final CopyOnWriteArraySet<Dependency<?>> seen = new CopyOnWriteArraySet<Dependency<?>>();
 
         private final ConcurrentMap<Class<?>, LifecycleMethods> lifecycleMethods = Maps.newConcurrentMap();

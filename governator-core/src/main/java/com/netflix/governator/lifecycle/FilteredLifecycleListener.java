@@ -27,7 +27,7 @@ import com.google.inject.TypeLiteral;
  * Wrapper listener that forwards to the provided listener only when the obj is in one of the
  * specified base packages.
  */
-public class FilteredLifecycleListener implements LifecycleListener
+public class FilteredLifecycleListener extends DefaultLifecycleListener
 {
     private final ImmutableSet<String> packages;
     private final LifecycleListener listener;
