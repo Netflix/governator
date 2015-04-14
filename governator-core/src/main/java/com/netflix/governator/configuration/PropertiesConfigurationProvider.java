@@ -20,13 +20,14 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 
 /**
  * ConfigurationProvider backed by a {#link Properties}
+ * @deprecated Deprecated in favor of using Archaius 2.x
  */
+@Deprecated
 public class PropertiesConfigurationProvider extends AbstractObjectConfigurationProvider
 {
     private final Properties properties;

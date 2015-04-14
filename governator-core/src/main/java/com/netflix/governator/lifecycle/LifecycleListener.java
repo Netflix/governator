@@ -26,7 +26,7 @@ import com.google.inject.TypeLiteral;
 public interface LifecycleListener
 {
     /**
-     * When Guice injects an object, this callback will be notified
+     * When Guice injects an object, this callback will be notified.  
      *
      * @param type object type being injected
      * @param obj  object being injected
@@ -43,7 +43,7 @@ public interface LifecycleListener
      * @param duration
      * @param units
      */
-//    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration, TimeUnit units);
+    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration, TimeUnit units);
     
     /**
      * Called when an object's lifecycle state changes
@@ -58,5 +58,5 @@ public interface LifecycleListener
      * using ConcurrentProvider
      * @param type
      */
-//    public <T> void objectInjecting(TypeLiteral<T> type);
+    public <T> void objectInjecting(TypeLiteral<T> type);
 }

@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.netflix.governator.guice.BootstrapBinder;
+import com.netflix.governator.guice.AbstractBootstrapModule;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.LifecycleInjectorBuilderSuite;
@@ -26,9 +26,9 @@ public @interface Bootstrap {
     Class<? extends BootstrapModule> bootstrap() default NullBootstrapModule.class;
     Class<? extends Module> module() default NullModule.class;
     
-    public static class NullBootstrapModule implements BootstrapModule {
+    public static class NullBootstrapModule extends AbstractBootstrapModule {
 		@Override
-		public void configure(BootstrapBinder binder) {
+		public void configure() {
 		}
     }
     

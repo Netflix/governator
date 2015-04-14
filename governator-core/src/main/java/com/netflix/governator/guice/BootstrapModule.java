@@ -17,7 +17,13 @@
 package com.netflix.governator.guice;
 
 /**
- * Abstraction for binding during the bootstrap phase
+ * Abstraction for binding during the bootstrap phase.  
+ * 
+ * BootstrapModule should be implemented only to customize the LifecycleInjector and not
+ * for generic bindings.
+ * 
+ * Code should extend {@link AbstractBootstrapModule} instead of implementing {@link BootstrapModule}  
+ * directly.
  */
 public interface BootstrapModule
 {

@@ -2,8 +2,7 @@ package com.netflix.governator.guice.bootstrap;
 
 import com.google.inject.Inject;
 import com.google.inject.ProvisionException;
-import com.netflix.governator.guice.BootstrapBinder;
-import com.netflix.governator.guice.BootstrapModule;
+import com.netflix.governator.guice.AbstractBootstrapModule;
 import com.netflix.governator.guice.ModuleTransformer;
 import com.netflix.governator.guice.PostInjectorAction;
 import com.netflix.governator.guice.annotations.GovernatorConfiguration;
@@ -11,7 +10,7 @@ import com.netflix.governator.guice.annotations.GovernatorConfiguration;
 /**
  * Implementation for the @GovernatorConfiguration main bootstrap class annotation
  */
-public class GovernatorBootstrap implements BootstrapModule {
+public class GovernatorBootstrap extends AbstractBootstrapModule {
 
     private final GovernatorConfiguration config;
     
@@ -21,15 +20,16 @@ public class GovernatorBootstrap implements BootstrapModule {
     }
     
     @Override
-    public void configure(BootstrapBinder binder) {
-        if (config.enableAutoBindSingleton() == false)
-            binder.disableAutoBinding();
-        binder.inStage(config.stage());
-        binder.inMode(config.mode());
+    public void configure() {
+        if (!config.enableAutoBindSingleton()) {
+            disableAutoBinding();
+        }
+        inStage(config.stage());
+        inMode(config.mode());
         
         for (Class<? extends PostInjectorAction> action : config.actions()) {
             try {
-                binder.bindPostInjectorAction().to(action);
+                bindPostInjectorAction().to(action);
             } catch (Exception e) {
                 throw new ProvisionException("Error creating postInjectorAction '" + action.getName() + "'", e);
             }
@@ -37,7 +37,7 @@ public class GovernatorBootstrap implements BootstrapModule {
         
         for (Class<? extends ModuleTransformer> transformer : config.transformers()) {
             try {
-                binder.bindModuleTransformer().to(transformer);
+                bindModuleTransformer().to(transformer);
             } catch (Exception e) {
                 throw new ProvisionException("Error creating postInjectorAction '" + transformer.getName() + "'", e);
             }

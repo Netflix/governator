@@ -22,6 +22,7 @@ import java.lang.annotation.Annotation;
 
 /**
  * Used to perform the binding for a given {@link AutoBind} annotation
+ * @deprecated Auto binding is deprecated in favor of using Guice modules
  */
 public interface AutoBindProvider<T extends Annotation>
 {

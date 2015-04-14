@@ -69,7 +69,7 @@ public class TestTransitiveNonLazySingletons {
                 .build()
                 .createInjector();
             
-            Assert.assertEquals(0,  ThisShouldBeLazy.counter.get());
+            Assert.assertEquals(1,  ThisShouldBeLazy.counter.get());
             Assert.assertEquals(1,  ThisShouldBeEager.counter.get());
     }
     
