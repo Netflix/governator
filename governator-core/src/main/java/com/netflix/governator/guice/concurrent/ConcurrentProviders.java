@@ -106,9 +106,9 @@ public class ConcurrentProviders {
                 InjectionPoint injectionPoint = InjectionPoint.forConstructorOf(type);
                 final long startTime = System.nanoTime();
                 
-//                for (LifecycleListener listener : listeners) {
-//                    listener.objectInjecting(TypeLiteral.get(type));
-//                }
+                for (LifecycleListener listener : listeners) {
+                    listener.objectInjecting(TypeLiteral.get(type));
+                }
                 if (injectionPoint != null) {
                     List<Dependency<?>> deps = injectionPoint.getDependencies();
                     if (deps.size() > 0) {
@@ -163,9 +163,9 @@ public class ConcurrentProviders {
                             try {
                                 T obj = (T)constructor.newInstance(params.toArray());
                                 long duration = System.nanoTime() - startTime;
-//                                for (LifecycleListener listener : listeners) {
-//                                    listener.objectInjected((TypeLiteral<T>)TypeLiteral.get(type), obj, duration, TimeUnit.NANOSECONDS);
-//                                }
+                                for (LifecycleListener listener : listeners) {
+                                    listener.objectInjected((TypeLiteral<T>)TypeLiteral.get(type), obj, duration, TimeUnit.NANOSECONDS);
+                                }
                                 return obj;
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
@@ -180,9 +180,9 @@ public class ConcurrentProviders {
                 try {
                     T obj = type.newInstance();
                     long duration = System.nanoTime() - startTime;
-//                    for (LifecycleListener listener : listeners) {
-//                        listener.objectInjected((TypeLiteral<T>)TypeLiteral.get(type), obj, duration, TimeUnit.NANOSECONDS);
-//                    }
+                    for (LifecycleListener listener : listeners) {
+                        listener.objectInjected((TypeLiteral<T>)TypeLiteral.get(type), obj, duration, TimeUnit.NANOSECONDS);
+                    }
                     return obj;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -228,14 +228,14 @@ public class ConcurrentProviders {
                     @Override
                     public S get() {
                         final long startTime = System.nanoTime();
-//                        for (LifecycleListener listener : listeners) {
-//                            listener.objectInjecting(key.getTypeLiteral());
-//                        }
+                        for (LifecycleListener listener : listeners) {
+                            listener.objectInjecting(key.getTypeLiteral());
+                        }
                         S obj = injector.getInstance(key);
                         final long duration = System.nanoTime() - startTime;
-//                        for (LifecycleListener listener : listeners) {
-//                            listener.objectInjected(key.getTypeLiteral(), obj, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-//                        }
+                        for (LifecycleListener listener : listeners) {
+                            listener.objectInjected(key.getTypeLiteral(), obj, duration, TimeUnit.NANOSECONDS);
+                        }
                         return obj;
                     }
                 };
