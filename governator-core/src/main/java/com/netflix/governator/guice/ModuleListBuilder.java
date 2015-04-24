@@ -73,7 +73,7 @@ public class ModuleListBuilder {
                     return instance;
                 }
                 
-                LOG.info("Getting instace of : " + type.getName());
+                LOG.info("Getting instance of : " + type.getName());
                 if (excludes.contains(type)) {
                     LOG.info("Module '" + type.getName() + "' is excluded");
                     return null;
