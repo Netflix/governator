@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -31,12 +30,23 @@ import com.google.common.collect.Multimap;
  * Used internally to hold the methods important to the LifecycleManager
  */
 public class LifecycleMethods {
-    final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
-    final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
-    final Multimap<Class<? extends Annotation>, Annotation> classMap = ArrayListMultimap.create();
+    private final Multimap<Class<? extends Annotation>, Field> fieldMap;
+    private final Multimap<Class<? extends Annotation>, Method> methodMap;
+    private final Multimap<Class<? extends Annotation>, Annotation> classMap;
 
-    boolean hasValidations = false;
-
+    private final boolean hasValidations;
+    
+    public LifecycleMethods(
+            Multimap<Class<? extends Annotation>, Field> fieldMap,
+            Multimap<Class<? extends Annotation>, Method> methodMap,
+            Multimap<Class<? extends Annotation>, Annotation> classMap, 
+            boolean hasValidations) {
+        this.fieldMap  = fieldMap;
+        this.methodMap = methodMap;
+        this.classMap  = classMap;
+        this.hasValidations = hasValidations;
+    }
+    
     public boolean hasLifecycleAnnotations() {
         return hasValidations || (methodMap.size() > 0) || (fieldMap.size() > 0);
     }
@@ -68,14 +78,11 @@ public class LifecycleMethods {
      */
     public <T extends Annotation> Collection<T> classAnnotationsFor(Class<T> annotation) {
         Collection<Annotation> annotations = classMap.get(annotation);
-        return Collections2.transform
-        (
+        return Collections2.transform (
             annotations,
-            new Function<Annotation, T>()
-            {
+            new Function<Annotation, T>() {
                 @Override
-                public T apply(Annotation annotation)
-                {
+                public T apply(Annotation annotation) {
                     //noinspection unchecked
                     return (T)annotation;
                 }

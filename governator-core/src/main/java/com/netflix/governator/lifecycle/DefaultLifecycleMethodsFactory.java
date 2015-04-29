@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Singleton;
 import javax.validation.Constraint;
@@ -41,21 +42,31 @@ public class DefaultLifecycleMethodsFactory implements LifecycleMethodsFactory {
     
     @Override
     public <T> LifecycleMethods create(Class<T> clazz) {
-        LifecycleMethods methods = new LifecycleMethods();
-        if (clazz != null) {
-            addLifeCycleMethods(clazz, methods, ArrayListMultimap.<Class<? extends Annotation>, String>create());
-        }
-        return methods;
+        Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
+        Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();;
+        Multimap<Class<? extends Annotation>, Annotation> classMap = ArrayListMultimap.create();;
+
+        AtomicBoolean hasValidations = new AtomicBoolean(false);
+        
+        addLifeCycleMethods(clazz, fieldMap, methodMap, classMap, hasValidations, ArrayListMultimap.<Class<? extends Annotation>, String>create());
+        
+        return new LifecycleMethods(fieldMap, methodMap, classMap, hasValidations.get());
     }
 
-    private void addLifeCycleMethods(Class<?> clazz, LifecycleMethods methods, Multimap<Class<? extends Annotation>, String> usedNames) {
+    private void addLifeCycleMethods(
+            Class<?> clazz,
+            Multimap<Class<? extends Annotation>, Field> fieldMap, 
+            Multimap<Class<? extends Annotation>, Method> methodMap, 
+            Multimap<Class<? extends Annotation>, Annotation> classMap,
+            AtomicBoolean hasValidations,
+            Multimap<Class<? extends Annotation>, String> usedNames) {
         if (clazz == null) {
             return;
         }
         
         for ( Class<? extends Annotation> annotationClass : classAnnotations ) {
             if ( clazz.isAnnotationPresent(annotationClass) ) {
-                methods.classMap.put(annotationClass, clazz.getAnnotation(annotationClass));
+                classMap.put(annotationClass, clazz.getAnnotation(annotationClass));
             }
         }
 
@@ -64,13 +75,13 @@ public class DefaultLifecycleMethodsFactory implements LifecycleMethodsFactory {
                 continue;
             }
 
-            if ( !methods.hasValidations ) {
-                methods.hasValidations = checkForValidations(field);
+            if ( !hasValidations.get() ) {
+                hasValidations.set(checkForValidations(field));
             }
 
             for ( Class<? extends Annotation> annotationClass : fieldAnnotations ) {
                 if (processField(field, annotationClass, usedNames)) {
-                    methods.fieldMap.put(annotationClass, field);
+                    fieldMap.put(annotationClass, field);
                 }
             }
         }
@@ -82,20 +93,20 @@ public class DefaultLifecycleMethodsFactory implements LifecycleMethodsFactory {
 
             for ( Class<? extends Annotation> annotationClass : methodAnnotations ) {
                 if (processMethod(method, annotationClass, usedNames)) {
-                    methods.methodMap.put(annotationClass, method);
+                    methodMap.put(annotationClass, method);
                 }
             }
             
             // Special case for @WarmUp annotated methods since there is no processor for them (yet).
             if (method.isAnnotationPresent(WarmUp.class)) {
-                methods.methodMap.put(WarmUp.class, method);
+                methodMap.put(WarmUp.class, method);
             }
         }
 
         // Recurse through super classes and interfaces
-        addLifeCycleMethods(clazz.getSuperclass(), methods, usedNames);
+        addLifeCycleMethods(clazz.getSuperclass(), fieldMap, methodMap, classMap, hasValidations, usedNames);
         for ( Class<?> face : clazz.getInterfaces() ) {
-            addLifeCycleMethods(face, methods, usedNames);
+            addLifeCycleMethods(face, fieldMap, methodMap, classMap, hasValidations, usedNames);
         }   
     }
 
