@@ -3,9 +3,10 @@ package com.netflix.governator.guice.bootstrap;
 import javax.inject.Inject;
 
 import com.netflix.governator.annotations.Modules;
-import com.netflix.governator.guice.AbstractBootstrapModule;
+import com.netflix.governator.guice.BootstrapBinder;
+import com.netflix.governator.guice.BootstrapModule;
 
-public class ModulesBootstrap extends AbstractBootstrapModule {
+public class ModulesBootstrap implements BootstrapModule {
     private final Modules modules;
     
     @Inject
@@ -14,9 +15,9 @@ public class ModulesBootstrap extends AbstractBootstrapModule {
     }
     
     @Override
-    public void configure() {
-        include(modules.include());
-        exclude(modules.exclude());
+    public void configure(BootstrapBinder binder) {
+        binder.include(modules.include());
+        binder.exclude(modules.exclude());
     }
 
 }

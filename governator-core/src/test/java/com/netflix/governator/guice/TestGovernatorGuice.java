@@ -48,6 +48,7 @@ import com.netflix.governator.lifecycle.DefaultLifecycleListener;
 import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.lifecycle.LifecycleState;
 
 public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
 {
@@ -97,64 +98,96 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
     public void     testAutoBindSingletonVsSingleton(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<Object>        objects = Lists.newArrayList();
-        final LifecycleListener   listener = new DefaultLifecycleListener() {
+        final LifecycleListener   listener = new DefaultLifecycleListener()
+        {
             @Override
-            public <T> void objectInjected(TypeLiteral<T> type, T obj) {
+            public <T> void objectInjected(TypeLiteral<T> type, T obj)
+            {
                 objects.add(obj);
+            }
+
+            @Override
+            public void stateChanged(Object obj, LifecycleState newState)
+            {
             }
         };
         Injector    injector = lifecycleInjectorBuilder
             .usingBasePackages(PACKAGES)
-            .withBootstrapModule(
-                new BootstrapModule() {
+            .withBootstrapModule
+            (
+                new BootstrapModule()
+                {
                     @Override
-                    public void configure(BootstrapBinder binder){
-                        binder.bindLifecycleListener().toInstance(listener); // new FilteredLifecycleListener(listener, PACKAGES));
+                    public void configure(BootstrapBinder binder)
+                    {
+                        binder.bindLifecycleListener().toInstance(new FilteredLifecycleListener(listener, PACKAGES));
                     }
                 }
             )
             .createInjector();
 
-        Assert.assertNull(Iterables.find(
+        Assert.assertNull
+        (
+            Iterables.find
+            (
                 objects,
-                new Predicate<Object>() {
+                new Predicate<Object>()
+                {
                     @Override
-                    public boolean apply(Object obj) {
+                    public boolean apply(Object obj)
+                    {
                         return obj instanceof UnreferencedSingleton;
                     }
                 },
-                null));
-        
-        Assert.assertNotNull(Iterables.find(
-                objects,
-                new Predicate<Object>() {
-                    @Override
-                    public boolean apply(Object obj) {
-                        return obj instanceof SimpleEagerSingleton;
-                    }
-                },
-                null));
+                null
+            )
+        );
+        Assert.assertNotNull
+        (
+            Iterables.find
+                (
+                    objects,
+                    new Predicate<Object>()
+                    {
+                        @Override
+                        public boolean apply(Object obj)
+                        {
+                            return obj instanceof SimpleEagerSingleton;
+                        }
+                    },
+                    null
+                )
+        );
 
         injector.getInstance(UnreferencedSingleton.class);
-        
-        Assert.assertNotNull(Iterables.find(
-                objects,
-                new Predicate<Object>() {
-                    @Override
-                    public boolean apply(Object obj) {
-                        return obj instanceof UnreferencedSingleton;
-                    }
-                },
-                null));
+        Assert.assertNotNull
+        (
+            Iterables.find
+                (
+                    objects,
+                    new Predicate<Object>()
+                    {
+                        @Override
+                        public boolean apply(Object obj)
+                        {
+                            return obj instanceof UnreferencedSingleton;
+                        }
+                    },
+                    null
+                )
+        );
     }
 
     @Test
     public void     testSimpleProvider() throws Exception
     {
-        Injector injector = Guice.createInjector(
-            new AbstractModule() {
+        Injector                injector = Guice.createInjector
+        (
+            new AbstractModule()
+            {
                 @Override
-                protected void configure() {
+                protected void configure()
+                {
                     ProviderBinderUtil.bind(binder(), SimpleProvider.class, Scopes.SINGLETON);
                     ProviderBinderUtil.bind(binder(), SimpleProviderAlt.class, Scopes.SINGLETON);
                 }

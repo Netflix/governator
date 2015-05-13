@@ -16,23 +16,21 @@
 
 package com.netflix.governator.annotations;
 
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
+import com.netflix.governator.lifecycle.LifecycleManager;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Marks a method as a pre-configuration method. Governator will execute pre-configuration methods
  * prior to configuration assignment
- * 
- * @deprecated All configuration based features in governator will soon be removed in favor of Archaius 2.0
  */
 @Documented
 @Retention(RUNTIME)
 @Target(METHOD)
-@Deprecated
 public @interface PreConfiguration
 {
 }

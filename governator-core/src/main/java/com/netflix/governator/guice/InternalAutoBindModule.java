@@ -47,12 +47,6 @@ import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 
-/**
- * Module for creating bindings from a class path scanner.
- * 
- * @author elandau
- *
- */
 class InternalAutoBindModule extends AbstractModule
 {
     private static final Logger LOG = LoggerFactory.getLogger(InternalAutoBindModule.class);
@@ -178,7 +172,7 @@ class InternalAutoBindModule extends AbstractModule
             }
             else if ( Module.class.isAssignableFrom(clazz) )
             {
-                // Modules are handled by {@link InternalAutoBindModuleBootstrapModule}
+                // Modules are handled by {@link InteranlAutoBindModuleBootstrapModule}
                 continue;
             }
             else

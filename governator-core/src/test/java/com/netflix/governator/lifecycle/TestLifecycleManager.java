@@ -23,35 +23,35 @@ import javax.validation.constraints.Min;
 @SuppressWarnings("UnusedDeclaration")
 public class TestLifecycleManager
 {
-//    @Test
-//    public void     testValidation() throws Exception
-//    {
-//        Object          goodObj = new Object()
-//        {
-//            @Min(1)
-//            private int     a = 10;
-//        };
-//
-//        Object          badObj = new Object()
-//        {
-//            @Min(1)
-//            private int     a = 0;
-//        };
-//
-//        LifecycleManager    manager = new LifecycleManager();
-//        manager.add(goodObj);
-//        manager.start();
-//
-//        manager = new LifecycleManager();
-//        manager.add(badObj);
-//        try
-//        {
-//            manager.start();
-//            Assert.fail();
-//        }
-//        catch ( ValidationException e )
-//        {
-//            // correct
-//        }
-//    }
+    @Test
+    public void     testValidation() throws Exception
+    {
+        Object          goodObj = new Object()
+        {
+            @Min(1)
+            private int     a = 10;
+        };
+
+        Object          badObj = new Object()
+        {
+            @Min(1)
+            private int     a = 0;
+        };
+
+        LifecycleManager    manager = new LifecycleManager();
+        manager.add(goodObj);
+        manager.start();
+
+        manager = new LifecycleManager();
+        manager.add(badObj);
+        try
+        {
+            manager.start();
+            Assert.fail();
+        }
+        catch ( ValidationException e )
+        {
+            // correct
+        }
+    }
 }

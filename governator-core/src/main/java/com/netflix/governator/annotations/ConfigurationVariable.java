@@ -8,7 +8,6 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
-@Deprecated
 public @interface ConfigurationVariable {
     String name();
 }

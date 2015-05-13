@@ -9,7 +9,6 @@ import com.google.common.base.Supplier;
  * 
  * @author elandau
  *
- * @deprecated Deprecated in favor of using Archaius 2.x
  */
 public abstract class DefaultConfigurationProvider implements ConfigurationProvider {
 
