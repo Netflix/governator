@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.xbean.finder.AnnotationFinder;
 import org.apache.xbean.finder.archive.Archive;
 import org.apache.xbean.finder.archive.CompositeArchive;
+import org.apache.xbean.finder.archive.FileArchive;
 import org.apache.xbean.finder.archive.JarArchive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +135,7 @@ public class ClasspathScanner
                     }
                     else
                     {
-                        archives.add(new GovernatorFileArchive(classLoader, thisUrl, basePackage));
+                        archives.add(new FileArchive(classLoader, thisUrl, basePackage));
                     }
                 }
                 CompositeArchive compositeArchive = new CompositeArchive(archives);

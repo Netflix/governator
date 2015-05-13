@@ -18,7 +18,7 @@ package com.netflix.governator.configuration;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Date;
 import java.util.Map;
