@@ -20,8 +20,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 
 /**

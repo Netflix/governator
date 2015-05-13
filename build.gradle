@@ -26,62 +26,21 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 subprojects {
-	group = "com.netflix.${githubProjectName}"
+    group = "com.netflix.${githubProjectName}"
 
-	test {
-	    useTestNG()
-	}
-
-	dependencies {
-	    compile     'javax.inject:javax.inject:1'
-	    compile     'com.google.guava:guava:14.0.1'
-	    compile     'org.slf4j:slf4j-api:1.6.3'
-	    compile     'org.hibernate:hibernate-validator:4.1.0.Final'
-	    compile     'org.apache.xbean:xbean-finder:3.11.1'
-	    compile     'org.apache.xbean:xbean-bundleutils:3.11.1'
-	    compile     'asm:asm-all:3.2'
-	    compile     'com.google.inject:guice:3.0'
-	    compile     'com.google.inject.extensions:guice-multibindings:3.0'
-	    compile     'com.netflix.archaius:archaius-core:0.5.12'
-	    compile     'com.google.inject.extensions:guice-grapher:3.0'    // should be provided - only if you want graphing
-	
-	    // if you are using Java 7 you can remove this and switch to the JDK version
-	    compile     'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
-	
-	    testCompile 'org.testng:testng:6.1.1'
-	    testCompile 'org.mockito:mockito-core:1.8.5'
-	    testCompile 'org.slf4j:slf4j-log4j12:1.6.1'
-	}
-}
-
-project(':governator') {
-    apply plugin: 'java'
-    dependencies {
-        
+    test {
+        useTestNG()
     }
-}
 
-project(':governator-test-junit') {
-    apply plugin: 'java'
     dependencies {
-        compile     project(':governator')
-        compile     "junit:junit:4.11"
-    }
-}
+       compile     'javax.inject:javax.inject:1'
 
-project(':governator-servlet') {
-    apply plugin: 'java'
-    dependencies {
-        compile     project(':governator')
-        compile     'javax.servlet:servlet-api:2.5'
-        compile     'com.google.inject.extensions:guice-servlet:3.0'
-    }
-}
+       compile 'com.fasterxml.jackson.core:jackson-annotations:2.4.3'
+       compile 'com.fasterxml.jackson.core:jackson-core:2.4.3'
+       compile 'com.fasterxml.jackson.core:jackson-databind:2.4.3'
 
-project(':governator-commons-cli') {
-    apply plugin: 'java'
-    dependencies {
-        compile     project(':governator')
-        compile     "commons-cli:commons-cli:1.2"
+       testCompile 'org.testng:testng:6.1.1'
+       testCompile 'org.mockito:mockito-core:1.8.5'
+       testCompile 'org.slf4j:slf4j-log4j12:1.6.1'
     }
 }

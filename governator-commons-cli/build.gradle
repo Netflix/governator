@@ -1,0 +1,10 @@
+// Establish version and status
+apply plugin: 'java'
+
+project(':governator-commons-cli') {
+    apply plugin: 'java'
+    dependencies {
+        compile     project(':governator')
+        compile     "commons-cli:commons-cli:1.2"
+    }
+}

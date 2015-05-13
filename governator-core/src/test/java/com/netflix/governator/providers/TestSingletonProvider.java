@@ -2,7 +2,6 @@ package com.netflix.governator.providers;
 
 import junit.framework.Assert;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.testng.annotations.Test;
 
 public class TestSingletonProvider {
@@ -23,6 +22,6 @@ public class TestSingletonProvider {
         Foo foo1 = provider.get();
         Foo foo2 = provider.get();
         
-        Assert.assertEquals(ObjectUtils.identityToString(foo1), ObjectUtils.identityToString(foo2));
+        Assert.assertSame(foo1, foo2);
     }
 }

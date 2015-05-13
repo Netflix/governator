@@ -16,17 +16,19 @@
 
 package com.netflix.governator.lifecycle.warmup;
 
-import com.google.common.collect.Lists;
-import com.netflix.governator.annotations.WarmUp;
-import com.netflix.governator.lifecycle.LifecycleMethods;
-import com.netflix.governator.lifecycle.LifecycleState;
-import jsr166y.RecursiveAction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RecursiveAction;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
+import com.netflix.governator.annotations.WarmUp;
+import com.netflix.governator.lifecycle.LifecycleMethods;
+import com.netflix.governator.lifecycle.LifecycleState;
 
 /**
  * <p>

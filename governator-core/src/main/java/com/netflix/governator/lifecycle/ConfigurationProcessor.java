@@ -16,6 +16,15 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Date;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
@@ -25,16 +34,6 @@ import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
 import com.netflix.governator.configuration.Property;
-
-import org.apache.commons.configuration.ConversionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Date;
-import java.util.Map;
 
 class ConfigurationProcessor
 {
@@ -122,11 +121,11 @@ class ConfigurationProcessor
                 ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
                 field = null;
             }
-            catch ( ConversionException e )
-            {
-                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
-                field = null;
-            }
+//            catch ( ConversionException e )
+//            {
+//                ignoreTypeMismtachIfConfigured(configuration, configurationName, e);
+//                field = null;
+//            }
         }
 
         if ( field != null )
