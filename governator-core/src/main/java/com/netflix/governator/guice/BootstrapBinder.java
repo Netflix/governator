@@ -84,21 +84,13 @@ public class BootstrapBinder implements Binder
     	return stack[0].toString();
     }
 
-    /**
-     * @deprecated These bindings should be done on a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors)
     {
         binder.bindInterceptor(classMatcher, methodMatcher, interceptors);
     }
 
-    /**
-     * @deprecated These bindings should be done on a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void bindScope(Class<? extends Annotation> annotationType, Scope scope)
     {
         binder.bindScope(annotationType, scope);
@@ -150,91 +142,58 @@ public class BootstrapBinder implements Binder
      * Use this to bind {@link ConfigurationProvider}s. Do NOT use standard Guice binding.
      *
      * @return configuration binding builder
-     * @deprecated All configuration based features in governator will soon be removed in favor of Archaius 2.0
      */
     public LinkedBindingBuilder<ConfigurationProvider> bindConfigurationProvider()
     {
         return Multibinder.newSetBinder(binder, ConfigurationProvider.class).addBinding();
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public <T> LinkedBindingBuilder<T> bind(Key<T> key)
     {
         warnOnSpecialized(key.getTypeLiteral().getRawType());
         return binder.withSource(getBindingLocation()).bind(key);
     }
     
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public <T> AnnotatedBindingBuilder<T> bind(TypeLiteral<T> typeLiteral)
     {
         warnOnSpecialized(typeLiteral.getRawType());
         return binder.withSource(getBindingLocation()).bind(typeLiteral);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public <T> AnnotatedBindingBuilder<T> bind(Class<T> type)
     {
         warnOnSpecialized(type);
         return binder.withSource(getBindingLocation()).bind(type);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public AnnotatedConstantBindingBuilder bindConstant()
     {
         return binder.withSource(getBindingLocation()).bindConstant();
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public <T> void requestInjection(TypeLiteral<T> type, T instance)
     {
         binder.withSource(getBindingLocation()).requestInjection(type, instance);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void requestInjection(Object instance)
     {
         binder.withSource(getBindingLocation()).requestInjection(instance);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void requestStaticInjection(Class<?>... types)
     {
         binder.withSource(getBindingLocation()).requestStaticInjection(types);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void install(Module module)
     {
         binder.withSource(getBindingLocation()).install(module);
@@ -280,10 +239,6 @@ public class BootstrapBinder implements Binder
         this.stage = stage;
     }
 
-    /**
-     * @deprecated Mode no longer an option 
-     * @param mode
-     */
     public void inMode(LifecycleInjectorMode mode) {
         this.mode = mode;
     }
@@ -336,71 +291,43 @@ public class BootstrapBinder implements Binder
         return binder.getMembersInjector(type);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void convertToTypes(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter converter)
     {
         binder.convertToTypes(typeMatcher, converter);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void bindListener(Matcher<? super TypeLiteral<?>> typeMatcher, TypeListener listener)
     {
         binder.withSource(getBindingLocation()).bindListener(typeMatcher, listener);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public Binder withSource(Object source)
     {
         return binder.withSource(source);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public Binder skipSources(@SuppressWarnings("rawtypes") Class... classesToSkip)
     {
         return binder.skipSources(classesToSkip);
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public PrivateBinder newPrivateBinder()
     {
         return binder.newPrivateBinder();
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void requireExplicitBindings()
     {
         binder.requireExplicitBindings();
     }
 
-    /**
-     * @deprecated These bindings should be done in a standard guice Module or AbstractModule and not in a BootstrapModule
-     */
     @Override
-    @Deprecated
     public void disableCircularProxies()
     {
         binder.disableCircularProxies();

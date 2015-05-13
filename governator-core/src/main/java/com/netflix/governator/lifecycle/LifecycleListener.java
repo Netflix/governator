@@ -26,7 +26,7 @@ import com.google.inject.TypeLiteral;
 public interface LifecycleListener
 {
     /**
-     * When Guice injects an object, this callback will be notified.  
+     * When Guice injects an object, this callback will be notified
      *
      * @param type object type being injected
      * @param obj  object being injected

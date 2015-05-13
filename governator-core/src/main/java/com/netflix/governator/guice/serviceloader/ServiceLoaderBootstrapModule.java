@@ -4,14 +4,15 @@ import java.util.ServiceLoader;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Module;
-import com.netflix.governator.guice.AbstractBootstrapModule;
+import com.netflix.governator.guice.BootstrapBinder;
+import com.netflix.governator.guice.BootstrapModule;
 
 /**
  * BootstrapModule that loads guice modules via the ServiceLoader.
  * 
  * @author elandau
  */
-public class ServiceLoaderBootstrapModule extends AbstractBootstrapModule {
+public class ServiceLoaderBootstrapModule implements BootstrapModule {
     private final Class<? extends Module> type;
     
     public ServiceLoaderBootstrapModule() {
@@ -23,8 +24,8 @@ public class ServiceLoaderBootstrapModule extends AbstractBootstrapModule {
     }
     
     @Override
-    public void configure() {
+    public void configure(BootstrapBinder binder) {
         ServiceLoader<? extends Module> modules = ServiceLoader.load(type);
-        includeModules(Lists.newArrayList(modules.iterator()));
+        binder.includeModules(Lists.newArrayList(modules.iterator()));
     }
 }

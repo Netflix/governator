@@ -5,7 +5,7 @@ import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 
-public class LoadersBootstrapModule extends AbstractBootstrapModule {
+public class LoadersBootstrapModule implements BootstrapModule {
 
     private ClasspathScanner scanner;
 
@@ -14,7 +14,7 @@ public class LoadersBootstrapModule extends AbstractBootstrapModule {
     }
     
     @Override
-    public void configure() {
+    public void configure(BootstrapBinder binder) {
         for ( Class<?> clazz : scanner.getClasses() )
         {
             if ( clazz.isAnnotationPresent(AutoBindSingleton.class) && ConfigurationProvider.class.isAssignableFrom(clazz) )
@@ -25,9 +25,10 @@ public class LoadersBootstrapModule extends AbstractBootstrapModule {
                 Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for ConfigurationProviders");
 
                 @SuppressWarnings("unchecked")
-                Class<? extends ConfigurationProvider> configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
-                bindConfigurationProvider().to(configurationProviderClass).asEagerSingleton();
+                Class<? extends ConfigurationProvider>    configurationProviderClass = (Class<? extends ConfigurationProvider>)clazz;
+                binder.bindConfigurationProvider().to(configurationProviderClass).asEagerSingleton();
             }
         }        
     }
+
 }

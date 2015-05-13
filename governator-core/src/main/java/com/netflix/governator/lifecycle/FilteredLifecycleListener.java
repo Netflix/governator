@@ -16,12 +16,13 @@
 
 package com.netflix.governator.lifecycle;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.TypeLiteral;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Wrapper listener that forwards to the provided listener only when the obj is in one of the

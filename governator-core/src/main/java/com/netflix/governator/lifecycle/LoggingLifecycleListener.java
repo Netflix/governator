@@ -2,6 +2,7 @@ package com.netflix.governator.lifecycle;
 
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,7 @@ public class LoggingLifecycleListener extends DefaultLifecycleListener {
     
     @Override
     public <T> void objectInjected(TypeLiteral<T> type, T obj) {
-        LOG.info("Injected {} {}", new Object[]{type.getRawType().getName(), obj.hashCode()});
+        LOG.info("Injected {} {}", new Object[]{type.toString(), ObjectUtils.identityToString(obj)});
     }
 
     @Override

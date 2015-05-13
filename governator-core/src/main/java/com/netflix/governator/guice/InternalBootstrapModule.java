@@ -27,7 +27,6 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
-import com.google.inject.multibindings.Multibinder;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
@@ -36,11 +35,7 @@ import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
-import com.netflix.governator.lifecycle.processors.ConfigurationProviderLifecycleAnnotationProcessor;
-import com.netflix.governator.lifecycle.processors.PostConstructLifecycleAnnotationProcessor;
-import com.netflix.governator.lifecycle.processors.PreConfigureLifecycleAnnotationProcessor;
-import com.netflix.governator.lifecycle.processors.PreDestroyLifecycleAnnotationProcessor;
-import com.netflix.governator.lifecycle.processors.ResourcesLifecycleAnnotationProcessor;
+import com.netflix.governator.lifecycle.LifecycleManager;
 
 class InternalBootstrapModule extends AbstractModule
 {
@@ -54,13 +49,13 @@ class InternalBootstrapModule extends AbstractModule
     private boolean disableAutoBinding;
     private final Collection<BootstrapModule> bootstrapModules;
     
-    private static class LifecycleConfigurationProvidersProvider implements Provider<ConfigurationProvider>
+    private static class LifecycleConfigurationProvidersProvider implements Provider<LifecycleConfigurationProviders>
     {
         @Inject(optional = true)
         private Set<ConfigurationProvider> configurationProviders = Sets.newHashSet();
 
         @Override
-        public ConfigurationProvider get()
+        public LifecycleConfigurationProviders get()
         {
             return new LifecycleConfigurationProviders(configurationProviders);
         }
@@ -90,13 +85,6 @@ class InternalBootstrapModule extends AbstractModule
         bindScope(LazySingleton.class, LazySingletonScope.get());
         bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
 
-        Multibinder<LifecycleAnnotationProcessor> binding = Multibinder.newSetBinder(binder(), LifecycleAnnotationProcessor.class);
-        binding.addBinding().to(PreConfigureLifecycleAnnotationProcessor.class);
-        binding.addBinding().to(ConfigurationProviderLifecycleAnnotationProcessor.class);
-        binding.addBinding().to(ResourcesLifecycleAnnotationProcessor.class);
-        binding.addBinding().to(PostConstructLifecycleAnnotationProcessor.class);
-        binding.addBinding().to(PreDestroyLifecycleAnnotationProcessor.class);
-        
         bootstrapBinder = new BootstrapBinder(binder(), stage, mode, modules, actions, transformers, disableAutoBinding);
         
         if ( bootstrapModules != null )
@@ -106,7 +94,8 @@ class InternalBootstrapModule extends AbstractModule
             }
         }
 
-        binder().bind(ConfigurationProvider.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
+        binder().bind(LifecycleManager.class).asEagerSingleton();
+        binder().bind(LifecycleConfigurationProviders.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
         
         this.stage = bootstrapBinder.getStage();
         this.mode = bootstrapBinder.getMode();

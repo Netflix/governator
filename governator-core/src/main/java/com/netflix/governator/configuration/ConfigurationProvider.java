@@ -16,18 +16,18 @@
 
 package com.netflix.governator.configuration;
 
-import java.util.Date;
-
 import com.google.common.base.Supplier;
+import com.google.inject.ImplementedBy;
 import com.netflix.governator.annotations.Configuration;
+import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
+
+import java.util.Date;
 
 /**
  * Abstraction for get configuration values to use for fields annotated
  * with {@link Configuration}
- * 
- * @deprecated All configuration based features in Governator will soon 
- * be removed in favor of Archaius 2.0
  */
+@ImplementedBy(LifecycleConfigurationProviders.class)
 public interface ConfigurationProvider
 {
     /**

@@ -32,13 +32,18 @@ public class OverrideAllDuplicateBindingsTest {
         }
     }
     
-    @Test(expectedExceptions={RuntimeException.class})
+    @Test
     public void testShouldFailOnDuplicate() {
-        LifecycleInjector.builder()
-            .withModuleClasses(MyModule.class, MyOverrideModule.class)
-            .build()
-            .createInjector();
-        Assert.fail("Should have failed with duplicate binding");
+        try {
+            LifecycleInjector.builder()
+                .withModuleClasses(MyModule.class, MyOverrideModule.class)
+                .build()
+                .createInjector();
+            Assert.fail("Should have failed with duplicate binding");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     @Test

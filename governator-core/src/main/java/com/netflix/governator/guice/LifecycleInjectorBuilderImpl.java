@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -137,7 +139,8 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
             Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
                 @SuppressWarnings("unchecked")
                 @Override
-                public Class<? extends Module> apply(Class<?> input) {
+                @Nullable
+                public Class<? extends Module> apply(@Nullable Class<?> input) {
                     return (Class<? extends Module>) input;
                 }
             }
@@ -159,7 +162,8 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
                 .addAll(Iterables.transform(Lists.newArrayList(modules), new Function<Class<?>, Class<? extends Module>>() {
                     @SuppressWarnings("unchecked")
                     @Override
-                    public Class<? extends Module> apply(Class<?> input) {
+                    @Nullable
+                    public Class<? extends Module> apply(@Nullable Class<?> input) {
                         return (Class<? extends Module>) input;
                     }
                 }))

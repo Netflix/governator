@@ -27,8 +27,6 @@ import java.lang.annotation.Target;
  * Annotation binding that combines with Governator's classpath scanning and a bound
  * {@link AutoBindProvider} to automatically/programmatically bind fields and constructor/method
  * arguments
- * 
- * @deprecated  AutoBind is deprecated in favor of using Guice modules
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
