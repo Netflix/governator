@@ -1,10 +1,11 @@
 package com.netflix.governator.lifecycle.warmup;
 
-import com.google.common.collect.Maps;
-import jsr166y.ForkJoinPool;
-import jsr166y.RecursiveAction;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.collect.Maps;
 
 public class WarmUpSession
 {
