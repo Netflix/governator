@@ -1,27 +1,35 @@
-== DESCRIPTION
+Governator
+=====
+DESCRIPTION
+-----------
 
 Governator is a library of extensions and utilities that enhance Google Guice to 
 provide: classpath scanning and automatic binding, lifecycle management, configuration 
 to field mapping, field validation and parallelized object warmup.
 
-== DETAILS
+DETAILS
+-----------
 
 Please see the doc at https://github.com/Netflix/governator/wiki
 
-== BUILDING
+BUILDING
+-----------
 
 Governator is built via Gradle (http://www.gradle.org). To build from the command line:
     ./gradlew build
 
-== ARTIFACTS
+ARTIFACTS
+-----------
 
 Governator binaries are published to Maven Central. Please see the docs for details.
 
-== AUTHOR
+AUTHOR
+-----------
 
 Jordan Zimmerman (mailto:jzimmerman@netflix.com)
 
-== LICENSE
+LICENSE
+-----------
 
 Copyright 2012 Netflix, Inc.
 
