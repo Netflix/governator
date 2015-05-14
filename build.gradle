@@ -39,6 +39,7 @@ subprojects {
 
     dependencies {
         compile     'javax.inject:javax.inject:1'
+        compile     'com.google.code.findbugs:jsr305:3.0.0'
 
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.4.3'
         compile 'com.fasterxml.jackson.core:jackson-core:2.4.3'
