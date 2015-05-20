@@ -11,6 +11,10 @@ import junit.framework.Assert;
 
 import org.testng.annotations.Test;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.Multibinder;
+
+@Test(singleThreaded=true)
 public class LifecycleManagerTest {
     @Singleton
     private static class ShutdownDelay {
@@ -30,7 +34,7 @@ public class LifecycleManagerTest {
         final AtomicBoolean isShutdown = new AtomicBoolean(false);
         
         LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
-        injector.addListener(new LifecycleListener() {
+        injector.addListener(new DefaultLifecycleListener() {
             @Override
             public void onShutdown() {
                 isShutdown.set(true);
@@ -47,5 +51,31 @@ public class LifecycleManagerTest {
         LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
         injector.getInstance(ShutdownDelay.class);
         injector.awaitTermination();
+    }
+    
+    @Singleton
+    public static class Ready extends DefaultLifecycleListener {
+        private static boolean isReady = false;
+
+        @Inject
+        public Ready(LifecycleManager manager) {
+        }
+        
+        @Override
+        public void onReady() {
+            isReady = true;
+        }
+    }
+    
+    @Test
+    public void testOnReadyListener() {
+        LifecycleInjector injector = Governator.createInjector(new LifecycleModule(), new AbstractModule() {
+            @Override
+            protected void configure() {
+                Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().to(Ready.class);
+            }
+        });
+        
+        Assert.assertTrue(Ready.isReady);
     }
 }

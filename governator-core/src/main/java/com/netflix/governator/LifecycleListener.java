@@ -9,5 +9,13 @@ package com.netflix.governator;
  * @author elandau
  */
 public interface LifecycleListener {
+    /**
+     * Notification that the LifecycleManager is shutting down
+     */
     public void onShutdown();
+    
+    /**
+     * Notification that the injector has been created 
+     */
+    public void onReady();
 }

@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
@@ -51,17 +51,12 @@ import com.google.inject.spi.TypeListener;
  * @author elandau
  *
  */
-public class LifecycleModule extends AbstractModule {
+public final class LifecycleModule extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
 
     public static class LifecycleTypeListener implements TypeListener, LifecycleListener {
         final List<Runnable> actions = new LinkedList<Runnable>();
         final AtomicBoolean isShutdown = new AtomicBoolean();
-        
-        @Inject
-        public void setLifecycleManager(LifecycleManager manager) {
-            manager.addListener(this);
-        }
         
         @Override
         public <I> void hear(TypeLiteral<I> typeLiteral, TypeEncounter<I> encounter) {
@@ -150,12 +145,16 @@ public class LifecycleModule extends AbstractModule {
                 action.run();
             }
         }
+
+        @Override
+        public void onReady() {
+        }
     }
     
     @Override
     protected void configure() {
         LifecycleTypeListener listener = new LifecycleTypeListener();
-        this.requestInjection(listener);
-        this.bindListener(Matchers.any(), listener);
+        Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
+        bindListener(Matchers.any(), listener);
    }
 }
