@@ -18,7 +18,7 @@ import com.google.inject.AbstractModule;
  * 
  * @author elandau
  */
-public class ShutdownHookModule extends AbstractModule {
+public final class ShutdownHookModule extends AbstractModule {
     @Singleton
     public static class SystemShutdownHook extends Thread {
         @Inject
