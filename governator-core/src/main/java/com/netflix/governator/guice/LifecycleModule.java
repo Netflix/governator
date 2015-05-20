@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.guice;
 
 import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
@@ -20,6 +20,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.LifecycleListener;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy

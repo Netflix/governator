@@ -14,6 +14,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.netflix.governator.guice.InjectorLifecycle;
+import com.netflix.governator.guice.LifecycleModule;
 
 public class LifecycleModuleTest {
     @Singleton

@@ -15,8 +15,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.governator.LifecycleListener;
 import com.netflix.governator.LifecycleManager;
-import com.netflix.governator.LifecycleModule;
 import com.netflix.governator.guice.InjectorLifecycle;
+import com.netflix.governator.guice.LifecycleModule;
 
 public class LifecycleManagerTest {
     @Singleton
