@@ -42,6 +42,7 @@ public class Governator {
         final LifecycleManager manager = new LifecycleManager();
         try {
             List<Module> l = new ArrayList<>();
+            l.add(new LifecycleModule());
             l.add(new AbstractModule() {
                 @Override
                 protected void configure() {

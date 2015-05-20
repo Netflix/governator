@@ -61,7 +61,7 @@ public class LifecycleModuleTest {
     
     @Test
     public void testWithLifecycle() {
-        LifecycleInjector injector = Governator.createInjector(Stage.DEVELOPMENT, new LifecycleModule());
+        LifecycleInjector injector = Governator.createInjector(Stage.DEVELOPMENT);
         MySingleton singleton = injector.getInstance(MySingleton.class);
         Assert.assertEquals(1, singleton.initCounter.get());
         injector.shutdown();
@@ -71,7 +71,7 @@ public class LifecycleModuleTest {
     @Test
     public void testWithExternalLifecycleManager() {
         try {
-            Governator.createInjector(ModulesEx.combineAndOverride(new LifecycleModule(), new AbstractModule() {
+            Governator.createInjector(ModulesEx.combineAndOverride(new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(MySingleton.class).asEagerSingleton();
