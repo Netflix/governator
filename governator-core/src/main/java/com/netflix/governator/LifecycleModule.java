@@ -22,15 +22,11 @@ import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 
 /**
- * Adding {@link LifecycleModule} to the injector will install a TypeListener that
- * provides support for @PostConstruct and @PreDestroy methods.
+ * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy
+ * to Guice.
  * 
- * Triggering the calls to @PreDestroy methods is done by registering a ShutdownHook.
- * It is the responsibility of the code creating the Injector to invoke the shutdown
- * hooks by get an instance of ShutdownInvoker.
- * 
- * For example,
  * <pre>
+ * {@code
  * public class MyService {
  *    @PostConstruct
  *    public void init() {
@@ -40,8 +36,18 @@ import com.google.inject.spi.TypeListener;
  *    public void shutdown() {
  *    }
  * }
- * 
+ * }
  * </pre>
+ * 
+ * To use simply add LifecycleModule to guice when creating the injector
+ * <pre>
+ * {@link 
+ * Guice.createInjector(new LifecycleModule());
+ * }
+ * </pre>
+ * 
+ * See {@link InjectorLifecycle} for different scenarios for shutting down the LifecycleManager.
+ * 
  * @author elandau
  *
  */
