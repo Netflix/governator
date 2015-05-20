@@ -2,6 +2,7 @@ package com.netflix.governator.guice;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -21,6 +22,10 @@ import com.netflix.governator.guice.annotations.Bootstrap;
  */
 public class ModulesEx {
     private static final Logger LOG = LoggerFactory.getLogger(ModulesEx.class);
+    
+    public static Module combineAndOverride(Module ... modules) {
+        return combineAndOverride(Arrays.asList(modules));
+    }
     
     /**
      * Generate a single module that is produced by accumulating and overriding
