@@ -8,7 +8,7 @@ import javax.inject.Singleton;
 
 import junit.framework.Assert;
 
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

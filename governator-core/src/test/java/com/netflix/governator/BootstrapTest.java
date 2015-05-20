@@ -5,8 +5,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.CreationException;
@@ -68,7 +68,7 @@ public class BootstrapTest {
         Assert.assertEquals(Foo1.class, injector.getInstance(Foo.class).getClass());
     }
 
-    @Test(expected=CreationException.class)
+    @Test(expectedExceptions=CreationException.class)
     public void testDuplicateWithoutOverride() {
         Injector injector = Guice.createInjector(Stage.DEVELOPMENT, ModulesEx.fromClass(MyApplicationWithOverride.class, false));
         Assert.fail("Should have failed with duplicate binding exception");

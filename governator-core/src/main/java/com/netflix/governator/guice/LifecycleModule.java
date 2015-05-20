@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.LifecycleListener;
+import com.netflix.governator.LifecycleManager;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy
@@ -58,6 +60,11 @@ public class LifecycleModule extends AbstractModule {
     public static class LifecycleTypeListener implements TypeListener, LifecycleListener {
         final List<Runnable> actions = new LinkedList<Runnable>();
         final AtomicBoolean isShutdown = new AtomicBoolean();
+        
+        @Inject
+        public void setLifecycleManager(LifecycleManager manager) {
+            manager.addListener(this);
+        }
         
         @Override
         public <I> void hear(TypeLiteral<I> typeLiteral, TypeEncounter<I> encounter) {
@@ -151,7 +158,7 @@ public class LifecycleModule extends AbstractModule {
     @Override
     protected void configure() {
         LifecycleTypeListener listener = new LifecycleTypeListener();
+        this.requestInjection(listener);
         this.bindListener(Matchers.any(), listener);
-        Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
    }
 }

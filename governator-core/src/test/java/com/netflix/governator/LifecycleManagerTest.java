@@ -9,12 +9,10 @@ import javax.inject.Singleton;
 
 import junit.framework.Assert;
 
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.governator.LifecycleListener;
-import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.guice.InjectorLifecycle;
 import com.netflix.governator.guice.LifecycleModule;
 
@@ -49,7 +47,7 @@ public class LifecycleManagerTest {
         Assert.assertTrue(isShutdown.get());
     }
 
-    @Test(timeout=1000)
+    @Test(timeOut=1000)
     public void testWaitForInternalShutdownTrigger() throws InterruptedException {
         Injector injector = Guice.createInjector(new LifecycleModule());
         injector.getInstance(ShutdownDelay.class);
