@@ -6,16 +6,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Singleton;
 
-import com.netflix.governator.guice.InjectorLifecycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @see {@link InjectorLifecycle}
+ * @see {@link LifecycleInjector}
  * 
  * @author elandau
  *
  */
 @Singleton
 public class LifecycleManager {
+    private static final Logger LOG = LoggerFactory.getLogger(LifecycleManager.class);
+    
     private final CopyOnWriteArraySet<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -26,12 +29,21 @@ public class LifecycleManager {
     
     public void shutdown() {
         if (isShutdown.compareAndSet(false, true)) {
+            LOG.info("Shutting down LifecycleManager");
             if (listeners != null) {
                 for (LifecycleListener hook : listeners) {
-                    hook.onShutdown();
+                    try {
+                        hook.onShutdown();
+                    }
+                    catch (Exception e) {
+                        LOG.error("Failed to shutdown hook {}", hook, e);
+                    }
                 }
             }
             latch.countDown();
+        }
+        else {
+            LOG.warn("LifecycleManager already shut down");
         }
     }
     

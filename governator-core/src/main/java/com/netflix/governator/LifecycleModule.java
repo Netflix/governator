@@ -1,4 +1,4 @@
-package com.netflix.governator.guice;
+package com.netflix.governator;
 
 import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
@@ -17,12 +17,9 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
-import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import com.netflix.governator.LifecycleListener;
-import com.netflix.governator.LifecycleManager;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy
@@ -45,11 +42,11 @@ import com.netflix.governator.LifecycleManager;
  * To use simply add LifecycleModule to guice when creating the injector
  * <pre>
  * {@link 
- * Guice.createInjector(new LifecycleModule());
+ * Governator.createInjector(new LifecycleModule());
  * }
  * </pre>
  * 
- * See {@link InjectorLifecycle} for different scenarios for shutting down the LifecycleManager.
+ * See {@link LifecycleInjector} for different scenarios for shutting down the LifecycleManager.
  * 
  * @author elandau
  *

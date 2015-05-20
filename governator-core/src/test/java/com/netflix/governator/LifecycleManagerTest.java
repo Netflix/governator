@@ -11,11 +11,6 @@ import junit.framework.Assert;
 
 import org.testng.annotations.Test;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.netflix.governator.guice.InjectorLifecycle;
-import com.netflix.governator.guice.LifecycleModule;
-
 public class LifecycleManagerTest {
     @Singleton
     private static class ShutdownDelay {
@@ -34,8 +29,8 @@ public class LifecycleManagerTest {
     public void testWithExternalListener() throws InterruptedException {
         final AtomicBoolean isShutdown = new AtomicBoolean(false);
         
-        Injector injector = Guice.createInjector(new LifecycleModule());
-        InjectorLifecycle.onShutdown(injector,  new LifecycleListener() {
+        LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
+        injector.addListener(new LifecycleListener() {
             @Override
             public void onShutdown() {
                 isShutdown.set(true);
@@ -43,14 +38,14 @@ public class LifecycleManagerTest {
         });
         
         Assert.assertFalse(isShutdown.get());
-        InjectorLifecycle.shutdown(injector);
+        injector.shutdown();
         Assert.assertTrue(isShutdown.get());
     }
 
     @Test(timeOut=1000)
     public void testWaitForInternalShutdownTrigger() throws InterruptedException {
-        Injector injector = Guice.createInjector(new LifecycleModule());
+        LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
         injector.getInstance(ShutdownDelay.class);
-        InjectorLifecycle.awaitTermination(injector);
+        injector.awaitTermination();
     }
 }

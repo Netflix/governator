@@ -2,9 +2,9 @@ package com.netflix.governator;
 
 /**
  * Contract for a callback to be invoked once the Injector is shut down.
- * LifecycleEvent should be reserved for framework use only.  All application 
- * code should use @PreDestroy, which is actually triggered via a LifecycleEvent
- * enabled by installing {@link LifecycleModule}
+ * LifecycleListener should be reserved for framework use only.  All application 
+ * code should use @PreDestroy, which is triggered via a LifecycleListener
+ * enabled by installing {@link LifecycleModule}.
  * 
  * @author elandau
  */
