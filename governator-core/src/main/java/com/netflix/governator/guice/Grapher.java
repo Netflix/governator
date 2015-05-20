@@ -16,20 +16,21 @@
 
 package com.netflix.governator.guice;
 
-import com.google.common.io.Closeables;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.grapher.GrapherModule;
-import com.google.inject.grapher.InjectorGrapher;
-import com.google.inject.grapher.graphviz.GraphvizModule;
-import com.google.inject.grapher.graphviz.GraphvizRenderer;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.grapher.InjectorGrapher;
+import com.google.inject.grapher.graphviz.GraphvizGrapher;
+import com.google.inject.grapher.graphviz.GraphvizModule;
 
 /**
  * An object that can generate a graph showing a Guice Dependency Injection graph.
@@ -41,7 +42,7 @@ import java.util.Set;
 public class Grapher
 {
     private final Injector injector;
-    private final Key<?>[] roots;
+    private final Set<Key<?>> roots;
 
     /*
      * Constructors
@@ -66,7 +67,7 @@ public class Grapher
      */
     public Grapher(Injector injector, Key<?>... keys) {
         this.injector = injector;
-        this.roots = keys;
+        this.roots = Sets.newHashSet(keys);
     }
 
     /**
@@ -77,9 +78,9 @@ public class Grapher
      */
     public Grapher(Injector injector, Class<?>... classes) {
         this.injector = injector;
-        this.roots = new Key<?>[classes.length];
-        for (int i = 0; i < classes.length; i++) {
-            roots[i] = Key.get(classes[i]);
+        this.roots = Sets.newHashSetWithExpectedSize(classes.length);
+        for (Class<?> cls : classes) {
+            roots.add(Key.get(cls));
         }
     }
 
@@ -92,7 +93,7 @@ public class Grapher
     public Grapher(Injector injector, String... packages) {
         this.injector = injector;
         // Scan all the injection bindings to find the root keys
-        Set<Key<?>> keys = new HashSet<Key<?>>();
+        this.roots = new HashSet<Key<?>>();
         for (Key<?> k : injector.getAllBindings().keySet()) {
             Package classPackage = k.getTypeLiteral().getRawType().getPackage();
             if (classPackage == null) {
@@ -101,12 +102,11 @@ public class Grapher
             String packageName = classPackage.getName();
             for (String p : packages) {
                 if (packageName.startsWith(p)) {
-                    keys.add(k);
+                    roots.add(k);
                     break;
                 }
             }
         }
-        this.roots = keys.toArray(new Key<?>[keys.size()]);
     }
 
     /*
@@ -147,14 +147,15 @@ public class Grapher
     public String graph() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintWriter out = new PrintWriter(baos);
-        Injector localInjector = Guice.createInjector(new GrapherModule(), new GraphvizModule());
-        GraphvizRenderer renderer = localInjector.getInstance(GraphvizRenderer.class);
-        renderer.setOut(out).setRankdir("TB");
-        InjectorGrapher g = localInjector.getInstance(InjectorGrapher.class).of(injector);
+        Injector localInjector = Guice.createInjector(new GraphvizModule());
+        GraphvizGrapher renderer = localInjector.getInstance(GraphvizGrapher.class);
+        renderer.setOut(out);
+        renderer.setRankdir("TB");
+        InjectorGrapher g = localInjector.getInstance(InjectorGrapher.class);
         if (roots != null) {
-            g.rootedAt(roots);
+            g.graph(injector, roots);
         }
-        g.graph();
+        g.graph(injector);
         return fixupGraph(baos.toString("UTF-8"));
     }
 
