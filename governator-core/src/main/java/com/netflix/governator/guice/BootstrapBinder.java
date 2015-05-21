@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Binder;
+import com.google.inject.Binding;
 import com.google.inject.Key;
 import com.google.inject.MembersInjector;
 import com.google.inject.Module;
@@ -39,7 +40,10 @@ import com.google.inject.binder.AnnotatedConstantBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.matcher.Matcher;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.spi.Dependency;
 import com.google.inject.spi.Message;
+import com.google.inject.spi.ModuleAnnotatedMethodScanner;
+import com.google.inject.spi.ProvisionListener;
 import com.google.inject.spi.TypeConverter;
 import com.google.inject.spi.TypeListener;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -363,5 +367,32 @@ public class BootstrapBinder implements Binder
 
     boolean isDisabledAutoBinding() {
         return disableAutoBinding;
+    }
+
+    @Override
+    public <T> Provider<T> getProvider(Dependency<T> dependency) {
+        return binder.getProvider(dependency);
+    }
+
+    @Override
+    public void bindListener(Matcher<? super Binding<?>> bindingMatcher,
+            ProvisionListener... listeners) {
+        binder.bindListener(bindingMatcher, listeners);
+    }
+
+    @Override
+    public void requireAtInjectOnConstructors() {
+        binder.requireAtInjectOnConstructors();
+    }
+
+    @Override
+    public void requireExactBindingAnnotations() {
+        binder.requireExactBindingAnnotations();
+    }
+
+    @Override
+    public void scanModulesForAnnotatedMethods(
+            ModuleAnnotatedMethodScanner scanner) {
+        binder.scanModulesForAnnotatedMethods(scanner);
     }
 }
