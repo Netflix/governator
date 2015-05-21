@@ -33,7 +33,7 @@ public class ShutdownHookModuleTest {
         }
     }
     
-    @Test
+    @Test(enabled=false)
     public void test() throws InterruptedException {
         System.out.println("Starting");
         LifecycleInjector injector = Governator.createInjector(new LifecycleModule(), new ShutdownHookModule());
