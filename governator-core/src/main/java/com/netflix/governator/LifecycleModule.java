@@ -42,7 +42,7 @@ import com.google.inject.spi.TypeListener;
  * To use simply add LifecycleModule to guice when creating the injector
  * <pre>
  * {@link 
- * Governator.createInjector(new LifecycleModule());
+ * Governator.createInjector();
  * }
  * </pre>
  * 
@@ -54,7 +54,7 @@ import com.google.inject.spi.TypeListener;
 public final class LifecycleModule extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
 
-    public static class LifecycleTypeListener implements TypeListener, LifecycleListener {
+    static class LifecycleTypeListener extends DefaultLifecycleListener implements TypeListener {
         final List<Runnable> actions = new LinkedList<Runnable>();
         final AtomicBoolean isShutdown = new AtomicBoolean();
         
@@ -144,10 +144,6 @@ public final class LifecycleModule extends AbstractModule {
             for (Runnable action : actions) {
                 action.run();
             }
-        }
-
-        @Override
-        public void onReady() {
         }
     }
     
