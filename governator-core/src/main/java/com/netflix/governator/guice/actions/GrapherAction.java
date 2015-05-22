@@ -13,6 +13,7 @@ public class GrapherAction implements PostInjectorAction {
         try {
             text = grapher.graph();
         } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
     
