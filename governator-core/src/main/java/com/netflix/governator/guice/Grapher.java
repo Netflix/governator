@@ -28,7 +28,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.grapher.InjectorGrapher;
 import com.google.inject.grapher.graphviz.GraphvizGrapher;
 import com.google.inject.grapher.graphviz.GraphvizModule;
 
@@ -56,7 +55,7 @@ public class Grapher
     @Inject
     public Grapher(Injector injector) {
         this.injector = injector;
-        this.roots = null;
+        this.roots = new HashSet<>();
     }
 
     /**
@@ -151,11 +150,10 @@ public class Grapher
         GraphvizGrapher renderer = localInjector.getInstance(GraphvizGrapher.class);
         renderer.setOut(out);
         renderer.setRankdir("TB");
-        InjectorGrapher g = localInjector.getInstance(InjectorGrapher.class);
         if (roots != null) {
-            g.graph(injector, roots);
+            renderer.graph(injector, roots);
         }
-        g.graph(injector);
+        renderer.graph(injector);
         return fixupGraph(baos.toString("UTF-8"));
     }
 
