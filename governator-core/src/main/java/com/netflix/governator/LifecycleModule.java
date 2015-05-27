@@ -20,6 +20,10 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
+import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
+import com.netflix.governator.guice.lazy.LazySingleton;
+import com.netflix.governator.guice.lazy.LazySingletonScope;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy
@@ -149,6 +153,9 @@ public final class LifecycleModule extends AbstractModule {
     
     @Override
     protected void configure() {
+        bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
+        bindScope(LazySingleton.class, LazySingletonScope.get());
+        
         LifecycleTypeListener listener = new LifecycleTypeListener();
         Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
         bindListener(Matchers.any(), listener);
