@@ -57,11 +57,13 @@ import com.google.inject.Injector;
  * @author elandau
  */
 public class LifecycleInjector extends DelegatingInjector {
-    private LifecycleManager manager;
+    private final LifecycleManager manager;
+    private final LifecycleShutdownSignal signal;
     
     public LifecycleInjector(Injector injector, LifecycleManager manager) {
         super(injector);
         this.manager  = manager;
+        this.signal = injector.getInstance(LifecycleShutdownSignal.class);
     }
     
     /**
@@ -71,7 +73,7 @@ public class LifecycleInjector extends DelegatingInjector {
      * @throws InterruptedException
      */
     public void awaitTermination() throws InterruptedException {
-        manager.awaitTermination();
+        signal.await();
     }
 
     /**
@@ -81,7 +83,7 @@ public class LifecycleInjector extends DelegatingInjector {
      * @param injector
      */
     public void shutdown() {
-        manager.shutdown();
+        signal.signal();
     }
     
     /**

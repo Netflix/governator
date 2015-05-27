@@ -40,8 +40,9 @@ public class Governator {
     
     public static LifecycleInjector createInjector(Stage stage, Collection<? extends Module> modules) {
         final LifecycleManager manager = new LifecycleManager();
+        Injector injector;
+        List<Module> l = new ArrayList<>();
         try {
-            List<Module> l = new ArrayList<>();
             l.add(new LifecycleModule());
             l.add(new AbstractModule() {
                 @Override
@@ -53,18 +54,32 @@ public class Governator {
             });
             l.addAll(modules);
             
-            Injector injector = Guice.createInjector(stage, l);
-            manager.notifyReady();
-            return new LifecycleInjector(injector, manager);
+            manager.notifyStarting();
+            injector = Guice.createInjector(stage, l);
         }
         catch (Exception e) {
             try {
-                manager.shutdown();
+                manager.notifyStartFailed(e);
             }
             catch (Exception e2) {
                 
             }
             throw e;
         }
+        
+        try {
+            manager.notifyStarted();
+            return new LifecycleInjector(injector, manager);
+        }
+        catch (Exception e) {
+            try {
+                manager.notifyShutdown();
+            }
+            catch (Exception e2) {
+                
+            }
+            throw e;
+        }
+
     }
 }

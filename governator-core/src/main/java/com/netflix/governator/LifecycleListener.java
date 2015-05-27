@@ -1,8 +1,8 @@
 package com.netflix.governator;
 
 /**
- * Contract for a callback to be invoked once the Injector is shut down.
- * LifecycleListener should be reserved for framework use only.  All application 
+ * Listener for Injector lifecycle events.   LifecycleListener should be 
+ * reserved for framework use only.  All application shutdown 
  * code should use @PreDestroy, which is triggered via a LifecycleListener
  * enabled by installing {@link LifecycleModule}.
  * 
@@ -10,12 +10,26 @@ package com.netflix.governator;
  */
 public interface LifecycleListener {
     /**
-     * Notification that the LifecycleManager is shutting down
+     * Notification that the Injector failed to be created.  This will only be called
+     * for LifecycleListeners registered with LifecycleManager before the injector 
+     * is created
      */
-    public void onShutdown();
+    public void onStartFailed(Throwable t);
     
     /**
-     * Notification that the injector has been created 
+     * Notification that the injector is shutting down
      */
-    public void onReady();
+    public void onStopped();
+    
+    /**
+     * Notification that the Injector is about to be started.  This method is only
+     * called for LifecycleListeners registered with LifecycleManager before the 
+     * injector is created.
+     */
+    public void onStarting();
+    
+    /**
+     * Notification that the Injector has been created.  
+     */
+    public void onStarted();
 }
