@@ -2,8 +2,7 @@ package com.netflix.governator;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -12,59 +11,73 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @see {@link LifecycleInjector}
+ * Manage state for lifecycle listeners
  * 
  * @author elandau
- *
  */
 @Singleton
 public class LifecycleManager {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleManager.class);
     
     private final CopyOnWriteArraySet<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
-    private final AtomicBoolean isReady = new AtomicBoolean(false);
+    private final AtomicReference<State> state = new AtomicReference<>(State.Idle);
+    
+    public enum State {
+        Idle,
+        Starting,
+        Started,
+        Stopped,
+        Done
+    }
     
     @Inject
     public void setListeners(Set<LifecycleListener> listeners) {
         this.listeners.addAll(listeners);
     }
     
-    void notifyReady() {
-        if (isReady.compareAndSet(false, true)) {
-            for (LifecycleListener listener : listeners) {
-                listener.onReady();
-            }
-        }
-    }
-    
     public void addListener(LifecycleListener listener) {
         listeners.add(listener);
-        if (isReady.get()) {
-            listener.onReady();
+    }
+    
+    void notifyStarting() {
+        if (state.compareAndSet(State.Idle, State.Starting)) {
+            for (LifecycleListener listener : listeners) {
+                listener.onStarting();
+            }
         }
     }
     
-    public void shutdown() {
-        if (isShutdown.compareAndSet(false, true)) {
+    void notifyStarted() {
+        if (state.compareAndSet(State.Starting, State.Started)) {
+            for (LifecycleListener listener : listeners) {
+                listener.onStarted();
+            }
+        }
+    }
+    
+    void notifyStartFailed(Throwable t) {
+        if (state.compareAndSet(State.Starting, State.Done)) {
+            for (LifecycleListener listener : listeners) {
+                listener.onStartFailed(t);
+            }
+        }
+    }
+    
+    void notifyShutdown() {
+        if (state.compareAndSet(State.Started, State.Done)) {
             LOG.info("Shutting down LifecycleManager");
-            for (LifecycleListener hook : listeners) {
+            for (LifecycleListener listener : listeners) {
                 try {
-                    hook.onShutdown();
+                    listener.onStopped();
                 }
                 catch (Exception e) {
-                    LOG.error("Failed to shutdown hook {}", hook, e);
+                    LOG.error("Failed to shutdown listener {}", listener, e);
                 }
             }
-            latch.countDown();
-        }
-        else {
-            LOG.warn("LifecycleManager already shut down");
         }
     }
     
-    public void awaitTermination() throws InterruptedException {
-        latch.await();
+    public State getState() {
+        return state.get();
     }
 }

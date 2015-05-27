@@ -16,7 +16,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
-import com.netflix.governator.guice.ModulesEx;
 
 @Test(singleThreaded=true)
 public class LifecycleModuleTest {
@@ -71,13 +70,13 @@ public class LifecycleModuleTest {
     @Test
     public void testWithExternalLifecycleManager() {
         try {
-            Governator.createInjector(ModulesEx.combineAndOverride(new AbstractModule() {
+            Governator.createInjector(new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(MySingleton.class).asEagerSingleton();
                     bind(FailingSingleton.class).asEagerSingleton();
                 }
-            }));
+            });
             Assert.fail("Should have failed to create injector");
         }
         catch (Exception e) {

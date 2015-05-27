@@ -2,7 +2,7 @@ package com.netflix.governator;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -19,31 +19,77 @@ public class LifecycleManagerTest {
     @Singleton
     private static class ShutdownDelay {
         @Inject
-        public ShutdownDelay(final LifecycleManager manager) {
+        public ShutdownDelay(final LifecycleShutdownSignal event) {
             Executors.newScheduledThreadPool(1).schedule(new Runnable() {
                 @Override
                 public void run() {
-                    manager.shutdown();
+                    event.signal();
                 }
             }, 10, TimeUnit.MILLISECONDS);
         }
     }
     
+    public static class CountingLifecycleListener implements LifecycleListener {
+        final AtomicInteger stoppedCount = new AtomicInteger();
+        final AtomicInteger startedCount = new AtomicInteger();
+        final AtomicInteger startFailedCount = new AtomicInteger();
+        final AtomicInteger startingCount = new AtomicInteger();
+        
+        @Override
+        public void onStopped() {
+            stoppedCount.incrementAndGet();
+        }
+
+        @Override
+        public void onStarted() {
+            startedCount.incrementAndGet();
+        }
+
+        @Override
+        public void onStartFailed(Throwable t) {
+            startFailedCount.incrementAndGet();
+        }
+
+        @Override
+        public void onStarting() {
+            startingCount.incrementAndGet();
+        }
+        
+        int getStartedCount() {
+            return startedCount.get();
+        }
+        
+        int getStoppedCount() {
+            return stoppedCount.get();
+        }
+        
+        int getStartFailedCount() {
+            return startFailedCount.get();
+        }
+        
+        int getStartingCount() {
+            return startingCount.get();
+        }
+    }
+    
     @Test
     public void testWithExternalListener() throws InterruptedException {
-        final AtomicBoolean isShutdown = new AtomicBoolean(false);
         
         LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
-        injector.addListener(new DefaultLifecycleListener() {
-            @Override
-            public void onShutdown() {
-                isShutdown.set(true);
-            }
-        });
+        CountingLifecycleListener listener = new CountingLifecycleListener();
+        injector.addListener(listener);
         
-        Assert.assertFalse(isShutdown.get());
+        Assert.assertEquals(0, listener.getStartedCount());
+        Assert.assertEquals(0, listener.getStartFailedCount());
+        Assert.assertEquals(0, listener.getStartingCount());
+        Assert.assertEquals(0, listener.getStoppedCount());
+        
         injector.shutdown();
-        Assert.assertTrue(isShutdown.get());
+        
+        Assert.assertEquals(0, listener.getStartedCount());
+        Assert.assertEquals(0, listener.getStartFailedCount());
+        Assert.assertEquals(0, listener.getStartingCount());
+        Assert.assertEquals(1, listener.getStoppedCount());
     }
 
     @Test(timeOut=1000)
@@ -53,29 +99,26 @@ public class LifecycleManagerTest {
         injector.awaitTermination();
     }
     
-    @Singleton
-    public static class Ready extends DefaultLifecycleListener {
-        private static boolean isReady = false;
-
-        @Inject
-        public Ready(LifecycleManager manager) {
-        }
-        
-        @Override
-        public void onReady() {
-            isReady = true;
-        }
-    }
-    
     @Test
     public void testOnReadyListener() {
+        final CountingLifecycleListener listener = new CountingLifecycleListener();
         LifecycleInjector injector = Governator.createInjector(new LifecycleModule(), new AbstractModule() {
             @Override
             protected void configure() {
-                Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().to(Ready.class);
+                Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
             }
         });
         
-        Assert.assertTrue(Ready.isReady);
+        Assert.assertEquals(1, listener.getStartedCount());
+        Assert.assertEquals(0, listener.getStartFailedCount());
+        Assert.assertEquals(0, listener.getStartingCount());
+        Assert.assertEquals(0, listener.getStoppedCount());
+        
+        injector.shutdown();
+        
+        Assert.assertEquals(1, listener.getStartedCount());
+        Assert.assertEquals(0, listener.getStartFailedCount());
+        Assert.assertEquals(0, listener.getStartingCount());
+        Assert.assertEquals(1, listener.getStoppedCount());
     }
 }

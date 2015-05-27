@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Injector;
 import com.google.inject.servlet.GuiceServletContextListener;
-import com.netflix.governator.LifecycleManager;
+import com.netflix.governator.LifecycleShutdownSignal;
 
 /**
  * An extension of {@link GuiceServletContextListener} which integrates with Governator's
  * LifecycleInjector.  This implementation drives shutdown of LifecycleManager through the 
- * ServletContextListener's contextDestroyed events.  
+ * ServletContextListener's contextDestroyed event.  
  * 
  * To use, subclass your main server class from GovernatorServletContextListener
  * <pre>
@@ -73,7 +73,7 @@ public abstract class GovernatorServletContextListener extends GuiceServletConte
 
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
         super.contextDestroyed(servletContextEvent);
-        injector.getInstance(LifecycleManager.class).shutdown();
+        injector.getInstance(LifecycleShutdownSignal.class).signal();
     }
 
     /**
