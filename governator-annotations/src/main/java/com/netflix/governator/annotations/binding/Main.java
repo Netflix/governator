@@ -14,17 +14,20 @@
  *    limitations under the License.
  */
 
-package autobind;
+package com.netflix.governator.annotations.binding;
 
-import com.google.inject.Inject;
-import com.netflix.governator.annotations.AutoBindSingleton;
+import javax.inject.Qualifier;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@AutoBindSingleton
-public class ExampleService
+@Qualifier
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+/**
+ * A generic binding annotation
+ */
+public @interface Main
 {
-    @Inject
-    public ExampleService()
-    {
-        System.out.println("ExampleService auto-bind construction");
-    }
 }

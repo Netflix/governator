@@ -14,17 +14,22 @@
  *    limitations under the License.
  */
 
-package autobind;
+package com.netflix.governator.annotations;
 
-import com.google.inject.Inject;
-import com.netflix.governator.annotations.AutoBindSingleton;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-@AutoBindSingleton
-public class ExampleService
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+/**
+ * Marks a method as a pre-configuration method. Governator will execute pre-configuration methods
+ * prior to configuration assignment
+ */
+@Documented
+@Retention(RUNTIME)
+@Target(METHOD)
+public @interface PreConfiguration
 {
-    @Inject
-    public ExampleService()
-    {
-        System.out.println("ExampleService auto-bind construction");
-    }
 }
