@@ -1,4 +1,5 @@
 rootProject.name='governator'
+include 'governator-annotations'
 include 'governator-core'
 include 'governator-servlet'
 include 'governator-commons-cli'

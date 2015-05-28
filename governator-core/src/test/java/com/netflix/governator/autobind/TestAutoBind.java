@@ -28,7 +28,6 @@ import com.netflix.governator.guice.AutoBindProvider;
 import com.netflix.governator.guice.AutoBinds;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
-import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
