@@ -73,7 +73,9 @@ public abstract class GovernatorServletContextListener extends GuiceServletConte
 
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
         super.contextDestroyed(servletContextEvent);
-        injector.getInstance(LifecycleShutdownSignal.class).signal();
+        if (injector != null) {
+            injector.getInstance(LifecycleShutdownSignal.class).signal();
+        }
     }
 
     /**
