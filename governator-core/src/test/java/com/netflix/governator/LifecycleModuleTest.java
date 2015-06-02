@@ -16,16 +16,39 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
+import com.netflix.governator.annotations.Configuration;
 
 @Test(singleThreaded=true)
 public class LifecycleModuleTest {
+    @Singleton
+    private static class MyStateInjectableClass {
+        @Inject
+        public static void staticInject(MySingleton singleton) {
+            System.out.println("*****Static injection");
+        }
+    }
+    
     @Singleton
     private static class MySingleton {
         private static AtomicInteger initCounter = new AtomicInteger(0);
         private static AtomicInteger shutdownCounter = new AtomicInteger(0);
         
+        @Configuration("foo")
+        String field1;
+        
+        @Configuration("goo")
+        public void setGoo(String goo) {
+            
+        }
+        
+        @Inject
+        public MySingleton() {
+            System.out.println("*****Injecting MySingleton");
+        }
+        
         @PostConstruct
         void init() {
+            System.out.println("*****Post constructing");
             initCounter.incrementAndGet();
         }
         
@@ -60,7 +83,15 @@ public class LifecycleModuleTest {
     
     @Test
     public void testWithLifecycle() {
-        LifecycleInjector injector = Governator.createInjector(Stage.DEVELOPMENT);
+        LifecycleInjector injector = Governator.createInjector(
+                Stage.DEVELOPMENT, 
+                new ConfigurationModule(),
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        this.requestStaticInjection(MyStateInjectableClass.class);
+                    }
+                });
         MySingleton singleton = injector.getInstance(MySingleton.class);
         Assert.assertEquals(1, singleton.initCounter.get());
         injector.shutdown();
