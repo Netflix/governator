@@ -19,11 +19,11 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 /**
  * Feature to enable @Configuration annotation processing.
  * 
- * To enable either install the ConfigurationModule or add the following line.  Note that this feature requires
- * a ConfigurationProvider to be installed as well.
+ * To enable install the ConfigurationModule.
+ * 
  * <pre>
  * {@code
- * Multibinder.newSetBinder(binder(), LifecycleFeature.class).addBinding().to(ConfigurationLifecycleFeature.class);
+ * install(new ConfigurationModule());
  * }
  * </pre>
  * @author elandau
@@ -32,12 +32,16 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 @Singleton
 public class ConfigurationLifecycleFeature implements LifecycleFeature {
     
-    private final ConfigurationMapper mapper;
-    private final ConfigurationProvider configurationProvider;
-    private final ConfigurationDocumentation configurationDocumentation;
+    private ConfigurationMapper mapper;
+    private ConfigurationProvider configurationProvider;
+    private ConfigurationDocumentation configurationDocumentation;
 
     @Inject
-    public ConfigurationLifecycleFeature(ConfigurationMapper mapper, ConfigurationProvider configurationProvider, ConfigurationDocumentation configurationDocumentation) {
+    public void initialize(
+            ConfigurationMapper mapper, 
+            ConfigurationProvider configurationProvider, 
+            ConfigurationDocumentation configurationDocumentation
+            ) {
         this.mapper = mapper;
         this.configurationDocumentation = configurationDocumentation;
         this.configurationProvider = configurationProvider;
@@ -48,9 +52,11 @@ public class ConfigurationLifecycleFeature implements LifecycleFeature {
         final LifecycleMethods methods = new LifecycleMethods(type);
         if (!methods.fieldsFor(Configuration.class).isEmpty()) {
             return Arrays.<LifecycleAction>asList(new LifecycleAction() {
-
                 @Override
                 public void call(Object obj) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+                    if (mapper == null) {
+                        throw new ProvisionException("Trying to map fields of type " + type.getName() + " before ConfigurationLifecycleFeature was fully initialized by the injector");
+                    }
                     try {
                         mapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
                     } catch (Exception e) {
