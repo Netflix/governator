@@ -27,13 +27,6 @@ public interface LifecycleListener {
     public void onStopped();
     
     /**
-     * Notification that the Injector is about to be started.  This method is only
-     * called for LifecycleListeners registered with LifecycleManager before the 
-     * injector is created.
-     */
-    public void onStarting();
-    
-    /**
      * Notification that the Injector has been created.  
      */
     public void onStarted();

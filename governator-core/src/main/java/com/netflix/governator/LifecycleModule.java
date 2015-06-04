@@ -14,12 +14,12 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
+import com.netflix.governator.guice.SingletonModule;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
@@ -54,7 +54,7 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
  * @author elandau
  *
  */
-public final class LifecycleModule extends AbstractModule {
+public final class LifecycleModule extends SingletonModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
 
     /**
@@ -71,7 +71,8 @@ public final class LifecycleModule extends AbstractModule {
     // creation
     static class StaticInitializer {
         @Inject
-        public static void initialize(LifecycleProvisionListener listener) {
+        public static void initialize(LifecycleProvisionListener listener, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
+            listener.initialize(features, metrics);
         }
     }
     
@@ -82,9 +83,8 @@ public final class LifecycleModule extends AbstractModule {
         private final AtomicBoolean isShutdown = new AtomicBoolean();
         private volatile ProvisionMetrics metrics;
         
-        @Inject
         public void initialize(Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            LOG.info("LifecycleProvisionListener initialized");
+            LOG.info("LifecycleProvisionListener initialized " + features);
             this.metrics = metrics;
             this.features = features;
         }
@@ -190,8 +190,8 @@ public final class LifecycleModule extends AbstractModule {
     @Override
     protected void configure() {
         LifecycleProvisionListener listener = new LifecycleProvisionListener();
-        requestInjection(listener);
         requestStaticInjection(StaticInitializer.class);
+        bind(LifecycleProvisionListener.class).toInstance(listener);
         bindListener(Matchers.any(), listener);
         Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
