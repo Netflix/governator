@@ -6,6 +6,11 @@ package com.netflix.governator;
  * code should use @PreDestroy, which is triggered via a LifecycleListener
  * enabled by installing {@link LifecycleModule}.
  * 
+ * When writing a LifecycleListener that is managed by Guice, make sure to 
+ * inject all dependencies lazily using {@link Provider} injection.  Otherwise,
+ * these dependencies will be instantiated too early thereby bypassing lifecycle 
+ * features in LifecycleModule.
+ * 
  * @author elandau
  */
 public interface LifecycleListener {

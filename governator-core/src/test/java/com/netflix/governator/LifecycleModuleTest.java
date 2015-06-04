@@ -15,6 +15,7 @@ import org.testng.annotations.Test;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.Configuration;
 
@@ -116,4 +117,22 @@ public class LifecycleModuleTest {
         }
     }
 
+    @Test
+    public void testProvidesAnnotation() {
+        LifecycleInjector injector = Governator.createInjector(new AbstractModule() {
+            @Override
+            protected void configure() {
+            }
+            
+            @Provides
+            @Singleton
+            MySingleton createSingleton() {
+                System.out.println("***** Called");
+                return new MySingleton();
+            }
+        });
+        Assert.assertEquals(1, MySingleton.initCounter.get());
+        injector.shutdown();
+        Assert.assertEquals(1, MySingleton.shutdownCounter.get());
+    }
 }
