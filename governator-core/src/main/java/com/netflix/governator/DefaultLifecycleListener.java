@@ -12,8 +12,4 @@ public class DefaultLifecycleListener implements LifecycleListener {
     @Override
     public void onStartFailed(Throwable t) {
     }
-
-    @Override
-    public void onStarting() {
-    }
 }

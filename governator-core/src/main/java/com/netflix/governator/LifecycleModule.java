@@ -14,12 +14,12 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
+import com.netflix.governator.guice.SingletonModule;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
@@ -54,7 +54,7 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
  * @author elandau
  *
  */
-public final class LifecycleModule extends AbstractModule {
+public final class LifecycleModule extends SingletonModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
 
     /**

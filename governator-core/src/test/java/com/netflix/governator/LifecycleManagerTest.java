@@ -33,7 +33,6 @@ public class LifecycleManagerTest {
         final AtomicInteger stoppedCount = new AtomicInteger();
         final AtomicInteger startedCount = new AtomicInteger();
         final AtomicInteger startFailedCount = new AtomicInteger();
-        final AtomicInteger startingCount = new AtomicInteger();
         
         @Override
         public void onStopped() {
@@ -49,11 +48,6 @@ public class LifecycleManagerTest {
         public void onStartFailed(Throwable t) {
             startFailedCount.incrementAndGet();
         }
-
-        @Override
-        public void onStarting() {
-            startingCount.incrementAndGet();
-        }
         
         int getStartedCount() {
             return startedCount.get();
@@ -67,34 +61,29 @@ public class LifecycleManagerTest {
             return startFailedCount.get();
         }
         
-        int getStartingCount() {
-            return startingCount.get();
-        }
     }
     
     @Test
     public void testWithExternalListener() throws InterruptedException {
         
-        LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
+        LifecycleInjector injector = Governator.createInjector();
         CountingLifecycleListener listener = new CountingLifecycleListener();
         injector.addListener(listener);
         
         Assert.assertEquals(0, listener.getStartedCount());
         Assert.assertEquals(0, listener.getStartFailedCount());
-        Assert.assertEquals(0, listener.getStartingCount());
         Assert.assertEquals(0, listener.getStoppedCount());
         
         injector.shutdown();
         
         Assert.assertEquals(0, listener.getStartedCount());
         Assert.assertEquals(0, listener.getStartFailedCount());
-        Assert.assertEquals(0, listener.getStartingCount());
         Assert.assertEquals(1, listener.getStoppedCount());
     }
 
     @Test(timeOut=1000)
     public void testWaitForInternalShutdownTrigger() throws InterruptedException {
-        LifecycleInjector injector = Governator.createInjector(new LifecycleModule());
+        LifecycleInjector injector = Governator.createInjector();
         injector.getInstance(ShutdownDelay.class);
         injector.awaitTermination();
     }
@@ -102,7 +91,7 @@ public class LifecycleManagerTest {
     @Test
     public void testOnReadyListener() {
         final CountingLifecycleListener listener = new CountingLifecycleListener();
-        LifecycleInjector injector = Governator.createInjector(new LifecycleModule(), new AbstractModule() {
+        LifecycleInjector injector = Governator.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
                 Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
@@ -111,14 +100,12 @@ public class LifecycleManagerTest {
         
         Assert.assertEquals(1, listener.getStartedCount());
         Assert.assertEquals(0, listener.getStartFailedCount());
-        Assert.assertEquals(0, listener.getStartingCount());
         Assert.assertEquals(0, listener.getStoppedCount());
         
         injector.shutdown();
         
         Assert.assertEquals(1, listener.getStartedCount());
         Assert.assertEquals(0, listener.getStartFailedCount());
-        Assert.assertEquals(0, listener.getStartingCount());
         Assert.assertEquals(1, listener.getStoppedCount());
     }
 }

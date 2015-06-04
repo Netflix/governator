@@ -41,9 +41,6 @@ public class LifecycleManager {
     
     void notifyStarting() {
         if (state.compareAndSet(State.Idle, State.Starting)) {
-            for (LifecycleListener listener : listeners) {
-                listener.onStarting();
-            }
         }
     }
     
