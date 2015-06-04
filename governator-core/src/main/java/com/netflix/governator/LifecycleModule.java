@@ -71,7 +71,8 @@ public final class LifecycleModule extends AbstractModule {
     // creation
     static class StaticInitializer {
         @Inject
-        public static void initialize(LifecycleProvisionListener listener) {
+        public static void initialize(LifecycleProvisionListener listener, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
+            listener.initialize(features, metrics);
         }
     }
     
@@ -82,9 +83,8 @@ public final class LifecycleModule extends AbstractModule {
         private final AtomicBoolean isShutdown = new AtomicBoolean();
         private volatile ProvisionMetrics metrics;
         
-        @Inject
         public void initialize(Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            LOG.info("LifecycleProvisionListener initialized");
+            LOG.info("LifecycleProvisionListener initialized " + features);
             this.metrics = metrics;
             this.features = features;
         }
@@ -190,8 +190,8 @@ public final class LifecycleModule extends AbstractModule {
     @Override
     protected void configure() {
         LifecycleProvisionListener listener = new LifecycleProvisionListener();
-        requestInjection(listener);
         requestStaticInjection(StaticInitializer.class);
+        bind(LifecycleProvisionListener.class).toInstance(listener);
         bindListener(Matchers.any(), listener);
         Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
