@@ -85,16 +85,10 @@ public class LifecycleModuleTest {
     @Test
     public void testWithLifecycle() {
         LifecycleInjector injector = Governator.createInjector(
-                Stage.DEVELOPMENT, 
-                new ConfigurationModule(),
-                new AbstractModule() {
-                    @Override
-                    protected void configure() {
-                        this.requestStaticInjection(MyStateInjectableClass.class);
-                    }
-                });
+                Stage.DEVELOPMENT);
         MySingleton singleton = injector.getInstance(MySingleton.class);
         Assert.assertEquals(1, singleton.initCounter.get());
+        Assert.assertEquals(0, singleton.shutdownCounter.get());
         injector.shutdown();
         Assert.assertEquals(1, singleton.shutdownCounter.get());
     }

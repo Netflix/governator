@@ -192,7 +192,6 @@ public final class LifecycleModule extends AbstractModule {
         LifecycleProvisionListener listener = new LifecycleProvisionListener();
         requestInjection(listener);
         requestStaticInjection(StaticInitializer.class);
-        bind(LifecycleProvisionListener.class).toInstance(listener);
         bindListener(Matchers.any(), listener);
         Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
