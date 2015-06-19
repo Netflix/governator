@@ -84,7 +84,7 @@ public final class LifecycleModule extends SingletonModule {
         private volatile ProvisionMetrics metrics;
         
         public void initialize(Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            LOG.info("LifecycleProvisionListener initialized " + features);
+            LOG.debug("LifecycleProvisionListener initialized " + features);
             this.metrics = metrics;
             this.features = features;
         }
@@ -95,7 +95,7 @@ public final class LifecycleModule extends SingletonModule {
             final Class<?> clazz = key.getTypeLiteral().getRawType();
             
             if (features == null) {
-                LOG.info("LifecycleProvisionListener not initialized yet : " + key + " source=" + provision.getBinding().getSource());
+                LOG.debug("LifecycleProvisionListener not initialized yet : " + key + " source=" + provision.getBinding().getSource());
                 // TODO: Add to PreDestroy list
                 return;
             }

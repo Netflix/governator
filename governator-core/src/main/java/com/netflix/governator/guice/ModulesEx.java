@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Module;
+import com.google.inject.spi.Element;
+import com.google.inject.spi.ElementSource;
 import com.google.inject.util.Modules;
 import com.netflix.governator.guice.annotations.Bootstrap;
 
@@ -106,5 +108,21 @@ public class ModulesEx {
         catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    /**
+     * List all Module classes that were involved in setting up bindings for the list of Elements
+     * @param elements
+     * @return
+     */
+    public static List<String> listModules(List<Element> elements) {
+        List<String> names = new ArrayList<>();
+        for (Element element : elements) {
+            if (element.getSource().getClass().isAssignableFrom(ElementSource.class)) {
+                ElementSource source = (ElementSource)element.getSource();
+                names.addAll(source.getModuleClassNames());
+            }
+        }
+        return names;
     }
 }
