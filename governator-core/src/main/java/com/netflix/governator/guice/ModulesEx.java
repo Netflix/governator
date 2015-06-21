@@ -3,15 +3,23 @@ package com.netflix.governator.guice;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Binding;
+import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.spi.DefaultBindingTargetVisitor;
+import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.ElementSource;
+import com.google.inject.spi.InstanceBinding;
+import com.google.inject.spi.LinkedKeyBinding;
 import com.google.inject.util.Modules;
 import com.netflix.governator.guice.annotations.Bootstrap;
 
@@ -124,5 +132,36 @@ public class ModulesEx {
             }
         }
         return names;
+    }
+    
+    /**
+     * List all keys for source and target bindings
+     * @param elements
+     * @return
+     */
+    public static Set<Key<?>> listKeys(List<Element> elements) {
+        final Set<Key<?>> keys = new HashSet<>();
+        for (Element element : elements) {
+            element.acceptVisitor(new DefaultElementVisitor<Void>() {
+                public <T> Void visit(Binding<T> binding) {
+                    keys.add(binding.getKey());
+                    binding.acceptTargetVisitor(new DefaultBindingTargetVisitor<T, Void>() {
+                        @Override
+                        public Void visit(InstanceBinding<? extends T> binding) {
+                            keys.add(Key.get(binding.getInstance().getClass()));
+                            return null;
+                        }
+
+                        @Override
+                        public Void visit(LinkedKeyBinding<? extends T> binding) {
+                            keys.add(binding.getLinkedKey());
+                            return null;
+                        }
+                    });
+                    return null;
+                }
+            });
+        }
+        return keys;
     }
 }

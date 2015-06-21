@@ -8,7 +8,7 @@ import com.google.inject.Key;
  * @author elandau
  *
  */
-public interface AutoContext {
+public interface AutoContext { 
     /**
      * @param className
      * @return Return true if the module was installed

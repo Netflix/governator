@@ -11,4 +11,4 @@ import com.google.inject.Module;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface OverrideModule {
     Class<? extends Module> value();
-}
+} 

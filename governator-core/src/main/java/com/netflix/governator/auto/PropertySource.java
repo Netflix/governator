@@ -8,9 +8,9 @@ package com.netflix.governator.auto;
  * @see PropertiesConfig
  * 
  * @author elandau
- *
+ * 
  */
-public interface Config {
+public interface PropertySource {
     /**
      * Get the value of a property or null if not found
      * 
@@ -18,4 +18,8 @@ public interface Config {
      * @return
      */
     public String get(String key);
+    
+    public <T> T get(String key, Class<T> type);
+    
+    public <T> T get(String key, Class<T> type, T defaultValue);
 }

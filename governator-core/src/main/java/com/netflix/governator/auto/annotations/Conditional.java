@@ -16,7 +16,7 @@ import com.netflix.governator.auto.Condition;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-public @interface Conditional {
+public @interface Conditional { 
 
     /**
      * All {@link Condition}s that must {@linkplain Condition#matches match}

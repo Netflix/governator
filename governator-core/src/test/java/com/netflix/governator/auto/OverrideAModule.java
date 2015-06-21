@@ -4,9 +4,11 @@ import javax.inject.Named;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 import com.netflix.governator.auto.annotations.OverrideModule;
 
 @OverrideModule(SubModule.class)
+@ConditionalOnProfile("test")
 public class OverrideAModule extends AbstractModule {
 
     @Override

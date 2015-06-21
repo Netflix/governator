@@ -8,7 +8,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.netflix.governator.DefaultModule;
 
-public class PropertiesConfig implements Config {
+public class PropertiesConfig extends AbstractPropertySource {
     private Properties props;
 
     public PropertiesConfig(Properties props) {
@@ -23,7 +23,7 @@ public class PropertiesConfig implements Config {
         return new DefaultModule() {
             @Provides
             @Singleton
-            public Config getConfig() {
+            public PropertySource getConfig() {
                 return new PropertiesConfig(props);
             }
         };

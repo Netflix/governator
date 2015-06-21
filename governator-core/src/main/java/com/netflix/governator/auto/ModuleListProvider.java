@@ -9,7 +9,7 @@ import com.google.inject.Module;
  * 
  * @author elandau
  */
-public interface ModuleProvider {
+public interface ModuleListProvider {
     /**
      * 
      * @return

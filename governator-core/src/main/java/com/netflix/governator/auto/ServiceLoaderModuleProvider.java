@@ -6,15 +6,26 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import com.google.inject.Module;
+import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 
-public class ServiceLoaderModuleProvider implements ModuleProvider {
+/**
+ * Load Module.class modules from the ServerLoader but filter out any modules
+ * that have no profile condition.
+ * 
+ * @author elandau
+ *
+ */
+public class ServiceLoaderModuleProvider implements ModuleListProvider {
 
     @Override
     public List<Module> get() {
         List<Module> modules = new ArrayList<>();
         Iterator<Module> iter = ServiceLoader.load(Module.class).iterator();
         while (iter.hasNext()) {
-            modules.add(iter.next());
+            Module module = iter.next();
+            if (null != module.getClass().getAnnotation(ConditionalOnProfile.class)) {
+                modules.add(module);
+            }
         }
         
         return modules;

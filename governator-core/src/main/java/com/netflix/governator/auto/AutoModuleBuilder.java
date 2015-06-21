@@ -12,15 +12,18 @@ import java.util.Set;
 import javax.inject.Singleton;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Binding;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Stage;
+import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.util.Modules;
+import com.netflix.governator.DefaultModule;
 import com.netflix.governator.auto.annotations.Conditional;
 import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 import com.netflix.governator.auto.annotations.OverrideModule;
@@ -78,33 +81,27 @@ import com.netflix.governator.guice.ModulesEx;
    }
    </pre>
  * 
- * While the above example may not be too impressive this functionality is extremely helpful in an 
- * application with hundreds of modules, some transitive, where overrides and additional functionality 
- * is desired when running in different environments.
+ * While the above example may seem verbose and not be too impressive when using a small number of modules
+ * this functionality is extremely helpful in an application with hundreds of modules, some transitive, 
+ * where overrides and additional functionality is desired when running in different environments.
  * 
  * @author elandau
  *
  */
 public final class AutoModuleBuilder  {
 
-    // ConditionalOnMissingBean
-    // ConditionalOnEnvironment
-    // ConditionalOnSystem
-    // ConditionalOnMissingModule
-    // ConditionalOnMissingClass
-    // ConditionalOnModule
-    // ConditionalOnClass
-    // ConditionalOnWebApplication
-    // ConditionalOnNotWebApplication
-    
     private final Module         module;
     private Set<String>          profiles = new HashSet<>();
-    private boolean              autoLoadActiveProfiles;
-    private List<ModuleProvider> finders = new ArrayList<>();
+    private boolean              autoLoadActiveProfiles = true;
+    private List<ModuleListProvider> moduleProviders = new ArrayList<>();
     private Module               bootstrapModule = Modules.EMPTY_MODULE;
     
     public static AutoModuleBuilder forModule(Module module) {
         return new AutoModuleBuilder(module);
+    }
+    
+    public static AutoModuleBuilder forModule(Module ...module) {
+        return new AutoModuleBuilder(Modules.combine(module));
     }
     
     public AutoModuleBuilder(Module module) {
@@ -121,13 +118,18 @@ public final class AutoModuleBuilder  {
         return this;
     }
     
+    public AutoModuleBuilder withoutAutoLoadActiveProfiles() {
+        autoLoadActiveProfiles = false;
+        return this;
+    }
+    
     /**
      * Add a module finder such as a ServiceLoaderModuleFinder or ClassPathScannerModuleFinder
      * @param finder
      * @return
      */
-    public AutoModuleBuilder withModuleFinder(ModuleProvider finder) {
-        this.finders.add(finder);
+    public AutoModuleBuilder withModuleFinder(ModuleListProvider finder) {
+        this.moduleProviders.add(finder);
         return this;
     }
     
@@ -144,6 +146,11 @@ public final class AutoModuleBuilder  {
      */
     public AutoModuleBuilder withBootstrap(Module bootstrapModule) {
         this.bootstrapModule = bootstrapModule;
+        return this;
+    }
+    
+    public AutoModuleBuilder withBootstrap(Module ... bootstrapModule) {
+        this.bootstrapModule = Modules.combine(bootstrapModule);
         return this;
     }
 
@@ -212,71 +219,76 @@ public final class AutoModuleBuilder  {
     }
     
     public Module build() {
-        final List<Element> elements = Elements.getElements(Stage.DEVELOPMENT, module);
-        final List<String> moduleNames = ModulesEx.listModules(elements);
-        
         // If no loader has been specified use the default which is to load
         // all Module classes via the ServiceLoader
-        if (finders.isEmpty()) {
-            finders.add(new ServiceLoaderModuleProvider());
+        if (moduleProviders.isEmpty()) {
+            moduleProviders.add(new ServiceLoaderModuleProvider());
         }
         
-        final List<Module> loadedModules = new ArrayList<>();
-        for (ModuleProvider loader : finders) {
-            loadedModules.addAll(loader.get());
-        }
-        
+        // Thes are created here first but must be populated only AFTER
+        // the bootstrap injector is created.
+        final List<Element> elements       = new ArrayList<>(); 
+        final List<String> moduleNames     = new ArrayList<>(); 
         final List<Module> overrideModules = new ArrayList<>();
         final List<Module> moreModules     = new ArrayList<>();
+        final Set<Key<?>>  keys            = new HashSet<>();
         
         // This injector is used to instantiated the condition checkers and inject anything
         // provided in the bootstrap module into them
-        Injector injector = Guice.createInjector(Modules.override(new AbstractModule() {
-            @Override
-            protected void configure() {
-            }
-            
-            @Provides
-            public AutoContext getContext() {
-                return new AutoContext() {
-                    @Override
-                    public boolean hasProfile(String profile) {
-                        return profiles.contains(profile);
-                    }
+        final Injector injector = Guice.createInjector(Modules
+            .override(new DefaultModule() {
+                @Provides
+                public AutoContext getContext() {
+                    return new AutoContext() {
+                        @Override
+                        public boolean hasProfile(String profile) {
+                            return profiles.contains(profile);
+                        }
+    
+                        @Override
+                        public boolean hasModule(String className) {
+                            return moduleNames.contains(className);
+                        }
+                        
+                        @Override
+                        public boolean hasBinding(Key<?> key) {
+                            return keys.contains(key);
+                        }
+                    };
+                }
+                
+                @Provides
+                @Singleton
+                public PropertySource getDefaultConfig() {
+                    return new AbstractPropertySource() {
+                        @Override
+                        public String get(String key) {
+                            String value = System.getProperty(key);
+                            if (value == null) {
+                                value = System.getenv(key);
+                            }
+                            return value;
+                        }
+                    };
+                }
+            })
+            .with(this.bootstrapModule));
 
-                    @Override
-                    public boolean hasModule(String className) {
-                        return moduleNames.contains(className);
-                    }
-                    
-                    @Override
-                    public boolean hasBinding(Key<?> key) {
-                        return false;
-                    }
-                };
-            }
-            
-            @Provides
-            @Singleton
-            public Config getDefaultConfig() {
-                return new Config() {
-                    @Override
-                    public String get(String key) {
-                        return System.getProperty(key);
-                    }
-                };
-            }
-        }).with(this.bootstrapModule));
-
+        // Populate all the bootstrap state from the main module
+        elements.addAll(Elements.getElements(Stage.DEVELOPMENT, module));
+        keys.addAll(ModulesEx.listKeys(elements));
+        moduleNames.addAll(ModulesEx.listModules(elements));
+        final List<Module> loadedModules   = new ArrayList<>();
+        for (ModuleListProvider loader : moduleProviders) {
+            loadedModules.addAll(loader.get());
+        }
+        
         // Iterate through all loaded modules and filter out any modules that
         // have failed the condition check.  Also, keep track of any override modules
         // for already installed modules.
-        List<Module> filteredModules = new ArrayList<>();
         for (Module module : loadedModules) {
             try {
                 if (evaluateConditions(injector, module)) {
-                    filteredModules.add(module);
-                    
                     if (autoLoadActiveProfiles) {
                         moreModules.add(module);
                     }
@@ -298,6 +310,12 @@ public final class AutoModuleBuilder  {
                 @Override
                 protected void configure() {
                     binder().skipSources(getClass());
+                    
+                    List<Binding<BootstrapExposedModule>> bootstrapModules = injector.findBindingsByType(TypeLiteral.get(BootstrapExposedModule.class));
+                    for (Binding<BootstrapExposedModule> module : bootstrapModules) {
+                        install(module.getProvider().get());
+                    }
+                    
                     install(Elements.getModule(elements));
                     for (Module module : moreModules) {
                         install(module);
