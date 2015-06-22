@@ -24,10 +24,10 @@ import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.util.Modules;
 import com.netflix.governator.DefaultModule;
+import com.netflix.governator.ElementsEx;
 import com.netflix.governator.auto.annotations.Conditional;
 import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 import com.netflix.governator.auto.annotations.OverrideModule;
-import com.netflix.governator.guice.ModulesEx;
 
 /**
  * AutoModule provides automatic module loading using plugable module finders combined
@@ -276,8 +276,8 @@ public final class AutoModuleBuilder  {
 
         // Populate all the bootstrap state from the main module
         elements.addAll(Elements.getElements(Stage.DEVELOPMENT, module));
-        keys.addAll(ModulesEx.listKeys(elements));
-        moduleNames.addAll(ModulesEx.listModules(elements));
+        keys.addAll(ElementsEx.listKeys(elements));
+        moduleNames.addAll(ElementsEx.listModules(elements));
         final List<Module> loadedModules   = new ArrayList<>();
         for (ModuleListProvider loader : moduleProviders) {
             loadedModules.addAll(loader.get());

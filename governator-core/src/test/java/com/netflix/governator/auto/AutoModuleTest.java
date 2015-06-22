@@ -17,8 +17,8 @@ import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Stage;
 import com.google.inject.spi.Elements;
+import com.netflix.governator.ElementsEx;
 import com.netflix.governator.Governator;
-import com.netflix.governator.guice.ModulesEx;
 
 public class AutoModuleTest {
     @Test
@@ -75,7 +75,7 @@ public class AutoModuleTest {
         Injector injector2 = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                for (Key<?> key : ModulesEx.listKeys(Elements.getElements(m))) {
+                for (Key<?> key : ElementsEx.listKeys(Elements.getElements(m))) {
                     System.out.println("Copy binding : " + key);
                     Provider provider = injector.getBinding(key).getProvider();
                     bind(key).toProvider(provider);

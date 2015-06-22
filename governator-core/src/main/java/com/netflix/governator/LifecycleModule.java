@@ -19,7 +19,6 @@ import com.google.inject.ProvisionException;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
-import com.netflix.governator.guice.SingletonModule;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;

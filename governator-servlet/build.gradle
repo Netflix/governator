@@ -1,10 +1,7 @@
 apply plugin: 'java'
 
-project(':governator-servlet') {
-    apply plugin: 'java'
-    dependencies {
-        compile     project(':governator')
-        compile     'javax.servlet:servlet-api:2.5'
-        compile     'com.google.inject.extensions:guice-servlet:4.0'
-    }
+dependencies {
+    compile     project(':governator')
+    compile     'javax.servlet:servlet-api:2.5'
+    compile     'com.google.inject.extensions:guice-servlet:4.0'
 }

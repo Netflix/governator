@@ -1,4 +1,4 @@
-package com.netflix.governator.guice;
+package com.netflix.governator;
 
 import java.lang.reflect.Modifier;
 

@@ -1,18 +1,12 @@
 apply plugin: 'java'
 
-project(':governator') {
-    apply plugin: 'java'
-    dependencies {
-        compile     project(':governator-annotations')
-        compile     'javax.inject:javax.inject:1'
-        compile     'com.google.code.findbugs:annotations:2.0.0'
-        compile     'org.slf4j:slf4j-api:1.6.3'
-        compile     'org.hibernate:hibernate-validator:4.1.0.Final'
-        compile     'org.ow2.asm:asm-all:5.0'
-        compile     'org.apache.xbean:xbean-finder:4.2'
-        compile     'org.apache.xbean:xbean-bundleutils:4.2'
-        compile     'com.google.inject:guice:4.0'
-        compile     'com.google.inject.extensions:guice-multibindings:4.0'
-        compile     'com.google.inject.extensions:guice-grapher:4.0'    // should be provided - only if you want graphing
-    }
+dependencies {
+    compile     project(':governator-annotations')
+    compile     'javax.inject:javax.inject:1'
+    compile     'com.google.code.findbugs:annotations:2.0.0'
+    compile     'org.slf4j:slf4j-api:1.6.3'
+    compile     'org.ow2.asm:asm-all:5.0'
+    compile     'com.google.inject:guice:4.0'
+    compile     'com.google.inject.extensions:guice-multibindings:4.0'
+    compile     'com.google.inject.extensions:guice-grapher:4.0'    // should be provided - only if you want graphing
 }
