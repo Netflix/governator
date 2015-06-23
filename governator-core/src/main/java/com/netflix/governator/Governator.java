@@ -11,7 +11,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
-import com.google.inject.multibindings.Multibinder;
 
 /**
  * Utility class matching Guice's {@link Guice} but providing shutdown capabilities.
@@ -49,12 +48,10 @@ public class Governator {
                 protected void configure() {
                     bind(LifecycleManager.class).toInstance(manager);
                     requestInjection(manager);
-                    Multibinder.newSetBinder(binder(), LifecycleListener.class);
                 }
             });
             l.addAll(modules);
             
-            manager.notifyStarting();
             injector = Guice.createInjector(stage, l);
         }
         catch (Exception e) {

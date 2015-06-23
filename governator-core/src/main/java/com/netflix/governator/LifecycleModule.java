@@ -19,7 +19,6 @@ import com.google.inject.ProvisionException;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
-import com.netflix.governator.guice.SingletonModule;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
 import com.netflix.governator.guice.lazy.LazySingleton;
@@ -71,21 +70,28 @@ public final class LifecycleModule extends SingletonModule {
     // creation
     static class StaticInitializer {
         @Inject
-        public static void initialize(LifecycleProvisionListener listener, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            listener.initialize(features, metrics);
+        public static void initialize(
+                LifecycleManager manager,
+                LifecycleProvisionListener listener, 
+                Set<LifecycleFeature> features, 
+                ProvisionMetrics metrics) {
+            listener.initialize(manager, features, metrics);
         }
     }
     
     static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
         private final ConcurrentLinkedQueue<Runnable> shutdownActions = new ConcurrentLinkedQueue<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
-        private volatile Set<LifecycleFeature> features;
+        private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
-        private volatile ProvisionMetrics metrics;
+        private ProvisionMetrics metrics;
+        private LifecycleManager manager;
         
-        public void initialize(Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            LOG.info("LifecycleProvisionListener initialized " + features);
+        public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
+            LOG.debug("LifecycleProvisionListener initialized " + features);
             this.metrics = metrics;
+            this.manager = manager;
+            this.manager.addListener(this);
             this.features = features;
         }
         
@@ -95,7 +101,7 @@ public final class LifecycleModule extends SingletonModule {
             final Class<?> clazz = key.getTypeLiteral().getRawType();
             
             if (features == null) {
-                LOG.info("LifecycleProvisionListener not initialized yet : " + key + " source=" + provision.getBinding().getSource());
+                LOG.debug("LifecycleProvisionListener not initialized yet : " + key + " source=" + provision.getBinding().getSource());
                 // TODO: Add to PreDestroy list
                 return;
             }
@@ -117,6 +123,10 @@ public final class LifecycleModule extends SingletonModule {
                     catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                         throw new ProvisionException("Failed to provision object of type " + key, e);
                     }
+                }
+                
+                if (injectee instanceof LifecycleListener) {
+                    manager.addListener((LifecycleListener)injectee);
                 }
             }
             finally {
@@ -193,7 +203,6 @@ public final class LifecycleModule extends SingletonModule {
         requestStaticInjection(StaticInitializer.class);
         bind(LifecycleProvisionListener.class).toInstance(listener);
         bindListener(Matchers.any(), listener);
-        Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
         
         // These are essentially obsolete since Guice4 fixes the global lock 

@@ -113,11 +113,10 @@ public class LifecycleModuleTest {
 
     @Test
     public void testProvidesAnnotation() {
-        LifecycleInjector injector = Governator.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-            }
-            
+        Assert.assertEquals(0, MySingleton.initCounter.get());
+        Assert.assertEquals(0, MySingleton.shutdownCounter.get());
+        
+        LifecycleInjector injector = Governator.createInjector(new DefaultModule() {
             @Provides
             @Singleton
             MySingleton createSingleton() {

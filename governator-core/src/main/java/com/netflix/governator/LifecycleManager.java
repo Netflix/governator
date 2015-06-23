@@ -1,10 +1,8 @@
 package com.netflix.governator;
 
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.slf4j.Logger;
@@ -16,37 +14,32 @@ import org.slf4j.LoggerFactory;
  * @author elandau
  */
 @Singleton
-public class LifecycleManager {
+public final class LifecycleManager {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleManager.class);
     
     private final CopyOnWriteArraySet<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
-    private final AtomicReference<State> state = new AtomicReference<>(State.Idle);
+    private final AtomicReference<State> state = new AtomicReference<>(State.Starting);
     
     public enum State {
-        Idle,
         Starting,
         Started,
         Stopped,
         Done
     }
     
-    @Inject
-    public void setListeners(Set<LifecycleListener> listeners) {
-        this.listeners.addAll(listeners);
-    }
-    
     public void addListener(LifecycleListener listener) {
+        LOG.info("Adding LifecycleListener '{}'", listener.getClass().getName());
         listeners.add(listener);
-    }
-    
-    void notifyStarting() {
-        if (state.compareAndSet(State.Idle, State.Starting)) {
+        if (state.equals(State.Started)) {
+            LOG.info("Starting LifecycleListener '{}'", listener.getClass().getName());
+            listener.onStarted();
         }
     }
     
     void notifyStarted() {
         if (state.compareAndSet(State.Starting, State.Started)) {
             for (LifecycleListener listener : listeners) {
+                LOG.info("Starting LifecycleListener '{}'", listener.getClass().getName());
                 listener.onStarted();
             }
         }
@@ -65,6 +58,7 @@ public class LifecycleManager {
             LOG.info("Shutting down LifecycleManager");
             for (LifecycleListener listener : listeners) {
                 try {
+                    LOG.info("Stopping LifecycleListener '{}'", listener.getClass().getName());
                     listener.onStopped();
                 }
                 catch (Exception e) {

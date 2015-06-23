@@ -153,7 +153,7 @@ Governator is built via Gradle (http://www.gradle.org). To build from the comman
     ./gradlew build
 
 # Artifacts
------------
+----------
 
 Governator binaries are published to Maven Central. Please see the docs for details.
 

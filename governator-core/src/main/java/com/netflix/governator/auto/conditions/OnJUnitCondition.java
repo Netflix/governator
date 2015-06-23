@@ -1,0 +1,19 @@
+package com.netflix.governator.auto.conditions;
+
+import javax.inject.Singleton;
+
+import com.netflix.governator.auto.Condition;
+
+@Singleton
+public class OnJUnitCondition implements Condition<OnJUnitCondition>{
+    @Override
+    public boolean check(OnJUnitCondition param) {
+        String cmd = System.getProperty("sun.java.command");
+        if (cmd == null) {
+            return false;
+        }
+        
+        return cmd.startsWith("org.eclipse.jdt.internal.junit.runner");
+        // TODO: Add additional checks for other IDEs
+    }
+}

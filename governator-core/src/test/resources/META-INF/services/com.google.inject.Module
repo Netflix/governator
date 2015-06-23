@@ -1,1 +1,2 @@
-com.netflix.governator.guice.serviceloader.MyServiceLoadedModule
+com.netflix.governator.auto.OverrideAModule
+com.netflix.governator.auto.ProfileBModule
