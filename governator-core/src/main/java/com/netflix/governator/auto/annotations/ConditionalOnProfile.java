@@ -14,4 +14,11 @@ import com.netflix.governator.auto.conditions.OnProfileCondition;
 @Conditional(OnProfileCondition.class)
 public @interface ConditionalOnProfile {
     String[] value();
+    
+    /**
+     * Match if context in all specified profiles
+     * 
+     * @return
+     */
+    boolean matchAll() default true;
 }

@@ -19,11 +19,20 @@ public class OnProfileCondition implements Condition<ConditionalOnProfile> {
     
     @Override
     public boolean check(ConditionalOnProfile condition) {
-        for (String profile : condition.value()) {
-            if (context.hasProfile(profile))
-                return true;
+        if (condition.matchAll()) {
+            for (String profile : condition.value()) {
+                if (!context.hasProfile(profile))
+                    return false;
+            }
+            return true;
         }
-        return false;
+        else {
+            for (String profile : condition.value()) {
+                if (!context.hasProfile(profile))
+                    return true;
+            }
+            return false;
+        }
     }
     
     @Override

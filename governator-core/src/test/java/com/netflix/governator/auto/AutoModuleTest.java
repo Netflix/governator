@@ -75,7 +75,7 @@ public class AutoModuleTest {
         Injector injector2 = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                for (Key<?> key : ElementsEx.listKeys(Elements.getElements(m))) {
+                for (Key<?> key : ElementsEx.getAllBoundKeys(Elements.getElements(m))) {
                     System.out.println("Copy binding : " + key);
                     Provider provider = injector.getBinding(key).getProvider();
                     bind(key).toProvider(provider);

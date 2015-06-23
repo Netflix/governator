@@ -8,8 +8,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Singleton;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
@@ -19,7 +23,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.util.Modules;
@@ -93,12 +97,13 @@ import com.netflix.governator.auto.annotations.OverrideModule;
  *
  */
 public final class AutoModuleBuilder  {
-
+    private static final Logger LOG = LoggerFactory.getLogger(AutoModuleBuilder.class);
+    
     private final Module         module;
     private Set<String>          profiles = new HashSet<>();
-    private boolean              autoLoadActiveProfiles = true;
-    private List<ModuleListProvider> moduleProviders = new ArrayList<>();
     private Module               bootstrapModule = Modules.EMPTY_MODULE;
+    private List<ModuleListProvider> moduleProviders = new ArrayList<>();
+    private static final AtomicInteger idCounter = new AtomicInteger();
     
     public static AutoModuleBuilder forModule(Module module) {
         return new AutoModuleBuilder(module);
@@ -112,21 +117,6 @@ public final class AutoModuleBuilder  {
         this.module = module;
     }
 
-    /**
-     * When set to true will auto install any found module that passes all conditions
-     * @param flag
-     * @return
-     */
-    public AutoModuleBuilder withAutoLoadActiveProfiles(boolean flag) {
-        autoLoadActiveProfiles = flag;
-        return this;
-    }
-    
-    public AutoModuleBuilder withoutAutoLoadActiveProfiles() {
-        autoLoadActiveProfiles = false;
-        return this;
-    }
-    
     /**
      * Add a module finder such as a ServiceLoaderModuleFinder or ClassPathScannerModuleFinder
      * @param finder
@@ -189,12 +179,15 @@ public final class AutoModuleBuilder  {
     }
 
     private boolean evaluateConditions(Injector injector, Module module) throws Exception {
+        LOG.info("Trying module {}", module.getClass().getName());
         // The class may have multiple Conditional annotations
         for (Annotation annot : module.getClass().getAnnotations()) {
+            LOG.info("  Trying annot {}", annot);
             Conditional conditional = annot.annotationType().getAnnotation(Conditional.class);
             if (conditional != null) {
                 // A Conditional may have a list of multiple Conditions
                 for (Class<? extends Condition> condition : conditional.value()) {
+                    LOG.info("    Trying condition {}", condition);
                     try {
                         // Construct the condition using Guice so that anything may be injected into 
                         // the condition
@@ -205,6 +198,7 @@ public final class AutoModuleBuilder  {
                         try {
                             Method check = condition.getDeclaredMethod("check", annot.annotationType());
                             if (!(boolean)check.invoke(c, annot)) {
+                                LOG.info("Module '{}' dicarded on condition : {}", module.getClass(), annot);
                                 return false;
                             }
                         }
@@ -213,9 +207,12 @@ public final class AutoModuleBuilder  {
                         catch (NoSuchMethodException e) {
                             Method check = condition.getDeclaredMethod("check");
                             if (!(boolean)check.invoke(c)) {
+                                LOG.info("Module '{}' dicarded on condition : {}", module.getClass(), annot);
                                 return false;
                             }
                         }
+                        
+                        LOG.info("      Passed condition {}", condition);
                     }
                     catch (Exception e) {
                         throw new Exception("Failed to check condition '" + condition + "' on module '" + module.getClass() + "'");
@@ -286,8 +283,8 @@ public final class AutoModuleBuilder  {
         
         // Populate all the bootstrap state from the main module
         elements.addAll(Elements.getElements(Stage.DEVELOPMENT, module));
-        keys.addAll(ElementsEx.listKeys(elements));
-        moduleNames.addAll(ElementsEx.listModules(elements));
+        keys.addAll(ElementsEx.getAllInjectionKeys(elements));
+        moduleNames.addAll(ElementsEx.getAllSourceModules(elements));
         final List<Module> loadedModules   = new ArrayList<>();
         for (ModuleListProvider loader : moduleProviders) {
             loadedModules.addAll(loader.get());
@@ -299,15 +296,16 @@ public final class AutoModuleBuilder  {
         for (Module module : loadedModules) {
             try {
                 if (evaluateConditions(injector, module)) {
-                    if (autoLoadActiveProfiles) {
-                        moreModules.add(module);
-                    }
-                    
                     OverrideModule override = module.getClass().getAnnotation(OverrideModule.class);
                     if (override != null) {
                         if (moduleNames.contains(override.value().getName())) {
+                            LOG.info("Adding override module {}", module.getClass().getName());
                             overrideModules.add(module);
                         }
+                    }
+                    else {
+                        LOG.info("Adding conditional module {}", module.getClass().getName());
+                        moreModules.add(module);
                     }
                 }
             } catch (Exception e) {
@@ -315,29 +313,30 @@ public final class AutoModuleBuilder  {
             }
         }
         
+        List<Binding<BootstrapExposedModule>> bootstrapModules = injector.findBindingsByType(TypeLiteral.get(BootstrapExposedModule.class));
+        for (Binding<BootstrapExposedModule> binding : bootstrapModules) {
+            Module module = binding.getProvider().get();
+            LOG.info("Adding bootstrap exposed module {}", module.getClass().getName());
+            moreModules.add(module);
+        }
+
         return Modules
             .override(new AbstractModule() {
                 @Override
                 protected void configure() {
                     binder().skipSources(getClass());
                     
-                    List<Binding<BootstrapExposedModule>> bootstrapModules = injector.findBindingsByType(TypeLiteral.get(BootstrapExposedModule.class));
-                    for (Binding<BootstrapExposedModule> module : bootstrapModules) {
-                        install(module.getProvider().get());
-                    }
-                    
                     install(Elements.getModule(elements));
-                    for (Module module : moreModules) {
-                        install(module);
-                    }
+                    install(Modules.combine(moreModules));
                     
-                    Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(new DefaultLifecycleListener() {
-                        @Override
-                        public void onStopped() {
-                            bootstrapLifecycleShutdownSignal.signal();
-                        }
-                    });
-
+                    bind(LifecycleListener.class)
+                        .annotatedWith(Names.named("BootstrapLifecycleBridge" + idCounter.incrementAndGet()))
+                        .toInstance(new DefaultLifecycleListener() {
+                            @Override
+                            public void onStopped() {
+                                bootstrapLifecycleShutdownSignal.signal();
+                            }
+                        });
                 }
             })
             .with(overrideModules);

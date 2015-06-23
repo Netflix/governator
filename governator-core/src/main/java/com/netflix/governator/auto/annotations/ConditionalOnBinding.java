@@ -6,12 +6,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.netflix.governator.auto.conditions.OnClassCondition;
+import com.netflix.governator.auto.conditions.OnBindingCondition;
 
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Conditional(OnClassCondition.class)
+@Conditional(OnBindingCondition.class)
 public @interface ConditionalOnBinding {
     String[] value();
 }
