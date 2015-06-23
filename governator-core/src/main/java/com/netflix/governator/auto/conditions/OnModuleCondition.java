@@ -5,10 +5,10 @@ import javax.inject.Singleton;
 
 import com.netflix.governator.auto.AutoContext;
 import com.netflix.governator.auto.Condition;
-import com.netflix.governator.auto.annotations.ConditionalOnMissingModule;
+import com.netflix.governator.auto.annotations.ConditionalOnModule;
 
 @Singleton
-public class OnModuleCondition implements Condition<ConditionalOnMissingModule>{
+public class OnModuleCondition implements Condition<ConditionalOnModule>{
     private final AutoContext context;
     
     @Inject
@@ -17,7 +17,7 @@ public class OnModuleCondition implements Condition<ConditionalOnMissingModule>{
     }
     
     @Override
-    public boolean check(ConditionalOnMissingModule param) {
+    public boolean check(ConditionalOnModule param) {
         for (String module : param.value()) {
             if (!context.hasModule(module)) {
                 return true;

@@ -13,18 +13,22 @@ import javax.inject.Singleton;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.util.Modules;
+import com.netflix.governator.DefaultLifecycleListener;
 import com.netflix.governator.DefaultModule;
 import com.netflix.governator.ElementsEx;
+import com.netflix.governator.Governator;
+import com.netflix.governator.LifecycleListener;
+import com.netflix.governator.LifecycleShutdownSignal;
 import com.netflix.governator.auto.annotations.Conditional;
 import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 import com.netflix.governator.auto.annotations.OverrideModule;
@@ -191,26 +195,30 @@ public final class AutoModuleBuilder  {
             if (conditional != null) {
                 // A Conditional may have a list of multiple Conditions
                 for (Class<? extends Condition> condition : conditional.value()) {
-                    // Construct the condition using Guice so that anything may be injected into 
-                    // the condition
-                    Condition c = injector.getInstance(condition);
-                    // Look for method signature 
-                    //      boolean check(T annot)
-                    // where T is the annotation type.  Note that the same checker will be used 
-                    // for all conditions of the same annotation type.
                     try {
-                        Method check = condition.getDeclaredMethod("check", annot.annotationType());
-                        if (!(boolean)check.invoke(c, annot)) {
-                            return false;
+                        // Construct the condition using Guice so that anything may be injected into 
+                        // the condition
+                        Condition c = injector.getInstance(condition);
+                        // Look for method signature : boolean check(T annot)
+                        // where T is the annotation type.  Note that the same checker will be used 
+                        // for all conditions of the same annotation type.
+                        try {
+                            Method check = condition.getDeclaredMethod("check", annot.annotationType());
+                            if (!(boolean)check.invoke(c, annot)) {
+                                return false;
+                            }
+                        }
+                        // If not found, look for method signature 
+                        //      boolean check();
+                        catch (NoSuchMethodException e) {
+                            Method check = condition.getDeclaredMethod("check");
+                            if (!(boolean)check.invoke(c)) {
+                                return false;
+                            }
                         }
                     }
-                    // If not found, look for method signature 
-                    //      boolean check();
-                    catch (NoSuchMethodException e) {
-                        Method check = condition.getDeclaredMethod("check");
-                        if (!(boolean)check.invoke(c)) {
-                            return false;
-                        }
+                    catch (Exception e) {
+                        throw new Exception("Failed to check condition '" + condition + "' on module '" + module.getClass() + "'");
                     }
                 }
             }
@@ -235,7 +243,7 @@ public final class AutoModuleBuilder  {
         
         // This injector is used to instantiated the condition checkers and inject anything
         // provided in the bootstrap module into them
-        final Injector injector = Guice.createInjector(Modules
+        final Injector injector = Governator.createInjector(Modules
             .override(new DefaultModule() {
                 @Provides
                 public AutoContext getContext() {
@@ -274,6 +282,8 @@ public final class AutoModuleBuilder  {
             })
             .with(this.bootstrapModule));
 
+        final LifecycleShutdownSignal bootstrapLifecycleShutdownSignal = injector.getInstance(LifecycleShutdownSignal.class);
+        
         // Populate all the bootstrap state from the main module
         elements.addAll(Elements.getElements(Stage.DEVELOPMENT, module));
         keys.addAll(ElementsEx.listKeys(elements));
@@ -320,6 +330,14 @@ public final class AutoModuleBuilder  {
                     for (Module module : moreModules) {
                         install(module);
                     }
+                    
+                    Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(new DefaultLifecycleListener() {
+                        @Override
+                        public void onStopped() {
+                            bootstrapLifecycleShutdownSignal.signal();
+                        }
+                    });
+
                 }
             })
             .with(overrideModules);

@@ -70,21 +70,28 @@ public final class LifecycleModule extends SingletonModule {
     // creation
     static class StaticInitializer {
         @Inject
-        public static void initialize(LifecycleProvisionListener listener, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            listener.initialize(features, metrics);
+        public static void initialize(
+                LifecycleManager manager,
+                LifecycleProvisionListener listener, 
+                Set<LifecycleFeature> features, 
+                ProvisionMetrics metrics) {
+            listener.initialize(manager, features, metrics);
         }
     }
     
     static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
         private final ConcurrentLinkedQueue<Runnable> shutdownActions = new ConcurrentLinkedQueue<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
-        private volatile Set<LifecycleFeature> features;
+        private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
-        private volatile ProvisionMetrics metrics;
+        private ProvisionMetrics metrics;
+        private LifecycleManager manager;
         
-        public void initialize(Set<LifecycleFeature> features, ProvisionMetrics metrics) {
+        public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
             LOG.debug("LifecycleProvisionListener initialized " + features);
             this.metrics = metrics;
+            this.manager = manager;
+            this.manager.addListener(this);
             this.features = features;
         }
         
@@ -116,6 +123,10 @@ public final class LifecycleModule extends SingletonModule {
                     catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                         throw new ProvisionException("Failed to provision object of type " + key, e);
                     }
+                }
+                
+                if (injectee instanceof LifecycleListener) {
+                    manager.addListener((LifecycleListener)injectee);
                 }
             }
             finally {
@@ -192,7 +203,6 @@ public final class LifecycleModule extends SingletonModule {
         requestStaticInjection(StaticInitializer.class);
         bind(LifecycleProvisionListener.class).toInstance(listener);
         bindListener(Matchers.any(), listener);
-        Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
         
         // These are essentially obsolete since Guice4 fixes the global lock 

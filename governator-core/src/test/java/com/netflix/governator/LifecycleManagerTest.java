@@ -12,7 +12,6 @@ import junit.framework.Assert;
 import org.testng.annotations.Test;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.multibindings.Multibinder;
 
 @Test(singleThreaded=true)
 public class LifecycleManagerTest {
@@ -94,7 +93,7 @@ public class LifecycleManagerTest {
         LifecycleInjector injector = Governator.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().toInstance(listener);
+                bind(CountingLifecycleListener.class).toInstance(listener);
             }
         });
         
