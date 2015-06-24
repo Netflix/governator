@@ -15,4 +15,9 @@ public class OnTestNGCondition implements Condition<OnTestNGCondition>{
         
         return cmd.startsWith("org.testng.remote.RemoteTestNG");
     }
+
+    @Override
+    public String toString() {
+        return "OnTestNGCondition[]";
+    }
 }

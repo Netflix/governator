@@ -31,6 +31,7 @@ import com.netflix.governator.ElementsEx;
 import com.netflix.governator.Governator;
 import com.netflix.governator.LifecycleListener;
 import com.netflix.governator.LifecycleShutdownSignal;
+import com.netflix.governator.auto.annotations.Bootstrap;
 import com.netflix.governator.auto.annotations.Conditional;
 import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 import com.netflix.governator.auto.annotations.OverrideModule;
@@ -99,7 +100,6 @@ public final class AutoModuleBuilder  {
     
     private final Module         module;
     private Set<String>          profiles = new HashSet<>();
-    private Set<String>          bootstrapProfiles = new HashSet<>();
     private Module               bootstrapModule = Modules.EMPTY_MODULE;
     private List<ModuleListProvider> moduleProviders = new ArrayList<>();
     private static final AtomicInteger idCounter = new AtomicInteger();
@@ -114,7 +114,6 @@ public final class AutoModuleBuilder  {
     
     public AutoModuleBuilder(Module module) {
         this.module = module;
-        bootstrapProfiles.add("bootstrap");
     }
 
     /**
@@ -178,21 +177,6 @@ public final class AutoModuleBuilder  {
         return this;
     }
 
-    public AutoModuleBuilder withBootstrapProfile(String profile) {
-        this.bootstrapProfiles.add(profile);
-        return this;
-    }
-
-    public AutoModuleBuilder withBootstrapProfiles(String... profiles) {
-        this.bootstrapProfiles.addAll(Arrays.asList(profiles));
-        return this;
-    }
-
-    public AutoModuleBuilder withBootstrapProfiles(Collection<String> profiles) {
-        this.bootstrapProfiles.addAll(profiles);
-        return this;
-    }
-
     private String formatConditional(Annotation a) {
         String str = a.toString();
         int pos = str.indexOf("(");
@@ -205,8 +189,18 @@ public final class AutoModuleBuilder  {
         return str;
     }
     
-    private boolean evaluateConditions(Injector injector, Module module) throws Exception {
+    private boolean evaluateConditions(Injector injector, Module module, boolean isBootstrap) throws Exception {
         LOG.info("Evaluating module {}", module.getClass().getName());
+        
+        Bootstrap bs = module.getClass().getAnnotation(Bootstrap.class);
+        if (isBootstrap != (bs != null)) {
+            LOG.info("  - ConditionalOn{}Bootstrap", isBootstrap ? "" : "Not");
+            return false;
+        }
+        else {
+            LOG.info("  + ConditionalOn{}Bootstrap", isBootstrap ? "" : "Not");
+        }
+        
         // The class may have multiple Conditional annotations
         for (Annotation annot : module.getClass().getAnnotations()) {
             Conditional conditional = annot.annotationType().getAnnotation(Conditional.class);
@@ -263,16 +257,16 @@ public final class AutoModuleBuilder  {
             loadedModules.addAll(loader.get());
         }
 
-        Module newBootstrap = create(loadedModules, bootstrapModule, bootstrapProfiles, new DefaultModule() {
+        Module newBootstrap = create(loadedModules, bootstrapModule, profiles, true, new DefaultModule() {
             @Provides
             PropertySource getPropertySource() {
                 return new DefaultPropertySource(); 
             }
         });
-        return create(loadedModules, module, profiles, newBootstrap);
+        return create(loadedModules, module, profiles, false, newBootstrap);
     }
     
-    private Module create(List<Module> loadedModules, Module rootModule, final Set<String> profiles, Module bootstrapModule) {
+    private Module create(List<Module> loadedModules, Module rootModule, final Set<String> profiles, final boolean isBootstrap, Module bootstrapModule) {
         LOG.info("Processing profiles : " + profiles);
         
         // Populate all the bootstrap state from the main module
@@ -311,7 +305,7 @@ public final class AutoModuleBuilder  {
         final List<Module> moreModules     = new ArrayList<>();
         for (Module module : loadedModules) {
             try {
-                if (evaluateConditions(injector, module)) {
+                if (evaluateConditions(injector, module, isBootstrap)) {
                     OverrideModule override = module.getClass().getAnnotation(OverrideModule.class);
                     if (override != null) {
                         if (moduleNames.contains(override.value().getName())) {

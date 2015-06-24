@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import com.google.inject.Module;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE})
 public @interface OverrideModule {
     Class<? extends Module> value();
 } 

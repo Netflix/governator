@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 import com.netflix.governator.auto.conditions.OnTestNGCondition;
 
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnTestNGCondition.class)

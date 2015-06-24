@@ -33,6 +33,6 @@ public class OnBindingCondition implements Condition<ConditionalOnBinding> {
     
     @Override
     public String toString() {
-        return "OnClassCondition[]";
+        return "OnBindingCondition[]";
     }
 }

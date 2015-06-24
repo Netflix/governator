@@ -32,6 +32,6 @@ public class OnMissingBindingCondition implements Condition<ConditionalOnMissing
     
     @Override
     public String toString() {
-        return "OnClassCondition[]";
+        return "OnMissingBindingCondition[]";
     }
 }
