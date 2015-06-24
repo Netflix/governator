@@ -244,31 +244,51 @@ public final class AutoModuleBuilder  {
     }
     
     public Module build() {
+        LOG.info("Using profiles : " + profiles);
+        
         // If no loader has been specified use the default which is to load
         // all Module classes via the ServiceLoader
         if (moduleProviders.isEmpty()) {
             moduleProviders.add(new ServiceLoaderModuleProvider());
         }
         
-        // Generate a single list of all found modules
+        // Generate a single list of all discovered modules
         // TODO: Duplicates?
         final List<Module> loadedModules   = new ArrayList<>();
         for (ModuleListProvider loader : moduleProviders) {
             loadedModules.addAll(loader.get());
         }
 
-        Module newBootstrap = create(loadedModules, bootstrapModule, profiles, true, new DefaultModule() {
-            @Provides
-            PropertySource getPropertySource() {
-                return new DefaultPropertySource(); 
-            }
-        });
-        return create(loadedModules, module, profiles, false, newBootstrap);
+        return create(
+                loadedModules, 
+                module, 
+                false, 
+                // First, auto load the bootstrap modules (usually deal with configuration and logging) and
+                // use to load the main module.
+                create(
+                    loadedModules, 
+                    bootstrapModule, 
+                    true, 
+                    new DefaultModule() {
+                        @Provides
+                        PropertySource getPropertySource() {
+                            return new DefaultPropertySource(); 
+                        }
+                    }));
     }
     
-    private Module create(List<Module> loadedModules, Module rootModule, final Set<String> profiles, final boolean isBootstrap, Module bootstrapModule) {
-        LOG.info("Processing profiles : " + profiles);
-        
+    private boolean isEnabled(PropertySource propertySource, String name) {
+        int pos = name.length();
+        do {
+            if (propertySource.get("governator.module.disabled." + name.substring(0, pos), Boolean.class, false)) {
+                return false;
+            }
+            pos = name.lastIndexOf(".", pos-1);
+        } while (pos > 0);
+        return true;
+    }
+    
+    private Module create(List<Module> loadedModules, Module rootModule, final boolean isBootstrap, Module bootstrapModule) {
         // Populate all the bootstrap state from the main module
         final List<Element> elements    = Elements.getElements(Stage.DEVELOPMENT, rootModule);
         final Set<Key<?>>   keys        = ElementsEx.getAllInjectionKeys(elements);
@@ -298,12 +318,19 @@ public final class AutoModuleBuilder  {
                 })
                 .with(bootstrapModule));
 
+        PropertySource propertySource = injector.getInstance(PropertySource.class);
+        
         // Iterate through all loaded modules and filter out any modules that
         // have failed the condition check.  Also, keep track of any override modules
         // for already installed modules.
         final List<Module> overrideModules = new ArrayList<>();
         final List<Module> moreModules     = new ArrayList<>();
         for (Module module : loadedModules) {
+            if (!isEnabled(propertySource, module.getClass().getName())) {
+                LOG.info("Ignoring module {}", module.getClass().getName());
+                continue;
+            }
+            
             try {
                 if (evaluateConditions(injector, module, isBootstrap)) {
                     OverrideModule override = module.getClass().getAnnotation(OverrideModule.class);
