@@ -3,6 +3,7 @@ package com.netflix.governator.auto;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.google.common.reflect.ClassPath;
@@ -16,9 +17,13 @@ import com.netflix.governator.auto.annotations.Conditional;
  */
 public class ClassPathModuleProvider implements ModuleListProvider {
 
-    private String[] packages;
+    private List<String> packages;
 
     public ClassPathModuleProvider(String... packages) {
+        this.packages = Arrays.asList(packages);
+    }
+    
+    public ClassPathModuleProvider(List<String> packages) {
         this.packages = packages;
     }
     
