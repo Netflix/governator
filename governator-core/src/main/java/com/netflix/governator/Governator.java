@@ -73,7 +73,9 @@ public class Governator {
                 manager.notifyShutdown();
             }
             catch (Exception e2) {
-                
+            }
+            finally {
+                System.exit(-1);
             }
             throw e;
         }

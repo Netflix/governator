@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,6 +99,7 @@ public final class AutoModuleBuilder  {
     
     private final Module         module;
     private Set<String>          profiles = new HashSet<>();
+    private Set<String>          bootstrapProfiles = new HashSet<>();
     private Module               bootstrapModule = Modules.EMPTY_MODULE;
     private List<ModuleListProvider> moduleProviders = new ArrayList<>();
     private static final AtomicInteger idCounter = new AtomicInteger();
@@ -115,6 +114,7 @@ public final class AutoModuleBuilder  {
     
     public AutoModuleBuilder(Module module) {
         this.module = module;
+        bootstrapProfiles.add("bootstrap");
     }
 
     /**
@@ -167,7 +167,7 @@ public final class AutoModuleBuilder  {
         this.profiles.addAll(Arrays.asList(profiles));
         return this;
     }
-
+    
     /**
      * Add a runtime profiles.  @see {@link ConditionalOnProfile}
      * 
@@ -178,16 +178,41 @@ public final class AutoModuleBuilder  {
         return this;
     }
 
+    public AutoModuleBuilder withBootstrapProfile(String profile) {
+        this.bootstrapProfiles.add(profile);
+        return this;
+    }
+
+    public AutoModuleBuilder withBootstrapProfiles(String... profiles) {
+        this.bootstrapProfiles.addAll(Arrays.asList(profiles));
+        return this;
+    }
+
+    public AutoModuleBuilder withBootstrapProfiles(Collection<String> profiles) {
+        this.bootstrapProfiles.addAll(profiles);
+        return this;
+    }
+
+    private String formatConditional(Annotation a) {
+        String str = a.toString();
+        int pos = str.indexOf("(");
+        if (pos != -1) {
+            pos = str.lastIndexOf(".", pos);
+            if (pos != -1) {
+                return str.substring(pos+1);
+            }
+        }
+        return str;
+    }
+    
     private boolean evaluateConditions(Injector injector, Module module) throws Exception {
-        LOG.info("Trying module {}", module.getClass().getName());
+        LOG.info("Evaluating module {}", module.getClass().getName());
         // The class may have multiple Conditional annotations
         for (Annotation annot : module.getClass().getAnnotations()) {
-            LOG.info("  Trying annot {}", annot);
             Conditional conditional = annot.annotationType().getAnnotation(Conditional.class);
             if (conditional != null) {
                 // A Conditional may have a list of multiple Conditions
                 for (Class<? extends Condition> condition : conditional.value()) {
-                    LOG.info("    Trying condition {}", condition);
                     try {
                         // Construct the condition using Guice so that anything may be injected into 
                         // the condition
@@ -198,7 +223,7 @@ public final class AutoModuleBuilder  {
                         try {
                             Method check = condition.getDeclaredMethod("check", annot.annotationType());
                             if (!(boolean)check.invoke(c, annot)) {
-                                LOG.info("Module '{}' dicarded on condition : {}", module.getClass(), annot);
+                                LOG.info("  - {}", formatConditional(annot));
                                 return false;
                             }
                         }
@@ -207,14 +232,15 @@ public final class AutoModuleBuilder  {
                         catch (NoSuchMethodException e) {
                             Method check = condition.getDeclaredMethod("check");
                             if (!(boolean)check.invoke(c)) {
-                                LOG.info("Module '{}' dicarded on condition : {}", module.getClass(), annot);
+                                LOG.info("  - {}", formatConditional(annot));
                                 return false;
                             }
                         }
                         
-                        LOG.info("      Passed condition {}", condition);
+                        LOG.info("  + {}", formatConditional(annot));
                     }
                     catch (Exception e) {
+                        LOG.info("  - {}", formatConditional(annot));
                         throw new Exception("Failed to check condition '" + condition + "' on module '" + module.getClass() + "'");
                     }
                 }
@@ -230,81 +256,71 @@ public final class AutoModuleBuilder  {
             moduleProviders.add(new ServiceLoaderModuleProvider());
         }
         
-        // Thes are created here first but must be populated only AFTER
-        // the bootstrap injector is created.
-        final List<Element> elements       = new ArrayList<>(); 
-        final List<String> moduleNames     = new ArrayList<>(); 
-        final List<Module> overrideModules = new ArrayList<>();
-        final List<Module> moreModules     = new ArrayList<>();
-        final Set<Key<?>>  keys            = new HashSet<>();
-        
-        // This injector is used to instantiated the condition checkers and inject anything
-        // provided in the bootstrap module into them
-        final Injector injector = Governator.createInjector(Modules
-            .override(new DefaultModule() {
-                @Provides
-                public AutoContext getContext() {
-                    return new AutoContext() {
-                        @Override
-                        public boolean hasProfile(String profile) {
-                            return profiles.contains(profile);
-                        }
-    
-                        @Override
-                        public boolean hasModule(String className) {
-                            return moduleNames.contains(className);
-                        }
-                        
-                        @Override
-                        public boolean hasBinding(Key<?> key) {
-                            return keys.contains(key);
-                        }
-                    };
-                }
-                
-                @Provides
-                @Singleton
-                public PropertySource getDefaultConfig() {
-                    return new AbstractPropertySource() {
-                        @Override
-                        public String get(String key) {
-                            String value = System.getProperty(key);
-                            if (value == null) {
-                                value = System.getenv(key);
-                            }
-                            return value;
-                        }
-                    };
-                }
-            })
-            .with(this.bootstrapModule));
-
-        final LifecycleShutdownSignal bootstrapLifecycleShutdownSignal = injector.getInstance(LifecycleShutdownSignal.class);
-        
-        // Populate all the bootstrap state from the main module
-        elements.addAll(Elements.getElements(Stage.DEVELOPMENT, module));
-        keys.addAll(ElementsEx.getAllInjectionKeys(elements));
-        moduleNames.addAll(ElementsEx.getAllSourceModules(elements));
+        // Generate a single list of all found modules
+        // TODO: Duplicates?
         final List<Module> loadedModules   = new ArrayList<>();
         for (ModuleListProvider loader : moduleProviders) {
             loadedModules.addAll(loader.get());
         }
+
+        Module newBootstrap = create(loadedModules, bootstrapModule, bootstrapProfiles, new DefaultModule() {
+            @Provides
+            PropertySource getPropertySource() {
+                return new DefaultPropertySource(); 
+            }
+        });
+        return create(loadedModules, module, profiles, newBootstrap);
+    }
+    
+    private Module create(List<Module> loadedModules, Module rootModule, final Set<String> profiles, Module bootstrapModule) {
+        LOG.info("Processing profiles : " + profiles);
         
+        // Populate all the bootstrap state from the main module
+        final List<Element> elements    = Elements.getElements(Stage.DEVELOPMENT, rootModule);
+        final Set<Key<?>>   keys        = ElementsEx.getAllInjectionKeys(elements);
+        final List<String>  moduleNames = ElementsEx.getAllSourceModules(elements);
+        
+        final Injector injector = Governator.createInjector(Modules
+                .override(new DefaultModule() {
+                    @Provides
+                    public AutoContext getContext() {
+                        return new AutoContext() {
+                            @Override
+                            public boolean hasProfile(String profile) {
+                                return profiles.contains(profile);
+                            }
+        
+                            @Override
+                            public boolean hasModule(String className) {
+                                return moduleNames.contains(className);
+                            }
+                            
+                            @Override
+                            public boolean hasBinding(Key<?> key) {
+                                return keys.contains(key);
+                            }
+                        };
+                    }
+                })
+                .with(bootstrapModule));
+
         // Iterate through all loaded modules and filter out any modules that
         // have failed the condition check.  Also, keep track of any override modules
         // for already installed modules.
+        final List<Module> overrideModules = new ArrayList<>();
+        final List<Module> moreModules     = new ArrayList<>();
         for (Module module : loadedModules) {
             try {
                 if (evaluateConditions(injector, module)) {
                     OverrideModule override = module.getClass().getAnnotation(OverrideModule.class);
                     if (override != null) {
                         if (moduleNames.contains(override.value().getName())) {
-                            LOG.info("Adding override module {}", module.getClass().getName());
+                            LOG.info("    Adding override module {}", module.getClass().getSimpleName());
                             overrideModules.add(module);
                         }
                     }
                     else {
-                        LOG.info("Adding conditional module {}", module.getClass().getName());
+                        LOG.info("    Adding conditional module {}", module.getClass().getSimpleName());
                         moreModules.add(module);
                     }
                 }
@@ -316,7 +332,7 @@ public final class AutoModuleBuilder  {
         List<Binding<BootstrapExposedModule>> bootstrapModules = injector.findBindingsByType(TypeLiteral.get(BootstrapExposedModule.class));
         for (Binding<BootstrapExposedModule> binding : bootstrapModules) {
             Module module = binding.getProvider().get();
-            LOG.info("Adding bootstrap exposed module {}", module.getClass().getName());
+            LOG.info("Adding exposed bootstrap module {}", module.getClass().getName());
             moreModules.add(module);
         }
 
@@ -329,6 +345,10 @@ public final class AutoModuleBuilder  {
                     install(Elements.getModule(elements));
                     install(Modules.combine(moreModules));
                     
+                    // Slave the bootstrap module's shutdown the what injector is created here
+                    // Otherwise it will not be possible to shutdown any lifecycle listeners
+                    // from the bootstrap injector
+                    final LifecycleShutdownSignal bootstrapLifecycleShutdownSignal = injector.getInstance(LifecycleShutdownSignal.class);
                     bind(LifecycleListener.class)
                         .annotatedWith(Names.named("BootstrapLifecycleBridge" + idCounter.incrementAndGet()))
                         .toInstance(new DefaultLifecycleListener() {
@@ -341,4 +361,5 @@ public final class AutoModuleBuilder  {
             })
             .with(overrideModules);
     }
+    
 }

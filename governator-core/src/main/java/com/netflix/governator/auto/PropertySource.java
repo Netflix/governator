@@ -1,5 +1,7 @@
 package com.netflix.governator.auto;
 
+import com.google.inject.ImplementedBy;
+
 /**
  * Very simple config interface to be used by Conditions to gain access
  * to any type of configuration.  The internal default in AutoModuleBuilder 
@@ -10,6 +12,7 @@ package com.netflix.governator.auto;
  * @author elandau
  * 
  */
+@ImplementedBy(DefaultPropertySource.class)
 public interface PropertySource {
     /**
      * Get the value of a property or null if not found
