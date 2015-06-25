@@ -21,7 +21,7 @@ public class OnMissingBindingCondition implements Condition<ConditionalOnMissing
     public boolean check(ConditionalOnMissingBinding condition) {
         for (String name : condition.value()) {
             try {
-                if (context.hasBinding(Key.get(Class.forName(name)))) {
+                if (context.hasBinding(Key.get(Class.forName(name, false, ClassLoader.getSystemClassLoader())))) {
                     return false;
                 }
             } catch (ClassNotFoundException e) {

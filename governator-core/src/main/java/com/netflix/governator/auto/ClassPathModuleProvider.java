@@ -37,7 +37,7 @@ public class ClassPathModuleProvider implements ModuleListProvider {
                 for (ClassPath.ClassInfo classInfo : classpath.getTopLevelClassesRecursive(pkg)) {
                     try {
                         // Include Modules that have at least on Conditional
-                        Class<?> cls = Class.forName(classInfo.getName());
+                        Class<?> cls = Class.forName(classInfo.getName(), false, ClassLoader.getSystemClassLoader());
                         if (!cls.isInterface() && !Modifier.isAbstract( cls.getModifiers() ) && Module.class.isAssignableFrom(cls)) {
                             for (Annotation annot : cls.getAnnotations()) {
                                 if (null != annot.annotationType().getAnnotation(Conditional.class)) {
