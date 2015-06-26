@@ -31,6 +31,8 @@ import com.netflix.governator.ElementsEx;
 import com.netflix.governator.Governator;
 import com.netflix.governator.LifecycleListener;
 import com.netflix.governator.LifecycleShutdownSignal;
+import com.netflix.governator.ModuleListProvider;
+import com.netflix.governator.ServiceLoaderModuleListProvider;
 import com.netflix.governator.auto.annotations.Bootstrap;
 import com.netflix.governator.auto.annotations.Conditional;
 import com.netflix.governator.auto.annotations.ConditionalOnProfile;
@@ -249,7 +251,7 @@ public final class AutoModuleBuilder  {
         // If no loader has been specified use the default which is to load
         // all Module classes via the ServiceLoader
         if (moduleProviders.isEmpty()) {
-            moduleProviders.add(new ServiceLoaderModuleProvider());
+            moduleProviders.add(new ServiceLoaderModuleListProvider());
         }
         
         // Generate a single list of all discovered modules
@@ -288,7 +290,7 @@ public final class AutoModuleBuilder  {
         return true;
     }
     
-    private Module create(List<Module> loadedModules, Module rootModule, final boolean isBootstrap, Module bootstrapModule) {
+    private Module create(final List<Module> loadedModules, final Module rootModule, final boolean isBootstrap, final Module bootstrapModule) {
         // Populate all the bootstrap state from the main module
         final List<Element> elements    = Elements.getElements(Stage.DEVELOPMENT, rootModule);
         final Set<Key<?>>   keys        = ElementsEx.getAllInjectionKeys(elements);
@@ -350,9 +352,9 @@ public final class AutoModuleBuilder  {
             }
         }
         
-        List<Binding<BootstrapExposedModule>> bootstrapModules = injector.findBindingsByType(TypeLiteral.get(BootstrapExposedModule.class));
-        for (Binding<BootstrapExposedModule> binding : bootstrapModules) {
-            Module module = binding.getProvider().get();
+        List<Binding<ModuleProvider>> moduleProviders = injector.findBindingsByType(TypeLiteral.get(ModuleProvider.class));
+        for (Binding<ModuleProvider> binding : moduleProviders) {
+            Module module = binding.getProvider().get().get();
             LOG.info("Adding exposed bootstrap module {}", module.getClass().getName());
             moreModules.add(module);
         }
@@ -363,7 +365,7 @@ public final class AutoModuleBuilder  {
                 protected void configure() {
                     binder().skipSources(getClass());
                     
-                    install(Elements.getModule(elements));
+                    install(rootModule);
                     install(Modules.combine(moreModules));
                     
                     // Slave the bootstrap module's shutdown the what injector is created here

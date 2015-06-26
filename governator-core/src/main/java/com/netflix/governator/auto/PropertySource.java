@@ -7,7 +7,7 @@ import com.google.inject.ImplementedBy;
  * to any type of configuration.  The internal default in AutoModuleBuilder 
  * is to delegate to System properties.
  * 
- * @see PropertiesConfig
+ * @see PropertiesPropertySource
  * 
  * @author elandau
  * 
@@ -22,7 +22,23 @@ public interface PropertySource {
      */
     public String get(String key);
     
+    /**
+     * Get a property value of a specific type
+     * 
+     * @param key
+     * @param type
+     * @return
+     */
     public <T> T get(String key, Class<T> type);
-    
+
+    /**
+     * Get a property value of a specific type while returning a 
+     * default value if the property is not set.
+     * 
+     * @param key
+     * @param type
+     * @param defaultValue
+     * @return
+     */
     public <T> T get(String key, Class<T> type, T defaultValue);
 }

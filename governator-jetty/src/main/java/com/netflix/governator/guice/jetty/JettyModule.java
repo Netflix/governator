@@ -61,7 +61,7 @@ import com.netflix.governator.LifecycleShutdownSignal;
                                return config;
                            }
                        })
-                .awaitTermination();
+                .awaitTermination());
     }
  * }
  * </pre>

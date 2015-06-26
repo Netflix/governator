@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,7 @@ public final class LifecycleModule extends SingletonModule {
         }
     }
     
+    @Singleton
     static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
         private final ConcurrentLinkedQueue<Runnable> shutdownActions = new ConcurrentLinkedQueue<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
@@ -86,6 +88,7 @@ public final class LifecycleModule extends SingletonModule {
         private final AtomicBoolean isShutdown = new AtomicBoolean();
         private ProvisionMetrics metrics;
         private LifecycleManager manager;
+        private ConcurrentLinkedQueue<LifecycleListener> pendingLifecycleListeners = new ConcurrentLinkedQueue<>();
         
         public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
             LOG.debug("LifecycleProvisionListener initialized " + features);
@@ -93,6 +96,11 @@ public final class LifecycleModule extends SingletonModule {
             this.manager = manager;
             this.manager.addListener(this);
             this.features = features;
+            
+            LifecycleListener listener;
+            while (null != (listener = pendingLifecycleListeners.poll())) {
+                this.manager.addListener(listener);
+            }
         }
         
         @Override
@@ -100,8 +108,16 @@ public final class LifecycleModule extends SingletonModule {
             final Key<?> key = provision.getBinding().getKey();
             final Class<?> clazz = key.getTypeLiteral().getRawType();
             
+            final T injectee;
             if (features == null) {
                 LOG.debug("LifecycleProvisionListener not initialized yet : " + key + " source=" + provision.getBinding().getSource());
+
+                injectee = provision.provision();
+                
+                if (injectee instanceof LifecycleListener) {
+                    pendingLifecycleListeners.add((LifecycleListener)injectee);
+                }
+                
                 // TODO: Add to PreDestroy list
                 return;
             }
@@ -111,7 +127,6 @@ public final class LifecycleModule extends SingletonModule {
             // Instantiate the type and pass to the metrics.  This time captured will
             // include invoking any lifecycle events.
             metrics.push(key);
-            final T injectee;
             try {
                 injectee = provision.provision();
             

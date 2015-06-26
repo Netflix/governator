@@ -1,2 +1,2 @@
-com.netflix.governator.auto.OverrideAModule
-com.netflix.governator.auto.ProfileBModule
+com.netflix.governator.auto.modules.OverrideAModule
+com.netflix.governator.auto.modules.ProfileBModule
