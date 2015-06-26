@@ -19,6 +19,7 @@ import com.google.inject.Stage;
 import com.google.inject.spi.Elements;
 import com.netflix.governator.ElementsEx;
 import com.netflix.governator.Governator;
+import com.netflix.governator.auto.modules.AModule;
 
 public class AutoModuleTest {
     @Test
@@ -30,7 +31,7 @@ public class AutoModuleTest {
             .createInjector(Stage.DEVELOPMENT, 
                 AutoModuleBuilder
                     .forModule(new AModule())
-                    .withBootstrap(PropertiesConfig.toModule(prop))
+                    .withBootstrap(PropertiesPropertySource.toModule(prop))
                     .withProfile("test")
                     .build());
         

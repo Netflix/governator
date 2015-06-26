@@ -1,8 +1,9 @@
-package com.netflix.governator.auto;
+package com.netflix.governator;
 
 import java.util.List;
 
 import com.google.inject.Module;
+import com.netflix.governator.auto.AutoModuleBuilder;
 
 /**
  * Plugin interface for a module provider, such as a ClassPathScannerModuleProvider or 

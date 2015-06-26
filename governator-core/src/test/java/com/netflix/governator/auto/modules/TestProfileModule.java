@@ -1,4 +1,4 @@
-package com.netflix.governator.auto;
+package com.netflix.governator.auto.modules;
 
 import javax.inject.Named;
 

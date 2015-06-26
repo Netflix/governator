@@ -10,7 +10,7 @@ public class OnClassCondition implements Condition<ConditionalOnClass> {
     public boolean check(ConditionalOnClass condition) {
         for (String name : condition.value()) {
             try {
-                Class.forName(name);
+                Class.forName(name, false, ClassLoader.getSystemClassLoader());
             } catch (ClassNotFoundException e) {
                 return false;
             }

@@ -16,4 +16,10 @@ public class OnJUnitCondition implements Condition<OnJUnitCondition>{
         return cmd.startsWith("org.eclipse.jdt.internal.junit.runner");
         // TODO: Add additional checks for other IDEs
     }
+    
+    @Override
+    public String toString() {
+        return "OnJUnitCondition[]";
+    }
+
 }

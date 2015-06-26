@@ -13,7 +13,7 @@ import org.testng.annotations.Test;
 
 import com.google.inject.AbstractModule;
 
-@Test(singleThreaded=true)
+@Test
 public class LifecycleManagerTest {
     @Singleton
     private static class ShutdownDelay {

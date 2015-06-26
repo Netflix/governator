@@ -8,7 +8,7 @@ public class OnMissingClassCondition implements Condition<ConditionalOnMissingCl
     public boolean check(ConditionalOnMissingClass condition) {
         for (String name : condition.value()) {
             try {
-                Class.forName(name);
+                Class.forName(name, false, ClassLoader.getSystemClassLoader());
                 return false;
             } catch (ClassNotFoundException e) {
             }

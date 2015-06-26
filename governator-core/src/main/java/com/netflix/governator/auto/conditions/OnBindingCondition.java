@@ -21,7 +21,7 @@ public class OnBindingCondition implements Condition<ConditionalOnBinding> {
     public boolean check(ConditionalOnBinding condition) {
         for (String name : condition.value()) {
             try {
-                if (!context.hasBinding(Key.get(Class.forName(name)))) {
+                if (!context.hasBinding(Key.get(Class.forName(name, false, ClassLoader.getSystemClassLoader())))) {
                     return false;
                 }
             } catch (ClassNotFoundException e) {
@@ -33,6 +33,6 @@ public class OnBindingCondition implements Condition<ConditionalOnBinding> {
     
     @Override
     public String toString() {
-        return "OnClassCondition[]";
+        return "OnBindingCondition[]";
     }
 }

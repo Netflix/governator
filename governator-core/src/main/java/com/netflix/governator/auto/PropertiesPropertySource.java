@@ -8,15 +8,15 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.netflix.governator.DefaultModule;
 
-public class PropertiesConfig extends AbstractPropertySource {
+public class PropertiesPropertySource extends AbstractPropertySource {
     private Properties props;
 
-    public PropertiesConfig(Properties props) {
+    public PropertiesPropertySource(Properties props) {
         this.props = props;
     }
 
-    public static PropertiesConfig from(Properties props) {
-        return new PropertiesConfig(props);
+    public static PropertiesPropertySource from(Properties props) {
+        return new PropertiesPropertySource(props);
     }
     
     public static Module toModule(final Properties props) {
@@ -24,7 +24,7 @@ public class PropertiesConfig extends AbstractPropertySource {
             @Provides
             @Singleton
             public PropertySource getConfig() {
-                return new PropertiesConfig(props);
+                return new PropertiesPropertySource(props);
             }
         };
     }
