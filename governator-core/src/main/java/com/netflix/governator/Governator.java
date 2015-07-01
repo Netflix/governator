@@ -69,16 +69,8 @@ public class Governator {
             return new LifecycleInjector(injector, manager);
         }
         catch (Exception e) {
-            try {
-                manager.notifyShutdown();
-            }
-            catch (Exception e2) {
-            }
-            finally {
-                System.exit(-1);
-            }
+            manager.notifyShutdown();
             throw e;
         }
-
     }
 }

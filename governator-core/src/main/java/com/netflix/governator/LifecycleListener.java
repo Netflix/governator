@@ -15,19 +15,19 @@ package com.netflix.governator;
  */
 public interface LifecycleListener {
     /**
-     * Notification that the Injector failed to be created.  This will only be called
-     * for LifecycleListeners registered with LifecycleManager before the injector 
-     * is created
+     * Notification that the Injector has been created.  
      */
-    public void onStartFailed(Throwable t);
-    
+    public void onStarted();
+
     /**
      * Notification that the injector is shutting down
      */
     public void onStopped();
     
     /**
-     * Notification that the Injector has been created.  
+     * Notification that the Injector failed to be created.  This will only be called
+     * for LifecycleListeners registered with LifecycleManager before the injector 
+     * is created
      */
-    public void onStarted();
+    public void onStartFailed(Throwable t);
 }
