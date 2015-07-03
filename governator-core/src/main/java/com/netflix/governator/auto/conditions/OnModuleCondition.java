@@ -18,8 +18,8 @@ public class OnModuleCondition implements Condition<ConditionalOnModule>{
     
     @Override
     public boolean check(ConditionalOnModule param) {
-        for (String module : param.value()) {
-            if (!context.hasModule(module)) {
+        for (Class<?> module : param.value()) {
+            if (!context.hasModule(module.getName())) {
                 return true;
             }
         }

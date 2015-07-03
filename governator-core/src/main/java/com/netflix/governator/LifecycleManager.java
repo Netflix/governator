@@ -28,15 +28,16 @@ public final class LifecycleManager {
     }
     
     public void addListener(LifecycleListener listener) {
-        LOG.info("Adding LifecycleListener '{}'", listener.getClass().getName());
-        listeners.add(listener);
-        if (state.equals(State.Started)) {
-            LOG.info("Starting LifecycleListener '{}'", listener.getClass().getName());
-            listener.onStarted();
+        if (listeners.add(listener)) {
+            LOG.info("Adding LifecycleListener '{}' {}", listener.getClass().getName(), System.identityHashCode(listener));
+            if (state.equals(State.Started)) {
+                LOG.info("Starting LifecycleListener '{}'", listener.getClass().getName());
+                listener.onStarted();
+            }
         }
     }
     
-    void notifyStarted() {
+    public void notifyStarted() {
         if (state.compareAndSet(State.Starting, State.Started)) {
             for (LifecycleListener listener : listeners) {
                 LOG.info("Starting LifecycleListener '{}'", listener.getClass().getName());
@@ -45,7 +46,7 @@ public final class LifecycleManager {
         }
     }
     
-    void notifyStartFailed(Throwable t) {
+    public void notifyStartFailed(Throwable t) {
         if (state.compareAndSet(State.Starting, State.Done)) {
             for (LifecycleListener listener : listeners) {
                 listener.onStartFailed(t);
@@ -53,7 +54,7 @@ public final class LifecycleManager {
         }
     }
     
-    void notifyShutdown() {
+    public void notifyShutdown() {
         if (state.compareAndSet(State.Started, State.Done)) {
             LOG.info("Shutting down LifecycleManager");
             for (LifecycleListener listener : listeners) {
