@@ -82,6 +82,11 @@ public final class LifecycleModule extends SingletonModule {
     
     @Singleton
     static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
+        @Override
+        public boolean equals(Object obj) {
+            return hashCode() == obj.hashCode();
+        }
+
         private final ConcurrentLinkedQueue<Runnable> shutdownActions = new ConcurrentLinkedQueue<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
         private Set<LifecycleFeature> features;

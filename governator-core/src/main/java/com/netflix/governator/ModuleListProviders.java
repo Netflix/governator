@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.inject.Module;
+import com.netflix.governator.auto.ClassPathConditionalModuleListProvider;
 
 /**
  * Utility class with convenience methods for creating various standard
@@ -47,6 +48,10 @@ public class ModuleListProviders {
         return new ClassPathModuleListProvider(packages);
     }
     
+    public static ModuleListProvider forPackagesConditional(final String... packages) {
+        return new ClassPathConditionalModuleListProvider(packages);
+    }
+        
     /**
      * Provider that will use Guava's ClassPath scanner to scan the provided 
      * packages.
@@ -58,6 +63,10 @@ public class ModuleListProviders {
         return new ClassPathModuleListProvider(packages);
     }
     
+    public static ModuleListProvider forPackagesConditional(List<String> packages) {
+        return new ClassPathConditionalModuleListProvider(packages);
+    }
+        
     /**
      * Provider using the ServiceLoader for class Module
      * 

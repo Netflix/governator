@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.google.inject.Module;
 import com.netflix.governator.auto.conditions.OnModuleCondition;
 
 @Target({ElementType.TYPE})
@@ -13,5 +14,5 @@ import com.netflix.governator.auto.conditions.OnModuleCondition;
 @Documented
 @Conditional(OnModuleCondition.class)
 public @interface ConditionalOnModule {
-    String[] value();
+    Class<? extends Module>[] value();
 }
