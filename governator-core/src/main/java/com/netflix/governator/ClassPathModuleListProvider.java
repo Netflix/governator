@@ -1,6 +1,5 @@
 package com.netflix.governator;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,7 +7,6 @@ import java.util.List;
 
 import com.google.common.reflect.ClassPath;
 import com.google.inject.Module;
-import com.netflix.governator.auto.annotations.Conditional;
 
 /**
  * ClassPath scanner using Guava's ClassPath
@@ -39,11 +37,8 @@ public class ClassPathModuleListProvider implements ModuleListProvider {
                         // Include Modules that have at least on Conditional
                         Class<?> cls = Class.forName(classInfo.getName(), false, ClassLoader.getSystemClassLoader());
                         if (!cls.isInterface() && !Modifier.isAbstract( cls.getModifiers() ) && Module.class.isAssignableFrom(cls)) {
-                            for (Annotation annot : cls.getAnnotations()) {
-                                if (null != annot.annotationType().getAnnotation(Conditional.class)) {
-                                    modules.add((Module) cls.newInstance());
-                                    break;
-                                }
+                            if (isAllowed((Class<? extends Module>) cls)) {
+                                modules.add((Module) cls.newInstance());
                             }
                         }
                     } catch (Exception e) {
@@ -55,5 +50,9 @@ public class ClassPathModuleListProvider implements ModuleListProvider {
             }
         }
         return modules;
+    }
+    
+    protected boolean isAllowed(Class<? extends Module> module) {
+        return true;
     }
 }
