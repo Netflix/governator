@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.auto;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;

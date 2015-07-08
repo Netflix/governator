@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.auto;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

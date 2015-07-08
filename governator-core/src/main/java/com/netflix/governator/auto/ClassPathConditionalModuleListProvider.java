@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.inject.Module;
-import com.netflix.governator.ClassPathModuleListProvider;
 import com.netflix.governator.auto.annotations.Bootstrap;
 import com.netflix.governator.auto.annotations.Conditional;
 

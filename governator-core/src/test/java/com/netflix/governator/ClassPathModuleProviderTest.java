@@ -4,6 +4,8 @@ import junit.framework.Assert;
 
 import org.testng.annotations.Test;
 
+import com.netflix.governator.auto.ClassPathModuleListProvider;
+
 public class ClassPathModuleProviderTest {
     @Test
     public void scanExistingClassPath() {

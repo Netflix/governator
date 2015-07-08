@@ -1,10 +1,9 @@
-package com.netflix.governator;
+package com.netflix.governator.auto;
 
 import java.util.Arrays;
 import java.util.List;
 
 import com.google.inject.Module;
-import com.netflix.governator.auto.ClassPathConditionalModuleListProvider;
 
 /**
  * Utility class with convenience methods for creating various standard
