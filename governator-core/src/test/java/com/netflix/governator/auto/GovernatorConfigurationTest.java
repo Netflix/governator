@@ -15,25 +15,25 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
-import com.google.inject.Stage;
 import com.google.inject.spi.Elements;
+import com.netflix.governator.DefaultGovernatorConfiguration;
 import com.netflix.governator.ElementsEx;
 import com.netflix.governator.Governator;
 import com.netflix.governator.auto.modules.AModule;
 
-public class AutoModuleTest {
+public class GovernatorConfigurationTest {
     @Test
     public void test() {
         final Properties prop = new Properties();
         prop.setProperty("test", "B");
                 
-        Injector injector = Governator
-            .createInjector(Stage.DEVELOPMENT, 
-                AutoModuleBuilder
-                    .forModule(new AModule())
-                    .withBootstrap(PropertiesPropertySource.toModule(prop))
-                    .withProfile("test")
-                    .build());
+        Injector injector = Governator.createInjector(
+                DefaultGovernatorConfiguration.builder()
+                    .addProfile("test")
+                    .addBootstrapModule(PropertiesPropertySource.toModule(prop))
+                    .addModuleListProvider(ModuleListProviders.forPackagesConditional("com.netflix.governator.auto.modules"))
+                    .build(),
+                new AModule());
         
         System.out.println(injector.getInstance(String.class));
         Assert.assertEquals("override", injector.getInstance(String.class));
