@@ -89,6 +89,11 @@ public final class JettyModule extends AbstractModule {
                 int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
                 LOG.info("Jetty server on port {} started", port);
             } catch (Exception e) {
+                try {
+                    server.stop();
+                }
+                catch (Exception e2) {
+                }
                 throw new ProvisionException("Jetty server failed to start", e);
             }
         }
