@@ -44,4 +44,26 @@ public class LoggingProvisionMetricsLifecycleListener extends DefaultLifecycleLi
                 }
             });
     }
+    
+    @Override
+    public void onStartFailed(Throwable t) {
+        LOG.info("Injection provision report for failed start : \n" );
+        metrics.accept(new Visitor() {
+                int level = 1;
+                
+                @Override
+                public void visit(Element entry) {
+                    LOG.info(String.format("%" + (level * 3 - 2) + "s%s%s : %d ms (%d ms)", 
+                            "",
+                            entry.getKey().getTypeLiteral().toString(), 
+                            entry.getKey().getAnnotation() == null ? "" : " [" + entry.getKey().getAnnotation() + "]",
+                            entry.getTotalDuration(TimeUnit.MILLISECONDS),
+                            entry.getDuration(TimeUnit.MILLISECONDS)
+                            ));
+                    level++;
+                    entry.accept(this);
+                    level--;
+                }
+            });
+    }
 }

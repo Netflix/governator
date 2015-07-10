@@ -99,6 +99,32 @@ public class Governator {
         }
     }
     
+    /**
+     * Entry point for creating an injector using a GovernatorConfiguration for bootstrapping the injector
+     * creations and a list of standard Guice modules for the main injector.
+     * 
+     * <pre>
+     * {@code
+       Governator.createInjector(
+             new DefaultGovernatorConfiguration(),
+             new JettyModule(),
+             new JerseyServletModule() {
+                @Override
+                protected void configureServlets() {
+                    serve("/*").with(GuiceContainer.class);
+                    bind(GuiceContainer.class).asEagerSingleton();
+                    
+                    bind(HelloWorldApp.class).asEagerSingleton();
+                }  
+            }
+            )
+            .awaitTermination();
+     * }
+     * </pre>
+     * @param config
+     * @param modules
+     * @return
+     */
     public static LifecycleInjector createInjector(GovernatorConfiguration config, Module ... modules) {
         return new Governator(config, Arrays.asList(modules)).create();
     }
@@ -122,8 +148,6 @@ public class Governator {
         this.modules          = new ArrayList<>(modules);
         this.profiles         = new LinkedHashSet<>(config.getProfiles());
         this.moduleProviders  = new ArrayList<>(config.getModuleListProviders());
-        
-        this.modules.addAll(modules);
     }
     
     private LifecycleInjector create() {
@@ -174,14 +198,15 @@ public class Governator {
                             }
                         })));
         }
-        catch (Exception e) {
+        catch (Throwable e) {
             try {
                 manager.notifyStartFailed(e);
             }
             catch (Exception e2) {
-                
+                System.err.println("Failed to notify injector creation failure!");
+                e2.printStackTrace(System.err);
             }
-            throw e;
+            throw new RuntimeException(e);
         }
         
         try {
@@ -262,7 +287,8 @@ public class Governator {
         return true;
     }
     
-    private Module create(final Logger LOG, final LifecycleManager manager, final Collection<Module> loadedModules, final List<Module> rootModules, final boolean isBootstrap, final Module bootstrapModule) {
+    private Module create(final Logger LOG, final LifecycleManager manager, final Collection<Module> loadedModules, final List<Module> rootModules, final boolean isBootstrap, final Module bootstrapModule) throws Exception {
+        LOG.info("Creating {} injector", isBootstrap ? "bootstrap" : "main");
         // Populate all the bootstrap state from the main module
         final List<Element> elements    = Elements.getElements(Stage.DEVELOPMENT, rootModules);
         final Set<Key<?>>   keys        = ElementsEx.getAllInjectionKeys(elements);
@@ -315,23 +341,19 @@ public class Governator {
                 continue;
             }
             
-            try {
-                Bootstrap bs = module.getClass().getAnnotation(Bootstrap.class);
-                if (isBootstrap == (bs != null) && evaluateConditions(LOG, injector, module)) {
-                    OverrideModule override = module.getClass().getAnnotation(OverrideModule.class);
-                    if (override != null) {
-                        if (moduleNames.contains(override.value().getName())) {
-                            LOG.info("    Adding override module {}", module.getClass().getSimpleName());
-                            overrideModules.add(module);
-                        }
-                    }
-                    else {
-                        LOG.info("    Adding conditional module {}", module.getClass().getSimpleName());
-                        moreModules.add(module);
+            Bootstrap bs = module.getClass().getAnnotation(Bootstrap.class);
+            if (isBootstrap == (bs != null) && evaluateConditions(LOG, injector, module)) {
+                OverrideModule override = module.getClass().getAnnotation(OverrideModule.class);
+                if (override != null) {
+                    if (moduleNames.contains(override.value().getName())) {
+                        LOG.info("    Adding override module {}", module.getClass().getSimpleName());
+                        overrideModules.add(module);
                     }
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                else {
+                    LOG.info("    Adding conditional module {}", module.getClass().getSimpleName());
+                    moreModules.add(module);
+                }
             }
         }
         
@@ -339,11 +361,18 @@ public class Governator {
         List<Binding<ModuleProvider>> moduleProviders = injector.findBindingsByType(TypeLiteral.get(ModuleProvider.class));
         for (Binding<ModuleProvider> binding : moduleProviders) {
             Module module = binding.getProvider().get().get();
-            LOG.info("Adding exposed bootstrap module {}", module.getClass().getName());
+            LOG.debug("Adding exposed bootstrap module {}", module.getClass().getName());
             extModules.add(module);
         }
 
-        return Modules
+        LOG.debug("Root Modules     : " + rootModules);
+        LOG.debug("More Modules     : " + moreModules);
+        LOG.debug("Override Modules : " + overrideModules);
+        LOG.debug("Ext Modules      : " + extModules);
+        
+        LOG.debug("Created {} injector", isBootstrap ? "bootstrap" : "main");
+        
+        Module m = Modules
             .override(new AbstractModule() {
                 @Override
                 protected void configure() {
@@ -355,5 +384,6 @@ public class Governator {
                 .override(overrideModules)
                 .with(Modules.combine(extModules)))
             ;
+        return m;
     }
 }
