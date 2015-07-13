@@ -111,13 +111,15 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
         }
     }
     
-    public static Builder builder() {
-        return new Builder() {
-            @SuppressWarnings("unchecked")
-            protected Builder This() {
-                return this;
-            }
-        };
+    private static class BuilderWrapper extends Builder<BuilderWrapper> {
+        @Override
+        protected BuilderWrapper This() {
+            return this;
+        }
+    }
+
+    public static Builder<?> builder() {
+        return new BuilderWrapper();
     }
     
     private final Stage                       stage;
