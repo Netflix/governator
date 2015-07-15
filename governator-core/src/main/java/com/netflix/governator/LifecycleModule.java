@@ -91,7 +91,7 @@ public final class LifecycleModule extends SingletonModule {
         private ConcurrentLinkedQueue<LifecycleListener> pendingLifecycleListeners = new ConcurrentLinkedQueue<>();
         
         public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
-            LOG.debug("LifecycleProvisionListener initialized " + features);
+            LOG.debug("LifecycleProvisionListener initialized {}", features);
             this.metrics = metrics;
             this.manager = manager;
             this.manager.addListener(this);
@@ -110,7 +110,8 @@ public final class LifecycleModule extends SingletonModule {
             
             final T injectee;
             if (features == null) {
-                LOG.debug("LifecycleProvisionListener not initialized yet : " + key + " source=" + provision.getBinding().getSource());
+                LOG.info("LifecycleProvisionListener not initialized yet : {}", key);
+                LOG.info("LifecycleProvisionListener not initialized yet : {} source={}", key, provision.getBinding().getSource());
 
                 injectee = provision.provision();
                 
