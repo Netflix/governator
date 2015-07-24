@@ -8,7 +8,7 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnModule;
 
 @Singleton
-public class OnModuleCondition implements Condition<ConditionalOnModule>{
+public class OnModuleCondition implements Condition<ConditionalOnModule> {
     private final AutoContext context;
     
     @Inject
@@ -20,7 +20,7 @@ public class OnModuleCondition implements Condition<ConditionalOnModule>{
     public boolean check(ConditionalOnModule param) {
         for (Class<?> module : param.value()) {
             if (!context.hasModule(module.getName())) {
-                return true;
+                return false;
             }
         }
         return true;
