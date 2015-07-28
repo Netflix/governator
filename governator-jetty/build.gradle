@@ -5,7 +5,7 @@ dependencies {
     compile 'javax.servlet:servlet-api:2.5'
     compile 'com.google.inject.extensions:guice-servlet:4.0'
     compile 'com.sun.jersey:jersey-server:1.19'
-    compile 'org.eclipse.jetty:jetty-servlet:9.3.0.v20150612'
+    compile 'org.eclipse.jetty:jetty-servlet:9.2.12.v20150709'
     
     testCompile 'com.sun.jersey.contribs:jersey-guice:1.19'
 }
