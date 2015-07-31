@@ -42,7 +42,7 @@ public class ClassPathModuleListProvider implements ModuleListProvider {
                             }
                         }
                     } catch (Exception e) {
-                        throw new RuntimeException("Failed to instantiate module '" + pkg + "'", e);
+                        throw new RuntimeException("Failed to instantiate module '" + classInfo.getName() + "'", e);
                     }
                 }
             } catch (Exception e) {
