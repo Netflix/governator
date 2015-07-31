@@ -29,13 +29,14 @@ public class ClassPathModuleListProvider implements ModuleListProvider {
     public List<Module> get() {
         List<Module> modules = new ArrayList<>();
         ClassPath classpath;
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
         for (String pkg : packages) {
             try {
-                classpath = ClassPath.from(Thread.currentThread().getContextClassLoader());
+                classpath = ClassPath.from(loader);
                 for (ClassPath.ClassInfo classInfo : classpath.getTopLevelClassesRecursive(pkg)) {
                     try {
                         // Include Modules that have at least on Conditional
-                        Class<?> cls = Class.forName(classInfo.getName(), false, ClassLoader.getSystemClassLoader());
+                        Class<?> cls = Class.forName(classInfo.getName(), false, loader);
                         if (!cls.isInterface() && !Modifier.isAbstract( cls.getModifiers() ) && Module.class.isAssignableFrom(cls)) {
                             if (isAllowed((Class<? extends Module>) cls)) {
                                 modules.add((Module) cls.newInstance());
