@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -82,7 +83,7 @@ public final class LifecycleModule extends SingletonModule {
     
     @Singleton
     static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
-        private final ConcurrentLinkedQueue<Runnable> shutdownActions = new ConcurrentLinkedQueue<Runnable>();
+        private final ConcurrentLinkedDeque<Runnable> shutdownActions = new ConcurrentLinkedDeque<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
@@ -152,7 +153,7 @@ public final class LifecycleModule extends SingletonModule {
             // Add any PreDestroy methods to the shutdown list of actions
             if (!actions.preDestroyActions.isEmpty()) {
                 if (isShutdown.get() == false) {
-                    shutdownActions.add(new Runnable() {
+                    shutdownActions.addFirst(new Runnable() {
                         @Override
                         public void run() {
                             for (LifecycleAction m : actions.preDestroyActions) {
