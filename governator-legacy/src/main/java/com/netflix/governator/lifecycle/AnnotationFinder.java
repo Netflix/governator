@@ -11,7 +11,7 @@ import java.util.Set;
 
 import static org.objectweb.asm.Type.*;
 
-public class AnnotationFinder extends ClassVisitor
+public final class AnnotationFinder extends ClassVisitor
 {
     private Set<Type> annotationTypes;
 
@@ -34,7 +34,7 @@ public class AnnotationFinder extends ClassVisitor
     private Class<?> classFromInternalName(String name)
     {
         try {
-            return Class.forName(name.replace('/', '.'), true, classLoader);
+            return Class.forName(name.replace('/', '.'), false, classLoader);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(e);
         }
@@ -140,24 +140,20 @@ public class AnnotationFinder extends ClassVisitor
                     Class[] argClasses = new Class[args.length];
                     for (int i = 0; i < args.length; i++)
                     {
-                        try {
-                            switch(args[i].getSort())
-                            {
-                                case OBJECT:
-                                case ARRAY:
-                                    argClasses[i] = classFromInternalName(args[i].getInternalName());
-                                    break;
-                                case BOOLEAN: argClasses[i] = boolean.class; break;
-                                case BYTE: argClasses[i] = byte.class; break;
-                                case CHAR: argClasses[i] = char.class; break;
-                                case DOUBLE: argClasses[i] = double.class; break;
-                                case FLOAT: argClasses[i] = float.class; break;
-                                case INT: argClasses[i] = int.class; break;
-                                case LONG: argClasses[i] = long.class; break;
-                                case SHORT: argClasses[i] = short.class; break;
-                            }
-                        } catch(NullPointerException e) {
-                            System.out.println("here");
+                        switch(args[i].getSort())
+                        {
+                            case OBJECT:
+                            case ARRAY:
+                                argClasses[i] = classFromInternalName(args[i].getInternalName());
+                                break;
+                            case BOOLEAN: argClasses[i] = boolean.class; break;
+                            case BYTE: argClasses[i] = byte.class; break;
+                            case CHAR: argClasses[i] = char.class; break;
+                            case DOUBLE: argClasses[i] = double.class; break;
+                            case FLOAT: argClasses[i] = float.class; break;
+                            case INT: argClasses[i] = int.class; break;
+                            case LONG: argClasses[i] = long.class; break;
+                            case SHORT: argClasses[i] = short.class; break;
                         }
                     }
 

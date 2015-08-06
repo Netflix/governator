@@ -16,6 +16,7 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -128,16 +129,16 @@ public class ClasspathScanner
                     URL url = resources.nextElement();
                     if ( isJarURL(url))
                     {
-                        try
+                        String jarPath = url.getFile();
+                        if ( jarPath.contains("!") )
                         {
-                            String jarPath = url.getFile();
-                            if ( jarPath.contains("!") )
-                            {
-                                jarPath = jarPath.substring(0, jarPath.indexOf("!"));
-                                url = new URL(jarPath);
-                            }
+                            jarPath = jarPath.substring(0, jarPath.indexOf("!"));
+                            url = new URL(jarPath);
+                        }
 
-                            JarFile jar = new JarFile(ClasspathUrlDecoder.toFile(url));
+                        File file = ClasspathUrlDecoder.toFile(url);
+                        try(JarFile jar = new JarFile(file))
+                        {
                             for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); )
                             {
                                 JarEntry entry = list.nextElement();
@@ -155,7 +156,8 @@ public class ClasspathScanner
                         }
                         catch( IOException e )
                         {
-                            throw new IllegalStateException(e);
+                            throw new IllegalStateException("Governator was unable to scan " +
+                                    file.getName() + " for annotations", e);
                         }
                     }
                     else

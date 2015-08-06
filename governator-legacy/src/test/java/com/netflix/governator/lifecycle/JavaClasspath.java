@@ -233,37 +233,6 @@ public class JavaClasspath
         return className.toString().replace("/", ".");
     }
 
-    public File jar(File f, String... classSources)
-    {
-        f.getParentFile().mkdirs();
-
-        try
-        {
-            FileOutputStream fos = new FileOutputStream(f);
-            JarOutputStream jos = new JarOutputStream(fos);
-
-            for (String clazz : compile(classSources))
-            {
-                jos.putNextEntry(new JarEntry(clazz.replace(".", "/") + ".class"));
-                jos.write(classpath.get(clazz));
-            }
-
-            jos.close();
-            fos.close();
-
-            return f;
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Set<String> definedClasses()
-    {
-        return classpath.keySet();
-    }
-
     public byte[] classBytes(String className)
     {
         return classpath.get(className);
