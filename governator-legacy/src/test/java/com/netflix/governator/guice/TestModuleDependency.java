@@ -2,7 +2,6 @@ package com.netflix.governator.guice;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import junit.framework.Assert;
@@ -151,8 +150,7 @@ public class TestModuleDependency {
             Lists.newArrayList(expected), 
             ImmutableList.copyOf(Lists.transform(actual, new Function<Module, Class<? extends Module>>() {
                 @Override
-                @Nullable
-                public Class<? extends Module> apply(@Nullable Module module) {
+                public Class<? extends Module> apply(Module module) {
                     return module.getClass();
                 }
             })));
