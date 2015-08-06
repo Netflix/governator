@@ -142,7 +142,7 @@ public class ClasspathScanner
                             for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); )
                             {
                                 JarEntry entry = list.nextElement();
-                                if ( entry.getName().endsWith(".class") )
+                                if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage) )
                                 {
                                     AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
                                     new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
@@ -186,6 +186,7 @@ public class ClasspathScanner
     private boolean isJarURL(URL url)
     {
         String protocol = url.getProtocol();
-        return "zip".equals(protocol) || "jar".equals(protocol);
+        return "zip".equals(protocol) || "jar".equals(protocol) ||
+                ("file".equals(protocol) && url.getPath().endsWith(".jar"));
     }
 }

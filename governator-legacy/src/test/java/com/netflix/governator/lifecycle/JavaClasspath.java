@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +24,8 @@ import java.util.regex.Pattern;
 public class JavaClasspath
 {
     Map<String, byte[]> classpath = new HashMap<>();
+    Map<String, File> jarByClass = new HashMap<>();
+
     Path temp;
     ClassLoader classLoader = byteClassLoader();
 
@@ -53,6 +56,16 @@ public class JavaClasspath
                 if(b == null)
                     throw new ClassNotFoundException(name);
                 return defineClass(name, b, 0, b.length);
+            }
+
+            @Override
+            protected Enumeration<URL> findResources(String name) throws IOException {
+                Set<URL> matchingJars = new HashSet<>();
+                for (Map.Entry<String, File> classToJar : jarByClass.entrySet()) {
+                    if(classToJar.getKey().startsWith(name))
+                        matchingJars.add(classToJar.getValue().toURI().toURL());
+                }
+                return Collections.enumeration(matchingJars);
             }
         };
     }
@@ -188,7 +201,7 @@ public class JavaClasspath
                     if(classNameFromSource(file.contents).equals(classNameParts[classNameParts.length - 1]))
                     {
                         classNames.add(c);
-                        break classIter;
+                        continue classIter;
                     }
                 }
             }
@@ -231,6 +244,33 @@ public class JavaClasspath
         }, 0);
 
         return className.toString().replace("/", ".");
+    }
+
+    public File jar(File f, String... classSources)
+    {
+        f.getParentFile().mkdirs();
+
+        try
+        {
+            FileOutputStream fos = new FileOutputStream(f);
+            JarOutputStream jos = new JarOutputStream(fos);
+
+            for (String clazz : compile(classSources))
+            {
+                jos.putNextEntry(new JarEntry(clazz.replace(".", "/") + ".class"));
+                jos.write(classpath.get(clazz));
+                jarByClass.put(clazz.replace('.', '/'), f);
+            }
+
+            jos.close();
+            fos.close();
+
+            return f;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public byte[] classBytes(String className)

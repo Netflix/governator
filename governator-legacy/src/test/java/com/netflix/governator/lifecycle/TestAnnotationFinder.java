@@ -46,8 +46,8 @@ public class TestAnnotationFinder {
     public void testFindAnnotationsOnClasses()
     {
         cp.compile(
-                "package governator.test;" +
-                        "@A public class Foo {}"
+            "package governator.test;" +
+            "@A public class Foo {}"
         );
 
         assertThat(scan("governator.test.Foo", a).getAnnotatedClasses(), is(Matchers.<Class<?>>iterableWithSize(1)));
