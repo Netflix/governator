@@ -39,9 +39,6 @@ subprojects {
 
     dependencies {
         compile 'javax.inject:javax.inject:1'
-
-        compile 'com.fasterxml.jackson.core:jackson-annotations:2.4.3'
-        compile 'com.fasterxml.jackson.core:jackson-core:2.4.3'
         compile 'com.fasterxml.jackson.core:jackson-databind:2.4.3'
 
         testCompile 'org.testng:testng:6.1.1'
