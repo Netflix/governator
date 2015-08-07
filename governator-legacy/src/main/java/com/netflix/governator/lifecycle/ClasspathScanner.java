@@ -16,8 +16,9 @@
 
 package com.netflix.governator.lifecycle;
 
+import static org.objectweb.asm.ClassReader.SKIP_CODE;
+
 import java.io.File;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -37,13 +38,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-import static org.objectweb.asm.ClassReader.*;
-
 /**
  * Utility to find annotated classes
  */
-public class ClasspathScanner
-{
+public class ClasspathScanner {
     private static final Logger log = LoggerFactory.getLogger(ClasspathScanner.class);
     protected final ClassLoader classLoader;
     
@@ -56,8 +54,7 @@ public class ClasspathScanner
      * @param basePackages list of packages to search (recursively)
      * @param annotations class annotations to search for
      */
-    public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations)
-    {
+    public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations) {
         this(basePackages, annotations, Thread.currentThread().getContextClassLoader());
     }
 
@@ -66,8 +63,7 @@ public class ClasspathScanner
      * @param annotations class annotations to search for
      * @param classLoader ClassLoader containing the classes to be scanned
      */
-    public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, final ClassLoader classLoader) 
-    {
+    public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, final ClassLoader classLoader)  {
         Preconditions.checkNotNull(annotations, "annotations cannot be null");
         Preconditions.checkNotNull(classLoader, "classLoader cannot be null");
 
@@ -92,79 +88,67 @@ public class ClasspathScanner
     /**
      * @return the found classes
      */
-    public Set<Class<?>> getClasses()
-    {
+    public Set<Class<?>> getClasses() {
         return classes;
     }
 
-    public Set<Constructor> getConstructors()
-    {
+    public Set<Constructor> getConstructors() {
         return constructors;
     }
 
-    public Set<Method> getMethods()
-    {
+    public Set<Method> getMethods() {
         return methods;
     }
 
-    public Set<Field> getFields()
-    {
+    public Set<Field> getFields() {
         return fields;
     }
 
-    protected void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields)
-    {
-        if ( basePackages.isEmpty() )
-        {
+    protected void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields) {
+        if ( basePackages.isEmpty() ) {
             log.warn("No base packages specified - no classpath scanning will be done");
             return;
         }
-        try
-        {
-            for ( String basePackage : basePackages )
-            {
+        try {
+            for ( String basePackage : basePackages )  {
                 Enumeration<URL> resources = classLoader.getResources(basePackage.replace(".", "/"));
-                while ( resources.hasMoreElements() )
-                {
+                while ( resources.hasMoreElements() ) {
                     URL url = resources.nextElement();
-                    if ( isJarURL(url))
-                    {
+                    if ( isJarURL(url)) {
                         String jarPath = url.getFile();
-                        if ( jarPath.contains("!") )
-                        {
+                        if ( jarPath.contains("!") ) {
                             jarPath = jarPath.substring(0, jarPath.indexOf("!"));
                             url = new URL(jarPath);
                         }
 
                         File file = ClasspathUrlDecoder.toFile(url);
-                        try(JarFile jar = new JarFile(file))
-                        {
-                            for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); )
-                            {
+                        try (JarFile jar = new JarFile(file)) {
+                            for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); ) {
                                 JarEntry entry = list.nextElement();
-                                if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage) )
-                                {
-                                    AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
-                                    new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
-
-                                    localClasses.addAll(finder.getAnnotatedClasses());
-                                    localMethods.addAll(finder.getAnnotatedMethods());
-                                    localConstructors.addAll(finder.getAnnotatedConstructors());
-                                    localFields.addAll(finder.getAnnotatedFields());
+                                try {
+                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage) ) {
+                                        AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                                        new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
+    
+                                        localClasses.addAll(finder.getAnnotatedClasses());
+                                        localMethods.addAll(finder.getAnnotatedMethods());
+                                        localConstructors.addAll(finder.getAnnotatedConstructors());
+                                        localFields.addAll(finder.getAnnotatedFields());
+                                    }
+                                }
+                                catch (Exception e) {
+                                    throw new IllegalStateException("Unable to scan JarEntry : " + entry.getName());
                                 }
                             }
                         }
-                        catch( IOException e )
-                        {
+                        catch (Exception e ) {
                             throw new IllegalStateException("Governator was unable to scan " +
-                                    file.getName() + " for annotations", e);
+                                    file.getCanonicalPath() + " for annotations", e);
                         }
                     }
-                    else
-                    {
+                    else {
                         DirectoryClassFilter filter = new DirectoryClassFilter(classLoader);
-                        for ( String className : filter.filesInPackage(url, basePackage) )
-                        {
+                        for ( String className : filter.filesInPackage(url, basePackage) ) {
                             AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
                             new ClassReader(filter.bytecodeOf(className)).accept(finder, SKIP_CODE);
 
@@ -177,14 +161,12 @@ public class ClasspathScanner
                 }
             }
         }
-        catch ( IOException e )
-        {
+        catch ( Exception e ) {
             throw new RuntimeException(e);
         }
     }
 
-    private boolean isJarURL(URL url)
-    {
+    private boolean isJarURL(URL url) {
         String protocol = url.getProtocol();
         return "zip".equals(protocol) || "jar".equals(protocol) ||
                 ("file".equals(protocol) && url.getPath().endsWith(".jar"));
