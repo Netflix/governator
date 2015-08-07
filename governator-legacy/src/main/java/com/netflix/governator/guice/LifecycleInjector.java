@@ -255,7 +255,6 @@ public class LifecycleInjector
      * pass the scanner to the builder via {@link LifecycleInjectorBuilder#usingClasspathScanner(ClasspathScanner)}.
      *
      * @param basePackages packages to recursively scan
-     * @param b 
      * @return scanner
      */
     public static ClasspathScanner createStandardClasspathScanner(Collection<String> basePackages)

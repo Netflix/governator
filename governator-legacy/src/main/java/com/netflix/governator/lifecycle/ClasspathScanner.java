@@ -16,6 +16,7 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -24,20 +25,19 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
-import org.apache.xbean.finder.AnnotationFinder;
-import org.apache.xbean.finder.archive.Archive;
-import org.apache.xbean.finder.archive.CompositeArchive;
-import org.apache.xbean.finder.archive.JarArchive;
+import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import static org.objectweb.asm.ClassReader.*;
 
 /**
  * Utility to find annotated classes
@@ -68,7 +68,7 @@ public class ClasspathScanner
      */
     public ClasspathScanner(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, final ClassLoader classLoader) 
     {
-        Preconditions.checkNotNull(annotations, "additionalAnnotations cannot be null");
+        Preconditions.checkNotNull(annotations, "annotations cannot be null");
         Preconditions.checkNotNull(classLoader, "classLoader cannot be null");
 
         log.debug("Starting classpath scanning...");
@@ -114,37 +114,66 @@ public class ClasspathScanner
 
     protected void doScanning(Collection<String> basePackages, Collection<Class<? extends Annotation>> annotations, Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields)
     {
-        if ( basePackages.size() == 0 )
+        if ( basePackages.isEmpty() )
         {
             log.warn("No base packages specified - no classpath scanning will be done");
             return;
         }
         try
         {
-            List<Archive> archives = Lists.newArrayList();
             for ( String basePackage : basePackages )
             {
                 Enumeration<URL> resources = classLoader.getResources(basePackage.replace(".", "/"));
                 while ( resources.hasMoreElements() )
                 {
-                    URL thisUrl = resources.nextElement();
-                    if ( isJarURL(thisUrl))
+                    URL url = resources.nextElement();
+                    if ( isJarURL(url))
                     {
-                        archives.add(new JarArchive(classLoader, thisUrl));
+                        String jarPath = url.getFile();
+                        if ( jarPath.contains("!") )
+                        {
+                            jarPath = jarPath.substring(0, jarPath.indexOf("!"));
+                            url = new URL(jarPath);
+                        }
+
+                        File file = ClasspathUrlDecoder.toFile(url);
+                        try(JarFile jar = new JarFile(file))
+                        {
+                            for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); )
+                            {
+                                JarEntry entry = list.nextElement();
+                                if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage) )
+                                {
+                                    AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                                    new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
+
+                                    localClasses.addAll(finder.getAnnotatedClasses());
+                                    localMethods.addAll(finder.getAnnotatedMethods());
+                                    localConstructors.addAll(finder.getAnnotatedConstructors());
+                                    localFields.addAll(finder.getAnnotatedFields());
+                                }
+                            }
+                        }
+                        catch( IOException e )
+                        {
+                            throw new IllegalStateException("Governator was unable to scan " +
+                                    file.getName() + " for annotations", e);
+                        }
                     }
                     else
                     {
-                        archives.add(new GovernatorFileArchive(classLoader, thisUrl, basePackage));
+                        DirectoryClassFilter filter = new DirectoryClassFilter(classLoader);
+                        for ( String className : filter.filesInPackage(url, basePackage) )
+                        {
+                            AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                            new ClassReader(filter.bytecodeOf(className)).accept(finder, SKIP_CODE);
+
+                            localClasses.addAll(finder.getAnnotatedClasses());
+                            localMethods.addAll(finder.getAnnotatedMethods());
+                            localConstructors.addAll(finder.getAnnotatedConstructors());
+                            localFields.addAll(finder.getAnnotatedFields());
+                        }
                     }
-                }
-                CompositeArchive compositeArchive = new CompositeArchive(archives);
-                AnnotationFinder annotationFinder = new AnnotationFinder(compositeArchive);
-                for ( Class<? extends Annotation> annotation : annotations )
-                {
-                    localClasses.addAll(annotationFinder.findAnnotatedClasses(annotation));
-                    localConstructors.addAll(annotationFinder.findAnnotatedConstructors(annotation));
-                    localMethods.addAll(annotationFinder.findAnnotatedMethods(annotation));
-                    localFields.addAll(annotationFinder.findAnnotatedFields(annotation));
                 }
             }
         }
@@ -157,6 +186,7 @@ public class ClasspathScanner
     private boolean isJarURL(URL url)
     {
         String protocol = url.getProtocol();
-        return "zip".equals(protocol) || "jar".equals(protocol);
+        return "zip".equals(protocol) || "jar".equals(protocol) ||
+                ("file".equals(protocol) && url.getPath().endsWith(".jar"));
     }
 }
