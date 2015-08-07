@@ -1,6 +1,7 @@
 package com.netflix.governator;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -32,7 +33,9 @@ public class LifecycleModuleTest {
     @Singleton
     private static class MySingleton {
         private static AtomicInteger initCounter = new AtomicInteger(0);
+        private static AtomicLong initTime = new AtomicLong(0);
         private static AtomicInteger shutdownCounter = new AtomicInteger(0);
+        private static AtomicLong shutdownTime = new AtomicLong(0);
         
         @Configuration("foo")
         String field1;
@@ -51,11 +54,13 @@ public class LifecycleModuleTest {
         void init() {
             System.out.println("*****Post constructing");
             initCounter.incrementAndGet();
+            initTime.set(System.nanoTime());
         }
         
         @PreDestroy
         void shutdown() {
             shutdownCounter.incrementAndGet();
+            shutdownTime.set(System.nanoTime());
         }
     }
     
@@ -64,6 +69,32 @@ public class LifecycleModuleTest {
         @Inject
         public FailingSingleton() {
             throw new RuntimeException("Failing singleton");
+        }
+    }
+    
+    @Singleton
+    private static class SingletonWithDependency {
+        private static AtomicInteger initCounter = new AtomicInteger(0);
+        private static AtomicLong initTime = new AtomicLong(0);
+        private static AtomicInteger shutdownCounter = new AtomicInteger(0);
+        private static AtomicLong shutdownTime = new AtomicLong(0);
+        
+        @Inject
+        public SingletonWithDependency(MySingleton mySingleton) {
+            System.out.println("*****Injecting SingletonWithDependency");
+        }
+        
+        @PostConstruct
+        void init() {
+            System.out.println("*****Post constructing SingletonWithDependency");
+            initCounter.incrementAndGet();
+            initTime.set(System.nanoTime());
+        }
+        
+        @PreDestroy
+        void shutdown() {
+            shutdownCounter.incrementAndGet();
+            shutdownTime.set(System.nanoTime());
         }
     }
     
@@ -91,6 +122,24 @@ public class LifecycleModuleTest {
         Assert.assertEquals(0, singleton.shutdownCounter.get());
         injector.shutdown();
         Assert.assertEquals(1, singleton.shutdownCounter.get());
+    }
+
+    @Test
+    public void testOrderWithLifecycle() {
+        LifecycleInjector injector = Governator.createInjector(
+                Stage.DEVELOPMENT);
+        SingletonWithDependency singleton = injector.getInstance(SingletonWithDependency.class);
+        Assert.assertEquals(1, singleton.initCounter.get());
+        Assert.assertEquals(1, MySingleton.initCounter.get());
+        Assert.assertTrue("MySingleton was constructed before SingletonWithDependency",
+                MySingleton.initTime.get() < singleton.initTime.get());
+        Assert.assertEquals(0, singleton.shutdownCounter.get());
+        Assert.assertEquals(0, MySingleton.shutdownCounter.get());
+        injector.shutdown();
+        Assert.assertEquals(1, singleton.shutdownCounter.get());
+        Assert.assertEquals(1, MySingleton.shutdownCounter.get());
+        Assert.assertTrue("SingletonWithDependency was destroyed before MySingleton",
+                MySingleton.shutdownTime.get() > singleton.shutdownTime.get());
     }
     
     @Test
