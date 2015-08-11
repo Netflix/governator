@@ -109,9 +109,12 @@ public class ClasspathScanner {
             log.warn("No base packages specified - no classpath scanning will be done");
             return;
         }
+        log.info("Scanning packages : " + basePackages + " for annotations " + annotations);
+        
         try {
             for ( String basePackage : basePackages )  {
-                Enumeration<URL> resources = classLoader.getResources(basePackage.replace(".", "/"));
+            	String basePackageWithSlashes = basePackage.replace(".", "/");
+            	Enumeration<URL> resources = classLoader.getResources(basePackageWithSlashes);
                 while ( resources.hasMoreElements() ) {
                     URL url = resources.nextElement();
                     if ( isJarURL(url)) {
@@ -120,13 +123,12 @@ public class ClasspathScanner {
                             jarPath = jarPath.substring(0, jarPath.indexOf("!"));
                             url = new URL(jarPath);
                         }
-
                         File file = ClasspathUrlDecoder.toFile(url);
                         try (JarFile jar = new JarFile(file)) {
                             for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); ) {
                                 JarEntry entry = list.nextElement();
                                 try {
-                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage) ) {
+                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackageWithSlashes)) {
                                         AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
                                         new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
     
