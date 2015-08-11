@@ -16,7 +16,12 @@
 
 package com.netflix.governator.lifecycle;
 
-import static org.objectweb.asm.ClassReader.SKIP_CODE;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import org.objectweb.asm.ClassReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -30,13 +35,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import org.objectweb.asm.ClassReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import static org.objectweb.asm.ClassReader.SKIP_CODE;
 
 /**
  * Utility to find annotated classes
@@ -111,7 +110,8 @@ public class ClasspathScanner {
         }
         try {
             for ( String basePackage : basePackages )  {
-                Enumeration<URL> resources = classLoader.getResources(basePackage.replace(".", "/"));
+                String basePackageWithSlashes = basePackage.replace(".", "/");
+                Enumeration<URL> resources = classLoader.getResources(basePackageWithSlashes);
                 while ( resources.hasMoreElements() ) {
                     URL url = resources.nextElement();
                     if ( isJarURL(url)) {
@@ -126,7 +126,7 @@ public class ClasspathScanner {
                             for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); ) {
                                 JarEntry entry = list.nextElement();
                                 try {
-                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage.replace(".", "/")) ) {
+                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackageWithSlashes) ) {
                                         AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
                                         new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
     
