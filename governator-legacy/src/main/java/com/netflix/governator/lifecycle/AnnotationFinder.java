@@ -1,6 +1,8 @@
 package com.netflix.governator.lifecycle;
 
 import org.objectweb.asm.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -12,6 +14,8 @@ import java.util.Set;
 import static org.objectweb.asm.Type.*;
 
 public final class AnnotationFinder extends ClassVisitor {
+	private static Logger log = LoggerFactory.getLogger(AnnotationFinder.class);
+	
     private Set<Type> annotationTypes;
 
     private Set<Class<?>> annotatedClasses = Collections.emptySet();
@@ -162,6 +166,9 @@ public final class AnnotationFinder extends ClassVisitor {
                             annotatedMethods.add(selfClass().getDeclaredMethod(
                                     name, argClasses));
                     } 
+                    catch (NoClassDefFoundError e) {
+                    	log.info("Unable to scan constructor of '{}' NoClassDefFoundError looking for '{}'", selfClass().getName(), e.getMessage());
+                    }
                     catch (NoSuchMethodException e) {
                         throw new IllegalStateException(e);
                     }
