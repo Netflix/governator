@@ -126,7 +126,7 @@ public class ClasspathScanner {
                             for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); ) {
                                 JarEntry entry = list.nextElement();
                                 try {
-                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage) ) {
+                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackage.replace(".", "/")) ) {
                                         AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
                                         new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
     
