@@ -5,8 +5,7 @@ import javax.inject.Inject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.apple.laf.AquaButtonBorder.Named;
-import com.google.inject.AbstractModule;
+import com.google.inject.AbstractModule; 
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
