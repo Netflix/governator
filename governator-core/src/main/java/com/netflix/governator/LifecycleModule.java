@@ -68,6 +68,11 @@ public final class LifecycleModule extends SingletonModule {
         final List<LifecycleAction> preDestroyActions = new ArrayList<>();
     }
     
+    static class Optional {
+        @com.google.inject.Inject(optional=true)
+        GovernatorConfiguration config;
+    }
+    
     // Hack to make sure LifecycleProvisionListener is instantiated early during Injector
     // creation
     static class StaticInitializer {
@@ -76,8 +81,10 @@ public final class LifecycleModule extends SingletonModule {
                 LifecycleManager manager,
                 LifecycleProvisionListener listener, 
                 Set<LifecycleFeature> features, 
-                ProvisionMetrics metrics) {
-            listener.initialize(manager, features, metrics);
+                ProvisionMetrics metrics, 
+                Optional optional
+                ) {
+            listener.initialize(manager, features, metrics, optional.config == null ? true : optional.config.isEnabled(GovernatorFeatures.SHUTDOWN_ON_ERROR));
         }
     }
     
@@ -90,13 +97,15 @@ public final class LifecycleModule extends SingletonModule {
         private ProvisionMetrics metrics;
         private LifecycleManager manager;
         private ConcurrentLinkedQueue<LifecycleListener> pendingLifecycleListeners = new ConcurrentLinkedQueue<>();
+        private boolean shutdownOnFailure = true;
         
-        public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics) {
+        public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics, boolean shutdownOnFailure) {
             LOG.debug("LifecycleProvisionListener initialized {}", features);
             this.metrics = metrics;
             this.manager = manager;
             this.manager.addListener(this);
             this.features = features;
+            this.shutdownOnFailure = shutdownOnFailure;
             
             LifecycleListener listener;
             while (null != (listener = pendingLifecycleListeners.poll())) {
@@ -210,7 +219,9 @@ public final class LifecycleModule extends SingletonModule {
         
         @Override
         public synchronized void onStartFailed(Throwable t) {
-            onStopped();
+            if (shutdownOnFailure) {
+                onStopped();
+            }
         }
     }
     

@@ -38,4 +38,10 @@ public interface GovernatorConfiguration {
      * otherwise all singletons are eager, including lazy injection using Provider<T> 
      */
     Stage getStage();
+    
+    /**
+     * Determine if a core governator feature has been enabled.  See {@link GovernatorFeatures}
+     * for available features.
+     */
+    boolean isEnabled(GovernatorFeature feature);
 }
