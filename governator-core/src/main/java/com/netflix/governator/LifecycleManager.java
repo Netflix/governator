@@ -19,11 +19,13 @@ public final class LifecycleManager {
     
     private final CopyOnWriteArraySet<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
     private final AtomicReference<State> state = new AtomicReference<>(State.Starting);
+    private volatile Throwable failureReason;
     
     public enum State {
         Starting,
         Started,
         Stopped,
+        Failed,
         Done
     }
     
@@ -47,7 +49,8 @@ public final class LifecycleManager {
     }
     
     public void notifyStartFailed(Throwable t) {
-        if (state.compareAndSet(State.Starting, State.Done)) {
+        if (state.compareAndSet(State.Starting, State.Failed)) {
+            failureReason = t;
             for (LifecycleListener listener : listeners) {
                 listener.onStartFailed(t);
             }
@@ -71,5 +74,9 @@ public final class LifecycleManager {
     
     public State getState() {
         return state.get();
+    }
+    
+    public Throwable getFailureReason() {
+        return failureReason;
     }
 }

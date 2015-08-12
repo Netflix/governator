@@ -63,7 +63,12 @@ public class LifecycleInjector extends DelegatingInjector {
     public LifecycleInjector(Injector injector, LifecycleManager manager) {
         super(injector);
         this.manager  = manager;
-        this.signal = injector.getInstance(LifecycleShutdownSignal.class);
+        if (injector != null) {
+            this.signal = injector.getInstance(LifecycleShutdownSignal.class);
+        }
+        else {
+            this.signal = new DefaultLifecycleShutdownSignal(manager);
+        }
     }
     
     /**

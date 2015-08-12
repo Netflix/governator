@@ -133,6 +133,7 @@ public class Governator {
         return new Governator(config, modules).create();
     }
     
+    private final GovernatorConfiguration     config;
     private final Stage                       stage;
     private final List<Module>                bootstrapModules;
     private final List<Module>                modules;
@@ -140,7 +141,7 @@ public class Governator {
     private final List<ModuleListProvider>    moduleProviders;
     
     private Governator(GovernatorConfiguration config, List<Module> modules) {
-        
+        this.config           = config;
         this.stage            = config.getStage();
         
         // Create copies of the config
@@ -173,6 +174,7 @@ public class Governator {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
+                        bind(GovernatorConfiguration.class).toInstance(config);
                         bind(LifecycleManager.class).toInstance(manager);
                         requestInjection(manager);
                     }
@@ -199,6 +201,7 @@ public class Governator {
                         })));
         }
         catch (Throwable e) {
+            e.printStackTrace();
             try {
                 manager.notifyStartFailed(e);
             }
@@ -206,7 +209,9 @@ public class Governator {
                 System.err.println("Failed to notify injector creation failure!");
                 e2.printStackTrace(System.err);
             }
-            throw new RuntimeException(e);
+            if (config.isEnabled(GovernatorFeatures.SHUTDOWN_ON_ERROR))
+                throw new RuntimeException(e);
+            return new LifecycleInjector(null, manager);
         }
         
         try {
@@ -300,6 +305,7 @@ public class Governator {
             new AbstractModule() {
                 @Override
                 protected void configure() {
+                    bind(GovernatorConfiguration.class).toInstance(config);
                     bind(LifecycleManager.class).toInstance(manager);
                     requestInjection(manager);
                 }

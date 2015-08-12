@@ -3,9 +3,10 @@ package com.netflix.governator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.inject.Module;
@@ -32,7 +33,8 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
         protected List<Module>                bootstrapModules = new ArrayList<>();
         protected Set<String>                 profiles = new LinkedHashSet<>();
         protected List<ModuleListProvider>    moduleProviders = new ArrayList<>();
-
+        protected Map<GovernatorFeature, Boolean> features = new HashMap<>();
+        
         /**
          * Add a module finder such as a ServiceLoaderModuleFinder or ClassPathScannerModuleFinder
          * @param finder
@@ -104,6 +106,24 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
             return This();
         }
         
+        /**
+         * Enable the specified feature
+         * @param feature
+         */
+        public T enable(GovernatorFeature feature) {
+            this.features.put(feature, true);
+            return This();
+        }
+
+        /**
+         * Disable the specified feature
+         * @param feature
+         */
+        public T disable(GovernatorFeature feature) {
+            this.features.put(feature, false);
+            return This();
+        }
+        
         protected abstract T This();
         
         public GovernatorConfiguration build() {
@@ -126,19 +146,19 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     private final List<Module>                bootstrapModules;
     private final Set<String>                 profiles;
     private final List<ModuleListProvider>    moduleProviders;
+    private final HashMap<GovernatorFeature, Boolean> features;
 
     public DefaultGovernatorConfiguration() {
-        this.stage            = Stage.DEVELOPMENT;
-        this.bootstrapModules = new ArrayList<>();
-        this.profiles         = new HashSet<>();
-        this.moduleProviders  = new ArrayList<>();
+        this(builder());
     }
     
     protected DefaultGovernatorConfiguration(Builder<?> builder) {
-        this.stage            = builder.stage;
-        this.bootstrapModules = new ArrayList<>(builder.bootstrapModules);
-        this.profiles         = new LinkedHashSet<>(builder.profiles);
-        this.moduleProviders  = new ArrayList<>(builder.moduleProviders);
+        this.stage             = builder.stage;
+        this.bootstrapModules  = new ArrayList<>(builder.bootstrapModules);
+        this.profiles          = new LinkedHashSet<>(builder.profiles);
+        this.moduleProviders   = new ArrayList<>(builder.moduleProviders);
+        this.features          = new HashMap<>();
+        this.features.putAll(builder.features);
     }
     
     @Override
@@ -159,5 +179,13 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     @Override
     public Stage getStage() {
         return stage;
+    }
+
+    @Override
+    public boolean isEnabled(GovernatorFeature feature) {
+        Boolean value = features.get(feature);
+        return value == null
+                ? feature.isEnabledByDefault()
+                : value;
     }
 }
