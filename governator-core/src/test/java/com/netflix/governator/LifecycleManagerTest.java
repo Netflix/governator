@@ -69,13 +69,13 @@ public class LifecycleManagerTest {
         CountingLifecycleListener listener = new CountingLifecycleListener();
         injector.addListener(listener);
         
-        Assert.assertEquals(0, listener.getStartedCount());
+        Assert.assertEquals(1, listener.getStartedCount());
         Assert.assertEquals(0, listener.getStartFailedCount());
         Assert.assertEquals(0, listener.getStoppedCount());
         
         injector.shutdown();
         
-        Assert.assertEquals(0, listener.getStartedCount());
+        Assert.assertEquals(1, listener.getStartedCount());
         Assert.assertEquals(0, listener.getStartFailedCount());
         Assert.assertEquals(1, listener.getStoppedCount());
     }
