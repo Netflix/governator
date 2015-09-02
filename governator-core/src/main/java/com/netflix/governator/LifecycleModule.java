@@ -120,7 +120,6 @@ public final class LifecycleModule extends SingletonModule {
             
             final T injectee;
             if (features == null) {
-                LOG.info("LifecycleProvisionListener not initialized yet : {}", key);
                 LOG.info("LifecycleProvisionListener not initialized yet : {} source={}", key, provision.getBinding().getSource());
 
                 injectee = provision.provision();
