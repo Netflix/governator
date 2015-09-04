@@ -32,9 +32,17 @@ public final class LifecycleManager {
     public void addListener(LifecycleListener listener) {
         if (listeners.add(listener)) {
             LOG.info("Adding LifecycleListener '{}' {}", listener.getClass().getName(), System.identityHashCode(listener));
-            if (state.get().equals(State.Started)) {
+            if (state.get() == State.Started) {
                 LOG.info("Starting LifecycleListener '{}'", listener.getClass().getName());
                 listener.onStarted();
+            }
+            else if (state.get() == State.Failed) {
+                LOG.info("Failed LifecycleListener '{}'", listener.getClass().getName());
+                listener.onStartFailed(failureReason);
+            }
+            else if (state.get() == State.Done) {
+                LOG.info("Stopped LifecycleListener '{}'", listener.getClass().getName());
+                listener.onStopped();
             }
         }
     }

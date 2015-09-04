@@ -33,4 +33,9 @@ public class PropertiesPropertySource extends AbstractPropertySource {
     public String get(String key) {
         return props.getProperty(key);
     }
+
+    @Override
+    public String get(String key, String defaultValue) {
+        return props.getProperty(key, defaultValue);
+    }
 }

@@ -32,8 +32,8 @@ public class GovernatorConfigurationTest {
                     .addProfile("test")
                     .addBootstrapModule(PropertiesPropertySource.toModule(prop))
                     .addModuleListProvider(ModuleListProviders.forPackagesConditional("com.netflix.governator.auto.modules"))
-                    .build(),
-                new AModule());
+                    .addModules(new AModule())
+                    .build());
         
         System.out.println(injector.getInstance(String.class));
         Assert.assertEquals("override", injector.getInstance(String.class));

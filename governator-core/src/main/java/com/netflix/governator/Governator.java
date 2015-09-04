@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -100,23 +99,40 @@ public class Governator {
     }
     
     /**
-     * Entry point for creating an injector using a GovernatorConfiguration for bootstrapping the injector
-     * creations and a list of standard Guice modules for the main injector.
+     * Entry point for creating a LifecycleInjector with module auto-loading capabilities.  
+     * Module auto-loading makes it possible to load bindings that are contextual to the 
+     * environment in which the application is running based on things like profiles,
+     * properties and existing bindings.  
+     * 
+     * The LifecycleInjector created here uses a layered approach to construct the Guice Injector
+     * so that bindings can be overridden at a high level based on the runtime environment
+     * as opposed to sprinkling Modules.overrides and conditionals throughout the modules themselves.
+     * Using Modules.overrides directly looses the original module's context and can easily result
+     * in difficult to debug duplicate binding errors.
+     * 
+     * This injector is constructed in two phases.  The first bootstrap phase determines which core
+     * Guice modules should be installed based on processing of conditional annotations.  The final
+     * list of auto discovered modules is appended to the main list of modules and installed on the
+     * main injector.  Application level override modules may be applied to this final list from the
+     * list of modules returned from {@link GovernatorConfiguration.getOverrideModules()}.
      * 
      * <pre>
      * {@code
        Governator.createInjector(
-             new DefaultGovernatorConfiguration(),
-             new JettyModule(),
-             new JerseyServletModule() {
-                @Override
-                protected void configureServlets() {
-                    serve("/*").with(GuiceContainer.class);
-                    bind(GuiceContainer.class).asEagerSingleton();
-                    
-                    bind(HelloWorldApp.class).asEagerSingleton();
-                }  
-            }
+             DefaultGovernatorConfiguration().builder()
+                .addModules(
+                     new JettyModule(),
+                     new JerseyServletModule() {
+                        @Override
+                        protected void configureServlets() {
+                            serve("/*").with(GuiceContainer.class);
+                            bind(GuiceContainer.class).asEagerSingleton();
+                            
+                            bind(HelloWorldApp.class).asEagerSingleton();
+                        }  
+                    }
+                )
+                .build()
             )
             .awaitTermination();
      * }
@@ -125,42 +141,16 @@ public class Governator {
      * @param modules
      * @return
      */
-    public static LifecycleInjector createInjector(GovernatorConfiguration config, Module ... modules) {
-        return new Governator(config, Arrays.asList(modules)).create();
-    }
-    
-    public static LifecycleInjector createInjector(GovernatorConfiguration config, List<Module> modules) {
-        return new Governator(config, modules).create();
-    }
-    
-    private final GovernatorConfiguration     config;
-    private final Stage                       stage;
-    private final List<Module>                bootstrapModules;
-    private final List<Module>                modules;
-    private final Set<String>                 profiles;
-    private final List<ModuleListProvider>    moduleProviders;
-    
-    private Governator(GovernatorConfiguration config, List<Module> modules) {
-        this.config           = config;
-        this.stage            = config.getStage();
-        
-        // Create copies of the config
-        this.bootstrapModules = new ArrayList<>(config.getBootstrapModules());
-        this.modules          = new ArrayList<>(modules);
-        this.profiles         = new LinkedHashSet<>(config.getProfiles());
-        this.moduleProviders  = new ArrayList<>(config.getModuleListProviders());
-    }
-    
-    private LifecycleInjector create() {
+    public static LifecycleInjector createInjector(final GovernatorConfiguration config) {
         // The logger is intentionally created here to avoid early static initialization
         // of SLF4J/LOG4J which may be customized using one of the bootstrap modules
         Logger LOG = LoggerFactory.getLogger(Governator.class);
-        LOG.info("Using profiles : " + profiles);
+        LOG.info("Using profiles : " + config.getProfiles());
         
         // Generate a single list of all discovered modules
         // TODO: Duplicates?
         final Set<Module> loadedModules   = new HashSet<>();
-        for (ModuleListProvider loader : moduleProviders) {
+        for (ModuleListProvider loader : config.getModuleListProviders()) {
             loadedModules.addAll(loader.get());
         }
 
@@ -168,8 +158,7 @@ public class Governator {
         
         Injector injector;
         try {
-            injector = Guice.createInjector(
-                stage, 
+            Module modules = Modules.combine(
                 new LifecycleModule(), 
                 new AbstractModule() {
                     @Override
@@ -181,17 +170,19 @@ public class Governator {
                 }, 
                 create(
                     LOG,
+                    config,
                     manager,
                     loadedModules, 
-                    modules, 
+                    config.getModules(), 
                     false, 
                     // First, auto load the bootstrap modules (usually deal with configuration and logging) and
                     // use to load the main module.
                     create(
                         LOG,
+                        config,
                         manager,
                         loadedModules, 
-                        bootstrapModules, 
+                        config.getBootstrapModules(), 
                         true, 
                         new DefaultModule() {
                             @Provides
@@ -199,6 +190,11 @@ public class Governator {
                                 return new DefaultPropertySource(); 
                             }
                         })));
+            if (!config.getOverrideModules().isEmpty()) {
+                modules = Modules.override(modules).with(config.getOverrideModules());
+            }
+                    
+            injector = Guice.createInjector(config.getStage(), modules);
         }
         catch (Throwable e) {
             e.printStackTrace();
@@ -224,7 +220,7 @@ public class Governator {
         }
     }
     
-    private String formatConditional(Annotation a) {
+    private static String formatConditional(Annotation a) {
         String str = a.toString();
         int pos = str.indexOf("(");
         if (pos != -1) {
@@ -236,7 +232,7 @@ public class Governator {
         return str;
     }
     
-    private boolean evaluateConditions(Logger LOG, Injector injector, Module module) throws Exception {
+    private static boolean evaluateConditions(Logger LOG, Injector injector, Module module) throws Exception {
         LOG.info("Evaluating module {}", module.getClass().getName());
         
         // The class may have multiple Conditional annotations
@@ -281,7 +277,7 @@ public class Governator {
         return true;
     }
     
-    private boolean isEnabled(PropertySource propertySource, String name) {
+    private static boolean isEnabled(PropertySource propertySource, String name) {
         int pos = name.length();
         do {
             if (propertySource.get("governator.module.disabled." + name.substring(0, pos), Boolean.class, false)) {
@@ -292,7 +288,7 @@ public class Governator {
         return true;
     }
     
-    private Module create(final Logger LOG, final LifecycleManager manager, final Collection<Module> loadedModules, final List<Module> rootModules, final boolean isBootstrap, final Module bootstrapModule) throws Exception {
+    private static Module create(final Logger LOG, final GovernatorConfiguration config, final LifecycleManager manager, final Collection<Module> loadedModules, final List<Module> rootModules, final boolean isBootstrap, final Module bootstrapModule) throws Exception {
         LOG.info("Creating {} injector", isBootstrap ? "bootstrap" : "main");
         // Populate all the bootstrap state from the main module
         final List<Element> elements    = Elements.getElements(Stage.DEVELOPMENT, rootModules);
@@ -300,7 +296,7 @@ public class Governator {
         final List<String>  moduleNames = ElementsEx.getAllSourceModules(elements);
         
         final Injector injector = Guice.createInjector(
-            stage, 
+            config.getStage(), 
             new LifecycleModule(), 
             new AbstractModule() {
                 @Override
@@ -317,7 +313,7 @@ public class Governator {
                         return new AutoContext() {
                             @Override
                             public boolean hasProfile(String profile) {
-                                return profiles.contains(profile);
+                                return config.getProfiles().contains(profile);
                             }
         
                             @Override
