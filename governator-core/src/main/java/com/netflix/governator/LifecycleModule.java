@@ -68,26 +68,6 @@ public final class LifecycleModule extends SingletonModule {
         final List<LifecycleAction> preDestroyActions = new ArrayList<>();
     }
     
-    static class Optional {
-        @com.google.inject.Inject(optional=true)
-        GovernatorConfiguration config;
-    }
-    
-    // Hack to make sure LifecycleProvisionListener is instantiated early during Injector
-    // creation
-    static class StaticInitializer {
-        @Inject
-        public static void initialize(
-                LifecycleManager manager,
-                LifecycleProvisionListener listener, 
-                Set<LifecycleFeature> features, 
-                ProvisionMetrics metrics, 
-                Optional optional
-                ) {
-            listener.initialize(manager, features, metrics, optional.config == null ? true : optional.config.isEnabled(GovernatorFeatures.SHUTDOWN_ON_ERROR));
-        }
-    }
-    
     @Singleton
     static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
         private final ConcurrentLinkedDeque<Runnable> shutdownActions = new ConcurrentLinkedDeque<Runnable>();
@@ -99,17 +79,30 @@ public final class LifecycleModule extends SingletonModule {
         private ConcurrentLinkedQueue<LifecycleListener> pendingLifecycleListeners = new ConcurrentLinkedQueue<>();
         private boolean shutdownOnFailure = true;
         
-        public void initialize(LifecycleManager manager, Set<LifecycleFeature> features, ProvisionMetrics metrics, boolean shutdownOnFailure) {
+        private static class Optional {
+            @com.google.inject.Inject(optional=true)
+            GovernatorConfiguration config;
+        }
+        
+        @Inject
+        public static void initialize(
+                LifecycleManager manager, 
+                LifecycleProvisionListener listener, 
+                Set<LifecycleFeature> features, 
+                ProvisionMetrics metrics, 
+                Optional optional) {
             LOG.debug("LifecycleProvisionListener initialized {}", features);
-            this.metrics = metrics;
-            this.manager = manager;
-            this.manager.addListener(this);
-            this.features = features;
-            this.shutdownOnFailure = shutdownOnFailure;
+            listener.metrics = metrics;
+            listener.manager = manager;
+            listener.manager.addListener(listener);
+            listener.features = features;
+            listener.shutdownOnFailure = optional.config == null 
+                    ? true 
+                    : optional.config.isEnabled(GovernatorFeatures.SHUTDOWN_ON_ERROR);
             
-            LifecycleListener listener;
-            while (null != (listener = pendingLifecycleListeners.poll())) {
-                this.manager.addListener(listener);
+            LifecycleListener l;
+            while (null != (l = listener.pendingLifecycleListeners.poll())) {
+                manager.addListener(l);
             }
         }
         
@@ -120,8 +113,7 @@ public final class LifecycleModule extends SingletonModule {
             
             final T injectee;
             if (features == null) {
-                LOG.info("LifecycleProvisionListener not initialized yet : {}", key);
-                LOG.info("LifecycleProvisionListener not initialized yet : {} source={}", key, provision.getBinding().getSource());
+                LOG.debug("LifecycleProvisionListener not initialized yet : {} source={}", key, provision.getBinding().getSource());
 
                 injectee = provision.provision();
                 
@@ -228,7 +220,7 @@ public final class LifecycleModule extends SingletonModule {
     @Override
     protected void configure() {
         LifecycleProvisionListener listener = new LifecycleProvisionListener();
-        requestStaticInjection(StaticInitializer.class);
+        requestStaticInjection(LifecycleProvisionListener.class);
         bind(LifecycleProvisionListener.class).toInstance(listener);
         bindListener(Matchers.any(), listener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);

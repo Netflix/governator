@@ -22,6 +22,7 @@ import com.netflix.governator.auto.annotations.ConditionalOnProfile;
  * 
  * @author elandau
  *
+ * TODO: Should addOverrideModule behavior be that every module can override the previous one?
  */
 public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     /**
@@ -32,14 +33,13 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
      * @param <T>
      */
     public static abstract class Builder<T extends Builder<T>> {
-        protected Stage                       stage = Stage.DEVELOPMENT;
-        protected List<Module>                modules = new ArrayList<>();
-        protected List<Module>                overrideModules = new ArrayList<>();
-        protected List<Module>                bootstrapModules = new ArrayList<>();
-        protected PropertySource              propertySource = new DefaultPropertySource();
-        protected Set<String>                 profiles = new LinkedHashSet<>();
-        protected List<ModuleListProvider>    moduleProviders = new ArrayList<>();
-        protected Map<GovernatorFeature, Boolean> features = new HashMap<>();
+        protected Stage                       stage             = Stage.DEVELOPMENT;
+        protected List<Module>                modules           = new ArrayList<>();
+        protected List<Module>                overrideModules   = new ArrayList<>();
+        protected PropertySource              propertySource    = new DefaultPropertySource();
+        protected Set<String>                 profiles          = new LinkedHashSet<>();
+        protected List<ModuleListProvider>    moduleProviders   = new ArrayList<>();
+        protected Map<GovernatorFeature, Boolean> features      = new HashMap<>();
         
         /**
          * Add a module finder such as a ServiceLoaderModuleFinder or ClassPathScannerModuleFinder
@@ -51,32 +51,6 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
             return This();
         }
         
-        /**
-         * Bootstrap overrides for the bootstrap injector used to load and inject into 
-         * the conditions.  Bootstrap does not restrict the bindings to allow any type
-         * to be externally provided and injected into conditions.  Several simple
-         * bindings are provided by default and may be overridden,
-         * 1.  Config
-         * 2.  Profiles
-         * 3.  BoundKeys (TODO)
-         * 
-         * @param bootstrapModule
-         */
-        public T addBootstrapModule(Module bootstrapModule) {
-            this.bootstrapModules.add(bootstrapModule);
-            return This();
-        }
-        
-        public T addBootstrapModules(Module ... bootstrapModule) {
-            this.bootstrapModules.addAll(Arrays.asList(bootstrapModule));
-            return This();
-        }
-
-        public T addBootstrapModules(List<Module> bootstrapModule) {
-            this.bootstrapModules.addAll(bootstrapModule);
-            return This();
-        }
-
         public T addModule(Module module) {
             this.modules.add(module);
             return This();
@@ -113,7 +87,8 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
          * @param profile
          */
         public T addProfile(String profile) {
-            this.profiles.add(profile);
+            if (profile != null)    
+                this.profiles.add(profile);
             return This();
         }
 
@@ -123,7 +98,9 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
          * @param profile
          */
         public T addProfiles(String... profiles) {
-            this.profiles.addAll(Arrays.asList(profiles));
+            if (profiles != null) {
+                this.profiles.addAll(Arrays.asList(profiles));
+            }
             return This();
         }
         
@@ -169,7 +146,7 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
         
         protected abstract T This();
         
-        public GovernatorConfiguration build() {
+        public GovernatorConfiguration build() throws Exception {
             return new DefaultGovernatorConfiguration(this);
         }
     }
@@ -185,8 +162,11 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
         return new BuilderWrapper();
     }
     
+    public static GovernatorConfiguration createDefault() throws Exception {
+        return builder().build();
+    }
+    
     private final Stage                       stage;
-    private final List<Module>                bootstrapModules;
     private final List<Module>                modules;
     private final List<Module>                overrideModules;
     private final Set<String>                 profiles;
@@ -201,7 +181,6 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     protected DefaultGovernatorConfiguration(Builder<?> builder) {
         this.stage             = builder.stage;
         this.modules           = new ArrayList<>(builder.modules);
-        this.bootstrapModules  = new ArrayList<>(builder.bootstrapModules);
         this.overrideModules   = new ArrayList<>(builder.overrideModules);
         this.profiles          = new LinkedHashSet<>(builder.profiles);
         this.moduleProviders   = new ArrayList<>(builder.moduleProviders);
@@ -210,11 +189,6 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
         this.features.putAll(builder.features);
     }
     
-    @Override
-    public List<Module> getBootstrapModules() {
-        return Collections.unmodifiableList(bootstrapModules);
-    }
-
     @Override
     public List<ModuleListProvider> getModuleListProviders() {
         return Collections.unmodifiableList(moduleProviders);
@@ -231,7 +205,7 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     }
 
     @Override
-    public PropertySource getPropertySources() {
+    public PropertySource getPropertySource() {
         return propertySource;
     }
     

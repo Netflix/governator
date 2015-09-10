@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.inject.Module;
-import com.netflix.governator.auto.annotations.Bootstrap;
 import com.netflix.governator.auto.annotations.Conditional;
 
 /**
@@ -26,8 +25,7 @@ public class ClassPathConditionalModuleListProvider extends ClassPathModuleListP
     @Override
     protected boolean isAllowed(Class<? extends Module> cls) {
         for (Annotation annot : cls.getAnnotations()) {
-            if (null != annot.annotationType().getAnnotation(Bootstrap.class) ||
-                null != annot.annotationType().getAnnotation(Conditional.class)) {
+            if (null != annot.annotationType().getAnnotation(Conditional.class)) {
                 return true;
             }
         }

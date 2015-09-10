@@ -32,14 +32,6 @@ public interface GovernatorConfiguration {
     List<Module> getOverrideModules();
     
     /**
-     * Return a list of bootstrap modules that will be loaded prior the main injector
-     * being created.  Bootstrap modules should be reserved for things like configuration
-     * loading that must be done before any module conditionals may be evaluated. 
-     * Applications should normally use getModules()
-     */
-    List<Module> getBootstrapModules();
-    
-    /**
      * Return a list of ModuleListProviders through which modules may be auto-loaded.
      */
     List<ModuleListProvider> getModuleListProviders();
@@ -60,7 +52,7 @@ public interface GovernatorConfiguration {
      * Return the main property source to be used during the bootstrap phase 
      * @return
      */
-    PropertySource getPropertySources();
+    PropertySource getPropertySource();
     
     /**
      * Determine if a core governator feature has been enabled.  See {@link GovernatorFeatures}

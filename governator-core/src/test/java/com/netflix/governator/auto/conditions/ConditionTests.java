@@ -1,7 +1,9 @@
 package com.netflix.governator.auto.conditions;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import junit.framework.Assert;
@@ -9,6 +11,7 @@ import junit.framework.Assert;
 import org.testng.annotations.Test;
 
 import com.google.inject.Key;
+import com.google.inject.spi.Element;
 import com.netflix.governator.auto.AutoContext;
 import com.netflix.governator.auto.annotations.ConditionalOnBinding;
 import com.netflix.governator.auto.annotations.ConditionalOnClass;
@@ -30,6 +33,11 @@ public class ConditionTests {
         @Override
         public boolean hasBinding(Key<?> key) {
             return false;
+        }
+
+        @Override
+        public List<Element> getElements() {
+            return Collections.emptyList();
         }
     }
     

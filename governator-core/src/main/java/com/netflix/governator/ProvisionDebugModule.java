@@ -2,15 +2,13 @@ package com.netflix.governator;
 
 import javax.inject.Inject;
 
-import com.google.inject.AbstractModule;
-
 /**
  * Install this module to log a Provision report after the Injector is created.
  * 
  * @author elandau
  *
  */
-public class ProvisionDebugModule extends AbstractModule {
+public class ProvisionDebugModule extends DefaultModule {
     public static class StaticInitializer {
         @Inject
         public static LoggingProvisionMetricsLifecycleListener listener;
