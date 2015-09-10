@@ -6,4 +6,9 @@ public class DefaultModule extends AbstractModule {
     @Override
     protected void configure() {
     }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
 }

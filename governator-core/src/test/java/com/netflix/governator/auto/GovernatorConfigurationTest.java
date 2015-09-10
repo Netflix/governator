@@ -23,17 +23,17 @@ import com.netflix.governator.auto.modules.AModule;
 
 public class GovernatorConfigurationTest {
     @Test
-    public void test() {
+    public void test() throws Exception {
         final Properties prop = new Properties();
         prop.setProperty("test", "B");
                 
         Injector injector = Governator.createInjector(
                 DefaultGovernatorConfiguration.builder()
                     .addProfile("test")
-                    .addBootstrapModule(PropertiesPropertySource.toModule(prop))
+                    .withPropertySource(PropertiesPropertySource.from(prop))
                     .addModuleListProvider(ModuleListProviders.forPackagesConditional("com.netflix.governator.auto.modules"))
-                    .build(),
-                new AModule());
+                    .addModules(new AModule())
+                    .build());
         
         System.out.println(injector.getInstance(String.class));
         Assert.assertEquals("override", injector.getInstance(String.class));

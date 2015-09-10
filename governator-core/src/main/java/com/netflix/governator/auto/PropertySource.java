@@ -23,6 +23,15 @@ public interface PropertySource {
     public String get(String key);
     
     /**
+     * Get the value of a property or default if not found
+     * 
+     * @param key
+     * @param defaultValue
+     * @return
+     */
+    public String get(String key, String defaultValue);
+    
+    /**
      * Get a property value of a specific type
      * 
      * @param key

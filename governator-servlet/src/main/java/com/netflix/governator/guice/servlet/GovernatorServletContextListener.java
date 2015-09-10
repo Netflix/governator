@@ -83,8 +83,13 @@ public abstract class GovernatorServletContextListener extends GuiceServletConte
      * injector.
      */
     protected final Injector getInjector() {
-        injector = createInjector();
-        return injector;
+        try {
+            return createInjector();
+        }
+        catch (Exception e) {
+            LOG.error("Failed to created injector", e);
+            return null;
+        }
     }
     
     protected abstract Injector createInjector();

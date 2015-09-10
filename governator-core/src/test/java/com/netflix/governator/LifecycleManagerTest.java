@@ -63,7 +63,7 @@ public class LifecycleManagerTest {
     }
     
     @Test
-    public void testWithExternalListener() throws InterruptedException {
+    public void listenerAddedAfterInjectorCreatedWithSuccess() throws InterruptedException {
         
         LifecycleInjector injector = Governator.createInjector();
         CountingLifecycleListener listener = new CountingLifecycleListener();
@@ -79,7 +79,7 @@ public class LifecycleManagerTest {
         Assert.assertEquals(0, listener.getStartFailedCount());
         Assert.assertEquals(1, listener.getStoppedCount());
     }
-
+    
     @Test(timeOut=1000)
     public void testWaitForInternalShutdownTrigger() throws InterruptedException {
         LifecycleInjector injector = Governator.createInjector();
