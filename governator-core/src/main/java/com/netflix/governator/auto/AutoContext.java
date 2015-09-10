@@ -11,7 +11,7 @@ import com.google.inject.spi.Element;
  * @author elandau
  *
  */
-public interface AutoContext { 
+public interface AutoContext {  
     /**
      * @param className
      * @return Return true if the module was installed
@@ -23,7 +23,7 @@ public interface AutoContext {
      * @return Return true if profile was set
      */
     boolean hasProfile(String profile);
-    
+     
     /**
      * @param key
      * @return Return true if a binding exists for a key
