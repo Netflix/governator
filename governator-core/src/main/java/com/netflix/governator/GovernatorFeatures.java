@@ -12,7 +12,7 @@ public enum GovernatorFeatures implements GovernatorFeature {
      * for debugging an application that failed to start by allowing admin servers to continue
      * running.
      */
-    SHUTDOWN_ON_ERROR(true)
+    SHUTDOWN_ON_ERROR(true),
     ;
 
     private final boolean enabled;

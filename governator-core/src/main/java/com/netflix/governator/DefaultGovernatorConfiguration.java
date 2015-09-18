@@ -146,7 +146,11 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
         
         protected abstract T This();
         
+        protected void initialize() throws Exception {
+        }
+        
         public GovernatorConfiguration build() throws Exception {
+            initialize();
             return new DefaultGovernatorConfiguration(this);
         }
     }

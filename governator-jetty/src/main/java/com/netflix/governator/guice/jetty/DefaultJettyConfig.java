@@ -1,5 +1,8 @@
 package com.netflix.governator.guice.jetty;
 
+import javax.inject.Singleton;
+
+@Singleton
 public class DefaultJettyConfig implements JettyConfig {
     private int port = 8080;
     

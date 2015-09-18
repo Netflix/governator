@@ -13,12 +13,12 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.ProvisionException;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.servlet.GuiceFilter;
 import com.netflix.governator.DefaultLifecycleListener;
+import com.netflix.governator.DefaultModule;
 import com.netflix.governator.LifecycleListener;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.LifecycleShutdownSignal;
@@ -71,7 +71,7 @@ import com.netflix.governator.LifecycleShutdownSignal;
  * @author elandau
  *
  */
-public final class JettyModule extends AbstractModule {
+public final class JettyModule extends DefaultModule {
     private final static Logger LOG = LoggerFactory.getLogger(JettyModule.class);
     
     /**
@@ -160,5 +160,15 @@ public final class JettyModule extends AbstractModule {
         servletContextHandler.addServlet(DefaultServlet.class, "/");
 
         return server;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        return JettyModule.class.equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return JettyModule.class.hashCode();
     }
 }
