@@ -139,7 +139,7 @@ public class ClasspathScanner {
                                     }
                                 }
                                 catch (Exception e) {
-                                    throw new IllegalStateException("Unable to scan JarEntry : " + entry.getName());
+                                    throw new IllegalStateException("Unable to scan JarEntry : " + entry.getName(), e);
                                 }
                             }
                         }
