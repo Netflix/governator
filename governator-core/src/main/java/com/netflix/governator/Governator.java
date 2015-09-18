@@ -172,6 +172,12 @@ public class Governator {
                     createAutoModule(LOG, config, candidateModules, config.getModules()))
                    .with(config.getOverrideModules());
             
+            if (config.isEnabled(GovernatorFeatures.PRINT_BINDINGS)) {
+                for (Element binding : Elements.getElements(coreModule)) {
+                    System.out.println(binding);
+                }
+            }
+            
             LOG.info("Configured override modules : " + config.getOverrideModules());
             
             Injector injector = Guice.createInjector(
@@ -323,10 +329,10 @@ public class Governator {
                             }
                         }
                         
-                        LOG.info("  PASS {}", formatConditional(annot));
+                        LOG.info("  (PASS) {}", formatConditional(annot));
                     }
                     catch (Exception e) {
-                        LOG.info("  FAIL {}", formatConditional(annot), e);
+                        LOG.info("  (FAIL) {}", formatConditional(annot), e);
                         throw new Exception("Failed to check condition '" + condition + "' on module '" + module.getClass() + "'", e);
                     }
                 }
