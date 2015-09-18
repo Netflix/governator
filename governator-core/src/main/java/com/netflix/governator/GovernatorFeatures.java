@@ -13,12 +13,6 @@ public enum GovernatorFeatures implements GovernatorFeature {
      * running.
      */
     SHUTDOWN_ON_ERROR(true),
-    
-    /**
-     * Print the final bindings to System.out before creating the injector.  This is helpful for debugging
-     * purposes when the injector completely fails to get created.
-     */
-    PRINT_BINDINGS(false)
     ;
 
     private final boolean enabled;

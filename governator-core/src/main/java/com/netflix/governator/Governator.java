@@ -172,10 +172,8 @@ public class Governator {
                     createAutoModule(LOG, config, candidateModules, config.getModules()))
                    .with(config.getOverrideModules());
             
-            if (config.isEnabled(GovernatorFeatures.PRINT_BINDINGS)) {
-                for (Element binding : Elements.getElements(coreModule)) {
-                    System.out.println(binding);
-                }
+            for (Element binding : Elements.getElements(coreModule)) {
+                LOG.debug("Binding : {}", binding);
             }
             
             LOG.info("Configured override modules : " + config.getOverrideModules());
