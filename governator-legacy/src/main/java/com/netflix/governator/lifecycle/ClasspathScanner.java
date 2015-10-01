@@ -117,48 +117,52 @@ public class ClasspathScanner {
             	Enumeration<URL> resources = classLoader.getResources(basePackageWithSlashes);
                 while ( resources.hasMoreElements() ) {
                     URL url = resources.nextElement();
-                    if ( isJarURL(url)) {
-                        String jarPath = url.getFile();
-                        if ( jarPath.contains("!") ) {
-                            jarPath = jarPath.substring(0, jarPath.indexOf("!"));
-                            url = new URL(jarPath);
-                        }
-                        File file = ClasspathUrlDecoder.toFile(url);
-                        try (JarFile jar = new JarFile(file)) {
-                            for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); ) {
-                                JarEntry entry = list.nextElement();
-                                try {
-                                    if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackageWithSlashes)) {
-                                        AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
-                                        new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
-    
-                                        localClasses.addAll(finder.getAnnotatedClasses());
-                                        localMethods.addAll(finder.getAnnotatedMethods());
-                                        localConstructors.addAll(finder.getAnnotatedConstructors());
-                                        localFields.addAll(finder.getAnnotatedFields());
+                    try {
+                        if ( isJarURL(url)) {
+                            String jarPath = url.getFile();
+                            if ( jarPath.contains("!") ) {
+                                jarPath = jarPath.substring(0, jarPath.indexOf("!"));
+                                url = new URL(jarPath);
+                            }
+                            File file = ClasspathUrlDecoder.toFile(url);
+                            try (JarFile jar = new JarFile(file)) {
+                                for ( Enumeration<JarEntry> list = jar.entries(); list.hasMoreElements(); ) {
+                                    JarEntry entry = list.nextElement();
+                                    try {
+                                        if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackageWithSlashes)) {
+                                            AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                                            new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
+        
+                                            localClasses.addAll(finder.getAnnotatedClasses());
+                                            localMethods.addAll(finder.getAnnotatedMethods());
+                                            localConstructors.addAll(finder.getAnnotatedConstructors());
+                                            localFields.addAll(finder.getAnnotatedFields());
+                                        }
+                                    }
+                                    catch (Exception e) {
+                                        log.debug("Unable to scan JarEntry '{}' in '{}'", entry.getName(), file.getCanonicalPath(), e);
                                     }
                                 }
-                                catch (Exception e) {
-                                    throw new IllegalStateException("Unable to scan JarEntry : " + entry.getName(), e);
-                                }
+                            }
+                            catch (Exception e ) {
+                                log.debug("Unable to scan jar '{}' ", file.getCanonicalPath(), e);
                             }
                         }
-                        catch (Exception e ) {
-                            throw new IllegalStateException("Governator was unable to scan " +
-                                    file.getCanonicalPath() + " for annotations", e);
+                        else {
+                            DirectoryClassFilter filter = new DirectoryClassFilter(classLoader);
+                            for ( String className : filter.filesInPackage(url, basePackage) ) {
+                                AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                                new ClassReader(filter.bytecodeOf(className)).accept(finder, SKIP_CODE);
+    
+                                localClasses.addAll(finder.getAnnotatedClasses());
+                                localMethods.addAll(finder.getAnnotatedMethods());
+                                localConstructors.addAll(finder.getAnnotatedConstructors());
+                                localFields.addAll(finder.getAnnotatedFields());
+                            }
                         }
                     }
-                    else {
-                        DirectoryClassFilter filter = new DirectoryClassFilter(classLoader);
-                        for ( String className : filter.filesInPackage(url, basePackage) ) {
-                            AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
-                            new ClassReader(filter.bytecodeOf(className)).accept(finder, SKIP_CODE);
-
-                            localClasses.addAll(finder.getAnnotatedClasses());
-                            localMethods.addAll(finder.getAnnotatedMethods());
-                            localConstructors.addAll(finder.getAnnotatedConstructors());
-                            localFields.addAll(finder.getAnnotatedFields());
-                        }
+                    catch (Exception e) {
+                        log.debug("Unable to scan jar '{}' ", url, e);
                     }
                 }
             }
