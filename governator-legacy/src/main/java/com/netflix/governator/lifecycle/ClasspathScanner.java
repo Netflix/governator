@@ -171,28 +171,36 @@ public class ClasspathScanner {
             if (localClasses.contains(cls)) {
                 log.debug(String.format("Duplicate class found for '%s'", cls.getCanonicalName()));
             }
-            localClasses.add(cls);
+            else {
+                localClasses.add(cls);
+            }
         }
         
         for (Method method : finder.getAnnotatedMethods()) {
             if (localMethods.contains(method)) {
                 log.debug(String.format("Duplicate method found for '%s:%s'", method.getClass().getCanonicalName(), method.getName()));
             }
-            localMethods.add(method);
+            else {
+                localMethods.add(method);
+            }
         }
         
         for (Constructor<?> ctor : finder.getAnnotatedConstructors()) {
             if (localConstructors.contains(ctor)) {
                 log.debug(String.format("Duplicate constructor found for '%s:%s'", ctor.getClass().getCanonicalName(), ctor.toString()));
             }
-            localConstructors.add(ctor);
+            else {
+                localConstructors.add(ctor);
+            }
         }
         
         for (Field field : finder.getAnnotatedFields()) {
             if (localFields.contains(field)) {
                 log.debug(String.format("Duplicate field found for '%s:%s'", field.getClass().getCanonicalName(), field.toString()));
             }
-            localFields.add(field);
+            else {
+                localFields.add(field);
+            }
         }
     }
 
