@@ -136,16 +136,10 @@ public class ClasspathScanner {
                                             applyFinderResults(localClasses, localConstructors, localMethods, localFields, finder);
                                         }
                                     }
-                                    catch (IllegalStateException e) {
-                                        throw new IllegalStateException("Error scanning jarEntry \'" + entry.getName() + "\'", e);
-                                    }
                                     catch (Exception e) {
                                         log.debug("Unable to scan JarEntry '{}' in '{}'. {}", new Object[]{entry.getName(), file.getCanonicalPath(), e.getMessage()});
                                     }
                                 }
-                            }
-                            catch (IllegalStateException e) {
-                                throw new IllegalStateException("Error scanning \'" + file.getCanonicalPath() + "\'", e);
                             }
                             catch (Exception e ) {
                                 log.debug("Unable to scan '{}'. {}", new Object[]{file.getCanonicalPath(), e.getMessage()});
@@ -161,9 +155,6 @@ public class ClasspathScanner {
                             }
                         }
                     }
-                    catch (IllegalStateException e) {
-                        throw new IllegalStateException("Error scanning \'" + url + "\'", e);
-                    }
                     catch (Exception e) {
                         log.debug("Unable to scan jar '{}'. {} ", new Object[]{url, e.getMessage()});
                     }
@@ -178,28 +169,28 @@ public class ClasspathScanner {
     private void applyFinderResults(Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields, AnnotationFinder finder) {
         for (Class<?> cls : finder.getAnnotatedClasses()) {
             if (localClasses.contains(cls)) {
-                throw new IllegalStateException(String.format("Duplicate class found for '%s'", cls.getCanonicalName()));
+                log.debug(String.format("Duplicate class found for '%s'", cls.getCanonicalName()));
             }
             localClasses.add(cls);
         }
         
         for (Method method : finder.getAnnotatedMethods()) {
             if (localMethods.contains(method)) {
-                throw new IllegalStateException(String.format("Duplicate method found for '%s:%s'", method.getClass().getCanonicalName(), method.getName()));
+                log.debug(String.format("Duplicate method found for '%s:%s'", method.getClass().getCanonicalName(), method.getName()));
             }
             localMethods.add(method);
         }
         
         for (Constructor<?> ctor : finder.getAnnotatedConstructors()) {
             if (localConstructors.contains(ctor)) {
-                new IllegalStateException(String.format("Duplicate constructor found for '%s:%s'", ctor.getClass().getCanonicalName(), ctor.toString()));
+                log.debug(String.format("Duplicate constructor found for '%s:%s'", ctor.getClass().getCanonicalName(), ctor.toString()));
             }
             localConstructors.add(ctor);
         }
         
         for (Field field : finder.getAnnotatedFields()) {
             if (localFields.contains(field)) {
-                new IllegalStateException(String.format("Duplicate field found for '%s:%s'", field.getClass().getCanonicalName(), field.toString()));
+                log.debug(String.format("Duplicate field found for '%s:%s'", field.getClass().getCanonicalName(), field.toString()));
             }
             localFields.add(field);
         }
