@@ -140,12 +140,12 @@ public class ClasspathScanner {
                                         }
                                     }
                                     catch (Exception e) {
-                                        log.debug("Unable to scan JarEntry '{}' in '{}'", entry.getName(), file.getCanonicalPath(), e);
+                                        log.debug("Unable to scan JarEntry '{}' in '{}'. {}", new Object[]{entry.getName(), file.getCanonicalPath(), e.getMessage()});
                                     }
                                 }
                             }
                             catch (Exception e ) {
-                                log.debug("Unable to scan jar '{}' ", file.getCanonicalPath(), e);
+                                log.debug("Unable to scan jar '{}'. {}", new Object[]{file.getCanonicalPath(), e.getMessage()});
                             }
                         }
                         else {
@@ -162,7 +162,7 @@ public class ClasspathScanner {
                         }
                     }
                     catch (Exception e) {
-                        log.debug("Unable to scan jar '{}' ", url, e);
+                        log.debug("Unable to scan jar '{}'. {} ", new Object[]{url, e.getMessage()});
                     }
                 }
             }
