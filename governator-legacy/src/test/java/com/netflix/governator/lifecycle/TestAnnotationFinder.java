@@ -1,22 +1,25 @@
 package com.netflix.governator.lifecycle;
 
-import org.hamcrest.Matchers;
-import org.objectweb.asm.ClassReader;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.is;
+import static org.objectweb.asm.ClassReader.SKIP_CODE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.objectweb.asm.ClassReader.SKIP_CODE;
+import org.hamcrest.Matchers;
+import org.objectweb.asm.ClassReader;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 public class TestAnnotationFinder {
     JavaClasspath cp;
@@ -138,7 +141,7 @@ public class TestAnnotationFinder {
 
     private AnnotationFinder scan(String clazz, String annotation) {
         Class<? extends Annotation> aClass = cp.loadClass(annotation);
-        AnnotationFinder finder = new AnnotationFinder(cp.getClassLoader(), aClass);
+        AnnotationFinder finder = new AnnotationFinder(cp.getClassLoader(), Collections.<Class<? extends Annotation>>singletonList(aClass));
         new ClassReader(cp.classBytes(clazz)).accept(finder, SKIP_CODE);
         return finder;
     }

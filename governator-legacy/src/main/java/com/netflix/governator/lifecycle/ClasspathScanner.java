@@ -111,8 +111,8 @@ public class ClasspathScanner {
         }
         log.info("Scanning packages : " + basePackages + " for annotations " + annotations);
         
-        try {
-            for ( String basePackage : basePackages )  {
+        for ( String basePackage : basePackages )  {
+            try {
             	String basePackageWithSlashes = basePackage.replace(".", "/");
             	Enumeration<URL> resources = classLoader.getResources(basePackageWithSlashes);
                 while ( resources.hasMoreElements() ) {
@@ -130,45 +130,78 @@ public class ClasspathScanner {
                                     JarEntry entry = list.nextElement();
                                     try {
                                         if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackageWithSlashes)) {
-                                            AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                                            AnnotationFinder finder = new AnnotationFinder(classLoader, annotations);
                                             new ClassReader(jar.getInputStream(entry)).accept(finder, SKIP_CODE);
         
-                                            localClasses.addAll(finder.getAnnotatedClasses());
-                                            localMethods.addAll(finder.getAnnotatedMethods());
-                                            localConstructors.addAll(finder.getAnnotatedConstructors());
-                                            localFields.addAll(finder.getAnnotatedFields());
+                                            applyFinderResults(localClasses, localConstructors, localMethods, localFields, finder);
                                         }
+                                    }
+                                    catch (IllegalStateException e) {
+                                        throw new IllegalStateException("Error scanning jarEntry \'" + entry.getName() + "\'", e);
                                     }
                                     catch (Exception e) {
                                         log.debug("Unable to scan JarEntry '{}' in '{}'. {}", new Object[]{entry.getName(), file.getCanonicalPath(), e.getMessage()});
                                     }
                                 }
                             }
+                            catch (IllegalStateException e) {
+                                throw new IllegalStateException("Error scanning \'" + file.getCanonicalPath() + "\'", e);
+                            }
                             catch (Exception e ) {
-                                log.debug("Unable to scan jar '{}'. {}", new Object[]{file.getCanonicalPath(), e.getMessage()});
+                                log.debug("Unable to scan '{}'. {}", new Object[]{file.getCanonicalPath(), e.getMessage()});
                             }
                         }
                         else {
                             DirectoryClassFilter filter = new DirectoryClassFilter(classLoader);
                             for ( String className : filter.filesInPackage(url, basePackage) ) {
-                                AnnotationFinder finder = new AnnotationFinder(classLoader, annotations.toArray(new Class[annotations.size()]));
+                                AnnotationFinder finder = new AnnotationFinder(classLoader, annotations);
                                 new ClassReader(filter.bytecodeOf(className)).accept(finder, SKIP_CODE);
     
-                                localClasses.addAll(finder.getAnnotatedClasses());
-                                localMethods.addAll(finder.getAnnotatedMethods());
-                                localConstructors.addAll(finder.getAnnotatedConstructors());
-                                localFields.addAll(finder.getAnnotatedFields());
+                                applyFinderResults(localClasses, localConstructors, localMethods, localFields, finder);
                             }
                         }
+                    }
+                    catch (IllegalStateException e) {
+                        throw new IllegalStateException("Error scanning \'" + url + "\'", e);
                     }
                     catch (Exception e) {
                         log.debug("Unable to scan jar '{}'. {} ", new Object[]{url, e.getMessage()});
                     }
                 }
             }
+            catch ( Exception e ) {
+                throw new RuntimeException("Classpath scanning failed for package \'" + basePackage + "\'", e);
+            }
         }
-        catch ( Exception e ) {
-            throw new RuntimeException(e);
+    }
+    
+    private void applyFinderResults(Set<Class<?>> localClasses, Set<Constructor> localConstructors, Set<Method> localMethods, Set<Field> localFields, AnnotationFinder finder) {
+        for (Class<?> cls : finder.getAnnotatedClasses()) {
+            if (localClasses.contains(cls)) {
+                throw new IllegalStateException(String.format("Duplicate class found for '%s'", cls.getCanonicalName()));
+            }
+            localClasses.add(cls);
+        }
+        
+        for (Method method : finder.getAnnotatedMethods()) {
+            if (localMethods.contains(method)) {
+                throw new IllegalStateException(String.format("Duplicate method found for '%s:%s'", method.getClass().getCanonicalName(), method.getName()));
+            }
+            localMethods.add(method);
+        }
+        
+        for (Constructor<?> ctor : finder.getAnnotatedConstructors()) {
+            if (localConstructors.contains(ctor)) {
+                new IllegalStateException(String.format("Duplicate constructor found for '%s:%s'", ctor.getClass().getCanonicalName(), ctor.toString()));
+            }
+            localConstructors.add(ctor);
+        }
+        
+        for (Field field : finder.getAnnotatedFields()) {
+            if (localFields.contains(field)) {
+                new IllegalStateException(String.format("Duplicate field found for '%s:%s'", field.getClass().getCanonicalName(), field.toString()));
+            }
+            localFields.add(field);
         }
     }
 
