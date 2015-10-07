@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnMissingClassCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnMissingClassCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnMissingClass {
     String[] value();
 }

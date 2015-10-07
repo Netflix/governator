@@ -4,7 +4,9 @@ package com.netflix.governator;
  * Core governator features.  Features are configured/enabled on {@link GovernatorConfiguration}
  * 
  * @author elandau
+ * @deprecated Functionality moved https://github.com/Netflix/karyon/tree/3.x
  */
+@Deprecated
 public enum GovernatorFeatures implements GovernatorFeature {
     /**
      * When disabled, if the injector created using Governator.createInjector() fails the resulting

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Injector;
+import com.google.inject.ProvisionException;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.netflix.governator.LifecycleShutdownSignal;
 
@@ -88,10 +89,10 @@ public abstract class GovernatorServletContextListener extends GuiceServletConte
         }
         catch (Exception e) {
             LOG.error("Failed to created injector", e);
-            return null;
+            throw new ProvisionException("Failed to create injector", e);
         }
     }
     
-    protected abstract Injector createInjector();
+    protected abstract Injector createInjector() throws Exception;
 
 }

@@ -151,8 +151,10 @@ public class Governator {
      *      +-------------------+
      *      
      *      
+     * @deprecated Functionality moved https://github.com/Netflix/karyon/tree/3.x
      * @return
      */
+    @Deprecated
     public static LifecycleInjector createInjector(final GovernatorConfiguration config) {
         Logger LOG = LoggerFactory.getLogger(Governator.class);
         LOG.info("Using profiles : " + config.getProfiles());

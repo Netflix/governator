@@ -6,7 +6,9 @@ package com.netflix.governator;
  * default value if not specified.  Features are set on GovernatorConfiguration.
  * 
  * @author elandau
+ * @deprecated Functionality moved https://github.com/Netflix/karyon/tree/3.x
  */
+@Deprecated
 public interface GovernatorFeature {
     public boolean isEnabledByDefault();
 }

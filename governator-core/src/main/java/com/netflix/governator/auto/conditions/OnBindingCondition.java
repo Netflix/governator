@@ -9,6 +9,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnBinding;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnBindingCondition implements Condition<ConditionalOnBinding> {
     private final AutoContext context;
 

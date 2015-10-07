@@ -195,7 +195,7 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     
     @Override
     public List<ModuleListProvider> getModuleListProviders() {
-        return Collections.unmodifiableList(moduleProviders);
+        return this.getAutoModuleListProviders();
     }
 
     @Override
@@ -225,6 +225,16 @@ public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
 
     @Override
     public boolean isEnabled(GovernatorFeature feature) {
+        return isFeatureEnabled(feature);
+    }
+
+    @Override
+    public List<ModuleListProvider> getAutoModuleListProviders() {
+        return Collections.unmodifiableList(moduleProviders);
+    }
+
+    @Override
+    public boolean isFeatureEnabled(GovernatorFeature feature) {
         Boolean value = features.get(feature);
         return value == null
                 ? feature.isEnabledByDefault()

@@ -13,6 +13,10 @@ import com.netflix.governator.auto.conditions.OnModuleCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnModuleCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnModule {
     Class<? extends Module>[] value();
 }

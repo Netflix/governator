@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnMissingBindingCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnMissingBindingCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnMissingBinding {
     String[] value();
 }

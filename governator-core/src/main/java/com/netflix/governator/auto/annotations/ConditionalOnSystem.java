@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnSystemCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnSystemCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnSystem {
     String name();
     String value();

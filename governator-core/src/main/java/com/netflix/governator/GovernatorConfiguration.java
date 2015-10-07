@@ -34,7 +34,13 @@ public interface GovernatorConfiguration {
     /**
      * Return a list of ModuleListProviders through which modules may be auto-loaded.
      */
+    @Deprecated
     List<ModuleListProvider> getModuleListProviders();
+    
+    /**
+     * Return a list of ModuleListProviders through which modules may be auto-loaded.
+     */
+    List<ModuleListProvider> getAutoModuleListProviders();
     
     /**
      * Return a list of active profiles for the injector.  These profiles are used when
@@ -43,20 +49,27 @@ public interface GovernatorConfiguration {
     Set<String> getProfiles();
 
     /**
-     * Return the Guice injector stage.  The recommended default is Stage.DEVELOPMENT
-     * otherwise all singletons are eager, including lazy injection using Provider<T> 
-     */
-    Stage getStage();
-    
-    /**
      * Return the main property source to be used during the bootstrap phase 
      * @return
      */
     PropertySource getPropertySource();
     
     /**
+     * Return the Guice injector stage.  The recommended default is Stage.DEVELOPMENT
+     * otherwise all singletons are eager, including lazy injection using Provider<T> 
+     */
+    Stage getStage();
+    
+    /**
      * Determine if a core governator feature has been enabled.  See {@link GovernatorFeatures}
      * for available features.
      */
+    @Deprecated
     boolean isEnabled(GovernatorFeature feature);
+    
+    /**
+     * Determine if a core governator feature has been enabled.  See {@link GovernatorFeatures}
+     * for available features.
+     */
+    boolean isFeatureEnabled(GovernatorFeature feature);
 }

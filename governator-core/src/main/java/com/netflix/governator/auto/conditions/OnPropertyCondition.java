@@ -8,6 +8,10 @@ import com.netflix.governator.auto.PropertySource;
 import com.netflix.governator.auto.annotations.ConditionalOnProperty;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnPropertyCondition implements Condition<ConditionalOnProperty> {
 
     private PropertySource config;

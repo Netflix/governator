@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnMissingModuleCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnMissingModuleCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnMissingModule {
     String[] value();
 }

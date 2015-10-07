@@ -7,5 +7,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface OverrideModule {
 } 

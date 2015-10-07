@@ -16,6 +16,10 @@ import com.netflix.governator.auto.Condition;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface Conditional { 
 
     /**

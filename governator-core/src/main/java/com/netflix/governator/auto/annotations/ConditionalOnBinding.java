@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnBindingCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnBindingCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnBinding {
     String[] value();
 }

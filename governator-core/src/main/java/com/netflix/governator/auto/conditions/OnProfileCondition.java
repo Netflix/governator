@@ -8,6 +8,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnProfileCondition implements Condition<ConditionalOnProfile> {
 
     private AutoContext context;

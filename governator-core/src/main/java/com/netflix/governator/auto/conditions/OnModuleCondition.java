@@ -8,6 +8,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnModule;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnModuleCondition implements Condition<ConditionalOnModule> {
     private final AutoContext context;
     
