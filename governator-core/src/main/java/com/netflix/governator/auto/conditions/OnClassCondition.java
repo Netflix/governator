@@ -5,6 +5,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnClass;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnClassCondition implements Condition<ConditionalOnClass> {
     @Override
     public boolean check(ConditionalOnClass condition) {

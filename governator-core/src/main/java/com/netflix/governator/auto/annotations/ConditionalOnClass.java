@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnClassCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnClassCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnClass {
     String[] value();
 }

@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnEnvironmentCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnEnvironmentCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnEnvironment {
     String name();
     String value();

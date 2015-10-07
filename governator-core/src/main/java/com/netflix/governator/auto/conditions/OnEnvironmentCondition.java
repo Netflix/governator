@@ -5,6 +5,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnProperty;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnEnvironmentCondition implements Condition<ConditionalOnProperty> {
     @Override
     public boolean check(ConditionalOnProperty condition) {

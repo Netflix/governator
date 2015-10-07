@@ -8,6 +8,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnMissingModule;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnMissingModuleCondition implements Condition<ConditionalOnMissingModule>{
     private final AutoContext context;
     

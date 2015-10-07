@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnProfileCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnProfileCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnProfile {
     String[] value();
     

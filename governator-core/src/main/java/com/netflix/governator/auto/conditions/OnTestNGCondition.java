@@ -5,6 +5,10 @@ import javax.inject.Singleton;
 import com.netflix.governator.auto.Condition;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnTestNGCondition implements Condition<OnTestNGCondition>{
     @Override
     public boolean check(OnTestNGCondition param) {

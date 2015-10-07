@@ -9,6 +9,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnMissingBinding;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnMissingBindingCondition implements Condition<ConditionalOnMissingBinding> {
     private final AutoContext context;
 

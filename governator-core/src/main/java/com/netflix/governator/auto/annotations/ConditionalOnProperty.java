@@ -12,6 +12,10 @@ import com.netflix.governator.auto.conditions.OnPropertyCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnPropertyCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnProperty {
     String name();
     String value();

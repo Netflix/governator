@@ -6,6 +6,10 @@ import com.netflix.governator.auto.Condition;
 import com.netflix.governator.auto.annotations.ConditionalOnMacOS;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnMacOSCondition implements Condition<ConditionalOnMacOS>{
     @Override
     public boolean check(ConditionalOnMacOS param) {

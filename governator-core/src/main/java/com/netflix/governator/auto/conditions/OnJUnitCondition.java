@@ -5,6 +5,10 @@ import javax.inject.Singleton;
 import com.netflix.governator.auto.Condition;
 
 @Singleton
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public class OnJUnitCondition implements Condition<OnJUnitCondition>{
     @Override
     public boolean check(OnJUnitCondition param) {

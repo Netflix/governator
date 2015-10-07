@@ -12,5 +12,9 @@ import com.netflix.governator.auto.conditions.OnTestNGCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnTestNGCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnTestNG {
 }

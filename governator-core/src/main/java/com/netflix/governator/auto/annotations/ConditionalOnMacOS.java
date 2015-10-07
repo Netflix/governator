@@ -12,5 +12,9 @@ import com.netflix.governator.auto.conditions.OnMacOSCondition;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Conditional(OnMacOSCondition.class)
+@Deprecated
+/**
+ * @deprecated Moved to Karyon3
+ */
 public @interface ConditionalOnMacOS {
 }
