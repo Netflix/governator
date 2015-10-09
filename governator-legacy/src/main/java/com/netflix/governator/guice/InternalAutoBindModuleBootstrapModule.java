@@ -63,6 +63,7 @@ public class InternalAutoBindModuleBootstrapModule implements BootstrapModule {
                         "@AutoBindSingleton(multiple=true) value cannot be set for Modules");
 
                 LOG.info("Found @AutoBindSingleton annotated module : {} ", clazz.getName());
+                LOG.info("***** @AutoBindSingleton for module {} is deprecated.  Modules should be added directly to the injector or via install({}.class)", clazz.getName(), clazz.getSimpleName());
                 binder.include((Class<? extends Module>) clazz);
             } 
         }
