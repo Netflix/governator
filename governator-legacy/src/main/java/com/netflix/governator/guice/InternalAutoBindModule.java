@@ -187,12 +187,12 @@ class InternalAutoBindModule extends AbstractModule
     private void bindAutoBindSingleton(AutoBindSingleton annotation, Class<?> clazz)
     {
         LOG.info("Installing @AutoBindSingleton '{}'", clazz.getName());
-        LOG.info("***** @AutoBindSingleton for '{}' is deprecated soon.\nPlease use a Guice module with bind({}.class).asEagerSingleton(); instead", 
+        LOG.info("***** @AutoBindSingleton for '{}' is deprecated as of 10/10/2015.\nPlease use a Guice module with bind({}.class).asEagerSingleton() instead.\nSee https://github.com/Netflix/governator/wiki/Auto-Binding", 
                 clazz.getName(), clazz.getSimpleName() );
         
         Singleton singletonAnnotation = clazz.getAnnotation(Singleton.class);
         if (singletonAnnotation == null) {
-            LOG.info("***** {} should also be annotation with @Singleton to ensure singleton behavior", clazz.getName());
+            LOG.info("***** {} should also be annotated with @Singleton to ensure singleton behavior", clazz.getName());
         }
         Class<?> annotationBaseClass = getAnnotationBaseClass(annotation);
         if ( annotationBaseClass != AutoBindSingleton.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
