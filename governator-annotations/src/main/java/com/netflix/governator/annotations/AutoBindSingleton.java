@@ -22,10 +22,13 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a class as a singleton. Governator will auto-bind it as an eager singleton
+ * @deprecated  2015-10-10 AutoBindSingleton is deprecated in favor of bindings in a Guice Module.
+ *              See https://github.com/Netflix/governator/wiki/Auto-Binding
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target(java.lang.annotation.ElementType.TYPE)
+@Deprecated
 public @interface AutoBindSingleton
 {
     /**

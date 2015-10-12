@@ -63,6 +63,7 @@ public class InternalAutoBindModuleBootstrapModule implements BootstrapModule {
                         "@AutoBindSingleton(multiple=true) value cannot be set for Modules");
 
                 LOG.info("Found @AutoBindSingleton annotated module : {} ", clazz.getName());
+                LOG.info("***** @AutoBindSingleton use for module {} is deprecated as of 2015-10-10.  Modules should be added directly to the injector or via install({}.class). See https://github.com/Netflix/governator/wiki/Auto-Binding", clazz.getName(), clazz.getSimpleName());
                 binder.include((Class<? extends Module>) clazz);
             } 
         }

@@ -26,11 +26,15 @@ import java.lang.annotation.Target;
  * Annotation binding that combines with Governator's classpath scanning and a bound
  * AutoBindProvider to automatically/programmatically bind fields and constructor/method
  * arguments
+ * 
+ * @deprecated 2015-10-10 Deprecated in favor of standard Guice modules. 
+ *             See https://github.com/Netflix/governator/wiki/Auto-Binding
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.PARAMETER})
 @Qualifier
+@Deprecated
 public @interface AutoBind
 {
     /**
