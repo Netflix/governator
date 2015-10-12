@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a class as a singleton. Governator will auto-bind it as an eager singleton
- * @deprecated  10/10/2015 AutoBindSingleton is deprecated in favor of bindings in a Guice Module.
+ * @deprecated  2015-10-10 AutoBindSingleton is deprecated in favor of bindings in a Guice Module.
  *              See https://github.com/Netflix/governator/wiki/Auto-Binding
  */
 @Documented

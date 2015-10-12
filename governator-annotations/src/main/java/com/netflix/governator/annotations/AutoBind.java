@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * AutoBindProvider to automatically/programmatically bind fields and constructor/method
  * arguments
  * 
- * @deprecated 10/10/2015 Deprecated in favor of standard Guice modules. 
+ * @deprecated 2015-10-10 Deprecated in favor of standard Guice modules. 
  *             See https://github.com/Netflix/governator/wiki/Auto-Binding
  */
 @Documented
