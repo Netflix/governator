@@ -10,8 +10,9 @@ import javax.annotation.PreDestroy;
  * Note that this feature is implicit in LifecycleModule and therefore does not need 
  * to be added using the LifecycleFeature multibinding.
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 final class PreDestroyLifecycleActions extends AbstractLifecycleFeature {
 
     static PreDestroyLifecycleActions INSTANCE = new PreDestroyLifecycleActions();

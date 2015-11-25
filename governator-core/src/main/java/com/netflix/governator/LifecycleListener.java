@@ -11,8 +11,9 @@ package com.netflix.governator;
  * these dependencies will be instantiated too early thereby bypassing lifecycle 
  * features in LifecycleModule.
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public interface LifecycleListener {
     /**
      * Notification that the Injector has been created.  

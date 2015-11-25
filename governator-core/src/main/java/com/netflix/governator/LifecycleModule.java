@@ -29,32 +29,25 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
  * 
- * <pre>
- * {@code
+ * <code>
  * public class MyService {
- *    @PostConstruct
+ *    {@literal @}PostConstruct
  *    public void init() {
  *    }
  *    
- *    @PreDestroy
+ *    {@literal @}PreDestroy
  *    public void shutdown() {
  *    }
  * }
- * }
- * </pre>
+ * </code>
  * 
  * To use simply add LifecycleModule to guice when creating the injector
- * <pre>
- * {@link 
- * Governator.createInjector();
- * }
- * </pre>
  * 
  * See {@link LifecycleInjector} for different scenarios for shutting down the LifecycleManager.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public final class LifecycleModule extends SingletonModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
 

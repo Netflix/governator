@@ -17,6 +17,11 @@ import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.InstanceBinding;
 import com.google.inject.spi.LinkedKeyBinding;
 
+/**
+ * 
+ * @deprecated Moved to karyon
+ */
+@Deprecated
 public abstract class ElementsEx {
     /**
      * List all Module classes that were involved in setting up bindings for the list of Elements

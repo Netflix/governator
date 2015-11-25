@@ -9,9 +9,9 @@ import javax.inject.Singleton;
  * Default shutdown signal, mostly to be used for runtime applications, using
  * a CountDown latch.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 @Singleton
 public class DefaultLifecycleShutdownSignal extends AbstractLifecycleShutdownSignal  {
     @Inject

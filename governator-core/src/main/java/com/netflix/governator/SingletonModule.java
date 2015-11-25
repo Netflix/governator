@@ -11,9 +11,9 @@ import com.google.inject.AbstractModule;
  * be final.  This is done to prevent the use of inheritance for overriding
  * behavior in favor of using Modules.override().
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public abstract class SingletonModule extends AbstractModule {
     public SingletonModule() {
         if (!Modifier.isFinal(getClass().getModifiers())) {

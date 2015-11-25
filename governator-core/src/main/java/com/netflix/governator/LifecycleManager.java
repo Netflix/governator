@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Manage state for lifecycle listeners
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 @Singleton
 public final class LifecycleManager {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleManager.class);

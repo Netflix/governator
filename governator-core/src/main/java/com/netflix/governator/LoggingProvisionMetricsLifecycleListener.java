@@ -11,6 +11,11 @@ import org.slf4j.LoggerFactory;
 import com.netflix.governator.ProvisionMetrics.Element;
 import com.netflix.governator.ProvisionMetrics.Visitor;
 
+/**
+ * 
+ * @deprecated Moved to karyon
+ */
+@Deprecated
 @Singleton
 public class LoggingProvisionMetricsLifecycleListener extends DefaultLifecycleListener {
     private static final Logger LOG = LoggerFactory.getLogger(LoggingProvisionMetricsLifecycleListener.class);

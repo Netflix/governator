@@ -8,9 +8,9 @@ import com.google.inject.ImplementedBy;
  * shutdown socket.  Each container is likely to have it's own implementation of
  * shutdown signal.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 @ImplementedBy(DefaultLifecycleShutdownSignal.class)
 public interface LifecycleShutdownSignal {
     /**

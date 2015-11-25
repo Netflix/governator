@@ -16,8 +16,9 @@ import java.util.List;
  * }
  * </pre>
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public interface LifecycleFeature {
     /**
      * Return a list of actions to perform on object of this type as part of 

@@ -10,9 +10,9 @@ import java.lang.reflect.InvocationTargetException;
  * 
  * @see LifecycleFeature
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public interface LifecycleAction {
     /**
      * Invoke the action on an object.

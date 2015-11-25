@@ -5,9 +5,9 @@ import javax.inject.Inject;
 /**
  * Install this module to log a Provision report after the Injector is created.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public class ProvisionDebugModule extends DefaultModule {
     public static class StaticInitializer {
         @Inject
