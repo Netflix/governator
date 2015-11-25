@@ -13,8 +13,9 @@ import com.google.inject.Key;
  * will be made for singletons that are being injected but have 
  * already been instantiated.
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 @ImplementedBy(NullProvisionMetrics.class)
 public interface ProvisionMetrics {
     

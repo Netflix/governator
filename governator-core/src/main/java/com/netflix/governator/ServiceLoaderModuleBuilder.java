@@ -13,10 +13,9 @@ import com.google.inject.multibindings.Multibinder;
  * service loader or creates multibindings for a service type.  Method and field @Inject
  * methods of the services will also be invoked.
  * 
- * @author elandau
- *
- * TODO:  Lazy member injection
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public class ServiceLoaderModuleBuilder {
     
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();

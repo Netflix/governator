@@ -16,8 +16,9 @@ import com.google.inject.AbstractModule;
  * }
  * </pre>
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public final class ShutdownHookModule extends AbstractModule {
     @Singleton
     public static class SystemShutdownHook extends Thread {

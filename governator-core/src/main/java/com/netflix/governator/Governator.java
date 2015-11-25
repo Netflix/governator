@@ -35,9 +35,9 @@ import com.netflix.governator.auto.annotations.OverrideModule;
  * Note that the injector being created will not by default support @PreDestory and
  * @PostConstruct.  Those are supported by adding LifecycleModule to the list of modules.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public class Governator {
     public static LifecycleInjector createInjector() {
         return createInjector(Stage.PRODUCTION, Collections.<Module>emptyList());

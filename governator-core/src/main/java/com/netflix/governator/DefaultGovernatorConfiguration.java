@@ -20,10 +20,10 @@ import com.netflix.governator.auto.annotations.ConditionalOnProfile;
 /**
  * Default implementation of GovernatorConfiguration with mostly empty lists.
  * 
- * @author elandau
- *
  * TODO: Should addOverrideModule behavior be that every module can override the previous one?
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public class DefaultGovernatorConfiguration implements GovernatorConfiguration {
     /**
      * Polymorphic builder.

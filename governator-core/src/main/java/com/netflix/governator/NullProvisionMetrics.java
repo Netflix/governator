@@ -5,9 +5,9 @@ import com.google.inject.Key;
 /**
  * Default NoOp implementation of ProvisionMetrics.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public class NullProvisionMetrics implements ProvisionMetrics {
     @Override
     public void push(Key<?> key) {

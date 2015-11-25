@@ -45,9 +45,9 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
  * 
  * See {@link LifecycleInjector} for different scenarios for shutting down the LifecycleManager.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public final class LifecycleModule extends SingletonModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
 

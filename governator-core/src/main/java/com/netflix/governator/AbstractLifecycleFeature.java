@@ -11,8 +11,9 @@ import java.util.List;
  * and interfaces and delgating the actual processing using the template methods
  * getFieldAction and getMethodAction.
  * 
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public abstract class AbstractLifecycleFeature implements LifecycleFeature {
 
     public static final LifecycleAction NONE = null;

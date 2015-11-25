@@ -54,8 +54,9 @@ import com.google.inject.Injector;
  *    });
  * }
  * </pre>
- * @author elandau
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public class LifecycleInjector extends DelegatingInjector {
     private final LifecycleManager manager;
     private final LifecycleShutdownSignal signal;

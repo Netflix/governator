@@ -10,6 +10,11 @@ import javax.inject.Singleton;
 
 import com.google.inject.Key;
 
+/**
+ * 
+ * @deprecated Moved to karyon
+ */
+@Deprecated
 @Singleton
 public class SimpleProvisionMetrics implements ProvisionMetrics {
     private final ThreadLocal<Data> context = new ThreadLocal<Data>();

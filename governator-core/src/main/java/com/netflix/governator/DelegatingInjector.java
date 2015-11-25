@@ -15,6 +15,11 @@ import com.google.inject.Scope;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.TypeConverterBinding;
 
+/**
+ * 
+ * @deprecated Moved to karyon
+ */
+@Deprecated
 public abstract class DelegatingInjector implements Injector {
 
     private final Injector injector;

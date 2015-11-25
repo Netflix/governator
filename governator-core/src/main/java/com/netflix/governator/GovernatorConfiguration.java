@@ -11,9 +11,9 @@ import com.netflix.governator.auto.PropertySource;
 /**
  * Configuration contract needed to bootstrap a Governator based application.
  * 
- * @author elandau
- *
+ * @deprecated Moved to karyon
  */
+@Deprecated
 public interface GovernatorConfiguration {
     /**
      * Return the list of core application modules to be used
