@@ -3,35 +3,32 @@ package com.netflix.governator;
 import com.google.inject.Injector;
 
 /**
- * Wrapper for Guice's Injector with added shutdown methods.  A LifecycleInjector may be created
- * using the utility methods of {@link Governator} which mirror the methods of {@link Guice}
- * but provide shutdown functionality.
+ * Wrapper for Guice's Injector with added shutdown methods.  
  * 
  * <b>Invoking shutdown from outside the injector</b>
  * <pre>
- * {@code 
- *    LifecycleInjector injector = Governator.createInjector();
+ * <code>
+ *    LifecycleInjector injector = Karyon.newBuilder().start()();
  *    // ...
  *    injector.shutdown();
- * }
- * 
+ * </code>
  * </pre>
  * 
  * <b>Blocking on the injector terminating</b>
  * <pre>
- * {@code 
- *    LifecycleInjector injector = Governator.createInjector();
+ * <code>
+ *    LifecycleInjector injector = Karyon.newBuilder().start()();
  *    // ...
  *    injector.awaitTermination();
- * }
+ * </code>
  * </pre>
  * 
- * <b>Triggering shutdown from a DI'd class
+ * <b>Triggering shutdown from a DI'd class</b>
  * <pre>
- * {@code 
- *    @Singleton
+ * <code>
+ *    {@literal @}Singleton
  *    public class SomeShutdownService {
- *        @Inject
+ *        {@literal @}Inject
  *        SomeShutdownService(LifecycleManager lifecycleManager) {
  *            this.lifecycleManager = lifecycleManager;
  *        }
@@ -41,26 +38,35 @@ import com.google.inject.Injector;
  *        }
  *    }
  * }
+ * </code>
  * </pre>
  * 
  * <b>Triggering an external event from shutdown without blocking</b>
  * <pre>
- * {@code 
- *    LifecycleInjector injector = Governator.createInjector();
+ * <code>
+ *    LifecycleInjector injector = Karyon.newBuilder().start()();
  *    injector.addListener(new LifecycleListener() {
  *        public void onShutdown() {
  *            // Do your shutdown handling here
  *        }
  *    });
  * }
+ * </code>
  * </pre>
- * @author elandau
  */
-public class LifecycleInjector extends DelegatingInjector {
+final public class LifecycleInjector extends DelegatingInjector {
     private final LifecycleManager manager;
     private final LifecycleShutdownSignal signal;
     
-    public LifecycleInjector(Injector injector, LifecycleManager manager) {
+    public static LifecycleInjector createFailedInjector(LifecycleManager manager) {
+        return new LifecycleInjector(null, manager);
+    }
+    
+    public static LifecycleInjector wrapInjector(Injector injector, LifecycleManager manager) {
+        return new LifecycleInjector(injector, manager);
+    }
+    
+    private LifecycleInjector(Injector injector, LifecycleManager manager) {
         super(injector);
         this.manager  = manager;
         if (injector != null) {
@@ -73,8 +79,6 @@ public class LifecycleInjector extends DelegatingInjector {
     
     /**
      * Block until LifecycleManager terminates
-     * 
-     * @param injector
      * @throws InterruptedException
      */
     public void awaitTermination() throws InterruptedException {
@@ -84,8 +88,6 @@ public class LifecycleInjector extends DelegatingInjector {
     /**
      * Shutdown LifecycleManager on this Injector which will invoke all registered
      * {@link LifecycleListener}s and unblock awaitTermination. 
-     * 
-     * @param injector
      */
     public void shutdown() {
         signal.signal();
@@ -94,8 +96,6 @@ public class LifecycleInjector extends DelegatingInjector {
     /**
      * Register a single shutdown listener for async notification of the LifecycleManager
      * terminating. 
-     * 
-     * @param injector
      * @param listener
      */
     public void addListener(LifecycleListener listener) {

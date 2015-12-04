@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
 
@@ -23,7 +22,8 @@ public class JettyServerTest {
     @Test
     public void confirmShutdownSequence() throws InterruptedException, MalformedURLException, IOException {
         // Create the injector and autostart Jetty
-        LifecycleInjector injector = Governator.createInjector(
+        LifecycleInjector injector = new Governator()
+            .addModules(
                 new SampleServletModule(), 
                 new ShutdownHookModule(), 
                 Modules.override(new JettyModule())
@@ -37,7 +37,8 @@ public class JettyServerTest {
                                 // Use emphemeral ports
                                 return new DefaultJettyConfig().setPort(0);
                             }
-                        }));
+                        }))
+            .run();
 
         // Determine the emphermal port from jetty
         Server server = injector.getInstance(Server.class);

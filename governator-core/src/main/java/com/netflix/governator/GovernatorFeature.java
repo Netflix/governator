@@ -1,14 +1,28 @@
 package com.netflix.governator;
 
-/**
- * Base interface for all governator features to be implemented by an 
- * enum, such as {@link GovernatorFeatures}.  Each feature has an implicit
- * default value if not specified.  Features are set on GovernatorConfiguration.
- * 
- * @author elandau
- * @deprecated Functionality moved https://github.com/Netflix/karyon/tree/3.x
- */
-@Deprecated
-public interface GovernatorFeature {
-    public boolean isEnabledByDefault();
+public class GovernatorFeature<T> {
+    private final String key;
+    private final T defaultValue;
+    
+    public static <T> GovernatorFeature<T> create(String key, T defaultValue) {
+        return new GovernatorFeature<T>(key, defaultValue);
+    }
+    
+    public GovernatorFeature(String key, T defaultValue) {
+        this.key = key;
+        this.defaultValue = defaultValue;
+    }
+    
+    public String getKey() {
+        return key;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Class<T> getType() {
+        return (Class<T>) defaultValue.getClass();
+    }
+    
+    public T getDefaultValue() {
+        return defaultValue;
+    }
 }

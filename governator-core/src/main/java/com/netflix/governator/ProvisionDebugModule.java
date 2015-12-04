@@ -4,11 +4,8 @@ import javax.inject.Inject;
 
 /**
  * Install this module to log a Provision report after the Injector is created.
- * 
- * @author elandau
- *
  */
-public class ProvisionDebugModule extends DefaultModule {
+public class ProvisionDebugModule extends SingletonModule {
     public static class StaticInitializer {
         @Inject
         public static LoggingProvisionMetricsLifecycleListener listener;
@@ -21,4 +18,20 @@ public class ProvisionDebugModule extends DefaultModule {
         bind(LoggingProvisionMetricsLifecycleListener.class).asEagerSingleton();
         bind(ProvisionMetrics.class).to(SimpleProvisionMetrics.class);
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ProvisionDebugModule[]";
+    }
+
 }

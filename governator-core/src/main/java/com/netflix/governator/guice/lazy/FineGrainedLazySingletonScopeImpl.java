@@ -16,14 +16,20 @@
 
 package com.netflix.governator.guice.lazy;
 
+import java.util.Map;
+
 import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scope;
 import com.google.inject.internal.CircularDependencyProxy;
-import java.util.Map;
 
+/**
+ * @deprecated Use javax.inject.Singleton instead.  FineGrainedLazySingleton is not needed 
+ * as of Guice4 which fixes the global lock issue.
+ */
+@Deprecated
 class FineGrainedLazySingletonScopeImpl implements Scope
 {
     private static final Object NULL = new Object();

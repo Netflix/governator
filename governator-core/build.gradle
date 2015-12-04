@@ -4,7 +4,13 @@ dependencies {
     compile     project(':governator-annotations')
     compile     'javax.inject:javax.inject:1'
     compile     'org.slf4j:slf4j-api:1.6.3'
-    compile     'com.google.inject:guice:4.0'
-    compile     'com.google.inject.extensions:guice-multibindings:4.0'
-    compile     'com.google.inject.extensions:guice-grapher:4.0'    // should be provided - only if you want graphing
+    compile     "com.google.inject:guice:${guice_version}"
+    compile     "com.google.inject.extensions:guice-multibindings:${guice_version}"
+    compile     "com.google.inject.extensions:guice-grapher:${guice_version}"    // should be provided - only if you want graphing
+
+    testCompile "org.hamcrest:hamcrest-core:${hamcrest_version}"
+    testCompile "org.hamcrest:hamcrest-library:${hamcrest_version}"
+    testCompile "org.mockito:mockito-all:1.9.5"
+    testCompile 'junit:junit:4.10'
+
 }

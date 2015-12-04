@@ -15,8 +15,6 @@ import com.google.inject.AbstractModule;
  *    Governator.createInjector(new LifecycleModule(), new ShutdownHookModule());
  * }
  * </pre>
- * 
- * @author elandau
  */
 public final class ShutdownHookModule extends AbstractModule {
     @Singleton
@@ -35,6 +33,21 @@ public final class ShutdownHookModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(SystemShutdownHook.class).asEagerSingleton();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ShutdownHookModule[]";
     }
 
 }

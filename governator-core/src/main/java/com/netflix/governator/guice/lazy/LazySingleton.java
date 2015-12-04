@@ -25,10 +25,14 @@ import java.lang.annotation.Target;
 /**
  * Scope annotation that marks a class as singleton that should NOT be
  * allocated eagerly
+ * 
+ * @deprecated Use javax.inject.Singleton instead.  LazySingleton is not needed since we run in Stage.DEVELOPMENT.
+ * where any non eager singleon is lazy.
  */
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @ScopeAnnotation
+@Deprecated
 public @interface LazySingleton
 {
 }

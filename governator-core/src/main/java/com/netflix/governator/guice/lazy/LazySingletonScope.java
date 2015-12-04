@@ -20,7 +20,10 @@ import com.google.inject.Scope;
 
 /**
  * A singleton factory that returns a Guice {@link Scope} that enables lazy singletons
+ * @deprecated Use javax.inject.Singleton instead.  LazySingleton is not needed since we run in Stage.DEVELOPMENT.
+ * where any non eager singleon is lazy.
  */
+@Deprecated
 public class LazySingletonScope
 {
     /**

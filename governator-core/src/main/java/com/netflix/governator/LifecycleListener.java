@@ -10,8 +10,6 @@ package com.netflix.governator;
  * inject all dependencies lazily using {@link Provider} injection.  Otherwise,
  * these dependencies will be instantiated too early thereby bypassing lifecycle 
  * features in LifecycleModule.
- * 
- * @author elandau
  */
 public interface LifecycleListener {
     /**
@@ -30,4 +28,10 @@ public interface LifecycleListener {
      * is created
      */
     public void onStartFailed(Throwable t);
+    
+    /**
+     * Notification that the injector has shutdown either due to failure or being stopped normally.
+     * This will be called in addition to onStopped() and onStartFailed()
+     */
+    public void onFinished();
 }
