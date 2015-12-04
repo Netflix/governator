@@ -250,6 +250,21 @@ public class Governator {
     }
 
     /**
+     * @deprecated Call new Governator().addModules(modules).run() instead.
+     */
+    @Deprecated
+    public LifecycleInjector createInjector(Module ... modules) {
+        return new Governator().addModules(modules).run();
+    }
+    
+    /**
+     * @deprecated Call new Governator().addModules(modules).run() instead.
+     */
+    public LifecycleInjector createInjector(Collection<Module> modules) {
+        return new Governator().addModules(new ArrayList<Module>(modules)).run();
+    }
+    
+    /**
      * Create the injector and call any LifecycleListeners
      * @return the LifecycleInjector for this run
      */
