@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.annotation.PreDestroy;
 
-import com.netflix.governator.AbstractLifecycleFeature;
 import com.netflix.governator.LifecycleAction;
 
 /**

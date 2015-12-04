@@ -8,7 +8,7 @@ import com.google.inject.Injector;
  * <b>Invoking shutdown from outside the injector</b>
  * <pre>
  * <code>
- *    LifecycleInjector injector = Karyon.newBuilder().start()();
+ *    LifecycleInjector injector = new Governator().run();
  *    // ...
  *    injector.shutdown();
  * </code>
@@ -17,7 +17,7 @@ import com.google.inject.Injector;
  * <b>Blocking on the injector terminating</b>
  * <pre>
  * <code>
- *    LifecycleInjector injector = Karyon.newBuilder().start()();
+ *    LifecycleInjector injector = new Governator().run(;
  *    // ...
  *    injector.awaitTermination();
  * </code>
@@ -44,7 +44,7 @@ import com.google.inject.Injector;
  * <b>Triggering an external event from shutdown without blocking</b>
  * <pre>
  * <code>
- *    LifecycleInjector injector = Karyon.newBuilder().start()();
+ *    LifecycleInjector injector = new Governator().run(;
  *    injector.addListener(new LifecycleListener() {
  *        public void onShutdown() {
  *            // Do your shutdown handling here

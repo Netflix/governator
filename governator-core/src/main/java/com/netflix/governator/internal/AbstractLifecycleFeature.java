@@ -1,10 +1,13 @@
-package com.netflix.governator;
+package com.netflix.governator.internal;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import com.netflix.governator.LifecycleAction;
+import com.netflix.governator.LifecycleFeature;
 
 /**
  * Base utility class for field and method based lifecycle features.  This class
@@ -14,7 +17,7 @@ import java.util.List;
  * 
  * @author elandau
  */
-public abstract class AbstractLifecycleFeature implements LifecycleFeature {
+abstract class AbstractLifecycleFeature implements LifecycleFeature {
 
     private void visitFieldsAndMethods(Class<?> type, List<LifecycleAction> actions) {
         if (type == null) {

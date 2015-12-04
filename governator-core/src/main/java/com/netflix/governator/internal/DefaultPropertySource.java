@@ -1,6 +1,5 @@
 package com.netflix.governator.internal;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.netflix.governator.AbstractPropertySource;
@@ -15,10 +14,6 @@ import com.netflix.governator.AbstractPropertySource;
 @Singleton
 public final class DefaultPropertySource extends AbstractPropertySource {
 
-    @Inject
-    public DefaultPropertySource() {
-    }
-    
     @Override
     public String get(String key) {
         return get(key, (String)null);
