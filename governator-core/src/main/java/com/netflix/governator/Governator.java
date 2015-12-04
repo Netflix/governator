@@ -36,15 +36,11 @@ import com.netflix.governator.spi.PropertySource;
 
 /**
  * Main entry point for creating a LifecycleInjector with guice extensions such as 
- * conditional bindings.  
+ * support for @PostConstruct, @PreDestroy annotations and LifecycleListener.
  * 
- * This injector is constructed in two phases.  The first bootstrap phase determines which core
- * Guice modules should be installed based on processing of conditional annotations.  The final
- * list of auto discovered modules is appended to the main list of modules and installed on the
- * main injector.  
- * 
+ * Example:
  * <code>
-     Governator.newBuilder()
+     new Governator()
         .addModules(
             new ArchaiusGovernatorModule(),
             new JettyModule(),
@@ -52,13 +48,13 @@ import com.netflix.governator.spi.PropertySource;
                 {@literal @}@Override
                 protected void configureServlets() {
                     serve("/*").with(GuiceContainer.class);
-                    bind(GuiceContainer.class).asEagerSingleton();
                     
+                    bind(GuiceContainer.class).asEagerSingleton();
                     bind(HelloWorldApp.class).asEagerSingleton();
                 }  
             }
         )
-        .start()
+        .run()
         .awaitTermination();
  * </code>
  */
