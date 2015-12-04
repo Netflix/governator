@@ -122,18 +122,13 @@ public final class LifecycleModule extends AbstractModule {
          * Invoke all shutdown actions
          */
         @Override
-        public synchronized void onStopped() {
-            if (isShutdown.compareAndSet(false, true)) {
-                for (Runnable action : shutdownActions) {
-                    action.run();
+        public synchronized void onStopped(Throwable optionalFailureReason) {
+            if (shutdownOnFailure || optionalFailureReason == null) {
+                if (isShutdown.compareAndSet(false, true)) {
+                    for (Runnable action : shutdownActions) {
+                        action.run();
+                    }
                 }
-            }
-        }
-        
-        @Override
-        public synchronized void onStartFailed(Throwable t) {
-            if (shutdownOnFailure) {
-                onStopped();
             }
         }
         

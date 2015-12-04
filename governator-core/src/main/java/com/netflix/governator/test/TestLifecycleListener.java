@@ -11,8 +11,7 @@ public abstract class TestLifecycleListener implements LifecycleListener {
 
     private boolean isStarted = false;
     private boolean isStopped = false;
-    private boolean isStartFailed = false;
-    private boolean isFinished = false;
+    private Throwable error = null;
     
     @Override
     public void onStarted() {
@@ -20,19 +19,9 @@ public abstract class TestLifecycleListener implements LifecycleListener {
     }
 
     @Override
-    public void onStopped() {
+    public void onStopped(Throwable t) {
+        error = t;
         isStopped = true;
-    }
-
-    @Override
-    public void onStartFailed(Throwable t) {
-        isStartFailed = true;
-    }
-
-    @Override
-    public void onFinished() {
-        isFinished = true;
-        onReady(injector);
     }
 
     public boolean isStarted() {
@@ -43,12 +32,8 @@ public abstract class TestLifecycleListener implements LifecycleListener {
         return isStopped;
     }
     
-    public boolean isStartFailed() {
-        return isStartFailed;
-    }
-    
-    public boolean isFinished() {
-        return isFinished;
+    public Throwable getError() {
+        return error;
     }
     
     protected abstract void onReady(Injector injector);

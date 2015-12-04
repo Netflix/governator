@@ -117,7 +117,7 @@ public final class JettyModule extends AbstractModule {
         }
         
         @Override
-        public void onStopped() {
+        public void onStopped(Throwable optionalError) {
             LOG.info("Jetty Server shutting down");
             try {
                 Thread t = new Thread(new Runnable() {

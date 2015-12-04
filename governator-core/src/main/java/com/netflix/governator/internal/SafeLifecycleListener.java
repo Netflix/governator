@@ -30,44 +30,16 @@ public final class SafeLifecycleListener implements LifecycleListener {
     }
 
     @Override
-    public void onStopped() {
-        LOG.info("Stopping LifecycleListener '{}'", delegate);
-        try {
-            delegate.onStopped();
-        }
-        catch (Exception e) {
-            LOG.info("onStopped failed for listener {}", delegate, e);
-        }
-        finally {
-            onFinished();
-        }
-    }
-
-    @Override
-    public void onStartFailed(Throwable t) {
+    public void onStopped(Throwable t) {
         LOG.info("Failed LifecycleListener '{}'", delegate);
         try {
-            delegate.onStartFailed(t);
+            delegate.onStopped(t);
         }
         catch (Exception e) {
             LOG.info("onStartFailed failed for listener {}", delegate, e);
         }
-        finally {
-            onFinished();
-        }
     }
 
-    @Override
-    public void onFinished() {
-        LOG.info("Finished LifecycleListener '{}'", delegate);
-        try {
-            delegate.onFinished();
-        }
-        catch (Exception e) {
-            LOG.info("onFinished failed for listener {}", delegate, e);
-        }
-    }
-    
     @Override
     public String toString() {
         return "Safe[" + delegate.toString() + "]";

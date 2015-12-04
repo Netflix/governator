@@ -25,8 +25,10 @@ public class LoggingProvisionMetricsLifecycleListener extends AbstractLifecycleL
     }
     
     @Override
-    public void onStartFailed(Throwable t) {
-        LOG.info("Injection provision report for failed start : \n" );
-        metrics.accept(new LoggingProvisionMetricsVisitor());
+    public void onStopped(Throwable t) {
+        if (t != null) {
+            LOG.info("Injection provision report for failed start : \n" );
+            metrics.accept(new LoggingProvisionMetricsVisitor());
+        }
     }
 }
