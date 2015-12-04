@@ -4,17 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Binding;
-import com.google.inject.Injector;
-import com.google.inject.spi.DefaultBindingTargetVisitor;
-import com.google.inject.spi.DefaultElementVisitor;
-import com.google.inject.spi.InstanceBinding;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.SafeLifecycleListener;
 
@@ -37,22 +31,6 @@ public final class LifecycleManager {
         Started,
         Stopped,
         Done
-    }
-    
-//    @Inject
-    public void intitialize(Injector injector) {
-        for (Binding<?> binding : injector.getAllBindings().values()) {
-            binding.acceptVisitor(new DefaultElementVisitor<Void>() {
-                public <T> Void visit(Binding<T> binding) {
-                    return binding.acceptTargetVisitor(new DefaultBindingTargetVisitor<T, Void>() {
-                        @Override
-                        public Void visit(InstanceBinding<? extends T> instanceBinding) {
-                            return visitOther(instanceBinding);
-                        }
-                    });
-                }
-            });
-        }
     }
     
     public synchronized void addListener(LifecycleListener listener) {
