@@ -1,31 +1,20 @@
 package com.netflix.governator;
 
+
 /**
- * Core governator features.  Features are configured/enabled on {@link GovernatorConfiguration}
- * 
- * @author elandau
- * @deprecated Functionality moved https://github.com/Netflix/karyon/tree/3.x
+ * Core Governator features.  Features are configured/enabled on {@link Governator}
  */
-@Deprecated
-public enum GovernatorFeatures implements GovernatorFeature {
+public final class GovernatorFeatures  {
     /**
-     * When disabled, if the injector created using Governator.createInjector() fails the resulting
-     * application will not shutdown and @PreDestroy methods will not be invoked.  This is useful
-     * for debugging an application that failed to start by allowing admin servers to continue
-     * running.
+     * When disable the Governator process will continue running even if there is a catastrophic 
+     * startup failure.  This allows the admin page to stay up so that the process may be 
+     * debugged more easily. 
      */
-    SHUTDOWN_ON_ERROR(true),
-    ;
-
-    private final boolean enabled;
+    public static final GovernatorFeature<Boolean> SHUTDOWN_ON_ERROR = GovernatorFeature.create("Governator.features.shutdownOnError", true);
     
-    GovernatorFeatures(boolean enabled) {
-        this.enabled = enabled;
-    }
+    /**
+     * Auto discover AutoBinders using the ServiceLoader
+     */
+    public static final GovernatorFeature<Boolean> DISCOVER_AUTO_BINDERS = GovernatorFeature.create("Governator.features.discoverAutoBinders", true);
     
-    @Override
-    public boolean isEnabledByDefault() {
-        return enabled;
-    }
-
 }

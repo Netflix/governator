@@ -14,6 +14,9 @@ import java.lang.annotation.Target;
  * the comment inside of the Guice code). This version synchronizes
  * on the object key and, thus, can construct multiple types of singletons
  * concurrently.
+ * 
+ * @deprecated Use javax.inject.Singleton instead.  FineGrainedLazySingleton is not needed 
+ * as of Guice4 which fixes the global lock issue.
  */
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)

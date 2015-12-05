@@ -1,12 +1,10 @@
 package com.netflix.governator;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,47 +14,42 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Key;
+import com.google.inject.AbstractModule;
 import com.google.inject.ProvisionException;
+import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
-import com.google.inject.spi.ProvisionListener;
-import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
-import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
-import com.netflix.governator.guice.lazy.LazySingleton;
-import com.netflix.governator.guice.lazy.LazySingletonScope;
+import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
+import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
+import com.netflix.governator.internal.GovernatorFeatureSet;
+import com.netflix.governator.internal.PostConstructLifecycleActions;
+import com.netflix.governator.internal.PreDestroyLifecycleActions;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
  * 
- * <pre>
- * {@code
+ * <code>
  * public class MyService {
- *    @PostConstruct
+ *    {@literal @}PostConstruct
  *    public void init() {
  *    }
  *    
- *    @PreDestroy
+ *    {@literal @}PreDestroy
  *    public void shutdown() {
  *    }
  * }
- * }
- * </pre>
+ * </code>
  * 
  * To use simply add LifecycleModule to guice when creating the injector
- * <pre>
- * {@link 
- * Governator.createInjector();
- * }
- * </pre>
  * 
  * See {@link LifecycleInjector} for different scenarios for shutting down the LifecycleManager.
- * 
- * @author elandau
- *
  */
-public final class LifecycleModule extends SingletonModule {
+public final class LifecycleModule extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleModule.class);
+
+    private LifecycleProvisionListener provisionListener = new LifecycleProvisionListener();
 
     /**
      * Holder of actions for a specific type.
@@ -69,109 +62,37 @@ public final class LifecycleModule extends SingletonModule {
     }
     
     @Singleton
-    static class LifecycleProvisionListener extends DefaultLifecycleListener implements ProvisionListener {
+    @SuppressLifecycleUninitialized
+    static class LifecycleProvisionListener extends AbstractLifecycleListener implements TypeListener {
         private final ConcurrentLinkedDeque<Runnable> shutdownActions = new ConcurrentLinkedDeque<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
-        private ProvisionMetrics metrics;
         private LifecycleManager manager;
-        private ConcurrentLinkedQueue<LifecycleListener> pendingLifecycleListeners = new ConcurrentLinkedQueue<>();
+        private List<LifecycleListener> pendingLifecycleListeners = new ArrayList<>();
         private boolean shutdownOnFailure = true;
         
-        private static class Optional {
-            @com.google.inject.Inject(optional=true)
-            GovernatorConfiguration config;
+        public LifecycleProvisionListener() {
+            System.out.println("Creating LifecycleProvisionListener");
         }
         
         @Inject
         public static void initialize(
+                GovernatorFeatureSet karyonFeatures,
                 LifecycleManager manager, 
-                LifecycleProvisionListener listener, 
-                Set<LifecycleFeature> features, 
-                ProvisionMetrics metrics, 
-                Optional optional) {
-            LOG.debug("LifecycleProvisionListener initialized {}", features);
-            listener.metrics = metrics;
-            listener.manager = manager;
-            listener.manager.addListener(listener);
-            listener.features = features;
-            listener.shutdownOnFailure = optional.config == null 
-                    ? true 
-                    : optional.config.isEnabled(GovernatorFeatures.SHUTDOWN_ON_ERROR);
+                LifecycleProvisionListener provisionListener, 
+                Set<LifecycleFeature> features) {
+            provisionListener.manager = manager;
+            provisionListener.features = features;
+            provisionListener.shutdownOnFailure = karyonFeatures.get(GovernatorFeatures.SHUTDOWN_ON_ERROR);
             
-            LifecycleListener l;
-            while (null != (l = listener.pendingLifecycleListeners.poll())) {
+            LOG.debug("LifecycleProvisionListener initialized {}", features);
+            
+            for (LifecycleListener l : provisionListener.pendingLifecycleListeners) {
+                LOG.info("Adding listener: " + l);
                 manager.addListener(l);
             }
-        }
-        
-        @Override
-        public <T> void onProvision(ProvisionInvocation<T> provision) {
-            final Key<?> key = provision.getBinding().getKey();
-            final Class<?> clazz = key.getTypeLiteral().getRawType();
-            
-            final T injectee;
-            if (features == null) {
-                LOG.debug("LifecycleProvisionListener not initialized yet : {} source={}", key, provision.getBinding().getSource());
-
-                injectee = provision.provision();
-                
-                if (injectee instanceof LifecycleListener) {
-                    pendingLifecycleListeners.add((LifecycleListener)injectee);
-                }
-                
-                // TODO: Add to PreDestroy list
-                return;
-            }
-            
-            final TypeLifecycleActions actions = getOrCreateActions(clazz);
-            
-            // Instantiate the type and pass to the metrics.  This time captured will
-            // include invoking any lifecycle events.
-            metrics.push(key);
-            try {
-                injectee = provision.provision();
-            
-                // Call all the LifecycleActions with PostConstruct methods being the last 
-                for (LifecycleAction processor : actions.postConstructActions) {
-                    try {
-                        processor.call(injectee);
-                    } 
-                    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                        throw new ProvisionException("Failed to provision object of type " + key, e);
-                    }
-                }
-                
-                if (injectee instanceof LifecycleListener) {
-                    manager.addListener((LifecycleListener)injectee);
-                }
-            }
-            finally {
-                metrics.pop();
-            }
-            
-            // Add any PreDestroy methods to the shutdown list of actions
-            if (!actions.preDestroyActions.isEmpty()) {
-                if (isShutdown.get() == false) {
-                    shutdownActions.addFirst(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (LifecycleAction m : actions.preDestroyActions) {
-                                try {
-                                    m.call(injectee);
-                                } 
-                                catch (Exception e) {
-                                    LOG.error("Failed to call @PreDestroy method {} on {}", new Object[]{m, injectee.getClass().getName()}, e);
-                                }
-                            }
-                        }
-                    });
-                }
-                else {
-                    LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", new Object[]{actions.preDestroyActions, injectee.getClass().getName()});
-                }
-            }
+            provisionListener.pendingLifecycleListeners.clear();
         }
         
         public TypeLifecycleActions getOrCreateActions(Class<?> type) {
@@ -201,33 +122,101 @@ public final class LifecycleModule extends SingletonModule {
          * Invoke all shutdown actions
          */
         @Override
-        public synchronized void onStopped() {
-            if (isShutdown.compareAndSet(false, true)) {
-                for (Runnable action : shutdownActions) {
-                    action.run();
+        public synchronized void onStopped(Throwable optionalFailureReason) {
+            if (shutdownOnFailure || optionalFailureReason == null) {
+                if (isShutdown.compareAndSet(false, true)) {
+                    for (Runnable action : shutdownActions) {
+                        action.run();
+                    }
                 }
             }
         }
         
         @Override
-        public synchronized void onStartFailed(Throwable t) {
-            if (shutdownOnFailure) {
-                onStopped();
-            }
+        public String toString() {
+            return "LifecycleProvisionListener[]";
+        }
+
+        @Override
+        public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
+            encounter.register(new InjectionListener<I>() {
+                @Override
+                public void afterInjection(final I injectee) {
+                    if (features == null) {
+                        if (!injectee.getClass().isAnnotationPresent(SuppressLifecycleUninitialized.class)) {
+                            LOG.debug("LifecycleProvisionListener not initialized yet : {}", injectee);
+                        }
+                        
+                        if (injectee instanceof LifecycleListener) {
+                            pendingLifecycleListeners.add((LifecycleListener)injectee);
+                        }
+                        
+                        // TODO: Add to PreDestroy list
+                        return;
+                    }
+                    
+                    final TypeLifecycleActions actions = getOrCreateActions(injectee.getClass());
+                    
+                    // Call all the LifecycleActions with PostConstruct methods being the last 
+                    for (LifecycleAction action : actions.postConstructActions) {
+                        try {
+                            action.call(injectee);
+                        } 
+                        catch (Exception e) {
+                            throw new ProvisionException("Failed to provision object of type " + injectee.getClass(), e);
+                        }
+                    }
+                    
+                    if (injectee instanceof LifecycleListener) {
+                        manager.addListener((LifecycleListener)injectee);
+                    }
+                
+                    // Add any PreDestroy methods to the shutdown list of actions
+                    if (!actions.preDestroyActions.isEmpty()) {
+                        if (isShutdown.get() == false) {
+                            shutdownActions.addFirst(new Runnable() {
+                                @Override
+                                public void run() {
+                                    for (LifecycleAction m : actions.preDestroyActions) {
+                                        try {
+                                            m.call(injectee);
+                                        } 
+                                        catch (Exception e) {
+                                            LOG.error("Failed to call @PreDestroy method {} on {}", new Object[]{m, injectee.getClass().getName()}, e);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        else {
+                            LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", new Object[]{actions.preDestroyActions, injectee.getClass().getName()});
+                        }
+                    }
+                }
+            });
         }
     }
     
     @Override
     protected void configure() {
-        LifecycleProvisionListener listener = new LifecycleProvisionListener();
         requestStaticInjection(LifecycleProvisionListener.class);
-        bind(LifecycleProvisionListener.class).toInstance(listener);
-        bindListener(Matchers.any(), listener);
+        bind(LifecycleProvisionListener.class).toInstance(provisionListener);
+        bindListener(Matchers.any(), provisionListener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
-        
-        // These are essentially obsolete since Guice4 fixes the global lock 
-        // and DEVELOPMENT mode makes everything lazy.
-        bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
-        bindScope(LazySingleton.class, LazySingletonScope.get());
-   }
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "LifecycleModule[]";
+    }
 }

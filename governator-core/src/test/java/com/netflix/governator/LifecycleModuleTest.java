@@ -1,180 +1,117 @@
 package com.netflix.governator;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 
-import junit.framework.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provides;
-import com.google.inject.Stage;
-import com.netflix.governator.annotations.Configuration;
 
-@Test(singleThreaded=true)
 public class LifecycleModuleTest {
-    @Singleton
-    private static class MyStateInjectableClass {
-        @Inject
-        public static void staticInject(MySingleton singleton) {
-            System.out.println("*****Static injection");
-        }
+    
+    private static enum Events {
+        Injected,
+        Initialized,
+        Destroyed,
+        Started,
+        Stopped,
+        Error
     }
     
-    @Singleton
-    private static class MySingleton {
-        private static AtomicInteger initCounter = new AtomicInteger(0);
-        private static AtomicLong initTime = new AtomicLong(0);
-        private static AtomicInteger shutdownCounter = new AtomicInteger(0);
-        private static AtomicLong shutdownTime = new AtomicLong(0);
-        
-        @Configuration("foo")
-        String field1;
-        
-        @Configuration("goo")
-        public void setGoo(String goo) {
-            
-        }
+    @Rule
+    public final TestName name = new TestName();
+    
+    class TrackingLifecycleListener implements LifecycleListener {
+        final List<Events> events = new ArrayList<>();
         
         @Inject
-        public MySingleton() {
-            System.out.println("*****Injecting MySingleton");
+        public void initialize(Injector injector) {
+            events.add(Events.Injected);
         }
         
         @PostConstruct
-        void init() {
-            System.out.println("*****Post constructing");
-            initCounter.incrementAndGet();
-            initTime.set(System.nanoTime());
+        public void initialized() {
+            events.add(Events.Initialized);
         }
         
         @PreDestroy
-        void shutdown() {
-            shutdownCounter.incrementAndGet();
-            shutdownTime.set(System.nanoTime());
-        }
-    }
-    
-    @Singleton
-    private static class FailingSingleton {
-        @Inject
-        public FailingSingleton() {
-            throw new RuntimeException("Failing singleton");
-        }
-    }
-    
-    @Singleton
-    private static class SingletonWithDependency {
-        private static AtomicInteger initCounter = new AtomicInteger(0);
-        private static AtomicLong initTime = new AtomicLong(0);
-        private static AtomicInteger shutdownCounter = new AtomicInteger(0);
-        private static AtomicLong shutdownTime = new AtomicLong(0);
-        
-        @Inject
-        public SingletonWithDependency(MySingleton mySingleton) {
-            System.out.println("*****Injecting SingletonWithDependency");
+        public void destroyed() {
+            events.add(Events.Destroyed);
         }
         
-        @PostConstruct
-        void init() {
-            System.out.println("*****Post constructing SingletonWithDependency");
-            initCounter.incrementAndGet();
-            initTime.set(System.nanoTime());
+        @Override
+        public void onStarted() {
+            events.add(Events.Started);
         }
-        
-        @PreDestroy
-        void shutdown() {
-            shutdownCounter.incrementAndGet();
-            shutdownTime.set(System.nanoTime());
-        }
-    }
-    
-    @BeforeMethod
-    public void before() {
-        MySingleton.initCounter.set(0);
-        MySingleton.shutdownCounter.set(0);
-    }
-    
-    @Test
-    public void testWithoutLifecycle() {
-        Injector injector = Guice.createInjector(Stage.DEVELOPMENT);
-        MySingleton singleton = injector.getInstance(MySingleton.class);
-        
-        Assert.assertEquals(0, singleton.initCounter.get());
-        Assert.assertEquals(0, singleton.shutdownCounter.get());
-    }
-    
-    @Test
-    public void testWithLifecycle() {
-        LifecycleInjector injector = Governator.createInjector(
-                Stage.DEVELOPMENT);
-        MySingleton singleton = injector.getInstance(MySingleton.class);
-        Assert.assertEquals(1, singleton.initCounter.get());
-        Assert.assertEquals(0, singleton.shutdownCounter.get());
-        injector.shutdown();
-        Assert.assertEquals(1, singleton.shutdownCounter.get());
-    }
 
-    @Test
-    public void testOrderWithLifecycle() {
-        LifecycleInjector injector = Governator.createInjector(
-                Stage.DEVELOPMENT);
-        SingletonWithDependency singleton = injector.getInstance(SingletonWithDependency.class);
-        Assert.assertEquals(1, singleton.initCounter.get());
-        Assert.assertEquals(1, MySingleton.initCounter.get());
-        Assert.assertTrue("MySingleton was constructed before SingletonWithDependency",
-                MySingleton.initTime.get() < singleton.initTime.get());
-        Assert.assertEquals(0, singleton.shutdownCounter.get());
-        Assert.assertEquals(0, MySingleton.shutdownCounter.get());
-        injector.shutdown();
-        Assert.assertEquals(1, singleton.shutdownCounter.get());
-        Assert.assertEquals(1, MySingleton.shutdownCounter.get());
-        Assert.assertTrue("SingletonWithDependency was destroyed before MySingleton",
-                MySingleton.shutdownTime.get() > singleton.shutdownTime.get());
-    }
-    
-    @Test
-    public void testWithExternalLifecycleManager() {
-        try {
-            Governator.createInjector(new AbstractModule() {
-                @Override
-                protected void configure() {
-                    bind(MySingleton.class).asEagerSingleton();
-                    bind(FailingSingleton.class).asEagerSingleton();
-                }
-            });
-            Assert.fail("Should have failed to create injector");
-        }
-        catch (Exception e) {
-            Assert.assertEquals(1, MySingleton.initCounter.get());
-            Assert.assertEquals(1, MySingleton.shutdownCounter.get());
-        }
-    }
-
-    @Test
-    public void testProvidesAnnotation() {
-        Assert.assertEquals(0, MySingleton.initCounter.get());
-        Assert.assertEquals(0, MySingleton.shutdownCounter.get());
-        
-        LifecycleInjector injector = Governator.createInjector(new DefaultModule() {
-            @Provides
-            @Singleton
-            MySingleton createSingleton() {
-                System.out.println("***** Called");
-                return new MySingleton();
+        @Override
+        public void onStopped(Throwable t) {
+            events.add(Events.Stopped);
+            if (t != null) {
+                events.add(Events.Error);
             }
-        });
-        Assert.assertEquals(1, MySingleton.initCounter.get());
-        injector.shutdown();
-        Assert.assertEquals(1, MySingleton.shutdownCounter.get());
+        }
+
+        @Override
+        public String toString() {
+            return "TrackingLifecycleListener[" + name.getMethodName() + "]";
+        }
+    }
+    
+    @Test
+    public void confirmLifecycleListenerEventsForSuccessfulStart() {
+        final TrackingLifecycleListener listener = new TrackingLifecycleListener();
+        
+        new Governator()
+            .run(listener)
+            .shutdown();
+        
+        assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Started, Events.Destroyed, Events.Stopped)));
+    }
+    
+    @Test(expected=RuntimeException.class)
+    public void confirmLifecycleListenerEventsForFailedStart() {
+        final TrackingLifecycleListener listener = new TrackingLifecycleListener() {
+            @Override
+            @Inject
+            public void initialize(Injector injector) {
+                super.initialize(injector);
+                throw new RuntimeException("Failed");
+            }
+        };
+        
+        try {
+            new Governator()
+                .run(listener)
+                .shutdown();
+        }
+        finally {
+            assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Stopped, Events.Error, Events.Destroyed)));
+        }
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void assertionExampleInListener() {
+        new Governator()
+            .run(new TrackingLifecycleListener() {
+                @Override
+                public void onStopped(Throwable t) {
+                    super.onStopped(t);
+                    assertThat(t, nullValue());
+                    assertThat(false, equalTo(true));
+                }
+            })
+            .shutdown();
     }
 }

@@ -13,12 +13,12 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.ProvisionException;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.servlet.GuiceFilter;
-import com.netflix.governator.DefaultLifecycleListener;
-import com.netflix.governator.DefaultModule;
+import com.netflix.governator.AbstractLifecycleListener;
 import com.netflix.governator.LifecycleListener;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.LifecycleShutdownSignal;
@@ -71,7 +71,7 @@ import com.netflix.governator.LifecycleShutdownSignal;
  * @author elandau
  *
  */
-public final class JettyModule extends DefaultModule {
+public final class JettyModule extends AbstractModule {
     private final static Logger LOG = LoggerFactory.getLogger(JettyModule.class);
     
     /**
@@ -108,7 +108,7 @@ public final class JettyModule extends DefaultModule {
      *
      */
     @Singleton
-    public static class JettyShutdown extends DefaultLifecycleListener {
+    public static class JettyShutdown extends AbstractLifecycleListener {
         private Server server;
         
         @Inject
@@ -117,7 +117,7 @@ public final class JettyModule extends DefaultModule {
         }
         
         @Override
-        public void onStopped() {
+        public void onStopped(Throwable optionalError) {
             LOG.info("Jetty Server shutting down");
             try {
                 Thread t = new Thread(new Runnable() {
