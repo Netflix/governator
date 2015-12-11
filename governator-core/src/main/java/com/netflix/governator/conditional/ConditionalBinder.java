@@ -37,10 +37,10 @@ import com.google.inject.spi.Toolable;
  *   protected void configure() {
  *     ConditionalBinder&lt;Snack&gt; conditionalbinder
  *         = ConditionalBinder.newConditionalBinder(binder(), Snack.class);
- *     multibinder.when(new ConditionalOnProperty("type", "twix")).toInstance(new Twix());
- *     multibinder.when(new ConditionalOnProperty("type", "snickers")).toProvider(SnickersProvider.class);
- *     multibinder.when(new ConditionalOnProperty("type", "skittles")).to(Skittles.class);
- *     multibinder.whenNone().to(Carrots.class);
+ *     conditionalbinder.when(new ConditionalOnProperty("type", "twix")).toInstance(new Twix());
+ *     conditionalbinder.when(new ConditionalOnProperty("type", "snickers")).toProvider(SnickersProvider.class);
+ *     conditionalbinder.when(new ConditionalOnProperty("type", "skittles")).to(Skittles.class);
+ *     conditionalbinder.whenNone().to(Carrots.class);
  *   }
  * }</code></pre>
  *
