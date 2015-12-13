@@ -45,7 +45,10 @@ import com.netflix.governator.spi.PropertySource;
         .run()
         .awaitTermination();
  * </code>
+ * 
+ * @deprecated 2015-12-13 Use {@link ModuleBuilder} instead
  */
+@Deprecated
 public class Governator {
     protected Set<String>                 profiles          = new LinkedHashSet<>();
     protected List<Module>                modules           = new ArrayList<>();
