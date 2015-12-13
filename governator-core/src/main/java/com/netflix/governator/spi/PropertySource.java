@@ -49,4 +49,9 @@ public interface PropertySource {
      * @return Value or defaultValue if not found
      */
     public <T> T get(String key, Class<T> type, T defaultValue);
+    
+    /**
+     * Determine if the PropertySource contains the specified property key
+     */
+    boolean hasProperty(String key);
 }

@@ -12,10 +12,10 @@ public interface LifecycleListener {
     /**
      * Notification that the Injector has been created.  
      */
-    public void onStarted();
+    void onStarted();
 
     /**
-     * Notification that the injector is shutting down
+     * Notification that the Injector is shutting down
      */
-    public void onStopped(Throwable error);
+    void onStopped(Throwable error);
 }

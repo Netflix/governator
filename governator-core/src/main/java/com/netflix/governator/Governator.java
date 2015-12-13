@@ -12,26 +12,14 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.ConfigurationException;
-import com.google.inject.CreationException;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.ProvisionException;
-import com.google.inject.Stage;
-import com.google.inject.TypeLiteral;
 import com.google.inject.util.Modules;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
-import com.netflix.governator.annotations.binding.Arguments;
-import com.netflix.governator.annotations.binding.Profiles;
 import com.netflix.governator.internal.DefaultPropertySource;
 import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.internal.ModulesEx;
 import com.netflix.governator.spi.ModuleListTransformer;
+import com.netflix.governator.spi.ModuleTransformer;
 import com.netflix.governator.spi.PropertySource;
 
 /**
@@ -59,8 +47,6 @@ import com.netflix.governator.spi.PropertySource;
  * </code>
  */
 public class Governator {
-    private static final Stage LAZY_SINGLETONS_STAGE = Stage.DEVELOPMENT;
-    
     protected Set<String>                 profiles          = new LinkedHashSet<>();
     protected List<Module>                modules           = new ArrayList<>();
     protected List<ModuleListTransformer> transformers      = new ArrayList<>();
@@ -98,7 +84,7 @@ public class Governator {
     }
     
     /**
-     * Add Guice modules to karyon.  
+     * Add Guice modules to Governator.  
      * 
      * @param modules Guice modules to add.  
      * @return this
@@ -111,7 +97,7 @@ public class Governator {
     }
     
     /**
-     * Add Guice modules to karyon.  
+     * Add Guice modules to Governator.  
      * 
      * @param modules Guice modules to add.  
      * @return this
@@ -222,8 +208,7 @@ public class Governator {
      * conditionally loaded.  This is useful for testing or when an application
      * absolutely needs to override a binding to fix a binding problem in the
      * code modules
-     * @param modules Modules that will be applied as overrides to modules add
-     *  or installed via {@link Karyon#addModules(Module...)}
+     * @param modules Modules that will be applied as overrides to modules
      * @return this
      */
     public Governator addOverrideModules(Module ... modules) {
@@ -238,8 +223,7 @@ public class Governator {
      * conditionally loaded.  This is useful for testing or when an application
      * absolutely needs to override a binding to fix a binding problem in the
      * code modules
-     * @param modules Modules that will be applied as overrides to modules add
-     *  or installed via {@link Karyon#addModules(Module...)}
+     * @param modules Modules that will be applied as overrides to modules
      * @return this
      */
     public Governator addOverrideModules(List<Module> modules) {
@@ -298,57 +282,24 @@ public class Governator {
      * @return the LifecycleInjector for this run
      */
     private LifecycleInjector run(Module externalModule, final String[] args) {
-        final Logger LOG = LoggerFactory.getLogger(Governator.class);
-        
-        final GovernatorFeatureSetImpl featureSet = new GovernatorFeatureSetImpl(new IdentityHashMap<>(featureOverrides));
-        
-        final LifecycleManager manager = new LifecycleManager();
-        
-        // Construct the injector using our override structure
-        try {
-            List<Module> coreModules = new ArrayList<>();
-            coreModules.addAll(modules);
-            coreModules.add(externalModule);
-            coreModules.add(new LifecycleModule());
-            coreModules.add(new LegacyScopesModule());
-            coreModules.add(new AbstractModule() {
+        return ModuleBuilder
+             .fromModules(modules)
+             .combineWith(externalModule)
+             .transform(new ModuleTransformer() {
                 @Override
-                protected void configure() {
-                    bind(GovernatorFeatureSet.class).toInstance(featureSet);
-                    bind(LifecycleManager.class).toInstance(manager);
-                    bind(new TypeLiteral<Set<String>>() {}).annotatedWith(Profiles.class).toInstance(profiles);
-                    bind(String[].class).annotatedWith(Arguments.class).toInstance(args);
-                }
-            });
-            
-            List<ModuleListTransformer> localTransformers = new ArrayList<ModuleListTransformer>(transformers);
-            localTransformers.add(new BindingLoggingModuleTransformer());
-            
-            for (ModuleListTransformer transformer : localTransformers) {
-                coreModules = transformer.transform(Collections.unmodifiableList(coreModules));
-            }
+                public Module transform(Module module) {
+                    List<Module> modulesToTransform = Collections.singletonList(module);
+                    for (ModuleListTransformer transformer : transformers) {
+                        modulesToTransform = transformer.transform(Collections.unmodifiableList(modulesToTransform));
+                    }
 
-            Injector injector = Guice.createInjector(
-                LAZY_SINGLETONS_STAGE,
-                Modules.override(coreModules).with(overrideModules)
-            );
-            manager.notifyStarted();
-            return LifecycleInjector.wrapInjector(injector, manager);
-        }
-        catch (ProvisionException|CreationException|ConfigurationException e) {
-            LOG.error("Failed to create injector", e);
-            try {
-                manager.notifyStartFailed(e);
-            }
-            catch (Exception e2) {
-                LOG.error("Failed to notify injector creation failure", e2 );
-            }
-            if (!featureSet.get(GovernatorFeatures.SHUTDOWN_ON_ERROR)) {
-                return LifecycleInjector.createFailedInjector(manager);
-            }
-            else {
-                throw e;
-            }
-        }
+                    return Modules.combine(modulesToTransform);
+                }
+             })
+             .overrideWith(overrideModules)
+             .createInjector(new LifecycleInjectorCreator()
+                 .withArguments(args)
+                 .withFeatures(featureOverrides)
+                 .withProfiles(profiles));
     }
 }

@@ -31,12 +31,12 @@ public final class SafeLifecycleListener implements LifecycleListener {
 
     @Override
     public void onStopped(Throwable t) {
-        LOG.info("Failed LifecycleListener '{}'", delegate);
+        LOG.info("Stopping LifecycleListener '{}'", delegate, t);
         try {
             delegate.onStopped(t);
         }
         catch (Exception e) {
-            LOG.info("onStartFailed failed for listener {}", delegate, e);
+            LOG.info("onStopped failed for listener {}", delegate, e);
         }
     }
 

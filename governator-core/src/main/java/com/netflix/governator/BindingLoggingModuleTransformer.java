@@ -9,17 +9,18 @@ import com.google.inject.Module;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.netflix.governator.spi.ModuleListTransformer;
+import com.netflix.governator.visitors.BindingTracingVisitor;
 
 public class BindingLoggingModuleTransformer implements ModuleListTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(BindingLoggingModuleTransformer.class);
     
     @Override
     public List<Module> transform(List<Module> modules) {
+        BindingTracingVisitor visitor = new BindingTracingVisitor();
         for (Element binding : Elements.getElements(modules)) {
             LOG.debug("Binding : {}", binding);
         }
         
         return modules;
     }
-
 }

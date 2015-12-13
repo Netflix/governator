@@ -13,8 +13,6 @@ import com.google.inject.Module;
  * 1.  Remove unwanted bindings
  * 2.  Auto add non-existent bindings 
  * 3.  Warn on dangerous bindings like toInstance() and static injection.
- * 
- * See {@link com.netflix.karyon.Karyon}
  */
 public interface ModuleListTransformer {
     /**
