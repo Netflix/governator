@@ -219,7 +219,7 @@ public abstract class ConditionalBinder<T> {
          */
         @Toolable 
         @Inject 
-        void initialize(Injector injector) {
+        void initialize(final Injector injector) {
             List<Binding<T>> candidateBindings = Lists.newArrayList();
             Binding<T> matchedBinding = null;
             Binding<T> defaultBinding = null;
@@ -245,10 +245,8 @@ public abstract class ConditionalBinder<T> {
                             }
                         }
                         else {
-                            @SuppressWarnings("unchecked")
-                            Class matcherType = condition.getMatcherClass();
-                            Matcher matcher = (Matcher)injector.getInstance(matcherType);
-                            if (matcher.match(condition)) {
+                            injector.injectMembers(condition);
+                            if (condition.evaluate()) {
                                 if (matchedBinding == null) {
                                     matchedBinding = binding;
                                 }
