@@ -1,6 +1,8 @@
 package com.netflix.governator.conditional;
 
-import com.google.inject.Inject;
+import com.google.inject.Binding;
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.netflix.governator.spi.PropertySource;
 
 /**
@@ -10,20 +12,18 @@ public class ConditionalOnProperty extends AbstractConditional {
     private final String value;
     private final String key;
 
-    @Inject(optional=true)
-    PropertySource properties;
-    
     public ConditionalOnProperty(String key, String value) {
         this.key = key;
         this.value = value;
     }
 
     @Override
-    public boolean evaluate() {
+    public boolean matches(Injector injector) {
+        Binding<PropertySource> properties = injector.getExistingBinding(Key.get(PropertySource.class));
         if (properties == null) {
             return false;
         }
-        return value.equals(properties.get(key, ""));
+        return value.equals(properties.getProvider().get().get(key, ""));
     }
     
     @Override

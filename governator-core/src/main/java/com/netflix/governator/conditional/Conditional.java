@@ -1,5 +1,7 @@
 package com.netflix.governator.conditional;
 
+import com.google.inject.Injector;
+
 /**
  * Contract for any conditional that may be applied to a conditional binding
  * bound via {@link ConditionalBinder}.
@@ -14,7 +16,7 @@ public abstract class Conditional {
      * creation time.
      * @return True if conditional is true otherwise false
      */
-    public abstract boolean evaluate();
+    public abstract boolean matches(Injector injector);
     
     /**
      * @param conditional

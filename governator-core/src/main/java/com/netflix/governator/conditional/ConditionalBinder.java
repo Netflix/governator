@@ -22,6 +22,7 @@ import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.internal.Errors;
 import com.google.inject.spi.BindingTargetVisitor;
 import com.google.inject.spi.Dependency;
+import com.google.inject.spi.HasDependencies;
 import com.google.inject.spi.Message;
 import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderWithExtensionVisitor;
@@ -37,10 +38,10 @@ import com.google.inject.spi.Toolable;
  *   protected void configure() {
  *     ConditionalBinder&lt;Snack&gt; conditionalbinder
  *         = ConditionalBinder.newConditionalBinder(binder(), Snack.class);
- *     conditionalbinder.when(new ConditionalOnProperty("type", "twix")).toInstance(new Twix());
- *     conditionalbinder.when(new ConditionalOnProperty("type", "snickers")).toProvider(SnickersProvider.class);
- *     conditionalbinder.when(new ConditionalOnProperty("type", "skittles")).to(Skittles.class);
- *     conditionalbinder.whenNone().to(Carrots.class);
+ *     conditionalbinder.whenMatchBind(new ConditionalOnProperty("type", "twix")).toInstance(new Twix());
+ *     conditionalbinder.whenMatchBind(new ConditionalOnProperty("type", "snickers")).toProvider(SnickersProvider.class);
+ *     conditionalbinder.whenMatchBind(new ConditionalOnProperty("type", "skittles")).to(Skittles.class);
+ *     conditionalbinder.whenNoMatchBind().to(Carrots.class);
  *   }
  * }</code></pre>
  *
@@ -155,7 +156,7 @@ public abstract class ConditionalBinder<T> {
      * <p>Scoping elements independently supported per binding. Use the {@code in} method
      * to specify a binding scope.
      */
-    public abstract LinkedBindingBuilder<T> whenMatch(Conditional obj);
+    public abstract LinkedBindingBuilder<T> whenMatchBind(Conditional obj);
 
     /**
      * Returns a binding builder used to specify the candidate for the key when no other
@@ -169,10 +170,10 @@ public abstract class ConditionalBinder<T> {
      * <p>Scoping elements independently supported per binding. Use the {@code in} method
      * to specify a binding scope.
      */
-    public abstract LinkedBindingBuilder<T> whenNoMatch();
+    public abstract LinkedBindingBuilder<T> whenNoMatchBind();
     
     static final class RealConditionalBinder<T> extends ConditionalBinder<T>
-        implements Module, ProviderWithExtensionVisitor<T>, ConditionalBinding<T> {
+        implements Module, ProviderWithExtensionVisitor<T>, ConditionalBinding<T>, HasDependencies {
         
         private final TypeLiteral<T> elementType;
         private final String keyName;
@@ -204,12 +205,12 @@ public abstract class ConditionalBinder<T> {
         }
 
         @Override 
-        public LinkedBindingBuilder<T> whenMatch(Conditional obj) {
+        public LinkedBindingBuilder<T> whenMatchBind(Conditional obj) {
             return binder.bind(getKeyForNewItem(obj));
         }
 
         @Override
-        public LinkedBindingBuilder<T> whenNoMatch() {
+        public LinkedBindingBuilder<T> whenNoMatchBind() {
             return binder.bind(getKeyForNewItem(null));
         }
 
@@ -245,8 +246,7 @@ public abstract class ConditionalBinder<T> {
                             }
                         }
                         else {
-                            injector.injectMembers(condition);
-                            if (condition.evaluate()) {
+                            if (condition.matches(injector)) {
                                 if (matchedBinding == null) {
                                     matchedBinding = binding;
                                 }
@@ -328,6 +328,11 @@ public abstract class ConditionalBinder<T> {
             else {
                 return false;
             }
+        }
+        
+        @Override
+        public Set<Dependency<?>> getDependencies() {
+            return dependencies;
         }
         
         @Override

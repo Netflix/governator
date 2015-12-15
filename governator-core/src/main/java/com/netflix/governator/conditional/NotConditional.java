@@ -1,5 +1,7 @@
 package com.netflix.governator.conditional;
 
+import com.google.inject.Injector;
+
 /**
  * Conditional equivalent to 
  * 
@@ -13,7 +15,7 @@ public class NotConditional extends AbstractConditional {
     }
     
     @Override
-    public boolean evaluate() {
-        return !conditional.evaluate();
+    public boolean matches(Injector injector) {
+        return !conditional.matches(injector);
     }
 }

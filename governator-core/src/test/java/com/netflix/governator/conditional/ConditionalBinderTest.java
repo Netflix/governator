@@ -80,11 +80,11 @@ public class ConditionalBinderTest {
         protected void configure() {
             ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
             
-            binder.whenMatch(new ConditionalOnProperty("group1", "a"))
+            binder.whenMatchBind(new ConditionalOnProperty("group1", "a"))
                 .toInstance(new FooImpl("group1_a"));
-            binder.whenMatch(new ConditionalOnProperty("group1", "b"))
+            binder.whenMatchBind(new ConditionalOnProperty("group1", "b"))
                 .toInstance(new FooImpl("group1_b"));
-            binder.whenNoMatch()
+            binder.whenNoMatchBind()
                 .toInstance(new FooImpl("group1_default"));
         }
     }
@@ -94,9 +94,9 @@ public class ConditionalBinderTest {
         protected void configure() {
             ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class, Names.named("group2"));
             
-            binder.whenMatch(new ConditionalOnProperty("group2", "a"))
+            binder.whenMatchBind(new ConditionalOnProperty("group2", "a"))
                 .toInstance(new FooImpl("group2_a"));
-            binder.whenMatch(new ConditionalOnProperty("group2", "b"))
+            binder.whenMatchBind(new ConditionalOnProperty("group2", "b"))
                 .toInstance(new FooImpl("group2_b"));
         }
     }
@@ -169,7 +169,7 @@ public class ConditionalBinderTest {
                 protected void configure() {
                     ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
                     
-                    binder.whenMatch(new ConditionalOnProperty("foo", "value"))
+                    binder.whenMatchBind(new ConditionalOnProperty("foo", "value"))
                         .toInstance(new FooImpl("value"));
                 }
             });
@@ -185,7 +185,7 @@ public class ConditionalBinderTest {
             protected void configure() {
                 ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
                 
-                binder.whenNoMatch()
+                binder.whenNoMatchBind()
                     .toInstance(new FooImpl("default"));
             }
         });
@@ -200,7 +200,7 @@ public class ConditionalBinderTest {
             @Override
             protected void configure() {
                 ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
-                binder.whenNoMatch().to(SingletonFoo.class);
+                binder.whenNoMatchBind().to(SingletonFoo.class);
                 
                 bind(SingletonFoo.class);
             }            
@@ -222,8 +222,8 @@ public class ConditionalBinderTest {
             @Override
             protected void configure() {
                 ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
-                binder.whenMatch(new ConditionalOnProperty("foo", "1")).to(SingletonFoo.class);
-                binder.whenNoMatch().to(NonSingletonFoo.class);
+                binder.whenMatchBind(new ConditionalOnProperty("foo", "1")).to(SingletonFoo.class);
+                binder.whenNoMatchBind().to(NonSingletonFoo.class);
             }
         });
         
@@ -275,9 +275,9 @@ public class ConditionalBinderTest {
                     protected void configure() {
                         ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
                         
-                        binder.whenMatch(new ConditionalOnProperty("group1", "a"))
+                        binder.whenMatchBind(new ConditionalOnProperty("group1", "a"))
                             .toInstance(new FooImpl("group1_a"));
-                        binder.whenMatch(new ConditionalOnProperty("group1", "a"))
+                        binder.whenMatchBind(new ConditionalOnProperty("group1", "a"))
                             .toInstance(new FooImpl("group1_b"));
                     }
                 });
@@ -296,9 +296,9 @@ public class ConditionalBinderTest {
                 protected void configure() {
                     ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
                     
-                    binder.whenNoMatch()
+                    binder.whenNoMatchBind()
                         .toInstance(new FooImpl("default1"));
-                    binder.whenNoMatch()
+                    binder.whenNoMatchBind()
                         .toInstance(new FooImpl("default2"));
                 }
             });
@@ -332,8 +332,8 @@ public class ConditionalBinderTest {
                 protected void configure() {
                     ConditionalBinder<Foo> binder = ConditionalBinder.newConditionalBinder(binder(), Foo.class);
                     
-                    binder.whenNoMatch().to(SingletonFoo.class);
-                    binder.whenMatch(new ConditionalOnProperty("foo", "1")).to(NonSingletonFoo.class);
+                    binder.whenNoMatchBind().to(SingletonFoo.class);
+                    binder.whenMatchBind(new ConditionalOnProperty("foo", "1")).to(NonSingletonFoo.class);
                 }
             });
         }

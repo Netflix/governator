@@ -1,5 +1,7 @@
 package com.netflix.governator.conditional;
 
+import com.google.inject.Injector;
+
 /**
  * Conditional equivalent to 
  * 
@@ -15,7 +17,7 @@ public class AndConditional extends AbstractConditional {
     }
 
     @Override
-    public boolean evaluate() {
-        return first.evaluate() && second.evaluate();
+    public boolean matches(Injector injector) {
+        return first.matches(injector) && second.matches(injector);
     }
 }
