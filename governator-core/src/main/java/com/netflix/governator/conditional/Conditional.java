@@ -10,30 +10,11 @@ import com.google.inject.Injector;
  * member injection.
  * 
  */
-public abstract class Conditional {
+public interface Conditional {
     /**
      * Evaluate whether the condition is true.  evaluate() is only called once at injector
      * creation time.
      * @return True if conditional is true otherwise false
      */
-    public abstract boolean matches(Injector injector);
-    
-    /**
-     * @param conditional
-     * @return Composite conditional that does a logical AND of this conditional with another
-     */
-    public abstract Conditional and(Conditional conditional);
-    
-    /**
-     * @param conditional
-     * @return Composite conditional that does a logical OR of this conditional with another
-     */
-    public abstract Conditional or(Conditional conditional);
-    
-    /**
-     * @return Create a conditional that is a logical NOT of the provided conditional
-     */
-    public static Conditional not(Conditional conditional) {
-        return new NotConditional(conditional);
-    }
+    boolean matches(Injector injector);
 }

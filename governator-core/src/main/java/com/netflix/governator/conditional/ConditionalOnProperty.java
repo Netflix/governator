@@ -8,7 +8,7 @@ import com.netflix.governator.spi.PropertySource;
 /**
  * Conditional that evaluates to true if the a property is set to a specific value
  */
-public class ConditionalOnProperty extends AbstractConditional {
+public class ConditionalOnProperty implements Conditional {
     private final String value;
     private final String key;
 

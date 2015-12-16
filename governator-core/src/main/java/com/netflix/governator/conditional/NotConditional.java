@@ -7,7 +7,7 @@ import com.google.inject.Injector;
  * 
  *  !conditional
  */
-public class NotConditional extends AbstractConditional {
+public class NotConditional implements Conditional {
     private final Conditional conditional;
     
     public NotConditional(Conditional conditional) {

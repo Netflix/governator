@@ -8,7 +8,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.netflix.governator.annotations.binding.Profiles;
 
-final public class ConditionalOnProfile extends AbstractConditional {
+final public class ConditionalOnProfile implements Conditional {
     private static final TypeLiteral<Set<String>> STRING_SET_TYPE = new TypeLiteral<Set<String>>() {};
     
     private final String profile;

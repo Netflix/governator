@@ -7,14 +7,14 @@ import org.junit.Test;
 import com.google.inject.Injector;
 
 public class ConditionalTest {
-    public static class True extends AbstractConditional {
+    public static class True implements Conditional {
         @Override
         public boolean matches(Injector injector) {
             return true;
         }
     }
     
-    public static class False extends AbstractConditional {
+    public static class False implements Conditional {
         @Override
         public boolean matches(Injector injector) {
             return false;
@@ -23,23 +23,23 @@ public class ConditionalTest {
     
     @Test
     public void testOr() {
-        Assert.assertTrue(new True().or(new True()).matches(null));
-        Assert.assertTrue(new True().or(new False()).matches(null));
-        Assert.assertTrue(new False().or(new True()).matches(null));
-        Assert.assertFalse(new False().or(new False()).matches(null));
+        Assert.assertTrue(Conditionals.anyOf(new True(), new True()).matches(null));
+        Assert.assertTrue(Conditionals.anyOf(new True(), new False()).matches(null));
+        Assert.assertTrue(Conditionals.anyOf(new False(), new True()).matches(null));
+        Assert.assertFalse(Conditionals.anyOf(new False(), new False()).matches(null));
     }
     
     @Test
     public void testAnd() {
-        Assert.assertTrue(new True().and(new True()).matches(null));
-        Assert.assertFalse(new True().and(new False()).matches(null));
-        Assert.assertFalse(new False().and(new True()).matches(null));
-        Assert.assertFalse(new False().and(new False()).matches(null));
+        Assert.assertTrue(Conditionals.allOf(new True(), new True()).matches(null));
+        Assert.assertFalse(Conditionals.allOf(new True(), new False()).matches(null));
+        Assert.assertFalse(Conditionals.allOf(new False(), new True()).matches(null));
+        Assert.assertFalse(Conditionals.allOf(new False(), new False()).matches(null));
     }
     
     @Test
     public void testNot() {
-        Assert.assertFalse(Conditional.not(new True()).matches(null));
-        Assert.assertTrue(Conditional.not(new False()).matches(null));
+        Assert.assertFalse(Conditionals.not(new True()).matches(null));
+        Assert.assertTrue(Conditionals.not(new False()).matches(null));
     }
 }
