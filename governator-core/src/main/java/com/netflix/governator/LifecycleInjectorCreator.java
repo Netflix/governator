@@ -36,7 +36,7 @@ import com.netflix.governator.spi.PropertySource;
  * 
  * The LifecycleInjectorCreator may be overridden to handle pre-create and post-create notification.
  */
-public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInjector>, LifecycleListener {
+public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInjector> {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleInjectorCreator.class);
     
     private String[] args = new String[]{};
@@ -110,9 +110,12 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                     }
                 });
             manager.notifyStarted();
-            return LifecycleInjector.wrapInjector(injector, manager);
+            LifecycleInjector lifecycleInjector = LifecycleInjector.wrapInjector(injector, manager);
+            onAfterInjectorCreated();
+            return lifecycleInjector;
         }
         catch (ProvisionException|CreationException|ConfigurationException e) {
+            onInjectorCreateFailed(e);
             LOG.error("Failed to create injector", e);
             try {
                 manager.notifyStartFailed(e);
@@ -127,9 +130,6 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                 throw e;
             }
         }
-        finally {
-            onAfterInjectorCreated();
-        }
     }
 
     protected void onBeforeInjectorCreated() {
@@ -138,12 +138,7 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
     protected void onAfterInjectorCreated() {
     }
     
-    @Override
-    public void onStarted() {
-    }
-
-    @Override
-    public void onStopped(Throwable error) {
+    protected void onInjectorCreateFailed(Throwable error) {
     }
     
     @Override
