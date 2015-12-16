@@ -1,40 +1,24 @@
 package com.netflix.governator.visitors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Binding;
 import com.google.inject.spi.DefaultElementVisitor;
-import com.netflix.governator.ModuleBuilder;
+import com.netflix.governator.InjectorBuilder;
 
 /**
  * Visitor for logging the entire binding information for each Element
  * 
- * To use with {@link ModuleBuilder},
+ * To use with {@link InjectorBuilder},
  * 
  * <code>
- * ModuleBuilder
+ * InjectorBuilder
  *      .withModules(new MyApplicationModule)
  *      .forEachElement(new BindingTracingVisitor())
  *      .createInjector();
  * </code>
  */
-public class BindingTracingVisitor extends DefaultElementVisitor<Void> {
-    private static final Logger LOG = LoggerFactory.getLogger(ModuleBuilder.class);
-    
-    private final String prefix;
-    
-    public BindingTracingVisitor() {
-        this("");
-    }
-    
-    public BindingTracingVisitor(String prefix) {
-        this.prefix = prefix == null ? "" : prefix + " : ";
-    }
-    
+public class BindingTracingVisitor extends DefaultElementVisitor<String> {
     @Override
-    public <T> Void visit(Binding<T> binding) {
-        LOG.info(prefix + binding);
-        return null;
+    public <T> String visit(Binding<T> binding) {
+        return binding.toString();
     }
 }

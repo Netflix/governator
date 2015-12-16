@@ -1,6 +1,7 @@
 package com.netflix.governator;
 
 import com.google.inject.Injector;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Wrapper for Guice's Injector with added shutdown methods.  

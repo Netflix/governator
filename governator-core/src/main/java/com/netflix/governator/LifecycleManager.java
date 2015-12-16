@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
-import com.netflix.governator.internal.SafeLifecycleListener;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Manage state for lifecycle listeners

@@ -26,6 +26,7 @@ import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.internal.PostConstructLifecycleActions;
 import com.netflix.governator.internal.PreDestroyLifecycleActions;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.

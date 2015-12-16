@@ -3,7 +3,7 @@ package com.netflix.governator.test;
 import javax.inject.Inject;
 
 import com.google.inject.Injector;
-import com.netflix.governator.LifecycleListener;
+import com.netflix.governator.spi.LifecycleListener;
 
 public abstract class TestLifecycleListener implements LifecycleListener {
     @Inject

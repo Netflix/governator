@@ -19,7 +19,7 @@ import com.google.inject.ProvisionException;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.servlet.GuiceFilter;
 import com.netflix.governator.AbstractLifecycleListener;
-import com.netflix.governator.LifecycleListener;
+import com.netflix.governator.spi.LifecycleListener;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.LifecycleShutdownSignal;
 

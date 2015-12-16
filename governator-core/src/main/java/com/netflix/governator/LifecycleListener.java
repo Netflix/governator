@@ -1,21 +1,8 @@
 package com.netflix.governator;
 
 /**
- * Listener for Injector lifecycle events.  
- * 
- * When writing a LifecycleListener that is managed by Guice, make sure to 
- * inject all dependencies lazily using {@link Provider} injection.  Otherwise,
- * these dependencies will be instantiated too early thereby bypassing lifecycle 
- * features in LifecycleModule.
+ * @deprecated Use com.netflix.governator.api.LifecycleListener instead
  */
-public interface LifecycleListener {
-    /**
-     * Notification that the Injector has been created.  
-     */
-    void onStarted();
-
-    /**
-     * Notification that the Injector is shutting down
-     */
-    void onStopped(Throwable error);
+@Deprecated
+public interface LifecycleListener extends com.netflix.governator.spi.LifecycleListener {
 }

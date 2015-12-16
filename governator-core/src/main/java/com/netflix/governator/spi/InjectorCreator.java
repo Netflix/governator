@@ -3,9 +3,8 @@ package com.netflix.governator.spi;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import com.netflix.governator.InjectorBuilder;
 import com.netflix.governator.LifecycleInjectorCreator;
-import com.netflix.governator.LifecycleListener;
-import com.netflix.governator.ModuleBuilder;
 import com.netflix.governator.SimpleInjectorCreator;
 
 /**
@@ -20,10 +19,10 @@ import com.netflix.governator.SimpleInjectorCreator;
    new LifecycleInjectorCreator().createInjector(new MyApplicationModule());
  * </code>
  * 
- * Alternatively, InjectorCreator can be used in conjunction with the {@link ModuleBuilder} DSL 
+ * Alternatively, InjectorCreator can be used in conjunction with the {@link InjectorBuilder} DSL 
  * 
  * <code>
-  LifecycleInjector injector = ModuleBuilder
+  LifecycleInjector injector = InjectorBuilder
       .fromModule(new MyApplicationModule())
       .overrideWith(new MyApplicationOverrideModule())
       .combineWith(new AdditionalModule()

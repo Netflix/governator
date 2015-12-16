@@ -5,9 +5,8 @@ import com.netflix.governator.PropertiesPropertySource;
 import com.netflix.governator.internal.DefaultPropertySource;
 
 /**
- * Very simple config interface to be used by Conditions to gain access
- * to any type of configuration.  The internal default in AutoModuleBuilder 
- * is to delegate to System properties.
+ * Very simple config interface to be used by Conditional to gain access
+ * to any type of configuration.
  * 
  * @see PropertiesPropertySource
  */

@@ -26,6 +26,7 @@ import com.netflix.governator.annotations.binding.Profiles;
 import com.netflix.governator.internal.DefaultPropertySource;
 import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.spi.InjectorCreator;
+import com.netflix.governator.spi.LifecycleListener;
 import com.netflix.governator.spi.PropertySource;
 
 /**

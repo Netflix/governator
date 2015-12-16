@@ -7,6 +7,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import com.google.inject.AbstractModule;
+import com.netflix.governator.spi.LifecycleListener;
 
 public class GovernatorTest {
     @Test

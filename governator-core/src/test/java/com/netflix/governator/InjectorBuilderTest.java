@@ -1,5 +1,6 @@
 package com.netflix.governator;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
@@ -9,24 +10,21 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.spi.Element;
 import com.netflix.governator.visitors.BindingTracingVisitor;
 import com.netflix.governator.visitors.KeyTracingVisitor;
 import com.netflix.governator.visitors.ModuleSourceTracingVisitor;
 
-public class ModuleBuilderTest {
-    private static Logger LOG = LoggerFactory.getLogger(ModuleBuilderTest.class);
-    
+public class InjectorBuilderTest {
     @Test
     public void testLifecycleInjectorEvents() {
         final AtomicBoolean injectCalled = new AtomicBoolean(false);
         final AtomicBoolean afterInjectorCalled = new AtomicBoolean(false);
         final AtomicBoolean beforeInjectorCalled = new AtomicBoolean(false);
         
-        ModuleBuilder
+        InjectorBuilder
             .createDefault()
             .createInjector(new LifecycleInjectorCreator() {
                 @Inject
@@ -63,33 +61,33 @@ public class ModuleBuilderTest {
     
     @Test
     public void testBindingTracing() {
-        ModuleBuilder
+        InjectorBuilder
             .fromModule(new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(String.class).toInstance("Hello world");
                 }
             })
-            .forEachElement(new BindingTracingVisitor(name.getMethodName()))
+            .traceEachElement(new BindingTracingVisitor())
             .createInjector();
     }
     
     @Test
     public void testKeyTracing() {
-        ModuleBuilder
+        InjectorBuilder
             .fromModule(new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(String.class).toInstance("Hello world");
                 }
             })
-            .forEachElement(new KeyTracingVisitor(name.getMethodName()))
+            .traceEachElement(new KeyTracingVisitor())
             .createInjector();
     }
     
     @Test
     public void testWarnOnStaticInjection() {
-        ModuleBuilder
+        List<Element> elements = InjectorBuilder
             .fromModule(new AbstractModule() {
                 @Override
                 protected void configure() {
@@ -97,22 +95,25 @@ public class ModuleBuilderTest {
                 }
             })
             .warnOfStaticInjections()
-            .createInjector();
+            .getElements();
+        
+        Assert.assertEquals(1, elements.size());
     }
     
     @Test
     public void testStripStaticInjection() {
-        ModuleBuilder
+        List<Element> elements = InjectorBuilder
             .fromModule(new AbstractModule() {
                 @Override
                 protected void configure() {
                     this.requestStaticInjection(String.class);
                 }
             })
-            .info("Stripping static injections")
             .stripStaticInjections()
             .warnOfStaticInjections()
-            .createInjector();
+            .getElements();
+        
+        Assert.assertEquals(0, elements.size());
     }
     
     public static class ModuleA extends AbstractModule {
@@ -149,9 +150,9 @@ public class ModuleBuilderTest {
     
     @Test
     public void testTraceModules() {
-        ModuleBuilder
+        InjectorBuilder
             .fromModule(new ModuleA())
-            .forEachElement(new ModuleSourceTracingVisitor())
+            .traceEachElement(new ModuleSourceTracingVisitor())
             .createInjector();
     }
 }

@@ -1,40 +1,24 @@
 package com.netflix.governator.visitors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Binding;
 import com.google.inject.spi.DefaultElementVisitor;
-import com.netflix.governator.ModuleBuilder;
+import com.netflix.governator.InjectorBuilder;
 
 /**
  * Visitor for logging only the Key for each {@code Element} binding
  * 
- * To use with {@link ModuleBuilder}
+ * To use with {@link InjectorBuilder}
  * 
  * <code>
- * ModuleBuilder
+ * InjectorBuilder
  *      .fromModule(new MyApplicationModule)
  *      .forEachElement(new BindingTracingVisitor())
  *      .createInjector();
  * </code>
  */
-public class KeyTracingVisitor extends DefaultElementVisitor<Void> {
-    private static final Logger LOG = LoggerFactory.getLogger(ModuleBuilder.class);
-    
-    private final String prefix;
-    
-    public KeyTracingVisitor() {
-        this("");
-    }
-    
-    public KeyTracingVisitor(String prefix) {
-        this.prefix = prefix == null ? "" : prefix + " : ";
-    }
-    
+public class KeyTracingVisitor extends DefaultElementVisitor<String> {
     @Override
-    public <T> Void visit(Binding<T> binding) {
-        LOG.info(prefix + binding.getKey().toString());
-        return null;
+    public <T> String visit(Binding<T> binding) {
+        return binding.getKey().toString();
     }
 }

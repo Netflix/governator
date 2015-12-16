@@ -21,6 +21,7 @@ import com.netflix.governator.internal.ModulesEx;
 import com.netflix.governator.spi.ModuleListTransformer;
 import com.netflix.governator.spi.ModuleTransformer;
 import com.netflix.governator.spi.PropertySource;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Main entry point for creating a LifecycleInjector with guice extensions such as 
@@ -46,7 +47,7 @@ import com.netflix.governator.spi.PropertySource;
         .awaitTermination();
  * </code>
  * 
- * @deprecated 2015-12-13 Use {@link ModuleBuilder} instead
+ * @deprecated 2015-12-13 Use {@link InjectorBuilder} instead
  */
 @Deprecated
 public class Governator {
@@ -285,10 +286,10 @@ public class Governator {
      * @return the LifecycleInjector for this run
      */
     private LifecycleInjector run(Module externalModule, final String[] args) {
-        return ModuleBuilder
+        return InjectorBuilder
              .fromModules(modules)
              .combineWith(externalModule)
-             .transform(new ModuleTransformer() {
+             .map(new ModuleTransformer() {
                 @Override
                 public Module transform(Module module) {
                     List<Module> modulesToTransform = Collections.singletonList(module);
