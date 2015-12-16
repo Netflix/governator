@@ -115,9 +115,8 @@ public final class InjectorBuilder {
     }
     
     /**
-     * Iterator through all elements and invoke a visitor.  This method
-     * is mean for side-effect free operations such as logging the current 
-     * state of bindings.
+     * Iterator through all elements of the current module and write the output of the
+     * ElementVisitor to the logger at debug level.  'null' responses are ignored
      * @param visitor
      */
     public InjectorBuilder traceEachElement(ElementVisitor<String> visitor) {
@@ -129,6 +128,14 @@ public final class InjectorBuilder {
         }
         return this;
     }
+
+    /**
+     * Log the current binding state.  traceEachKey() is useful for debugging a sequence of
+     * operation where the binding snapshot can be dumped to the log after an operation.
+     */
+    public InjectorBuilder traceEachKey() {
+        return traceEachElement(new KeyTracingVisitor());
+    }
     
     /**
      * Log a warning that static injection is being used.  Static injection is considered a 'hack'
@@ -137,17 +144,10 @@ public final class InjectorBuilder {
     public InjectorBuilder warnOfStaticInjections() {
         return traceEachElement(new WarnOfStaticInjectionVisitor());
     }
-
-    /**
-     * Log the current binding state.  Log() is useful for debugging a sequence of
-     * operation where the binding snapshot can be dumped to the log after an operation.
-     */
-    public InjectorBuilder logEachKey() {
-        return traceEachElement(new KeyTracingVisitor());
-    }
     
     /**
-     * Extend the CORE dsl by providing a custom ModuleTransformer
+     * Extend the core DSL by providing a custom ModuleTransformer.  The output module 
+     * replaces the current module.
      * @param transformer
      */
     public InjectorBuilder map(ModuleTransformer transformer) {
@@ -156,7 +156,7 @@ public final class InjectorBuilder {
     }
     
     /**
-     * Filter out elements for which the provided visitor returns true
+     * Filter out elements for which the provided visitor returns true.
      * @param predicate
      */
     public InjectorBuilder filter(ElementVisitor<Boolean> predicate) {

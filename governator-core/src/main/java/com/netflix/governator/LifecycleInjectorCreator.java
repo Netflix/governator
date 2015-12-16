@@ -93,7 +93,7 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
         
         // Construct the injector using our override structure
         try {
-            onBeforeInjectorCreated();
+            onBeforeInjectorCreate();
             Injector injector = Guice.createInjector(
                 stage, 
                 module,
@@ -111,11 +111,11 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                 });
             manager.notifyStarted();
             LifecycleInjector lifecycleInjector = LifecycleInjector.wrapInjector(injector, manager);
-            onAfterInjectorCreated();
+            onSuccessfulInjectorCreate();
             return lifecycleInjector;
         }
         catch (ProvisionException|CreationException|ConfigurationException e) {
-            onInjectorCreateFailed(e);
+            onFailedInjectorCreate(e);
             LOG.error("Failed to create injector", e);
             try {
                 manager.notifyStartFailed(e);
@@ -130,15 +130,36 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                 throw e;
             }
         }
+        finally {
+            onCompletedInjectorCreate();
+        }
     }
 
-    protected void onBeforeInjectorCreated() {
+    /**
+     * Template method invoked immediately before the injector is created
+     */
+    protected void onBeforeInjectorCreate() {
     }
 
-    protected void onAfterInjectorCreated() {
+    /**
+     * Template method invoked immediately after the injector is created
+     */
+    protected void onSuccessfulInjectorCreate() {
     }
     
-    protected void onInjectorCreateFailed(Throwable error) {
+    /**
+     * Template method invoked immediately after any failure to create the injector
+     * @param error Cause of the failure
+     */
+    protected void onFailedInjectorCreate(Throwable error) {
+    }
+
+    /**
+     * Template method invoked at the end of createInjector() regardless of whether
+     * the injector was created successful or not.
+     */
+    protected void onCompletedInjectorCreate() {
+        
     }
     
     @Override

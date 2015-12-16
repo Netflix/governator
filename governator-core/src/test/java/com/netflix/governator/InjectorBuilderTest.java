@@ -33,13 +33,8 @@ public class InjectorBuilderTest {
                 }
                 
                 @Override
-                protected void onAfterInjectorCreated() {
+                protected void onCompletedInjectorCreate() {
                     afterInjectorCalled.set(true);
-                }
-
-                @Override
-                protected void onBeforeInjectorCreated() {
-                    beforeInjectorCalled.set(true);
                 }
             })
             .shutdown();
