@@ -21,5 +21,4 @@ public class BindingLoggingModuleTransformer implements ModuleListTransformer {
         
         return modules;
     }
-
 }

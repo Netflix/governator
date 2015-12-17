@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import com.google.inject.Injector;
+import com.netflix.governator.spi.LifecycleListener;
 
 public class LifecycleModuleTest {
     

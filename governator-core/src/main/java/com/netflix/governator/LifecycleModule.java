@@ -26,6 +26,7 @@ import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.internal.PostConstructLifecycleActions;
 import com.netflix.governator.internal.PreDestroyLifecycleActions;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
@@ -72,24 +73,29 @@ public final class LifecycleModule extends AbstractModule {
         private List<LifecycleListener> pendingLifecycleListeners = new ArrayList<>();
         private boolean shutdownOnFailure = true;
         
-        public LifecycleProvisionListener() {
-            System.out.println("Creating LifecycleProvisionListener");
+        @SuppressLifecycleUninitialized
+        @Singleton
+        static class OptionalArgs {
+            @com.google.inject.Inject(optional = true)
+            GovernatorFeatureSet governatorFeatures;
+            
+            boolean hasShutdownOnFailure() {
+                return governatorFeatures == null ? true : governatorFeatures.get(GovernatorFeatures.SHUTDOWN_ON_ERROR);
+            }
         }
-        
         @Inject
         public static void initialize(
-                GovernatorFeatureSet karyonFeatures,
+                OptionalArgs args,
                 LifecycleManager manager, 
                 LifecycleProvisionListener provisionListener, 
                 Set<LifecycleFeature> features) {
             provisionListener.manager = manager;
             provisionListener.features = features;
-            provisionListener.shutdownOnFailure = karyonFeatures.get(GovernatorFeatures.SHUTDOWN_ON_ERROR);
+            provisionListener.shutdownOnFailure =  args.hasShutdownOnFailure();
             
             LOG.debug("LifecycleProvisionListener initialized {}", features);
             
             for (LifecycleListener l : provisionListener.pendingLifecycleListeners) {
-                LOG.info("Adding listener: " + l);
                 manager.addListener(l);
             }
             provisionListener.pendingLifecycleListeners.clear();

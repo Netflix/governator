@@ -3,6 +3,7 @@ package com.netflix.governator.internal;
 import javax.inject.Singleton;
 
 import com.netflix.governator.AbstractPropertySource;
+import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 
 /**
  * PropertySource based on system and environment properties with 
@@ -12,6 +13,7 @@ import com.netflix.governator.AbstractPropertySource;
  *
  */
 @Singleton
+@SuppressLifecycleUninitialized
 public final class DefaultPropertySource extends AbstractPropertySource {
 
     @Override
@@ -28,5 +30,10 @@ public final class DefaultPropertySource extends AbstractPropertySource {
                 return defaultValue;
         }
         return value;
+    }
+
+    @Override
+    public boolean hasProperty(String key) {
+        return get(key, (String)null) != null;
     }
 }

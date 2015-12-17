@@ -1,16 +1,16 @@
-package com.netflix.governator.internal;
+package com.netflix.governator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.governator.LifecycleListener;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Wrapper for any LifecycleListener to provide this following funcionality
  * 1.  Logging of events as INFO
  * 2.  Swallow any event handler exceptions during shutdown
  */
-public final class SafeLifecycleListener implements LifecycleListener {
+final class SafeLifecycleListener implements LifecycleListener {
     private static final Logger LOG = LoggerFactory.getLogger(SafeLifecycleListener.class);
 
     private final LifecycleListener delegate;
@@ -31,12 +31,12 @@ public final class SafeLifecycleListener implements LifecycleListener {
 
     @Override
     public void onStopped(Throwable t) {
-        LOG.info("Failed LifecycleListener '{}'", delegate);
+        LOG.info("Stopping LifecycleListener '{}'", delegate, t);
         try {
             delegate.onStopped(t);
         }
         catch (Exception e) {
-            LOG.info("onStartFailed failed for listener {}", delegate, e);
+            LOG.info("onStopped failed for listener {}", delegate, e);
         }
     }
 
