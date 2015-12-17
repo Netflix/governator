@@ -59,14 +59,12 @@ public final class PropertiesPropertySource extends AbstractPropertySource imple
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-
-        throw new RuntimeException("Only one PropertiesModule may be installed");
+        // equals() is used by Guice to dedup multiple installs.  This is module has state so we only
+        // allow one instance of it to ever be installed.  This equals() implementation
+        // forces guice to dedup as long as it is the same exact object.  Installing multiple 
+        // PropertiesPropertySource instances will result in duplicate binding errors for PropertySource
+        // where the errors will provide details about where the multiple installs came from.
+        return this == obj;
     }
 
     @Override

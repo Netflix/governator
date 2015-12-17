@@ -12,12 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.ConfigurationException;
-import com.google.inject.CreationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.ProvisionException;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
@@ -114,9 +111,9 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
             onSuccessfulInjectorCreate();
             return lifecycleInjector;
         }
-        catch (ProvisionException|CreationException|ConfigurationException e) {
-            onFailedInjectorCreate(e);
+        catch (Exception e) {
             LOG.error("Failed to create injector", e);
+            onFailedInjectorCreate(e);
             try {
                 manager.notifyStartFailed(e);
             }

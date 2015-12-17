@@ -25,7 +25,11 @@ public class InjectorBuilderTest {
         final AtomicBoolean beforeInjectorCalled = new AtomicBoolean(false);
         
         InjectorBuilder
-            .createDefault()
+            .fromModule(new AbstractModule() {
+                @Override
+                protected void configure() {
+                }
+            })
             .createInjector(new LifecycleInjectorCreator() {
                 @Inject
                 public void initialize() {

@@ -12,7 +12,7 @@ public class ModuleSourceTracingVisitor  extends DefaultElementVisitor<String> {
     protected String visitOther(Element element) {
         Object source = element.getSource();
         ElementSource elementSource = null;
-        while (source != null && source instanceof ElementSource) {
+        while (source instanceof ElementSource) {
             elementSource = (ElementSource)source;
             source = elementSource.getOriginalElementSource();
         }

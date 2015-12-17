@@ -69,14 +69,6 @@ public final class InjectorBuilder {
         return new InjectorBuilder(Modules.combine(modules));
     }
     
-    public static InjectorBuilder createDefault() {
-        return fromModule(new Module() {
-            @Override
-            public void configure(Binder binder) {
-            }
-        });
-    }
-    
     private InjectorBuilder(Module module) {
         this.module = module;
     }
