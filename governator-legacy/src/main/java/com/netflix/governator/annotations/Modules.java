@@ -12,6 +12,11 @@ import com.netflix.governator.guice.bootstrap.ModulesBootstrap;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Bootstrap(bootstrap=ModulesBootstrap.class)
+@Deprecated
+/**
+ * @deprecated Use Guice's built in module deduping using hashCode and equals instead
+ * http://www.mattinsler.com/post/26548709502/google-guice-module-de-duplication
+ */
 public @interface Modules {
     /**
      * Modules to include
