@@ -23,10 +23,7 @@ import com.google.inject.Scopes;
 
 /**
  * A Guice {@link Scope} that enables lazy singletons
- * @deprecated Use javax.inject.Singleton instead.  LazySingleton is not needed since we run in Stage.DEVELOPMENT.
- * where any non eager singleon is lazy.
  */
-@Deprecated
 final class LazySingletonScopeImpl implements Scope
 {
     @Override
