@@ -5,7 +5,7 @@ import javax.inject.Inject;
 /**
  * Install this module to log a Provision report after the Injector is created.
  */
-public class ProvisionDebugModule extends SingletonModule {
+public final class ProvisionDebugModule extends SingletonModule {
     public static class StaticInitializer {
         @Inject
         public static LoggingProvisionMetricsLifecycleListener listener;
