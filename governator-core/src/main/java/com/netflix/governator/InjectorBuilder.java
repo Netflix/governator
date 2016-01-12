@@ -199,14 +199,14 @@ public final class InjectorBuilder {
     /**
      * @see {@link InjectorBuilder#createInjector(Stage, InjectorCreator)}
      */
-    public Injector createInjector(Stage stage) {
+    public LifecycleInjector createInjector(Stage stage) {
         return createInjector(stage, new LifecycleInjectorCreator());
     }
 
     /**
      * @see {@link InjectorBuilder#createInjector(Stage, InjectorCreator)}
      */
-    public Injector createInjector() {
+    public LifecycleInjector createInjector() {
         return createInjector(LAZY_SINGLETONS_STAGE, new LifecycleInjectorCreator());
     }
 }
