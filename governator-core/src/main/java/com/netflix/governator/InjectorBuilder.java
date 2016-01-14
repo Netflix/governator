@@ -54,10 +54,9 @@ public final class InjectorBuilder {
         return new InjectorBuilder(module);
     }
     
-    public static InjectorBuilder fromModules(Module firstModule, Module secondModule, Module ... additionalModules) {
+    public static InjectorBuilder fromModules(Module firstModule, Module ... additionalModules) {
         List<Module> modules = new ArrayList<>();
         modules.add(firstModule);
-        modules.add(secondModule);
         if (null != additionalModules) {
             modules.addAll(Arrays.asList(additionalModules));
         }
