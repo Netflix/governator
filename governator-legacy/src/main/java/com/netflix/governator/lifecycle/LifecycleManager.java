@@ -231,6 +231,12 @@ public class LifecycleManager implements Closeable
             try
             {
                 stopInstances();
+
+                WarmUpSession session = postStartWarmUpSession.get();
+                if (session != null)
+                {
+                    session.close();
+                }
             }
             catch ( Exception e )
             {
