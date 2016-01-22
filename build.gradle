@@ -38,8 +38,6 @@ subprojects {
     }
 
     dependencies {
-        compile 'javax.inject:javax.inject:1'
-
         testCompile 'org.testng:testng:6.1.1'
         testCompile 'org.slf4j:slf4j-log4j12:1.7.2'
     }
