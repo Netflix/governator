@@ -5,6 +5,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import javax.annotation.PreDestroy;
+
 import junit.framework.Assert;
 
 import org.eclipse.jetty.server.Server;
@@ -19,17 +21,27 @@ import com.netflix.governator.guice.jetty.JettyConfig;
 import com.netflix.governator.guice.jetty.JettyModule;
 
 public class JettyServerTest {
+    static class Foo {
+        private boolean shutdownCalled;
+        
+        @PreDestroy
+        void shutdown() {
+            shutdownCalled = true;
+        }
+    };
+    
+    
     @Test
     public void confirmShutdownSequence() throws InterruptedException, MalformedURLException, IOException {
         // Create the injector and autostart Jetty
-        LifecycleInjector injector = new Governator()
-            .addModules(
+        LifecycleInjector injector = InjectorBuilder.fromModules(
                 new SampleServletModule(), 
                 new ShutdownHookModule(), 
                 Modules.override(new JettyModule())
                        .with(new AbstractModule() {
                             @Override
                             protected void configure() {
+                                bind(Foo.class).asEagerSingleton();
                             }
                             
                             @Provides
@@ -38,8 +50,10 @@ public class JettyServerTest {
                                 return new DefaultJettyConfig().setPort(0);
                             }
                         }))
-            .run();
+                        .createInjector();
 
+        Foo foo = injector.getInstance(Foo.class);
+        
         // Determine the emphermal port from jetty
         Server server = injector.getInstance(Server.class);
         int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
@@ -59,6 +73,7 @@ public class JettyServerTest {
         }
         injector.awaitTermination();
         
+        Assert.assertTrue(foo.shutdownCalled);
         Assert.assertEquals(1, resource.getPostConstructCount());
         Assert.assertEquals(1, resource.getPreDestroyCount());
     }

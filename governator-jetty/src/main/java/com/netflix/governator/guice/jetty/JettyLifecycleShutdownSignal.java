@@ -27,20 +27,13 @@ public class JettyLifecycleShutdownSignal extends AbstractLifecycleShutdownSigna
     public void signal() {
         final int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
         LOG.info("Jetty Server on port {} shutting down", port);
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    shutdown();
-                    server.stop();
-                    LOG.info("Jetty Server on port {} shut down complete", port);
-                } catch (Exception e) {
-                    LOG.warn("Jetty Server on port {} failed to shut down", port, e);
-                }
-            }
-        });
-        t.setDaemon(true);
-        t.start();
+        try {
+            shutdown();
+            server.stop();
+        } catch (Exception e) {
+            LOG.error("Failed to shut down jetty on port{}", port, e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
