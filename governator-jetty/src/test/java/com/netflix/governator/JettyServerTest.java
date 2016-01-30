@@ -11,7 +11,6 @@ import junit.framework.Assert;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
 import com.google.inject.AbstractModule;
@@ -22,16 +21,18 @@ import com.netflix.governator.guice.jetty.JettyConfig;
 import com.netflix.governator.guice.jetty.JettyModule;
 
 public class JettyServerTest {
-    public static class Foo {
+    static class Foo {
+        private boolean shutdownCalled;
+        
         @PreDestroy
         void shutdown() {
+            shutdownCalled = true;
         }
-    }
+    };
+    
     
     @Test
     public void confirmShutdownSequence() throws InterruptedException, MalformedURLException, IOException {
-        final Foo foo = Mockito.mock(Foo.class);
-        
         // Create the injector and autostart Jetty
         LifecycleInjector injector = InjectorBuilder.fromModules(
                 new SampleServletModule(), 
@@ -40,7 +41,7 @@ public class JettyServerTest {
                        .with(new AbstractModule() {
                             @Override
                             protected void configure() {
-                                bind(Foo.class).toInstance(foo);
+                                bind(Foo.class).asEagerSingleton();
                             }
                             
                             @Provides
@@ -51,6 +52,8 @@ public class JettyServerTest {
                         }))
                         .createInjector();
 
+        Foo foo = injector.getInstance(Foo.class);
+        
         // Determine the emphermal port from jetty
         Server server = injector.getInstance(Server.class);
         int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
@@ -70,7 +73,7 @@ public class JettyServerTest {
         }
         injector.awaitTermination();
         
-        Mockito.verify(foo, Mockito.times(1)).shutdown();
+        Assert.assertTrue(foo.shutdownCalled);
         Assert.assertEquals(1, resource.getPostConstructCount());
         Assert.assertEquals(1, resource.getPreDestroyCount());
     }
