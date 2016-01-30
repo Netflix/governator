@@ -48,7 +48,14 @@ public class SampleResource {
     
     @Path("kill")
     public String kill() {
-        event.signal();
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                event.signal();
+            }
+        });
+        t.setDaemon(true);
+        t.start();
         return "killing";
     }
     
