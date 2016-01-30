@@ -3,6 +3,7 @@ package com.netflix.governator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
 import org.junit.Assert;
@@ -10,6 +11,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.spi.Element;
@@ -18,6 +20,30 @@ import com.netflix.governator.visitors.KeyTracingVisitor;
 import com.netflix.governator.visitors.ModuleSourceTracingVisitor;
 
 public class InjectorBuilderTest {
+    private static class Foo {
+        @PreDestroy 
+        public void shutdown() {
+            
+        }
+    }
+
+    @Test
+    public void testLifecycleShutdown() {
+        final Foo foo = Mockito.mock(Foo.class);
+        
+        LifecycleInjector injector = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Foo.class).toInstance(foo);
+            }
+        }).createInjector();
+        
+        Mockito.verify(foo, Mockito.never()).shutdown();
+        injector.shutdown();
+        
+        Mockito.verify(foo, Mockito.times(1)).shutdown();
+    }
+    
     @Test
     public void testLifecycleInjectorEvents() {
         final AtomicBoolean injectCalled = new AtomicBoolean(false);

@@ -22,8 +22,7 @@ public class JettyServerTest {
     @Test
     public void confirmShutdownSequence() throws InterruptedException, MalformedURLException, IOException {
         // Create the injector and autostart Jetty
-        LifecycleInjector injector = new Governator()
-            .addModules(
+        LifecycleInjector injector = InjectorBuilder.fromModules(
                 new SampleServletModule(), 
                 new ShutdownHookModule(), 
                 Modules.override(new JettyModule())
@@ -38,7 +37,7 @@ public class JettyServerTest {
                                 return new DefaultJettyConfig().setPort(0);
                             }
                         }))
-            .run();
+                        .createInjector();
 
         // Determine the emphermal port from jetty
         Server server = injector.getInstance(Server.class);
