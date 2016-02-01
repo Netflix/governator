@@ -4,8 +4,8 @@ DESCRIPTION
 -----------
 
 Governator is a library of extensions and utilities that enhance Google Guice to 
-provide: classpath scanning and automatic binding, lifecycle management, configuration 
-to field mapping, field validation and parallelized object warmup.
+provide injector lifecycle and well as support for object lifecycle via 
+@PostConstruct and @PreDestory.
 
 DETAILS
 -----------

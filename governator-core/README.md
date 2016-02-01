@@ -7,19 +7,20 @@ lifecycle management.  The concept of lifecycle management has two aspects here.
 2.  Object lifecycle managmenet via @PostConstruct and @PreDestroy.
 
 Governator also provides hooks through which additional features may be added to 
-lifecycle management at the appropriate places. 
-
-Note that this version of governator doesn't try to add any additional APIs (with the exception of the lightweight Governator.createInjector() API) or bastractions on top of Guice but rather leverage the use of Guice Modules and simple bindings to add features.
+lifecycle management at the appropriate places. (see LifecycleFeature)
 
 ## Creating the Injector
----------------------
-Governator provides a simple wrapper to Guice's Guice.createInjector through which lifecycle management is added.  Note that unlike previous versions of Governator no other features, such as classpath scanning and configuration bindings, are added here.  These are added using traditional modules.  Also, unlike previous versions only one Injector is created to avoid various idiosyncrasies introduced when using child injectors. 
+------------------------
+Governator provides a simple builder DSL on top of Guice's built in SPI to,
+1.  provide a more readable fluent code
+2.  Make injector creation policy driven
+3.  constructing the list of modules provided to Guice.  
 
 ```java
-LifecycleInjector injector = Governator.createInjector(new MyApplicationModule());
+LifecycleInjector injector = InjectorBuilder.fromModules(new MyApplicationModule());
 ```
 
-Once created the container can interact with the LifecycleInjector's lifecycle 
+Once created the container can interact with the LifecycleInjector's lifecycle methods
 directly or asynchronously by registering a LifecycleListener in a Guice module.  The
 injector's lifecycle may be terminated either by calling LifecycleInjector.shutdown()
 or by injecting LifecycleShutdownSignal and calling LifecycleShutdownSignal.shutdown().
@@ -66,12 +67,54 @@ You can also enable a JVM shutdown hook by adding ShutdownHookModule to Guice's 
 Governator.createInjector(new ShutdownHookModule(), new MyApplicationModule());
 ```
 
+## Injector lifecycle
+----------------------
+
+When using DI all operations should be performed within the context DI such that initialization 
+is done via dependency injection and eager singleton behavior. As long as eager singletons have 
+been properly registered the entire application should be functional once the injector has been 
+created.  Sometimes, however, it may be necessary to perform post injector creation operations, 
+such as registering that the application is ready to serve traffic.  This can be done by implementing
+the LifecycleInterface from any eager singleton.  
+
+```java
+@Singleton
+public class MyApplication extends AbstractLifecycleListener {
+    @Override
+    public void onStarted() {
+        applicationStatus.markAsUp();
+    }
+}
+```
+
+## Debugging Guice
+----------------------
+
+Governator includes several utilities to help debug problems and get insight into injector creation.
+
+### TracingProvisionListener
+
+Sometimes Guice fails to create the injector and provides little information about which class or object
+creation path resulted in failure.  Enabling the TracingProvisionListener will result in class names
+being emitted to standard output (can be customized to different outputs) and indented to give a clear
+path to the path through which objects were provisioned.  
+
+### ProvisionDebugModule
+
+The ProvisionDebugModule tracks metrics about object instantiation and retains this information after
+the injector has been created.  The information is later accessible via ProvisionMetrics.  This can 
+be used to provide a UI that gives a visual representation of the application bootstrapping processes,
+helping identify slow initialization paths.
+
+## 
+
 ## Using Governator with main()
 ----------------------------------
 ```java
 public class MyApplication {
 	public static void main(String[] args) throws Exception {
-		Governator.createInjector(new ShutdownHookModule(), new MyApplicationModule())
+		InjectorBuilder
+		    .fromModules(new ShutdownHookModule(), new MyApplicationModule())
 			.awaitTermination();
 	}
 }
@@ -84,7 +127,7 @@ public class StartServer extends GovernatorServletContextListener
 {
     @Override
     protected Injector createInjector() {
-        return Governator.createInjector(
+        return InjectorBuilder.fromModules(
         	new ShutdownHookModule(),
             new JerseyServletModule() {
                 @Override
