@@ -16,45 +16,46 @@ import com.google.inject.servlet.GuiceFilter;
 @HandlesTypes(WebApplicationInitializer.class)
 public class GovernatorServletContainerInitializer implements ServletContainerInitializer {
 
-	@Override
-	public void onStartup(Set<Class<?>> initializerClasses, ServletContext servletContext) throws ServletException {
-		final WebApplicationInitializer initializer = getInitializer(initializerClasses, servletContext);
-		if(initializer != null) {
-			servletContext.addFilter("guiceFilter", new GuiceFilter());
-			servletContext.addListener(new GovernatorServletContextListener() {
-				@Override
-				protected Injector createInjector() throws Exception {
-					return initializer.createInjector();
-				}
-			});
-		}	
-	}
-	
-	private WebApplicationInitializer getInitializer(Set<Class<?>> initializerClasses, ServletContext servletContext) throws ServletException {
-		List<WebApplicationInitializer> initializers = new LinkedList<WebApplicationInitializer>();
-		if (initializerClasses != null) {
-			for (Class<?> initializerClass : initializerClasses) {
-				if (!initializerClass.isInterface() && !Modifier.isAbstract(initializerClass.getModifiers()) &&
-						WebApplicationInitializer.class.isAssignableFrom(initializerClass)) {
-					try {
-						initializers.add((WebApplicationInitializer) initializerClass.newInstance());
-					}
-					catch (Throwable ex) {
-						throw new ServletException("Failed to instantiate WebApplicationInitializer class", ex);
-					}
-				}
-			}
-		}
+    @Override
+    public void onStartup(Set<Class<?>> initializerClasses, ServletContext servletContext) throws ServletException {
+        final WebApplicationInitializer initializer = getInitializer(initializerClasses, servletContext);
+        if (initializer != null) {
+            servletContext.addFilter("guiceFilter", new GuiceFilter());
+            servletContext.addListener(new GovernatorServletContextListener() {
+                @Override
+                protected Injector createInjector() throws Exception {
+                    return initializer.createInjector();
+                }
+            });
+        }
+    }
 
-		if (initializers.isEmpty()) {
-			servletContext.log("No WebApplicationInitializer types found on classpath");
-			return null;
-		}
-		if (initializers.size() > 1) {
-			servletContext.log("Multiple WebApplicationInitializer types found on classpath. Expected one but found " + initializers.size());
-			return null;
-		}
-		return initializers.get(0);
-	}
+    private WebApplicationInitializer getInitializer(Set<Class<?>> initializerClasses, ServletContext servletContext)
+            throws ServletException {
+        List<WebApplicationInitializer> initializers = new LinkedList<WebApplicationInitializer>();
+        if (initializerClasses != null) {
+            for (Class<?> initializerClass : initializerClasses) {
+                if (!initializerClass.isInterface() && !Modifier.isAbstract(initializerClass.getModifiers())
+                        && WebApplicationInitializer.class.isAssignableFrom(initializerClass)) {
+                    try {
+                        initializers.add((WebApplicationInitializer) initializerClass.newInstance());
+                    } catch (Throwable ex) {
+                        throw new ServletException("Failed to instantiate WebApplicationInitializer class", ex);
+                    }
+                }
+            }
+        }
+
+        if (initializers.isEmpty()) {
+            servletContext.log("No WebApplicationInitializer types found on classpath");
+            return null;
+        }
+        if (initializers.size() > 1) {
+            servletContext.log(
+                    "Multiple WebApplicationInitializer types found on classpath. Expected one but found " + initializers.size());
+            return null;
+        }
+        return initializers.get(0);
+    }
 
 }
