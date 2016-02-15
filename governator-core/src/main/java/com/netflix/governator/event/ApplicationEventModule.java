@@ -10,7 +10,6 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
@@ -91,5 +90,20 @@ public class ApplicationEventModule extends AbstractModule {
                 }
             }
         });
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ApplicationEventModule[]";
     }
 }

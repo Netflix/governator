@@ -13,5 +13,20 @@ public class GuavaApplicationEventModule extends AbstractModule {
         ApplicationEventModule applicationEventModule = new ApplicationEventModule(dispatcher);
         install(applicationEventModule);        
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "GuavaApplicationEventModule[]";
+    }
 
 }
