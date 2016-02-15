@@ -9,23 +9,20 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.reflect.TypeToken;
 import com.netflix.governator.event.ApplicationEvent;
-import com.netflix.governator.event.ApplicationEventCallback;
 import com.netflix.governator.event.ApplicationEventDispatcher;
 import com.netflix.governator.event.ApplicationEventListener;
 
 public class GuavaApplicationEventDispatcher implements ApplicationEventDispatcher {
 
     private final EventBus eventBus;
-    private final Method callbackMethod;
     private final Method eventListenerMethod;
 
     public GuavaApplicationEventDispatcher(EventBus eventBus) {
         this.eventBus = eventBus;
         try {
-            this.callbackMethod = ApplicationEventCallback.class.getDeclaredMethod("onEvent", ApplicationEvent.class);
             this.eventListenerMethod = ApplicationEventListener.class.getDeclaredMethod("onEvent", ApplicationEvent.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to cache ApplicationEvent method", e);
+            throw new RuntimeException("Failed to cache ApplicationEventListener method", e);
         }
     }
 
@@ -36,8 +33,8 @@ public class GuavaApplicationEventDispatcher implements ApplicationEventDispatch
     }
 
     @Override
-    public <T extends ApplicationEvent> void registerListener(Class<T> eventType, ApplicationEventCallback<T> callback) {
-        GuavaSubscriberProxy proxy = new GuavaSubscriberProxy(callback, callbackMethod, eventType);
+    public <T extends ApplicationEvent> void registerListener(Class<T> eventType, ApplicationEventListener<T> eventListener) {
+        GuavaSubscriberProxy proxy = new GuavaSubscriberProxy(eventListener, eventListenerMethod, eventType);
         eventBus.register(proxy);
     }
 

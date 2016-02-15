@@ -51,23 +51,23 @@ public class ApplicationEventModuleTest {
     }
 
     @Test
-    public void testEventCallbacks() throws Exception {
+    public void testManuallyRegisteredApplicationEventListeners() throws Exception {
         ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
         final AtomicInteger testEventCounter = new AtomicInteger();
         final AtomicInteger notTestEventCounter = new AtomicInteger();
         final AtomicInteger allEventCounter = new AtomicInteger();
 
-        dispatcher.registerListener(TestEvent.class, new ApplicationEventCallback<TestEvent>() {
+        dispatcher.registerListener(TestEvent.class, new ApplicationEventListener<TestEvent>() {
             public void onEvent(TestEvent event) {
                 testEventCounter.incrementAndGet();
             }
         });
-        dispatcher.registerListener(NotTestEvent.class, new ApplicationEventCallback<NotTestEvent>() {
+        dispatcher.registerListener(NotTestEvent.class, new ApplicationEventListener<NotTestEvent>() {
             public void onEvent(NotTestEvent event) {
                 notTestEventCounter.incrementAndGet();
             }
         });
-        dispatcher.registerListener(ApplicationEvent.class, new ApplicationEventCallback<ApplicationEvent>() {
+        dispatcher.registerListener(ApplicationEvent.class, new ApplicationEventListener<ApplicationEvent>() {
             public void onEvent(ApplicationEvent event) {
                 allEventCounter.incrementAndGet();
             }
@@ -80,7 +80,7 @@ public class ApplicationEventModuleTest {
     }
 
     @Test
-    public void testManuallyRegisteredApplicationEventListeners() throws Exception {
+    public void testManuallyRegisteredApplicationEventListenersWithoutClassArgument() throws Exception {
         ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
         final AtomicInteger testEventCounter = new AtomicInteger();
         final AtomicInteger notTestEventCounter = new AtomicInteger();

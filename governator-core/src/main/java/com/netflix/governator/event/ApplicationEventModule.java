@@ -18,10 +18,13 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.ProvisionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.netflix.governator.event.guava.GuavaApplicationEventModule;
 
 /**
- * Adds support for passing {@link ApplicationEvent}s backed by Guava {@link EventBus}
- * See {@link EventListener} and {@link ApplicationEventPublisher} for usage. 
+ * Adds support for passing {@link ApplicationEvent}s. Default (Guava-based) implementation
+ * can be found in {@link GuavaApplicationEventModule}
+ * 
+ * See {@link EventListener} and {@link ApplicationEventDispatcher} for usage. 
  */
 public class ApplicationEventModule extends AbstractModule {
     
