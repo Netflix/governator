@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.inject.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +33,6 @@ public class ApplicationEventModule extends AbstractModule {
         subscribingTypeListener = new ApplicationEventSubscribingTypeListener(dispatcher);
     }
     
-    @Singleton
     private static class ApplicationEventSubscribingTypeListener implements TypeListener {
 
         private static final Logger LOG = LoggerFactory.getLogger(ApplicationEventModule.class);
