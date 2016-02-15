@@ -1,10 +1,12 @@
 package com.netflix.governator.guice.servlet;
 
 import java.lang.reflect.Modifier;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -20,7 +22,7 @@ public class GovernatorServletContainerInitializer implements ServletContainerIn
     public void onStartup(Set<Class<?>> initializerClasses, ServletContext servletContext) throws ServletException {
         final WebApplicationInitializer initializer = getInitializer(initializerClasses, servletContext);
         if (initializer != null) {
-            servletContext.addFilter("guiceFilter", new GuiceFilter());
+            servletContext.addFilter("guiceFilter", new GuiceFilter()).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
             servletContext.addListener(new GovernatorServletContextListener() {
                 @Override
                 protected Injector createInjector() throws Exception {

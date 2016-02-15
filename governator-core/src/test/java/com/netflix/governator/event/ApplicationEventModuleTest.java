@@ -1,59 +1,158 @@
 package com.netflix.governator.event;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.netflix.governator.InjectorBuilder;
+import com.netflix.governator.event.guava.GuavaApplicationEventModule;
 
 public class ApplicationEventModuleTest {
-    
-    @Test
-    public void testEventBus() throws Exception {
-        Injector injector = InjectorBuilder.fromModules(new ApplicationEventModule(), new AbstractModule() {
-                        
+
+    private Injector injector;
+
+    @Before
+    public void setup() {
+        injector = InjectorBuilder.fromModules(new GuavaApplicationEventModule(), new AbstractModule() {
             @Override
             protected void configure() {
-                bind(TestListener.class).toInstance(new TestListener());;
+                bind(TestAnnotatedListener.class).toInstance(new TestAnnotatedListener());
+                bind(TestListenerInterface.class).toInstance(new TestListenerInterface());
             }
         }).createInjector();
-        
-        ApplicationEventPublisher publisher = injector.getInstance(ApplicationEventPublisher.class);
-        TestListener listener = injector.getInstance(TestListener.class);
-        assertNotNull(publisher);
+    }
+
+    @Test
+    public void testProvidedComponentsPresent() {
+        ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
+        TestAnnotatedListener listener = injector.getInstance(TestAnnotatedListener.class);
+        TestListenerInterface listenerInterface = injector.getInstance(TestListenerInterface.class);
+        assertNotNull(dispatcher);
         assertNotNull(listener);
+        assertNotNull(listenerInterface);
+    }
+
+    @Test
+    public void testAnnotatedListener() throws Exception {
+        ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
+        TestAnnotatedListener listener = injector.getInstance(TestAnnotatedListener.class);
         assertEquals(0, listener.invocationCount.get());
-        publisher.publishEvent(new TestEvent());
+        dispatcher.publishEvent(new TestEvent());
         assertEquals(1, listener.invocationCount.get());
-       
+        dispatcher.publishEvent(new NotTestEvent());
+        assertEquals(1, listener.invocationCount.get());
+    }
+
+    @Test
+    public void testEventCallbacks() throws Exception {
+        ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
+        final AtomicInteger testEventCounter = new AtomicInteger();
+        final AtomicInteger notTestEventCounter = new AtomicInteger();
+        final AtomicInteger allEventCounter = new AtomicInteger();
+
+        dispatcher.registerListener(TestEvent.class, new ApplicationEventCallback<TestEvent>() {
+            public void onEvent(TestEvent event) {
+                testEventCounter.incrementAndGet();
+            }
+        });
+        dispatcher.registerListener(NotTestEvent.class, new ApplicationEventCallback<NotTestEvent>() {
+            public void onEvent(NotTestEvent event) {
+                notTestEventCounter.incrementAndGet();
+            }
+        });
+        dispatcher.registerListener(ApplicationEvent.class, new ApplicationEventCallback<ApplicationEvent>() {
+            public void onEvent(ApplicationEvent event) {
+                allEventCounter.incrementAndGet();
+            }
+        });
+
+        dispatcher.publishEvent(new TestEvent());
+        assertEquals(1, testEventCounter.get());
+        assertEquals(0, notTestEventCounter.get());
+        assertEquals(1, allEventCounter.get());
+    }
+
+    @Test
+    public void testManuallyRegisteredApplicationEventListeners() throws Exception {
+        ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
+        final AtomicInteger testEventCounter = new AtomicInteger();
+        final AtomicInteger notTestEventCounter = new AtomicInteger();
+        final AtomicInteger allEventCounter = new AtomicInteger();
+
+        dispatcher.registerListener(new ApplicationEventListener<TestEvent>() {
+            public void onEvent(TestEvent event) {
+                testEventCounter.incrementAndGet();
+            }
+        });
+        dispatcher.registerListener(new ApplicationEventListener<NotTestEvent>() {
+            public void onEvent(NotTestEvent event) {
+                notTestEventCounter.incrementAndGet();
+            }
+        });
+        dispatcher.registerListener(new ApplicationEventListener<ApplicationEvent>() {
+            public void onEvent(ApplicationEvent event) {
+                allEventCounter.incrementAndGet();
+            }
+        });
+
+        dispatcher.publishEvent(new TestEvent());
+        assertEquals(1, testEventCounter.get());
+        assertEquals(0, notTestEventCounter.get());
+        assertEquals(1, allEventCounter.get());
     }
     
-    private class TestListener {
+    @Test
+    public void testInjectorDiscoveredApplicationEventListeners() throws Exception {
+        ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
+        TestListenerInterface listener = injector.getInstance(TestListenerInterface.class);
+        assertEquals(0, listener.invocationCount.get());
+        dispatcher.publishEvent(new TestEvent());
+        assertEquals(1, listener.invocationCount.get());
+        dispatcher.publishEvent(new NotTestEvent());
+        assertEquals(1, listener.invocationCount.get());
+    }
+
+    private class TestAnnotatedListener {
         AtomicInteger invocationCount = new AtomicInteger();
-        
+
         @EventListener
         public void doThing(TestEvent event) {
-            invocationCount.incrementAndGet();            
+            invocationCount.incrementAndGet();
         }
-        
+
         @EventListener
         public void doNothing(String invalidArgumentType) {
             fail("This should never be called");
         }
-        
-        @EventListener 
+
+        @EventListener
         public void doNothing(Class<Object> arg1, Object arg2) {
             fail("This should never be called");
         }
     }
     
+    private class TestListenerInterface implements ApplicationEventListener<TestEvent> {
+        AtomicInteger invocationCount = new AtomicInteger();
+
+        @Override
+        public void onEvent(TestEvent event) {
+            invocationCount.incrementAndGet();
+        }
+    }
+
     private class TestEvent implements ApplicationEvent {
 
-        
+    }
+
+    private class NotTestEvent implements ApplicationEvent {
+
     }
 
 }
