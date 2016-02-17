@@ -118,6 +118,23 @@ public class ApplicationEventModuleTest {
         dispatcher.publishEvent(new NotTestEvent());
         assertEquals(1, listener.invocationCount.get());
     }
+    
+    @Test
+    public void testUnregisterApplicationEventListener() throws Exception {
+        ApplicationEventDispatcher dispatcher = injector.getInstance(ApplicationEventDispatcher.class);
+        final AtomicInteger testEventCounter = new AtomicInteger();
+
+        ApplicationEventRegistration registration = dispatcher.registerListener(new ApplicationEventListener<TestEvent>() {
+            public void onEvent(TestEvent event) {
+                testEventCounter.incrementAndGet();
+            }
+        });
+        
+        dispatcher.publishEvent(new TestEvent());
+        assertEquals(1, testEventCounter.get());
+        registration.unregister();
+        assertEquals(1, testEventCounter.get());        
+    }
 
     private class TestAnnotatedListener {
         AtomicInteger invocationCount = new AtomicInteger();

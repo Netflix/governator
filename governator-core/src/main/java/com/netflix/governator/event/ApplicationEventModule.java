@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.inject.Provider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,29 +25,36 @@ import com.netflix.governator.event.guava.GuavaApplicationEventModule;
  * 
  * See {@link EventListener} and {@link ApplicationEventDispatcher} for usage. 
  */
-public class ApplicationEventModule extends AbstractModule {
-    
-    private final ApplicationEventSubscribingTypeListener subscribingTypeListener; 
-    private final ApplicationEventDispatcher dispatcher;
-    
-    public ApplicationEventModule(ApplicationEventDispatcher dispatcher) {
-        this.dispatcher = dispatcher;
-        subscribingTypeListener = new ApplicationEventSubscribingTypeListener(dispatcher);
-    }
+public final class ApplicationEventModule extends AbstractModule {
     
     private static class ApplicationEventSubscribingTypeListener implements TypeListener {
 
-        private static final Logger LOG = LoggerFactory.getLogger(ApplicationEventModule.class);
-        private final ApplicationEventDispatcher dispatcher;
-
-        public ApplicationEventSubscribingTypeListener(ApplicationEventDispatcher dispatcher) {
-            this.dispatcher = dispatcher;
+        private static final Logger LOG = LoggerFactory.getLogger(ApplicationEventSubscribingTypeListener.class);
+        private final Provider<ApplicationEventDispatcher> dispatcherProvider;
+        
+        public ApplicationEventSubscribingTypeListener(Provider<ApplicationEventDispatcher> dispatcherProvider) {
+            this.dispatcherProvider = dispatcherProvider;
         }
 
         @Override
         public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
+            final Class<?> clazz = type.getRawType();
+            final List<Method> handlerMethods = getAllDeclaredHandlerMethods(clazz);
+            if(!handlerMethods.isEmpty())
+            {
+                encounter.register(new InjectionListener<Object>() {
+                    @Override
+                    public void afterInjection(Object injectee) {
+                        for (final Method handlerMethod : handlerMethods) {
+                            dispatcherProvider.get().registerListener(injectee, handlerMethod, (Class<? extends ApplicationEvent>) handlerMethod.getParameterTypes()[0]);
+                        }
+                    }
+                });
+            }
+        }
+
+        private List<Method> getAllDeclaredHandlerMethods(Class<?> clazz) {
             final List<Method> handlerMethods = new ArrayList<>();
-            Class<?> clazz = type.getRawType();
             while (clazz != null && !Collection.class.isAssignableFrom(clazz) && !clazz.isArray()) {
                 for (final Method handlerMethod : clazz.getDeclaredMethods()) {
                     if (handlerMethod.isAnnotationPresent(EventListener.class)) {
@@ -63,30 +72,32 @@ public class ApplicationEventModule extends AbstractModule {
                 }
                 clazz = clazz.getSuperclass();
             }
-            encounter.register(new InjectionListener<Object>() {
-                @Override
-                public void afterInjection(Object injectee) {
-                    for (final Method handlerMethod : handlerMethods) {
-                        dispatcher.registerListener(injectee, handlerMethod, (Class<? extends ApplicationEvent>) handlerMethod.getParameterTypes()[0]);
-                    }
-                }
-            });
+            return handlerMethods;
+        }
+    }
+    
+    private static class ApplicationEventSubscribingProvisionListener implements ProvisionListener {
+        
+        private final Provider<ApplicationEventDispatcher> dispatcherProvider;
+        
+        public ApplicationEventSubscribingProvisionListener(Provider<ApplicationEventDispatcher> dispatcherProvider) {
+            this.dispatcherProvider = dispatcherProvider;
+        }
+        
+        @Override
+        public <T> void onProvision(ProvisionInvocation<T> provision) {
+            T provisioned = provision.provision();
+            if (provisioned instanceof ApplicationEventListener) {
+                dispatcherProvider.get().registerListener((ApplicationEventListener)provisioned);
+            }
         }
     }
 
     @Override
     protected void configure() {
-        bind(ApplicationEventDispatcher.class).toInstance(dispatcher);
-        bindListener(Matchers.any(), subscribingTypeListener);
-        bindListener(Matchers.any(), new ProvisionListener() {
-            @Override
-            public <T> void onProvision(ProvisionInvocation<T> provision) {
-                T provisioned = provision.provision();
-                if (provisioned instanceof ApplicationEventListener) {
-                    dispatcher.registerListener((ApplicationEventListener) provisioned);
-                }
-            }
-        });
+        com.google.inject.Provider<ApplicationEventDispatcher> dispatcherProvider = binder().getProvider(ApplicationEventDispatcher.class);
+        bindListener(Matchers.any(),  new ApplicationEventSubscribingTypeListener(dispatcherProvider));
+        bindListener(Matchers.any(), new ApplicationEventSubscribingProvisionListener(dispatcherProvider));
     }
     
     @Override
