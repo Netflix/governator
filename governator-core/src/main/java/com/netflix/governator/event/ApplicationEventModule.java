@@ -46,7 +46,8 @@ public final class ApplicationEventModule extends AbstractModule {
                     @Override
                     public void afterInjection(Object injectee) {
                         for (final Method handlerMethod : handlerMethods) {
-                            dispatcherProvider.get().registerListener(injectee, handlerMethod, (Class<? extends ApplicationEvent>) handlerMethod.getParameterTypes()[0]);
+                            dispatcherProvider.get().registerListener(injectee, handlerMethod,
+                                    (Class<? extends ApplicationEvent>) handlerMethod.getParameterTypes()[0]);
                         }
                     }
                 });
@@ -63,10 +64,9 @@ public final class ApplicationEventModule extends AbstractModule {
                                 && ApplicationEvent.class.isAssignableFrom(handlerMethod.getParameterTypes()[0])) {
                             handlerMethods.add(handlerMethod);
                         } else {
-                            LOG.warn(
-                                    "@EventListener {}.{} skipped. Methods must be public, void, and accept exactly"
-                                            + " one argument extending com.netflix.governator.event.ApplicationEvent.",
-                                    clazz.getName(), handlerMethod.getName());
+                            throw new IllegalArgumentException("@EventListener " + clazz.getName() + "." + handlerMethod.getName()
+                                    + "skipped. Methods must be public, void, and accept exactly"
+                                    + " one argument extending com.netflix.governator.event.ApplicationEvent.");
                         }
                     }
                 }

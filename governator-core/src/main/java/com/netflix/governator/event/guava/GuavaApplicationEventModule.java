@@ -5,12 +5,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import javax.inject.Inject;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.netflix.governator.event.ApplicationEvent;
 import com.netflix.governator.event.ApplicationEventDispatcher;
 import com.netflix.governator.event.ApplicationEventListener;
@@ -18,16 +18,11 @@ import com.netflix.governator.event.ApplicationEventModule;
 import com.netflix.governator.event.ApplicationEventRegistration;
 
 public final class GuavaApplicationEventModule extends AbstractModule {   
-    
-    @Provides
-    @Singleton
-    public ApplicationEventDispatcher dispatcher() {
-        return new GuavaApplicationEventDispatcher(new EventBus("Governator Application Event Bus"));
-    }
-    
+     
     @Override
     protected void configure() {  
         install(new ApplicationEventModule());    
+        bind(ApplicationEventDispatcher.class).to(GuavaApplicationEventDispatcher.class).asEagerSingleton();
     }
     
     @Override
@@ -50,6 +45,7 @@ public final class GuavaApplicationEventModule extends AbstractModule {
         private final EventBus eventBus;
         private final Method eventListenerMethod;
     
+        @Inject
         public GuavaApplicationEventDispatcher(EventBus eventBus) {
             this.eventBus = eventBus;
             try {
