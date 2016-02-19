@@ -1,8 +1,8 @@
 package com.netflix.governator;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +89,7 @@ public class LifecycleModuleTest {
             public void initialize(Injector injector) {
                 super.initialize(injector);
                 throw new RuntimeException("Failed");
-            }
+            } 
         };
         
         try {
