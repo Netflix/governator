@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -19,8 +18,8 @@ import com.netflix.governator.guice.jetty.DefaultJettyConfig;
 import com.netflix.governator.guice.jetty.GovernatorJerseyServletModule;
 import com.netflix.governator.guice.jetty.JettyConfig;
 import com.netflix.governator.guice.jetty.JettyModule;
-import com.netflix.governator.jersey.annotations.ServletContainerProperties;
 import com.sun.jersey.api.core.PackagesResourceConfig;
+import com.sun.jersey.api.core.ResourceConfig;
 
 public class JerseyServerTest {
     @Test
@@ -34,11 +33,11 @@ public class JerseyServerTest {
                     }
                     
                     @Provides
-                    @ServletContainerProperties
-                    Map<String, Object> getContainerProperties() {
-                        return ImmutableMap.<String, Object>builder()
+                    ResourceConfig getResourceConfig() {
+                        return new PackagesResourceConfig(ImmutableMap.<String, Object>builder()
                                 .put(PackagesResourceConfig.PROPERTY_PACKAGES, "com.netflix")
-                                .build();
+                                .put(ResourceConfig.FEATURE_DISABLE_WADL, "false")
+                                .build());
                     }
                 },
                 Modules.override(new JettyModule())
