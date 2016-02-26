@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+dependencies {
+    compile project(':governator-core')
+
+    compile 'javax.servlet:servlet-api:2.5'
+
+    compile 'com.google.inject.extensions:guice-servlet:4.0'
+
+    compile 'com.sun.jersey:jersey-server:1.19'
+    compile 'com.sun.jersey.contribs:jersey-guice:1.19'
+
+    compile 'org.eclipse.jetty:jetty-servlet:9.2.12.v20150709'
+
+    testCompile project(':governator-jetty')
+}
