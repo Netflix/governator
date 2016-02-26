@@ -3,7 +3,7 @@ apply plugin: 'java'
 dependencies {
     compile project(':governator-core')
 
-    compile 'javax.servlet:servlet-api:3.0'
+    compile 'javax.servlet:servlet-api:2.5'
 
     compile 'com.google.inject.extensions:guice-servlet:4.0'
 
