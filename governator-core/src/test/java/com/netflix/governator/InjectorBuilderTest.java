@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,6 +15,7 @@ import org.junit.rules.TestName;
 import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.spi.Element;
 import com.netflix.governator.visitors.BindingTracingVisitor;
 import com.netflix.governator.visitors.KeyTracingVisitor;
@@ -45,10 +47,33 @@ public class InjectorBuilderTest {
     }
     
     @Test
+    public void testLifecycleShutdownWithAtProvides() {
+        final Foo foo = Mockito.mock(Foo.class);
+        
+        LifecycleInjector injector = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+            }
+            
+            @Provides
+            @Singleton
+            Foo getFoo() {
+                return foo;
+            }
+        }).createInjector();
+        
+        injector.getInstance(Foo.class);
+        
+        Mockito.verify(foo, Mockito.never()).shutdown();
+        injector.shutdown();
+        
+        Mockito.verify(foo, Mockito.times(1)).shutdown();
+    }
+    
+    @Test
     public void testLifecycleInjectorEvents() {
         final AtomicBoolean injectCalled = new AtomicBoolean(false);
         final AtomicBoolean afterInjectorCalled = new AtomicBoolean(false);
-        final AtomicBoolean beforeInjectorCalled = new AtomicBoolean(false);
         
         InjectorBuilder
             .fromModule(new AbstractModule() {
@@ -71,7 +96,6 @@ public class InjectorBuilderTest {
         
         Assert.assertTrue(injectCalled.get());
         Assert.assertTrue(afterInjectorCalled.get());
-        Assert.assertTrue(beforeInjectorCalled.get());
     }
     
     @Before
