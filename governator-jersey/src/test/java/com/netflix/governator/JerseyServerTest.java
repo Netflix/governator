@@ -15,11 +15,13 @@ import com.google.inject.CreationException;
 import com.google.inject.Provides;
 import com.google.inject.util.Modules;
 import com.netflix.governator.guice.jetty.DefaultJettyConfig;
-import com.netflix.governator.guice.jetty.GovernatorJerseyServletModule;
+import com.netflix.governator.guice.jetty.GovernatorServletContainer;
 import com.netflix.governator.guice.jetty.JettyConfig;
 import com.netflix.governator.guice.jetty.JettyModule;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
+import com.sun.jersey.guice.JerseyServletModule;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 public class JerseyServerTest {
     @Test
@@ -27,9 +29,11 @@ public class JerseyServerTest {
         // Create the injector and autostart Jetty
         LifecycleInjector injector = InjectorBuilder.fromModules(
                 new ShutdownHookModule(), 
-                new GovernatorJerseyServletModule() {
+                new JerseyServletModule() {
                     @Override
-                    protected void configureMoreServlets() {
+                    protected void configureServlets() {
+                        bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
+                        serve("/*").with(GuiceContainer.class);
                     }
                     
                     @Provides
@@ -76,9 +80,10 @@ public class JerseyServerTest {
         // Create the injector and autostart Jetty
         LifecycleInjector injector = InjectorBuilder.fromModules(
                 new ShutdownHookModule(), 
-                new GovernatorJerseyServletModule() {
-                    @Override
-                    protected void configureMoreServlets() {
+                new JerseyServletModule() {
+                    protected void configureServlets() {
+                        bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
+                        serve("/*").with(GuiceContainer.class);
                     }
                 },
                 Modules.override(new JettyModule())
@@ -117,9 +122,10 @@ public class JerseyServerTest {
         // Create the injector and autostart Jetty
         LifecycleInjector injector = InjectorBuilder.fromModules(
                 new ShutdownHookModule(), 
-                new GovernatorJerseyServletModule() {
-                    @Override
-                    protected void configureMoreServlets() {
+                new JerseyServletModule() {
+                    protected void configureServlets() {
+                        bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
+                        serve("/*").with(GuiceContainer.class);
                         bind(SampleResource.class);
                     }
                 },
