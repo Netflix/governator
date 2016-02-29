@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.guice.jetty;
 
 import com.google.inject.servlet.ServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;

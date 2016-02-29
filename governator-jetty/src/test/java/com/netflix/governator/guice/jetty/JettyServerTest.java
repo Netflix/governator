@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.guice.jetty;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -16,6 +16,9 @@ import org.testng.annotations.Test;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.util.Modules;
+import com.netflix.governator.InjectorBuilder;
+import com.netflix.governator.LifecycleInjector;
+import com.netflix.governator.ShutdownHookModule;
 import com.netflix.governator.guice.jetty.DefaultJettyConfig;
 import com.netflix.governator.guice.jetty.JettyConfig;
 import com.netflix.governator.guice.jetty.JettyModule;

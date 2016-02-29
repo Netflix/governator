@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.guice.jetty;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -11,6 +11,8 @@ import javax.ws.rs.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.netflix.governator.LifecycleShutdownSignal;
 
 @Path("/")
 @Singleton

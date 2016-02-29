@@ -1,4 +1,4 @@
-package com.netflix.governator;
+package com.netflix.governator.guice.jetty;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -14,10 +14,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.CreationException;
 import com.google.inject.Provides;
 import com.google.inject.util.Modules;
-import com.netflix.governator.guice.jetty.DefaultJettyConfig;
-import com.netflix.governator.guice.jetty.GovernatorServletContainer;
-import com.netflix.governator.guice.jetty.JettyConfig;
-import com.netflix.governator.guice.jetty.JettyModule;
+import com.netflix.governator.InjectorBuilder;
+import com.netflix.governator.LifecycleInjector;
+import com.netflix.governator.ShutdownHookModule;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.JerseyServletModule;
@@ -39,7 +38,7 @@ public class JerseyServerTest {
                     @Provides
                     ResourceConfig getResourceConfig() {
                         return new PackagesResourceConfig(ImmutableMap.<String, Object>builder()
-                                .put(PackagesResourceConfig.PROPERTY_PACKAGES, "com.netflix")
+                                .put(PackagesResourceConfig.PROPERTY_PACKAGES, SampleResource.class.getPackage().getName())
                                 .put(ResourceConfig.FEATURE_DISABLE_WADL, "false")
                                 .build());
                     }
