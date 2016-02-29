@@ -17,8 +17,9 @@ import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.WebConfig;
 
 /**
- * Enhancement to {@link GuiceContainer} by allowing the Jersey to be configured via bindings instead of 
- * statically in a {@link JerseyServletModule}.  To enable just provide the following binding,
+ * Enhancement to {@link GuiceContainer} by allowing Jersey to be configured via bindings instead of 
+ * statically in a {@link JerseyServletModule}.  In addition all singleton resources will be 
+ * instantiated eagerly.
  * 
  * ```java
  * bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
@@ -37,15 +38,10 @@ import com.sun.jersey.spi.container.servlet.WebConfig;
  * ResourceConfig getResourceConfig() {
  *     return new PackagesResourceConfig(ImmutableMap.<String, Object>builder()
  *             .put(PackagesResourceConfig.PROPERTY_PACKAGES, "org.example.resources")
- *             .put(ResourceConfig.FEATURE_DISABLE_WADL, "false")
+ *             .put(ResourceConfig.FEATURE_DISABLE_WADL, "false")   // Enable WADL
  *             .build());
  * }
  * ```
- * 
- * In addition installing this module will automatically turn on the WADL (which can be turned off
- * by setting the property, com.sun.jersey.config.feature.DisableWADL=true.  Also, when running
- * in Stage.DEVELOPMENT all scanning singleton resources will be eagerly created.
- * 
  */
 @Singleton
 public final class GovernatorServletContainer extends GuiceContainer {
