@@ -26,7 +26,7 @@ public class StartServer extends GovernatorServletContextListener
     protected Injector createInjector() {
         return Governator.createInjector(
             new JerseyServletModule() {
-                @Override
+                {@literal @}Override
                 protected void configureServlets() {
                     serve("/REST/*").with(GuiceContainer.class);
                     binder().bind(GuiceContainer.class).asEagerSingleton();

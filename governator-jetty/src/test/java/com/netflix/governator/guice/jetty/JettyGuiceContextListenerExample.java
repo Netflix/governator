@@ -1,5 +1,7 @@
-package com.netflix.governator;
+package com.netflix.governator.guice.jetty;
 
+import com.netflix.governator.Governator;
+import com.netflix.governator.ShutdownHookModule;
 import com.netflix.governator.guice.jetty.JettyModule;
 
 public class JettyGuiceContextListenerExample {
