@@ -12,9 +12,8 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.sun.jersey.api.core.ResourceConfig;
+import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer.ServletGuiceComponentProviderFactory;
-import com.sun.jersey.spi.container.WebApplication;
 import com.sun.jersey.spi.container.servlet.WebConfig;
 
 /**
@@ -25,14 +24,22 @@ import com.sun.jersey.spi.container.servlet.WebConfig;
  * bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
  * ```
  * 
- * You can provide the configuration values to Jersey using the binding
+ * To set up a Jersey endpoint,
  * 
  * ```java
- *  @Provides
- *  @ServletContainerProperties 
- *  Map<String, Object> getJerseyProperties() {
- *      return ...;
- *  }
+ * serve("/*").with(GuiceContainer.class);  
+ * ```
+ * 
+ * To customize the configuration of the Jersey endpoint
+ * 
+ * ```java
+ * @Provides
+ * ResourceConfig getResourceConfig() {
+ *     return new PackagesResourceConfig(ImmutableMap.<String, Object>builder()
+ *             .put(PackagesResourceConfig.PROPERTY_PACKAGES, "org.example.resources")
+ *             .put(ResourceConfig.FEATURE_DISABLE_WADL, "false")
+ *             .build());
+ * }
  * ```
  * 
  * In addition installing this module will automatically turn on the WADL (which can be turned off
