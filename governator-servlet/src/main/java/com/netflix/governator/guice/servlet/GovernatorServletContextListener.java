@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Netflix, Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.netflix.governator.guice.servlet;
 
 import javax.servlet.ServletContextEvent;
@@ -64,8 +80,6 @@ public class StartServer extends GovernatorServletContextListener
 public abstract class GovernatorServletContextListener extends GuiceServletContextListener {
     protected static final Logger LOG = LoggerFactory.getLogger(GovernatorServletContextListener.class);
 
-    static final String INJECTOR_NAME = Injector.class.getName();
-
     private Injector injector;
     
     public void contextInitialized(ServletContextEvent servletContextEvent) {
@@ -82,15 +96,21 @@ public abstract class GovernatorServletContextListener extends GuiceServletConte
     /**
      * Override this method to create (or otherwise obtain a reference to) your
      * injector.
+     * NOTE: If everything is set up right, then this method should only be called once during
+     * application startup.
      */
     protected final Injector getInjector() {
+        if (injector != null) {
+            throw new IllegalStateException("Injector already created.");
+        }
         try {
-            return createInjector();
+            injector = createInjector();
         }
         catch (Exception e) {
             LOG.error("Failed to created injector", e);
             throw new ProvisionException("Failed to create injector", e);
         }
+        return injector;
     }
     
     protected abstract Injector createInjector() throws Exception;
