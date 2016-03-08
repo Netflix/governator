@@ -12,24 +12,19 @@ import org.junit.Test;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
+import com.google.inject.util.Providers;
 import com.netflix.governator.event.guava.GuavaApplicationEventModule;
 
 public class NullableBindingTest {
 
     private Injector injector;
-
+    
     @Before
     public void setup() {
         injector = InjectorBuilder.fromModules(new GuavaApplicationEventModule(), new AbstractModule() {
             @Override
             protected void configure() {
-                bind(InnerDependency.class).toProvider(new Provider<InnerDependency>() {
-                    @Override
-                    public InnerDependency get() {
-                        return null;
-                    }
-                });               
+                bind(InnerDependency.class).toProvider(Providers.<InnerDependency>of(null));               
             }
         }).createInjector();
     }
