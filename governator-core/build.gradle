@@ -2,8 +2,8 @@ apply plugin: 'java'
 
 dependencies {
     compile     project(':governator-api')
-    compile     'javax.inject:javax.inject:1'
-    compile     'org.slf4j:slf4j-api:1.6.3'
+    compile     "javax.inject:javax.inject:1"
+    compile     "org.slf4j:slf4j-api:1.6.3"
     compile     "com.google.inject:guice:${guice_version}"
     compile     "com.google.inject.extensions:guice-multibindings:${guice_version}"
     compile     "com.google.inject.extensions:guice-grapher:${guice_version}"    // should be provided - only if you want graphing
@@ -11,6 +11,7 @@ dependencies {
     testCompile "org.hamcrest:hamcrest-core:${hamcrest_version}"
     testCompile "org.hamcrest:hamcrest-library:${hamcrest_version}"
     testCompile "org.mockito:mockito-all:1.9.5"
-    testCompile 'junit:junit:4.10'
+    testCompile "junit:junit:4.10"
+    testCompile "com.google.code.findbugs:jsr305:3.0.0"
 
 }
