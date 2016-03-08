@@ -143,7 +143,9 @@ public final class LifecycleModule extends AbstractModule {
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
             final T injectee = provision.provision();
-            
+            if(injectee == null) {
+                return;
+            }
             if (features == null) {
                 if (!injectee.getClass().isAnnotationPresent(SuppressLifecycleUninitialized.class)) {
                     LOG.debug("LifecycleProvisionListener not initialized yet : {}", injectee.getClass());

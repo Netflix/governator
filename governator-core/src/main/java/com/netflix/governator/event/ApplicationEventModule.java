@@ -87,7 +87,7 @@ public final class ApplicationEventModule extends AbstractModule {
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
             T provisioned = provision.provision();
-            if (provisioned instanceof ApplicationEventListener) {
+            if (provisioned != null && provisioned instanceof ApplicationEventListener) {
                 dispatcherProvider.get().registerListener((ApplicationEventListener)provisioned);
             }
         }
