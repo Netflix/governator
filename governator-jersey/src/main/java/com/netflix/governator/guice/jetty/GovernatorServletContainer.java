@@ -21,19 +21,24 @@ import com.sun.jersey.spi.container.servlet.WebConfig;
  * statically in a {@link JerseyServletModule}.  In addition all singleton resources will be 
  * instantiated eagerly.
  * 
- * ```java
+ * <pre>
+ * {@code
  * bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
- * ```
+ * }
+ * </pre>
  * 
  * To set up a Jersey endpoint,
- * 
- * ```java
- * serve("/*").with(GuiceContainer.class);  
- * ```
+ *
+ * <pre>
+ * {@code
+ * serve("/*").with(GuiceContainer.class);
+ * }
+ * </pre>
  * 
  * To customize the configuration of the Jersey endpoint
- * 
- * ```java
+ *
+ * <pre>
+ * {@code
  * @Provides
  * ResourceConfig getResourceConfig() {
  *     return new PackagesResourceConfig(ImmutableMap.<String, Object>builder()
@@ -41,7 +46,8 @@ import com.sun.jersey.spi.container.servlet.WebConfig;
  *             .put(ResourceConfig.FEATURE_DISABLE_WADL, "false")   // Enable WADL
  *             .build());
  * }
- * ```
+ * }
+ * </pre>
  */
 @Singleton
 public final class GovernatorServletContainer extends GuiceContainer {
