@@ -17,6 +17,7 @@
 plugins {
     id 'nebula.netflixoss' version '2.2.10'
     id 'nebula.provided-base' version '2.0.1'
+    id 'org.ajoberstar.github-pages' version '1.4.2'
 }
 
 ext.githubProjectName = rootProject.name
@@ -116,11 +117,9 @@ task jDiffJar(type: Jar) {
     final olderVersion = project.getProperty('jDiff.olderVersion')
     final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
 
-    baseName = "${rootProject.name}-${olderVersion}-to-${newerVersion}"
     classifier = 'jdiff'
     extension = 'jar'
     destinationDir = file("${rootProject.buildDir}/libs")
-    version = ''
 
     from "${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}/changes"
 }
