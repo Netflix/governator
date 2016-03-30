@@ -17,9 +17,12 @@
 plugins {
     id 'nebula.netflixoss' version '2.2.10'
     id 'nebula.provided-base' version '2.0.1'
+    id 'org.ajoberstar.github-pages' version '1.4.2'
 }
 
-ext.githubProjectName = rootProject.name 
+ext.githubProjectName = rootProject.name
+
+import org.ajoberstar.grgit.Grgit
 
 subprojects {
     apply plugin: 'nebula.netflixoss'
@@ -47,5 +50,90 @@ subprojects {
             downloadSources = true
             downloadJavadoc = true
         }
+    }
+}
+
+/**
+ * Generate a JDiff report between a newer version and an older version.
+ *
+ * Usage:
+ *  gradle -PjDiff.olderVersion=2.1312.0 [-PjDiff.newerVersion=2.1716.0] generateJDiffReport
+ *
+ * View generated report at:
+ *  build/reports/jDiff/${olderVersion}-to-${newerVersion}/changes.html
+ */
+task generateJDiffReport(dependsOn: '_jDiff_cloneOldVersion') {
+    description = "Generates a JDiff report"
+    group = "Documentation"
+
+    final jDiffHome = "${rootProject.rootDir}/buildSrc/lib/jdiff-1.1.1/"
+
+    ant.taskdef(
+        name: 'jDiff',
+        classname: 'jdiff.JDiffAntTask',
+        classpath: "${jDiffHome}/antjdiff.jar")
+
+    doLast {
+        final olderVersion = project.getProperty('jDiff.olderVersion')
+        final olderVersionRoot = new File("${rootProject.buildDir}/jDiff/${project.name}-${olderVersion}")
+
+        if (olderVersion == null)
+            throw new IllegalArgumentException(
+                'Set `jDiff.olderVersion` property to indicate older of the two versions being compared')
+
+        final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
+        final newerVersionRoot = rootProject.rootDir
+
+        final outputDir = "${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}"
+        mkdir(outputDir)
+
+        ant.metaClass.jDiff_getSrcDirSets = { root ->
+            root.eachDirMatch({ dir ->
+                new File("${dir}/src/main/java").exists()
+            }) { dir ->
+                dirset(dir: "${dir}/src/main/java")
+            }
+        }
+
+        ant.property(name: "JDIFF_HOME", value: jDiffHome)
+        ant.jDiff(
+            destdir: outputDir,
+            verbose: 'off',
+            stats: 'on',
+            docchanges: 'off',
+            source: '1.8') {
+            old(name: "${project.name}-${olderVersion}") {
+                jDiff_getSrcDirSets(olderVersionRoot)
+            }
+
+            'new'(name: "${project.name}-${newerVersion}") {
+                jDiff_getSrcDirSets(newerVersionRoot)
+            }
+        }
+    }
+}
+
+task jDiffJar(type: Jar) {
+    final olderVersion = project.getProperty('jDiff.olderVersion')
+    final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
+
+    classifier = 'jdiff'
+    extension = 'jar'
+    destinationDir = file("${rootProject.buildDir}/libs")
+
+    from "${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}/changes"
+}
+
+task _jDiff_cloneOldVersion << {
+    final olderVersion = project.getProperty('jDiff.olderVersion')
+    final olderVersionRoot = new File("${rootProject.buildDir}/jDiff/${project.name}-${olderVersion}")
+
+    final newerVersionRoot = rootProject.rootDir
+
+    if (!olderVersionRoot.isDirectory()) {
+        Grgit.clone(
+            uri: "file://${newerVersionRoot.path}/.git",
+            dir: olderVersionRoot.path,
+            refToCheckout: "refs/tags/v${olderVersion}")
     }
 }
