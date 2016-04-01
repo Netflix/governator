@@ -7,15 +7,17 @@ import static org.junit.Assert.assertTrue;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
+import org.mockito.Mockito;
 import org.mockito.internal.util.MockUtil;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.netflix.governator.guice.ModulesForTesting;
-import com.netflix.governator.guice.test.ReplaceWithMock;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(GovernatorJunit4ClassRunner.class)
 @ModulesForTesting({ TestInjectorRuleTestModule.class })
 public class GovernatorJunit4ClassRunnerTest {
@@ -31,6 +33,7 @@ public class GovernatorJunit4ClassRunnerTest {
     @Named("namedMock")
     @Inject @ReplaceWithMock(name="namedMock") NamedMock namedMock;
     @Inject InvokesMock invokesMock;
+    @Inject @WrapWithSpy Spied spied;
     
     @Test
     public void basicInjectionTest() {
@@ -57,6 +60,25 @@ public class GovernatorJunit4ClassRunnerTest {
         assertNotNull(namedMock);
         assertTrue(mockUtil.isMock(namedMock));
     }
+    
+    @Test
+    public void testMocksCleanUpAfterTestsPartOne() {
+        assertNotNull(toBeMocked);
+        toBeMocked.invoke();
+        Mockito.verify(toBeMocked, Mockito.times(1)).invoke();   
+    }
+    
+    @Test
+    public void testMocksCleanUpAfterTestsPartTwo() {
+        assertNotNull(toBeMocked);
+        Mockito.verifyZeroInteractions(toBeMocked);
+    }
+    
+    @Test
+    public void testWrapWithSpy() {
+        assertNotNull(spied);
+        assertTrue(mockUtil.isSpy(spied));
+    }
 
 }
 
@@ -65,22 +87,26 @@ class TestInjectorRuleTestModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(String.class).annotatedWith(Names.named("testString")).toInstance("Test");
-        bind(ToBeMocked.class).toInstance(new ToBeMocked());
-        bind(InvokesMock.class).toInstance(new InvokesMock());
-        bind(NamedMock.class).annotatedWith(Names.named("namedMock")).toInstance(new NamedMock());
+        bind(ToBeMocked.class);
+        bind(InvokesMock.class);
+        bind(NamedMock.class).annotatedWith(Names.named("namedMock"));
+        bind(Spied.class).toInstance(new Spied());
     }
 
 }
 
-class ToBeMocked {}
+class ToBeMocked {
+    public void invoke() {}
+}
 
 class NewBindingToBeMocked {}
 
 class NamedMock {}
 
 class InvokesMock {
+    @Inject ToBeMocked mocked;
+}
 
-    @Inject
-    ToBeMocked mocked;
-
+class Spied {
+    public void invoke() {};
 }
