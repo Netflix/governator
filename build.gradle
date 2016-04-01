@@ -113,7 +113,7 @@ task generateJDiffReport(dependsOn: '_jDiff_cloneOldVersion') {
     }
 }
 
-task jDiffJar(type: Jar) {
+task jDiffJar(type: Jar) << {
     final olderVersion = project.getProperty('jDiff.olderVersion')
     final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
 
