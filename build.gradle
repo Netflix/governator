@@ -30,13 +30,13 @@ githubPages {
         final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
 
         from("${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}") {
-            include('changes/**')
-            include('changes.html')
-            rename('changes\\.html', 'index.html')
+            include('**')
             into("jDiff/${olderVersion}-to-${newerVersion}")
         }
     }
 }
+
+prepareGhPages.dependsOn(':generateJDiffReport')
 
 import org.ajoberstar.grgit.Grgit
 
