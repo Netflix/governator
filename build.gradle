@@ -22,6 +22,22 @@ plugins {
 
 ext.githubProjectName = rootProject.name
 
+githubPages {
+    repoUri = Grgit.open().remote.list().first().url
+    deleteExistingFiles = false
+    pages {
+        final olderVersion = project.hasProperty('jDiff.olderVersion') ? project.getProperty('jDiff.olderVersion') : rootProject.version
+        final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
+
+        from("${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}") {
+            include('changes/**')
+            include('changes.html')
+            rename('changes\\.html', 'index.html')
+            into("jDiff/${olderVersion}-to-${newerVersion}")
+        }
+    }
+}
+
 import org.ajoberstar.grgit.Grgit
 
 subprojects {
