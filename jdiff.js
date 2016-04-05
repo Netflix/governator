@@ -2,7 +2,7 @@
 angular.module('Index', [])
   .controller('JDiff', ['$scope', function ($scope) {
     $scope['j-diff-reports'] = [
-        '1.8.0-to-1.12.10'].map(function (jDiffReport) {
+        '1.11.0-to-1.12.10'].map(function (jDiffReport) {
           return [jDiffReport.replace(/.*-to-/, ''), jDiffReport];
         });
   }]);
