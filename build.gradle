@@ -22,12 +22,19 @@ plugins {
 
 ext.githubProjectName = rootProject.name
 
+import com.github.zafarkhaja.semver.Version;
+
 githubPages {
     repoUri = Grgit.open().remote.list().first().url
     deleteExistingFiles = false
     pages {
-        final olderVersion = project.hasProperty('jDiff.olderVersion') ? project.getProperty('jDiff.olderVersion') : rootProject.version
-        final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
+        final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version as String
+        final olderVersion = (project.hasProperty('jDiff.olderVersion')
+                ? project.getProperty('jDiff.olderVersion')
+                : {
+                    final newerSemVer = Version.valueOf(newerVersion)
+                    Version.forIntegers(newerSemVer.getMajorVersion(), newerSemVer.getMinorVersion() - 1).toString()
+                }())
 
         from("${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}") {
             include('**')
@@ -54,7 +61,7 @@ subprojects {
     }
 
     group = "com.netflix.governator"
-    
+
     test {
         useTestNG()
     }
@@ -93,15 +100,16 @@ task generateJDiffReport(dependsOn: '_jDiff_cloneOldVersion') {
         classpath: "${jDiffHome}/antjdiff.jar")
 
     doLast {
-        final olderVersion = project.getProperty('jDiff.olderVersion')
-        final olderVersionRoot = new File("${rootProject.buildDir}/jDiff/${rootProject.name}-${olderVersion}")
-
-        if (olderVersion == null)
-            throw new IllegalArgumentException(
-                'Set `jDiff.olderVersion` property to indicate older of the two versions being compared')
-
-        final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
+        final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version as String
         final newerVersionRoot = rootProject.rootDir
+
+        final olderVersion = (project.hasProperty('jDiff.olderVersion')
+                ? project.getProperty('jDiff.olderVersion')
+                : {
+                    final newerSemVer = Version.valueOf(newerVersion)
+                    Version.forIntegers(newerSemVer.getMajorVersion(), newerSemVer.getMinorVersion() - 1).toString()
+                }())
+        final olderVersionRoot = new File("${rootProject.buildDir}/jDiff/${rootProject.name}-${olderVersion}")
 
         final outputDir = "${rootProject.buildDir}/reports/jDiff/${olderVersion}-to-${newerVersion}"
         mkdir(outputDir)
@@ -133,8 +141,13 @@ task generateJDiffReport(dependsOn: '_jDiff_cloneOldVersion') {
 }
 
 task jDiffJar(type: Jar) << {
-    final olderVersion = project.getProperty('jDiff.olderVersion')
-    final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version
+    final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version as String
+    final olderVersion = (project.hasProperty('jDiff.olderVersion')
+            ? project.getProperty('jDiff.olderVersion')
+            : {
+                final newerSemVer = Version.valueOf(newerVersion)
+                Version.forIntegers(newerSemVer.getMajorVersion(), newerSemVer.getMinorVersion() - 1).toString()
+            }())
 
     classifier = 'jdiff'
     extension = 'jar'
@@ -144,10 +157,16 @@ task jDiffJar(type: Jar) << {
 }
 
 task _jDiff_cloneOldVersion << {
-    final olderVersion = project.getProperty('jDiff.olderVersion')
-    final olderVersionRoot = new File("${rootProject.buildDir}/jDiff/${rootProject.name}-${olderVersion}")
-
+    final newerVersion = project.hasProperty('jDiff.newerVersion') ? project.getProperty('jDiff.newerVersion') : rootProject.version as String
     final newerVersionRoot = rootProject.rootDir
+
+    final olderVersion = (project.hasProperty('jDiff.olderVersion')
+            ? project.getProperty('jDiff.olderVersion')
+            : {
+                final newerSemVer = Version.valueOf(newerVersion)
+                Version.forIntegers(newerSemVer.getMajorVersion(), newerSemVer.getMinorVersion() - 1).toString()
+            }())
+    final olderVersionRoot = new File("${rootProject.buildDir}/jDiff/${rootProject.name}-${olderVersion}")
 
     if (!olderVersionRoot.isDirectory()) {
         Grgit.clone(
