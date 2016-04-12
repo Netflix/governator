@@ -45,7 +45,6 @@ import com.google.inject.BindingAnnotation;
 @Target(FIELD)
 @Retention(RUNTIME)
 @Documented
-@BindingAnnotation
 public @interface WrapWithSpy {
 
     String name() default "";

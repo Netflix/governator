@@ -1,11 +1,14 @@
 package com.netflix.governator.guice.test.junit4;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.ClassUtils;
 import org.junit.After;
@@ -19,24 +22,40 @@ import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
+import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.Provider;
+import com.google.inject.Scope;
+import com.google.inject.Scopes;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
+import com.google.inject.internal.Scoping;
 import com.google.inject.name.Names;
+import com.google.inject.spi.BindingScopingVisitor;
+import com.google.inject.spi.BindingTargetVisitor;
+import com.google.inject.spi.ConstructorBinding;
+import com.google.inject.spi.ConvertedConstantBinding;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
+import com.google.inject.spi.ExposedBinding;
+import com.google.inject.spi.InstanceBinding;
+import com.google.inject.spi.LinkedKeyBinding;
+import com.google.inject.spi.ProviderBinding;
+import com.google.inject.spi.ProviderInstanceBinding;
+import com.google.inject.spi.ProviderKeyBinding;
+import com.google.inject.spi.UntargettedBinding;
 import com.netflix.governator.InjectorBuilder;
 import com.netflix.governator.LifecycleInjector;
+import com.netflix.governator.providers.SingletonProvider;
 
 /**
- * An extended {@link BlockJUnit4ClassRunner} which creates a Governator-Guice injector
- * from a list of modules, as well as provides utilities for Mocking/Spying bindings.
+ * An extended {@link BlockJUnit4ClassRunner} which creates a Governator-Guice
+ * injector from a list of modules, as well as provides utilities for
+ * Mocking/Spying bindings.
  * 
- * See {@link ModulesForTesting}, {@link ReplaceWithMock}, and {@link WrapWithSpy} 
- * for example usage.
+ * See {@link ModulesForTesting}, {@link ReplaceWithMock}, and
+ * {@link WrapWithSpy} for example usage.
  */
 public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
 
@@ -148,18 +167,29 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
             }
         }
     }
-    
 
     private void getSpiesForTargetKeys(List<Element> elements) {
         for (Element element : elements) {
             element.acceptVisitor(new DefaultElementVisitor<Void>() {
                 @Override
                 public <T> Void visit(Binding<T> binding) {
+                    final Binding<T> finalBinding = binding;
                     if (spyTargets.contains(binding.getKey())) {
                         AbstractModule spyModule = new AbstractModule() {
                             protected void configure() {
-                                bind(binding.getKey().getTypeLiteral()).annotatedWith(WrapWithSpy.class)
-                                        .toProvider(new SpyWrappingProvider(binding.getProvider())).asEagerSingleton();
+
+                                final Key newUniqueKey = Key.get(finalBinding.getKey().getTypeLiteral().getRawType(),
+                                        Names.named("Spied " + finalBinding.getKey().getTypeLiteral().getRawType()));
+                                finalBinding.acceptTargetVisitor(new CopyBindingTargetVisitor<>(binder().bind(newUniqueKey)));
+                                bind(finalBinding.getKey()).toProvider(new SingletonProvider<T>() {
+                                    @Inject
+                                    Injector injector;
+
+                                    protected T create() {
+                                        T t = (T) injector.getInstance(newUniqueKey);
+                                        return Mockito.spy(t);
+                                    };
+                                });
                             }
                         };
                         overrideModules.add(spyModule);
@@ -191,18 +221,66 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-    private class SpyWrappingProvider<T> implements Provider<T> {
-        private Provider<T> provider;
+    private class CopyBindingTargetVisitor<T> implements BindingTargetVisitor<T, Void> {
+        
+        private LinkedBindingBuilder builder;
 
-        public SpyWrappingProvider(Provider<T> provider) {
-            this.provider = provider;
+        public CopyBindingTargetVisitor(LinkedBindingBuilder builder) {
+            this.builder = builder;
         }
 
         @Override
-        public T get() {
-             T spy = Mockito.spy(provider.get());
-             mocksToReset.add(spy);
-             return spy;
+        public Void visit(InstanceBinding<? extends T> binding) {
+            builder.toInstance(binding.getInstance());
+            return null;
+        }
+
+        @Override
+        public Void visit(ProviderInstanceBinding<? extends T> binding) {
+            builder.toProvider(binding.getProviderInstance()).in(Scopes.SINGLETON);
+            return null;
+        }
+
+        @Override
+        public Void visit(ProviderKeyBinding<? extends T> binding) {
+            builder.toProvider(binding.getProviderKey()).in(Scopes.SINGLETON);
+            return null;
+        }
+
+        @Override
+        public Void visit(LinkedKeyBinding<? extends T> binding) {
+            builder.to(binding.getLinkedKey()).in(Scopes.SINGLETON);
+            return null;
+        }
+
+        @Override
+        public Void visit(ExposedBinding<? extends T> binding) {
+            builder.to(binding.getKey()).in(Scopes.SINGLETON);
+            return null;
+        }
+
+        @Override
+        public Void visit(UntargettedBinding<? extends T> binding) {
+            builder.to(binding.getKey().getTypeLiteral().getRawType()).in(Scopes.SINGLETON);
+            return null;
+        }
+
+        @Override
+        public Void visit(ConstructorBinding<? extends T> binding) {
+            builder.toConstructor((Constructor<T>) binding.getConstructor().getMember()).in(Scopes.SINGLETON);
+            return null;
+        }
+
+        @Override
+        public Void visit(ConvertedConstantBinding<? extends T> binding) {
+            builder.toInstance(binding.getValue());
+            return null;
+        }
+
+        @Override
+        public Void visit(ProviderBinding<? extends T> binding) {
+            builder.toProvider(binding.getProvider()).in(Scopes.SINGLETON);
+            return null;
         }
     }
 }

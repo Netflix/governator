@@ -2,6 +2,7 @@ package com.netflix.governator.guice.test.junit4;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import javax.inject.Inject;
@@ -15,6 +16,8 @@ import org.mockito.Mockito;
 import org.mockito.internal.util.MockUtil;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -34,6 +37,7 @@ public class GovernatorJunit4ClassRunnerTest {
     @Inject @ReplaceWithMock(name="namedMock") NamedMock namedMock;
     @Inject InvokesMock invokesMock;
     @Inject @WrapWithSpy Spied spied;
+    @Inject InvokesSpy invokesSpy;
     
     @Test
     public void basicInjectionTest() {
@@ -77,7 +81,12 @@ public class GovernatorJunit4ClassRunnerTest {
     @Test
     public void testWrapWithSpy() {
         assertNotNull(spied);
+        assertNotNull(invokesSpy);
         assertTrue(mockUtil.isSpy(spied));
+        assertTrue(mockUtil.isSpy(invokesSpy.spied));
+        invokesSpy.invoke();
+        assertSame(spied,invokesSpy.spied);
+        Mockito.verify(spied, Mockito.times(1)).invoke();
     }
 
 }
@@ -90,7 +99,13 @@ class TestInjectorRuleTestModule extends AbstractModule {
         bind(ToBeMocked.class);
         bind(InvokesMock.class);
         bind(NamedMock.class).annotatedWith(Names.named("namedMock"));
-        bind(Spied.class).toInstance(new Spied());
+        bind(InvokesSpy.class);
+    }
+    
+    @Provides
+    @Singleton
+    public Spied spied() {
+        return new Spied();
     }
 
 }
@@ -103,10 +118,21 @@ class NewBindingToBeMocked {}
 
 class NamedMock {}
 
+@Singleton
 class InvokesMock {
     @Inject ToBeMocked mocked;
 }
 
+@Singleton
 class Spied {
     public void invoke() {};
+}
+
+@Singleton
+class InvokesSpy {
+    @Inject Spied spied;
+    
+    public void invoke() {
+        spied.invoke();
+    }
 }
