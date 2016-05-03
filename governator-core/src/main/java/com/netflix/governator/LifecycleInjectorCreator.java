@@ -93,6 +93,8 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
             onBeforeInjectorCreate();
             Injector injector = Guice.createInjector(
                 stage, 
+                // This has to be first to make sure @PostConstruct support is added as early
+                // as possible
                 new LifecycleModule(),
                 new LegacyScopesModule(),
                 new AbstractModule() {
