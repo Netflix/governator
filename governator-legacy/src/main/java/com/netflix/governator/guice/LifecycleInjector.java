@@ -50,6 +50,7 @@ import com.google.inject.Scopes;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
+import com.netflix.governator.LifecycleListenerModule;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.annotations.Bootstrap;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
@@ -366,13 +367,18 @@ public class LifecycleInjector
      */
     public Injector createInjector(Collection<Module> additionalModules)
     {
+        List<Module> localModules = Lists.newArrayList();
+        
         // Add the discovered modules FIRST.  The discovered modules
         // are added, and will subsequently be configured, in module dependency 
         // order which will ensure that any singletons bound in these modules 
         // will be created in the same order as the bind() calls are made.
         // Note that the singleton ordering is only guaranteed for 
         // singleton scope.
-        List<Module> localModules = Lists.newArrayList();
+        
+        //Add the LifecycleListener module
+        localModules.add(new LifecycleListenerModule());
+        
         if ( additionalModules != null )
         {
             localModules.addAll(additionalModules);

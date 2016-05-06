@@ -81,6 +81,7 @@ public class LifecycleManager implements Closeable
     private final PostStartArguments postStartArguments;
     private final AtomicReference<WarmUpSession> postStartWarmUpSession = new AtomicReference<WarmUpSession>(null);
     private final Injector injector;
+    private com.netflix.governator.LifecycleManager newLifecycleManager;
 
     public LifecycleManager()
     {
@@ -97,6 +98,7 @@ public class LifecycleManager implements Closeable
     {
         this.injector = injector;
         configurationMapper = arguments.getConfigurationMapper();
+        newLifecycleManager = arguments.getLifecycleManager();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
         factory = Validation.buildDefaultValidatorFactory();
@@ -217,7 +219,9 @@ public class LifecycleManager implements Closeable
         boolean success = warmUpSession.doImmediate(maxMs);
 
         new ConfigurationColumnWriter(configurationDocumentation).output(log);
-
+        if (newLifecycleManager != null) {
+            newLifecycleManager.notifyStarted();
+        }
         state.set(State.STARTED);
 
         return success;
@@ -230,6 +234,9 @@ public class LifecycleManager implements Closeable
         {
             try
             {
+                if (newLifecycleManager != null) {
+                    newLifecycleManager.notifyShutdown();
+                }
                 stopInstances();
             }
             catch ( Exception e )
