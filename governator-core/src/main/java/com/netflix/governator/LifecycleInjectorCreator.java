@@ -96,6 +96,7 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                 // This has to be first to make sure @PostConstruct support is added as early
                 // as possible
                 new LifecycleModule(),
+                new LifecycleListenerModule(),
                 new LegacyScopesModule(),
                 new AbstractModule() {
                     @Override

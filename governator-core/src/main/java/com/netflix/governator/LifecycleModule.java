@@ -66,8 +66,6 @@ public final class LifecycleModule extends AbstractModule {
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
-        private LifecycleManager manager;
-        private List<LifecycleListener> pendingLifecycleListeners = new ArrayList<>();
         private boolean shutdownOnFailure = true;
         
         @SuppressLifecycleUninitialized
@@ -86,16 +84,10 @@ public final class LifecycleModule extends AbstractModule {
                 LifecycleManager manager, 
                 LifecycleProvisionListener provisionListener, 
                 Set<LifecycleFeature> features) {
-            provisionListener.manager = manager;
             provisionListener.features = features;
             provisionListener.shutdownOnFailure =  args.hasShutdownOnFailure();
             
             LOG.debug("LifecycleProvisionListener initialized {}", features);
-            
-            for (LifecycleListener l : provisionListener.pendingLifecycleListeners) {
-                manager.addListener(l);
-            }
-            provisionListener.pendingLifecycleListeners.clear();
         }
         
         public TypeLifecycleActions getOrCreateActions(Class<?> type) {
@@ -150,11 +142,7 @@ public final class LifecycleModule extends AbstractModule {
                 if (!injectee.getClass().isAnnotationPresent(SuppressLifecycleUninitialized.class)) {
                     LOG.debug("LifecycleProvisionListener not initialized yet : {}", injectee.getClass());
                 }
-                
-                if (injectee instanceof LifecycleListener) {
-                    pendingLifecycleListeners.add((LifecycleListener)injectee);
-                }
-                
+                  
                 // TODO: Add to PreDestroy list
                 return;
             }
@@ -171,10 +159,6 @@ public final class LifecycleModule extends AbstractModule {
                 }
             }
             
-            if (injectee instanceof LifecycleListener) {
-                manager.addListener((LifecycleListener)injectee);
-            }
-        
             // Add any PreDestroy methods to the shutdown list of actions
             if (!actions.preDestroyActions.isEmpty()) {
                 if (isShutdown.get() == false) {
