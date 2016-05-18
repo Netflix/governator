@@ -33,10 +33,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-@Test(enabled=false)
 public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
 {
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testPostStart(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder.createInjector();
@@ -60,7 +59,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testErrors(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         AbstractModule module = new AbstractModule()
@@ -86,7 +85,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testDag1MultiModule(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<AbstractModule> modules = Arrays.asList(
@@ -131,7 +130,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         assertOrdering(recorder, "A", "C");
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testDagInterfaceModule(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final Module dag1Module = new AbstractModule()
@@ -160,7 +159,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         assertOrdering(recorder, "A", "C");
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testDag1(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder.createInjector();
@@ -180,7 +179,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         assertOrdering(recorder, "A", "C");
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testDag2(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder.createInjector();
@@ -223,7 +222,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         assertOrdering(recorder, "B4", "C3");
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testDag3(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder.createInjector();
@@ -248,7 +247,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         assertOrdering(recorder, "B", "D");
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testDag4(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder
@@ -280,7 +279,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         assertOrdering(recorder, "A", "B");
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testFlat(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder.createInjector();
@@ -298,7 +297,7 @@ public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
         Assert.assertTrue(recorder.getRecordings().indexOf("B") >= 0);
     }
 
-    @Test(dataProvider = "builders")
+    @Test(dataProvider = "builders", enabled=false)
     public void testStuck(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder
