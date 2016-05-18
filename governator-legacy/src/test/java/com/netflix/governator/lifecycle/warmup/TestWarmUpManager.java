@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+@Test(enabled=false)
 public class TestWarmUpManager extends LifecycleInjectorBuilderProvider
 {
     @Test(dataProvider = "builders")
