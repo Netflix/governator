@@ -44,8 +44,7 @@ import com.netflix.governator.annotations.WarmUp;
 /**
  * Used internally to hold the methods important to the LifecycleManager
  */
-public class LifecycleMethods
-{
+public class LifecycleMethods {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
@@ -57,8 +56,7 @@ public class LifecycleMethods
     private static final Collection<Class<? extends Annotation>> methodAnnotations;
     private static final Collection<Class<? extends Annotation>> classAnnotations;
 
-    static
-    {
+    static {
         ImmutableSet.Builder<Class<? extends Annotation>> methodAnnotationsBuilder = ImmutableSet.builder();
         methodAnnotationsBuilder.add(PreConfiguration.class);
         methodAnnotationsBuilder.add(PostConstruct.class);
@@ -81,131 +79,102 @@ public class LifecycleMethods
         classAnnotations = classAnnotationsBuilder.build();
     }
 
-    public LifecycleMethods(Class<?> clazz)
-    {
-        addLifeCycleMethods(clazz, ArrayListMultimap.<Class<? extends Annotation>, String>create());
+    public LifecycleMethods(Class<?> clazz) {
+        addLifeCycleMethods(clazz, ArrayListMultimap.<Class<? extends Annotation>, String> create());
     }
 
-    public boolean hasLifecycleAnnotations()
-    {
+    public boolean hasLifecycleAnnotations() {
         return hasValidations || (methodMap.size() > 0) || (fieldMap.size() > 0);
     }
 
-    public Collection<Method> methodsFor(Class<? extends Annotation> annotation)
-    {
+    public Collection<Method> methodsFor(Class<? extends Annotation> annotation) {
         Collection<Method> methods = methodMap.get(annotation);
-        return (methods != null) ? methods : Lists.<Method>newArrayList();
+        return (methods != null) ? methods : Lists.<Method> newArrayList();
     }
 
-    public Collection<Field> fieldsFor(Class<? extends Annotation> annotation)
-    {
+    public Collection<Field> fieldsFor(Class<? extends Annotation> annotation) {
         Collection<Field> fields = fieldMap.get(annotation);
-        return (fields != null) ? fields : Lists.<Field>newArrayList();
+        return (fields != null) ? fields : Lists.<Field> newArrayList();
     }
 
-    public <T extends Annotation> Collection<T> classAnnotationsFor(Class<T> annotation)
-    {
+    public <T extends Annotation> Collection<T> classAnnotationsFor(Class<T> annotation) {
         Collection<Annotation> annotations = classMap.get(annotation);
-        return Collections2.transform (
-            annotations,
-            new Function<Annotation, T>() {
-                @Override
-                public T apply(Annotation annotation) {
-                    //noinspection unchecked
-                    return (T)annotation;
-                }
+        return Collections2.transform(annotations, new Function<Annotation, T>() {
+            @Override
+            public T apply(Annotation annotation) {
+                // noinspection unchecked
+                return (T) annotation;
             }
-        );
+        });
     }
 
-    private void addLifeCycleMethods(Class<?> clazz, Multimap<Class<? extends Annotation>, String> usedNames)
-    {
-        if ( clazz == null )
-        {
+    private void addLifeCycleMethods(Class<?> clazz, Multimap<Class<? extends Annotation>, String> usedNames) {
+        if (clazz == null) {
             return;
         }
 
-        for ( Class<? extends Annotation> annotationClass : classAnnotations )
-        {
-            if ( clazz.isAnnotationPresent(annotationClass) )
-            {
+        for (Class<? extends Annotation> annotationClass : classAnnotations) {
+            if (clazz.isAnnotationPresent(annotationClass)) {
                 classMap.put(annotationClass, clazz.getAnnotation(annotationClass));
             }
         }
 
-        for ( Field field : getDeclardFields(clazz) )
-        {
-            if ( field.isSynthetic() )
-            {
+        for (Field field : getDeclardFields(clazz)) {
+            if (field.isSynthetic()) {
                 continue;
             }
 
-            if ( !hasValidations )
-            {
+            if (!hasValidations) {
                 checkForValidations(field);
             }
 
-            for ( Class<? extends Annotation> annotationClass : fieldAnnotations )
-            {
+            for (Class<? extends Annotation> annotationClass : fieldAnnotations) {
                 processField(field, annotationClass, usedNames);
             }
         }
 
-        for ( Method method : getDeclaredMethods(clazz) )
-        {
-            if ( method.isSynthetic() || method.isBridge() )
-            {
+        for (Method method : getDeclaredMethods(clazz)) {
+            if (method.isSynthetic() || method.isBridge()) {
                 continue;
             }
 
-            for ( Class<? extends Annotation> annotationClass : methodAnnotations )
-            {
+            for (Class<? extends Annotation> annotationClass : methodAnnotations) {
                 processMethod(method, annotationClass, usedNames);
             }
         }
 
         addLifeCycleMethods(clazz.getSuperclass(), usedNames);
-        for ( Class<?> face : clazz.getInterfaces() )
-        {
+        for (Class<?> face : clazz.getInterfaces()) {
             addLifeCycleMethods(face, usedNames);
         }
     }
 
-    private Method[] getDeclaredMethods(Class<?> clazz)
-    {
-        try
-        {
+    private Method[] getDeclaredMethods(Class<?> clazz) {
+        try {
             return clazz.getDeclaredMethods();
-        }
-        catch ( Throwable e )
-        {
+        } catch (Throwable e) {
             handleReflectionError(clazz, e);
         }
 
-        return new Method[]{};
+        return new Method[] {};
     }
 
-    private Field[] getDeclardFields(Class<?> clazz)
-    {
-        try
-        {
+    private Field[] getDeclardFields(Class<?> clazz) {
+        try {
             return clazz.getDeclaredFields();
-        }
-        catch ( Throwable e )
-        {
+        } catch (Throwable e) {
             handleReflectionError(clazz, e);
         }
 
-        return new Field[]{};
+        return new Field[] {};
     }
 
-    private void handleReflectionError(Class<?> clazz, Throwable e)
-    {
-        if ( e != null )
-        {
-            if ( (e instanceof NoClassDefFoundError) || (e instanceof ClassNotFoundException) )
-            {
-                log.debug(String.format("Class %s could not be resolved because of a class path error. Governator cannot further process the class.", clazz.getName()), e);
+    private void handleReflectionError(Class<?> clazz, Throwable e) {
+        if (e != null) {
+            if ((e instanceof NoClassDefFoundError) || (e instanceof ClassNotFoundException)) {
+                log.debug(String.format(
+                        "Class %s could not be resolved because of a class path error. Governator cannot further process the class.",
+                        clazz.getName()), e);
                 return;
             }
 
@@ -213,24 +182,19 @@ public class LifecycleMethods
         }
     }
 
-    private void checkForValidations(Field field)
-    {
-        for ( Annotation annotation : field.getDeclaredAnnotations() )
-        {
-            if ( annotation.annotationType().isAnnotationPresent(Constraint.class) )
-            {
+    private void checkForValidations(Field field) {
+        for (Annotation annotation : field.getDeclaredAnnotations()) {
+            if (annotation.annotationType().isAnnotationPresent(Constraint.class)) {
                 hasValidations = true;
                 break;
             }
         }
     }
 
-    private void processField(Field field, Class<? extends Annotation> annotationClass, Multimap<Class<? extends Annotation>, String> usedNames)
-    {
-        if ( field.isAnnotationPresent(annotationClass) )
-        {
-            if ( !usedNames.get(annotationClass).contains(field.getName()) )
-            {
+    private void processField(Field field, Class<? extends Annotation> annotationClass,
+            Multimap<Class<? extends Annotation>, String> usedNames) {
+        if (field.isAnnotationPresent(annotationClass)) {
+            if (!usedNames.get(annotationClass).contains(field.getName())) {
                 field.setAccessible(true);
                 usedNames.put(annotationClass, field.getName());
                 fieldMap.put(annotationClass, field);
@@ -238,19 +202,10 @@ public class LifecycleMethods
         }
     }
 
-    private void processMethod(Method method, Class<? extends Annotation> annotationClass, Multimap<Class<? extends Annotation>, String> usedNames)
-    {
-        if ( method.isAnnotationPresent(annotationClass) )
-        {
-            if ( !usedNames.get(annotationClass).contains(method.getName()) )
-            {
-/* TODO
-                if ( method.getParameterTypes().length != 0 )
-                {
-                    throw new UnsupportedOperationException(String.format("@PostConstruct/@PreDestroy methods cannot have arguments: %s", method.getDeclaringClass().getName() + "." + method.getName() + "(...)"));
-                }
-*/
-
+    private void processMethod(Method method, Class<? extends Annotation> annotationClass,
+            Multimap<Class<? extends Annotation>, String> usedNames) {
+        if (method.isAnnotationPresent(annotationClass)) {
+            if (!usedNames.get(annotationClass).contains(method.getName())) {
                 method.setAccessible(true);
                 usedNames.put(annotationClass, method.getName());
                 methodMap.put(annotationClass, method);

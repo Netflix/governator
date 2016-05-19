@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -329,19 +330,15 @@ public class LifecycleManager implements Closeable
         setResources(obj, methods);
 
         setState(obj, LifecycleState.POST_CONSTRUCTING);
-        for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
+        LinkedHashSet<Method> postConstructs = new LinkedHashSet<>();
+        postConstructs.addAll(methods.methodsFor(PostConstruct.class));
+        postConstructs.addAll(methods.methodsFor(WarmUp.class));
+        for ( Method postConstruct : postConstructs )
         {
             log.debug(String.format("\t%s()", postConstruct.getName()));
             postConstruct.invoke(obj);
         }
         
-        for ( Method postConstruct : methods.methodsFor(WarmUp.class) )
-        {
-            log.info("**** @WarmUp is now deprecated.  Please replace @WarmUp with @PostConstruct ****");
-            log.debug(String.format("\t%s()", postConstruct.getName()));
-            postConstruct.invoke(obj);
-        }
-
         Collection<Method> preDestroyMethods = methods.methodsFor(PreDestroy.class);
         if ( preDestroyMethods.size() > 0 )
         {
