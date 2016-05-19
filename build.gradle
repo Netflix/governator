@@ -19,8 +19,6 @@ plugins {
     id 'nebula.provided-base' version '2.0.1'
 }
 
-ext.githubProjectName = rootProject.name 
-
 subprojects {
     apply plugin: 'nebula.netflixoss'
     apply plugin: 'java'
@@ -32,7 +30,7 @@ subprojects {
     }
 
     group = "com.netflix.governator"
-    
+
     test {
         useTestNG()
     }

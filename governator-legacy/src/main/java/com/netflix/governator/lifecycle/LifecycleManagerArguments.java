@@ -19,6 +19,7 @@ package com.netflix.governator.lifecycle;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -44,6 +45,9 @@ public class LifecycleManagerArguments
 
     @Inject
     private ConfigurationDocumentation      configurationDocumentation;
+    
+    @Inject
+    private LifecycleManager                lifecycleManager;
     
     @Inject(optional = true)
     private Set<LifecycleListener>          lifecycleListeners = ImmutableSet.of();
@@ -145,5 +149,13 @@ public class LifecycleManagerArguments
     
     public ConfigurationDocumentation getConfigurationDocumentation() {
         return configurationDocumentation;
+    }
+
+    public LifecycleManager getLifecycleManager() {
+        return lifecycleManager;
+    }
+
+    public void setLifecycleManager(LifecycleManager lifecycleManager) {
+        this.lifecycleManager = lifecycleManager;
     }
 }
