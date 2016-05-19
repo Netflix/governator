@@ -238,6 +238,12 @@ public class LifecycleManager implements Closeable
                     newLifecycleManager.notifyShutdown();
                 }
                 stopInstances();
+
+                WarmUpSession session = postStartWarmUpSession.get();
+                if (session != null)
+                {
+                    session.close();
+                }
             }
             catch ( Exception e )
             {

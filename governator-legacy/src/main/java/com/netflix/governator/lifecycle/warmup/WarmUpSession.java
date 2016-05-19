@@ -102,4 +102,10 @@ public class WarmUpSession
             }
         };
     }
+
+
+    public void close()
+    {
+        forkJoinPool.shutdownNow();
+    }
 }
