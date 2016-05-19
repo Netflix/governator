@@ -22,12 +22,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method as a warm up method. Governator will execute warm up methods
- * in parallel when the com.netflix.governator.lifecycle.LifecycleManager is started.
+ * @deprecated 2016-05-19 This class is being deprecated in favor of using {@literal @}PostConstruct
+ * or running initialization code in the constructor.  While {@literal @}WarmUp did promise to help 
+ * with parallel initialization of singletons it resulted in excessive complexity and invalidated DI
+ * expectations that a class is fully initialized by the time it is injected.  WarmUp methods are 
+ * now treated exactly like PostConstruct and are therefore guaranteed to have been executed by the
+ * time an object is injected.
  */
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
+@Deprecated
 public @interface WarmUp
 {
 }

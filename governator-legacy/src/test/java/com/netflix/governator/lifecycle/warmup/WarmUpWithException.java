@@ -18,16 +18,9 @@ package com.netflix.governator.lifecycle.warmup;
 
 import com.netflix.governator.annotations.WarmUp;
 
-public class WarmUpWithException
-{
+public class WarmUpWithException {
     @WarmUp
-    public void warmUp()
-    {
-        System.out.println(getNull().toString());   // generate NPE
-    }
-
-    private Object getNull()
-    {
-        return null;
+    public void warmUp() {
+        throw new NullPointerException();
     }
 }
