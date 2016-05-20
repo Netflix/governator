@@ -16,6 +16,8 @@
 
 package com.netflix.governator.lifecycle.warmup;
 
+import javax.annotation.PostConstruct;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.WarmUp;
@@ -45,6 +47,7 @@ public class Dag1
         }
 
         @WarmUp
+        @PostConstruct
         public void warmUp() throws InterruptedException
         {
             recorder.record("A");

@@ -16,6 +16,8 @@
 
 package com.netflix.governator.lifecycle.warmup;
 
+import javax.inject.Inject;
+
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.WarmUp;
 
@@ -28,6 +30,7 @@ public class Flat
     @Singleton
     public static class A
     {
+        @Inject
         public volatile Recorder recorder;
 
         @WarmUp
@@ -40,6 +43,7 @@ public class Flat
     @Singleton
     public static class B
     {
+        @Inject
         public volatile Recorder recorder;
 
         @WarmUp
