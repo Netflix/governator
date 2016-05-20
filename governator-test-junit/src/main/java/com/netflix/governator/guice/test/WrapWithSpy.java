@@ -1,14 +1,18 @@
-package com.netflix.governator.guice.test.junit4;
+package com.netflix.governator.guice.test;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import com.google.inject.Module;
+import org.mockito.Spy;
+
+import com.google.inject.BindingAnnotation;
 
 /**
- * Creates a Governator-Guice Injector using the provided modules for use in testing.
+ * Wraps an existing binding with a Mockito {@link Spy}.
  * 
  * Example:
  * <pre>
@@ -16,12 +20,13 @@ import com.google.inject.Module;
  * {@literal @}ModulesForTesting({ SomeTestModule.class })
  * public class MyTestCase {
  *     
- *     {@literal @}Inject
+ *     {@literal @}Inject {@literal @}WrapWithSpy
  *     SomeDependency someDependency;
  *     
  *     {@literal @}Test
  *     public void test() {
- *        assertNotNull(someDependency);
+ *        someDependency.doSomething();
+ *        verify(someDependency, times(1)).doSomething();
  *    }
  * }
  *     
@@ -37,11 +42,11 @@ import com.google.inject.Module;
  * }
  * </pre>
  */
+@Target(FIELD)
+@Retention(RUNTIME)
 @Documented
-@Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
-public @interface ModulesForTesting {
-    
-    Class<? extends Module>[] value() default {};
+public @interface WrapWithSpy {
 
+    String name() default "";
+    
 }

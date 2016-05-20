@@ -19,6 +19,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.ReplaceWithMock;
+import com.netflix.governator.guice.test.WrapWithSpy;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(GovernatorJunit4ClassRunner.class)
@@ -66,14 +69,14 @@ public class GovernatorJunit4ClassRunnerTest {
     }
     
     @Test
-    public void testMocksCleanUpAfterTestsPartOne() {
+    public void za_testMocksCleanUpAfterTestsPartOne() {
         assertNotNull(toBeMocked);
         toBeMocked.invoke();
         Mockito.verify(toBeMocked, Mockito.times(1)).invoke();   
     }
     
     @Test
-    public void testMocksCleanUpAfterTestsPartTwo() {
+    public void zz_testMocksCleanUpAfterTestsPartTwo() {
         assertNotNull(toBeMocked);
         Mockito.verifyZeroInteractions(toBeMocked);
     }
@@ -88,7 +91,6 @@ public class GovernatorJunit4ClassRunnerTest {
         assertSame(spied,invokesSpy.spied);
         Mockito.verify(spied, Mockito.times(1)).invoke();
     }
-
 }
 
 class TestInjectorRuleTestModule extends AbstractModule {
