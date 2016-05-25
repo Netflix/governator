@@ -3,8 +3,11 @@ package com.netflix.governator.internal;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import com.netflix.governator.LifecycleAction;
 import com.netflix.governator.LifecycleFeature;
@@ -17,39 +20,67 @@ import com.netflix.governator.LifecycleFeature;
  * 
  * @author elandau
  */
-abstract class AbstractLifecycleFeature implements LifecycleFeature {
+abstract class AbstractLifecycleFeature<C> implements LifecycleFeature {
+	enum IntrospectionFlag {
+		FIELD, METHOD, INTERFACE, SUPERCLASS
+	}
 
-    private void visitFieldsAndMethods(Class<?> type, List<LifecycleAction> actions) {
+	private Set<IntrospectionFlag> flags;
+	
+	private AbstractLifecycleFeature(Set<IntrospectionFlag> flags) {
+		this.flags = flags;
+	}
+	
+	protected AbstractLifecycleFeature(IntrospectionFlag... flags) {
+		this.flags = EnumSet.copyOf(Arrays.asList(flags));
+	}
+	
+	protected AbstractLifecycleFeature() {
+		this(EnumSet.allOf(IntrospectionFlag.class));
+	}
+	
+    private void visitFieldsAndMethods(C typeContext, Class<?> type, List<LifecycleAction> actions) {
         if (type == null) {
             return;
         }
         
-        for (final Field field : type.getDeclaredFields()) {
-            actions.addAll(getFieldActions(type, field));
+        if (flags.contains(IntrospectionFlag.FIELD)) {
+	        for (final Field field : type.getDeclaredFields()) {
+	            actions.addAll(getFieldActions(typeContext, type, field));
+	        }
         }
         
-        for (final Method method : type.getDeclaredMethods()) {
-            actions.addAll(getMethodActions(type, method));
+        if (flags.contains(IntrospectionFlag.METHOD)) {
+	        for (final Method method : type.getDeclaredMethods()) {
+	            actions.addAll(getMethodActions(typeContext, type, method));
+	        }
         }
         
-        visitFieldsAndMethods(type.getSuperclass(), actions);
-        for (Class<?> iface : type.getInterfaces()) {
-            visitFieldsAndMethods(iface, actions);
+        if (flags.contains(IntrospectionFlag.SUPERCLASS)) {
+        	visitFieldsAndMethods(typeContext, type.getSuperclass(), actions);
+        }
+        
+        if (flags.contains(IntrospectionFlag.INTERFACE)) {
+	        for (Class<?> iface : type.getInterfaces()) {
+	            visitFieldsAndMethods(typeContext, iface, actions);
+	        }
         }
     }
+    
+    protected abstract C newTypeContext();
 
-    protected List<LifecycleAction> getFieldActions(Class<?> type, Field field) {
+    protected List<LifecycleAction> getFieldActions(C typeContext, Class<?> type, Field field) {
         return Collections.emptyList();
     }
     
-    protected List<LifecycleAction> getMethodActions(Class<?> type, Method method) {
+    protected List<LifecycleAction> getMethodActions(C typeContext, Class<?> type, Method method) {
         return Collections.emptyList();
     }
     
     @Override
     public List<LifecycleAction> getActionsForType(Class<?> type) {
         List<LifecycleAction> actions = new ArrayList<>();
-        visitFieldsAndMethods(type, actions);
+        visitFieldsAndMethods(newTypeContext(), type, actions);
         return actions;
     }
 }

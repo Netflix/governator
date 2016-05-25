@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -61,6 +62,23 @@ public final class InjectorBuilder {
     public static InjectorBuilder fromModules(List<Module> modules) {
         return new InjectorBuilder(Modules.combine(modules));
     }
+    
+    public static <T> InjectorBuilder fromInstance(final Object o) {
+        return fromInstances(o);
+    }
+    
+    public static InjectorBuilder fromInstances(final Object... instances) {
+        return new InjectorBuilder(new AbstractModule() {
+            @SuppressWarnings("unchecked")
+			@Override
+            protected void configure() {
+            	for (Object o : instances) {
+            		bind((Class)o.getClass()).toInstance(o);
+            	}
+            }        
+		});
+    }
+    
     
     private InjectorBuilder(Module module) {
         this.module = module;
