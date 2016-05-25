@@ -43,6 +43,29 @@ public class PreDestroyTest {
         }
     }
     
+    private interface PreDestroyInterface {
+        @PreDestroy 
+		public void destroy();   	
+    }
+    
+    private static class PreDestroyImpl implements PreDestroyInterface {
+    	@Override
+    	public void destroy() {
+    		// should not be called
+    	}
+    }
+    
+    
+    private static class RunnableType implements Runnable {
+    	@Override
+        @PreDestroy 
+		public void run()  {
+    		// method from interface; will it be called?
+		}
+    }
+    
+    
+    
     private static class CloseableType implements Closeable {
 		@Override
 		public void close() throws IOException {
@@ -89,7 +112,7 @@ public class PreDestroyTest {
         final PreDestroyChild preDestroyChild = Mockito.mock(PreDestroyChild.class);
         InOrder inOrder = Mockito.inOrder(preDestroyChild);
         
-		try (LifecycleInjector injector = InjectorBuilder.fromInstance(preDestroyChild).createInjector()) {
+		try (LifecycleInjector injector = InjectorBuilder.bindInstance(preDestroyChild).createInjector()) {
 			Assert.assertNotNull(injector.getInstance(PreDestroyChild.class));
 	        Mockito.verify(preDestroyChild, Mockito.never()).shutdown();
 	        Mockito.verify(preDestroyChild, Mockito.never()).anotherShutdown();
@@ -99,13 +122,37 @@ public class PreDestroyTest {
         inOrder.verify(preDestroyChild, Mockito.times(1)).shutdown(); // not twice
         inOrder.verify(preDestroyChild, Mockito.times(1)).anotherShutdown(); // once to parent anotherShutdown(), after child shutdown()
     }
-    
 
+    @Test
+    public void testLifecycleDeclaredInterfaceMethod() {
+        final RunnableType runnableInstance = Mockito.mock(RunnableType.class);
+        InOrder inOrder = Mockito.inOrder(runnableInstance);
+        
+		try (LifecycleInjector injector = InjectorBuilder.bindInstance(runnableInstance).createInjector()) {
+			Assert.assertNotNull(injector.getInstance(RunnableType.class));
+	        Mockito.verify(runnableInstance, Mockito.never()).run();
+        }		
+        inOrder.verify(runnableInstance, Mockito.times(1)).run();
+    }
+
+    @Test
+    public void testLifecycleAnnotatedInterfaceMethod() {
+        final PreDestroyImpl impl = Mockito.mock(PreDestroyImpl.class);
+        InOrder inOrder = Mockito.inOrder(impl);
+        
+		try (LifecycleInjector injector = InjectorBuilder.bindInstance(impl).createInjector()) {
+			Assert.assertNotNull(injector.getInstance(RunnableType.class));
+	        Mockito.verify(impl, Mockito.never()).destroy();
+        }		
+        inOrder.verify(impl, Mockito.never()).destroy();
+    }
+
+    
     @Test
     public void testLifecycleShutdownWithInvalidPreDestroys() {
         final InvalidPreDestroys ipd = Mockito.mock(InvalidPreDestroys.class);
         
-        try (LifecycleInjector injector = InjectorBuilder.fromInstance(ipd).createInjector()) {     
+        try (LifecycleInjector injector = InjectorBuilder.bindInstance(ipd).createInjector()) {     
 			Assert.assertNotNull(injector.getInstance(InvalidPreDestroys.class));
 	        Mockito.verify(ipd, Mockito.never()).shutdownWithParameters(Mockito.anyString());
 	        Mockito.verify(ipd, Mockito.never()).shutdownWithReturnValue();
@@ -123,7 +170,7 @@ public class PreDestroyTest {
 			// ignore, mock only
 		}
         
-        try (LifecycleInjector injector = InjectorBuilder.fromInstance(closeableType).createInjector()) {
+        try (LifecycleInjector injector = InjectorBuilder.bindInstance(closeableType).createInjector()) {
         	Assert.assertNotNull(injector.getInstance(CloseableType.class));
 	        try {
 				Mockito.verify(closeableType, Mockito.never()).close();
@@ -147,7 +194,7 @@ public class PreDestroyTest {
     @Test
     public void testLifecycleShutdown() {
         final Foo foo = Mockito.mock(Foo.class);        
-        try (LifecycleInjector injector = InjectorBuilder.fromInstance(foo).createInjector()) {
+        try (LifecycleInjector injector = InjectorBuilder.bindInstance(foo).createInjector()) {
         	Assert.assertNotNull(injector.getInstance(Foo.class));        
         	Mockito.verify(foo, Mockito.never()).shutdown();
         }        

@@ -77,7 +77,7 @@ public class PostConstructTest {
         final PostConstructChild postConstructChild = Mockito.mock(PostConstructChild.class);
         InOrder inOrder = Mockito.inOrder(postConstructChild);
         
-        try (LifecycleInjector injector = InjectorBuilder.fromInstance(postConstructChild).createInjector()) {
+        try (LifecycleInjector injector = InjectorBuilder.bindInstance(postConstructChild).createInjector()) {
         	Assert.assertNotNull(injector.getInstance(PostConstructChild.class));
 	        inOrder.verify(postConstructChild, Mockito.times(1)).anotherInit(); // parent postConstruct before child postConstruct
 	        inOrder.verify(postConstructChild, Mockito.times(1)).init(); // not twice
@@ -88,7 +88,7 @@ public class PostConstructTest {
     @Test
     public void testLifecycleInitWithInvalidPostConstructs() {        
         InvalidPostConstructs mockInstance = Mockito.mock(InvalidPostConstructs.class);
-		try (LifecycleInjector injector = InjectorBuilder.fromInstance(mockInstance).createInjector()) {        
+		try (LifecycleInjector injector = InjectorBuilder.bindInstance(mockInstance).createInjector()) {        
            	Assert.assertNotNull(injector.getInstance(InvalidPostConstructs.class));
 	        Mockito.verify(mockInstance, Mockito.never()).initWithParameters(Mockito.anyString());
 	        Mockito.verify(mockInstance, Mockito.never()).initWithReturnValue();
@@ -99,7 +99,7 @@ public class PostConstructTest {
     @Test
     public void testLifecycleInit() {
         SimplePostConstruct mockInstance = Mockito.mock(SimplePostConstruct.class);
-		try (LifecycleInjector injector = InjectorBuilder.fromInstance(mockInstance).createInjector()) {
+		try (LifecycleInjector injector = InjectorBuilder.bindInstance(mockInstance).createInjector()) {
 			Assert.assertNotNull(injector.getInstance(SimplePostConstruct.class));
         	Mockito.verify(mockInstance, Mockito.times(1)).init();
         }

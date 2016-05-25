@@ -63,11 +63,11 @@ public final class InjectorBuilder {
         return new InjectorBuilder(Modules.combine(modules));
     }
     
-    public static <T> InjectorBuilder fromInstance(final Object o) {
-        return fromInstances(o);
+    public static <T> InjectorBuilder bindInstance(final Object o) {
+        return bindInstances(o);
     }
     
-    public static InjectorBuilder fromInstances(final Object... instances) {
+    public static InjectorBuilder bindInstances(final Object... instances) {
         return new InjectorBuilder(new AbstractModule() {
             @SuppressWarnings("unchecked")
 			@Override
