@@ -12,6 +12,11 @@ import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.LifecycleInjectorBuilderSuite;
 
+/**
+ * @deprecated 2016-05-26  All annotation based module loading APIs are being removed in favor of
+ *  pure Guice and InjectoBuilder
+ */
+@Deprecated
 @Documented
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

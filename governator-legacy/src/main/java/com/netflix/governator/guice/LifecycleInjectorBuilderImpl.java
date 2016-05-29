@@ -41,7 +41,6 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     @SuppressWarnings("deprecation")
     private LifecycleInjectorMode lifecycleInjectorMode = LifecycleInjectorMode.REAL_CHILD_INJECTORS;
     private List<PostInjectorAction> actions = ImmutableList.of();
-    private List<ModuleTransformer> transformers = ImmutableList.of();
 
     public LifecycleInjectorBuilder withBootstrapModule(BootstrapModule module)
     {
@@ -237,39 +236,6 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
-    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer filter) {
-        if (filter != null) {
-            this.transformers = ImmutableList.<ModuleTransformer>builder()
-                .addAll(this.transformers)
-                .add(filter)
-                .build();
-        }
-        return this;
-    }
-
-    @Override
-    public LifecycleInjectorBuilder withModuleTransformer(Collection<? extends ModuleTransformer> filters) {
-        if (this.transformers != null) {
-            this.transformers = ImmutableList.<ModuleTransformer>builder()
-                .addAll(this.transformers)
-                .addAll(filters)
-                .build();
-        }
-        return this;
-    }
-
-    @Override
-    public LifecycleInjectorBuilder withModuleTransformer(ModuleTransformer... filters) {
-        if (this.transformers != null) {
-            this.transformers = ImmutableList.<ModuleTransformer>builder()
-                .addAll(this.transformers)
-                .addAll(ImmutableList.copyOf(filters))
-                .build();
-        }
-        return this;
-    }
-
-    @Override
     public LifecycleInjectorBuilder withPostInjectorAction(PostInjectorAction action) {
         this.actions = ImmutableList.<PostInjectorAction>builder()
             .addAll(this.actions)
@@ -351,10 +317,6 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
         return actions;
     }
     
-    List<ModuleTransformer> getModuleTransformers() {
-        return transformers;
-    }
-
     boolean isDisableAutoBinding() {
         return this.disableAutoBinding;
     }

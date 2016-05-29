@@ -155,27 +155,6 @@ public class DelegatingLifecycleInjectorBuilder implements LifecycleInjectorBuil
     }
 
     @Override
-    public LifecycleInjectorBuilder withModuleTransformer(
-            ModuleTransformer transformer) {
-        this.delegate = delegate.withModuleTransformer(transformer);
-        return this;
-    }
-
-    @Override
-    public LifecycleInjectorBuilder withModuleTransformer(
-            Collection<? extends ModuleTransformer> transformers) {
-        this.delegate = delegate.withModuleTransformer(transformers);
-        return this;
-    }
-
-    @Override
-    public LifecycleInjectorBuilder withModuleTransformer(
-            ModuleTransformer... transformers) {
-        this.delegate = delegate.withModuleTransformer(transformers);
-        return this;
-    }
-
-    @Override
     public LifecycleInjectorBuilder withPostInjectorAction(
             PostInjectorAction action) {
         this.delegate = delegate.withPostInjectorAction(action);

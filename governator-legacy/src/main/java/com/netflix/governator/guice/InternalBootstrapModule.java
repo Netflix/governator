@@ -45,7 +45,6 @@ class InternalBootstrapModule extends AbstractModule
     private LifecycleInjectorMode mode;
     private ModuleListBuilder modules;
     private Collection<PostInjectorAction> actions;
-    private Collection<ModuleTransformer> transformers;
     private boolean disableAutoBinding;
     private final Collection<BootstrapModule> bootstrapModules;
     
@@ -61,13 +60,12 @@ class InternalBootstrapModule extends AbstractModule
         }
     }
 
-    public InternalBootstrapModule(Collection<BootstrapModule> bootstrapModules, ClasspathScanner scanner, Stage stage, LifecycleInjectorMode mode, ModuleListBuilder modules, Collection<PostInjectorAction> actions, Collection<ModuleTransformer> transformers, boolean disableAutoBinding) {
+    public InternalBootstrapModule(Collection<BootstrapModule> bootstrapModules, ClasspathScanner scanner, Stage stage, LifecycleInjectorMode mode, ModuleListBuilder modules, Collection<PostInjectorAction> actions, boolean disableAutoBinding) {
         this.scanner = scanner;
         this.stage = stage;
         this.mode = mode;
         this.modules = modules;
         this.actions = actions;
-        this.transformers = transformers;
         this.bootstrapModules = bootstrapModules;
         this.disableAutoBinding = disableAutoBinding;
     }
@@ -85,7 +83,7 @@ class InternalBootstrapModule extends AbstractModule
         bindScope(LazySingleton.class, LazySingletonScope.get());
         bindScope(FineGrainedLazySingleton.class, FineGrainedLazySingletonScope.get());
 
-        bootstrapBinder = new BootstrapBinder(binder(), stage, mode, modules, actions, transformers, disableAutoBinding);
+        bootstrapBinder = new BootstrapBinder(binder(), stage, mode, modules, actions, disableAutoBinding);
         
         if ( bootstrapModules != null )
         {

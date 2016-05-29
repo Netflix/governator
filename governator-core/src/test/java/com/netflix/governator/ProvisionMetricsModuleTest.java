@@ -6,7 +6,7 @@ import org.testng.Assert;
 public class ProvisionMetricsModuleTest {
     @Test
     public void defaultMetricsAreEmpty() {
-        LifecycleInjector injector = new Governator().run();
+        LifecycleInjector injector = InjectorBuilder.fromModules().createInjector();
         try {
             ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
             LoggingProvisionMetricsVisitor visitor = new LoggingProvisionMetricsVisitor();
@@ -20,9 +20,8 @@ public class ProvisionMetricsModuleTest {
     
     @Test
     public void installedMetricsHaveData() {
-        LifecycleInjector injector = new Governator()
-            .addModules(new ProvisionMetricsModule())
-            .run();
+        LifecycleInjector injector = InjectorBuilder.fromModules(new ProvisionMetricsModule())
+                .createInjector();
         
         try {
             ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
