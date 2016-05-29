@@ -18,7 +18,9 @@ package com.netflix.governator.guice;
 
 /**
  * Abstraction for binding during the bootstrap phase
+ * @deprecated Use standard Guice modules instead
  */
+@Deprecated
 public interface BootstrapModule
 {
     /**

@@ -16,22 +16,6 @@
 
 package com.netflix.governator.guice;
 
-import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.annotation.Resource;
-import javax.annotation.Resources;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -59,6 +43,22 @@ import com.netflix.governator.guice.lazy.LazySingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.Resource;
+import javax.annotation.Resources;
 
 /**
  * <p>
@@ -91,7 +91,6 @@ public class LifecycleInjector
     private final Stage stage;
     private final LifecycleInjectorMode mode;
     private Set<PostInjectorAction> actions;
-    private Set<ModuleTransformer> transformers;
 
     /**
      * Create a new LifecycleInjector builder
@@ -318,9 +317,6 @@ public class LifecycleInjector
         Injector childInjector;
         
         Collection<Module> localModules = modules;
-        for (ModuleTransformer transformer  : transformers) {
-            localModules = transformer.call(localModules);
-        }
         //noinspection deprecation
         if ( mode == LifecycleInjectorMode.REAL_CHILD_INJECTORS )
         {
@@ -417,7 +413,6 @@ public class LifecycleInjector
                 builder.getLifecycleInjectorMode(),
                 builder.getModuleListBuilder(),
                 builder.getPostInjectorActions(),
-                builder.getModuleTransformers(),
                 builder.isDisableAutoBinding());
         
         injector = Guice.createInjector
@@ -433,7 +428,6 @@ public class LifecycleInjector
         this.ignoreClasses = ImmutableList.copyOf(builder.getIgnoreClasses());
         
         this.actions = injector.getInstance(Key.get(new TypeLiteral<Set<PostInjectorAction>>() {}));
-        this.transformers = injector.getInstance(Key.get(new TypeLiteral<Set<ModuleTransformer>>() {}));
         
         try {
             this.modules = internalBootstrapModule.getModuleListBuilder().build(injector);

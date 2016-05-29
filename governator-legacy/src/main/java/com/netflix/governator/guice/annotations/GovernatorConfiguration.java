@@ -1,15 +1,14 @@
 package com.netflix.governator.guice.annotations;
 
+import com.google.inject.Stage;
+import com.netflix.governator.guice.LifecycleInjectorMode;
+import com.netflix.governator.guice.PostInjectorAction;
+import com.netflix.governator.guice.bootstrap.GovernatorBootstrap;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import com.google.inject.Stage;
-import com.netflix.governator.guice.LifecycleInjectorMode;
-import com.netflix.governator.guice.ModuleTransformer;
-import com.netflix.governator.guice.PostInjectorAction;
-import com.netflix.governator.guice.bootstrap.GovernatorBootstrap;
 
 /**
  * Governator configuration for the main bootstrap class with 'good' default
@@ -45,10 +44,4 @@ public @interface GovernatorConfiguration {
      * @return
      */
     Class<? extends PostInjectorAction>[] actions() default {};
-
-    /**
-     * {@link ModuleTransform} operations to perform on the final list of modules
-     * @return
-     */
-    Class<? extends ModuleTransformer>[] transformers() default {};
 }

@@ -16,14 +16,6 @@
 
 package com.netflix.governator.guice;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.Collection;
-
-import org.aopalliance.intercept.MethodInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Binder;
 import com.google.inject.Binding;
@@ -50,6 +42,15 @@ import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.ResourceLocator;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.Collection;
+
+@Deprecated
 public class BootstrapBinder implements Binder
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -59,22 +60,17 @@ public class BootstrapBinder implements Binder
     private ModuleListBuilder modules;
     private boolean disableAutoBinding;
     
-    BootstrapBinder(Binder binder, Stage stage, LifecycleInjectorMode mode, ModuleListBuilder modules, Collection<PostInjectorAction> actions, Collection<ModuleTransformer> transformers, boolean disableAutoBinding)
+    BootstrapBinder(Binder binder, Stage stage, LifecycleInjectorMode mode, ModuleListBuilder modules, Collection<PostInjectorAction> actions, boolean disableAutoBinding)
     {
         this.binder = binder;
         this.mode = mode;
         this.stage = stage;
         this.modules = modules;
         
-        Multibinder<ModuleTransformer> transformerBinder = Multibinder.newSetBinder(binder, ModuleTransformer.class);
         Multibinder<PostInjectorAction> actionBinder = Multibinder.newSetBinder(binder, PostInjectorAction.class);
         
         for (PostInjectorAction action : actions) {
             actionBinder.addBinding().toInstance(action);
-        }
-        
-        for (ModuleTransformer transformer : transformers) {
-            transformerBinder.addBinding().toInstance(transformer);
         }
     }
 
@@ -108,16 +104,6 @@ public class BootstrapBinder implements Binder
     public LinkedBindingBuilder<PostInjectorAction> bindPostInjectorAction()
     {
         return Multibinder.newSetBinder(binder, PostInjectorAction.class).addBinding();
-    }
-
-    /**
-     * Bind module transform operations to perform on the final list of modul.
-     * 
-     * @return a binding builder used to add a new element in the set.
-     */
-    public LinkedBindingBuilder<ModuleTransformer> bindModuleTransformer()
-    {
-        return Multibinder.newSetBinder(binder, ModuleTransformer.class).addBinding();
     }
 
     /**

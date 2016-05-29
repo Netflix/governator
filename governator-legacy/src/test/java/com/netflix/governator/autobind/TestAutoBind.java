@@ -18,19 +18,18 @@ package com.netflix.governator.autobind;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Binder;
-import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.guice.AutoBindProvider;
-import com.netflix.governator.guice.AutoBinds;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
 import java.util.Collections;
 
 public class TestAutoBind extends LifecycleInjectorBuilderProvider
@@ -188,24 +187,6 @@ public class TestAutoBind extends LifecycleInjectorBuilderProvider
         SimpleWithMethodAutoBind instance = injector.getInstance(SimpleWithMethodAutoBind.class);
         Assert.assertEquals(instance.getF1().getParameter(), "f1");
         Assert.assertEquals(instance.getF2().getParameter(), "f2");
-    }
-
-    @Test
-    public void     testNormally()
-    {
-        Injector        injector = Guice.createInjector
-        (
-            new Module()
-            {
-                @Override
-                public void configure(Binder binder)
-                {
-                    binder.bind(String.class).annotatedWith(AutoBinds.withValue("foo")).toInstance("we are the music makers");
-                }
-            }
-        );
-
-        Assert.assertEquals(injector.getInstance(SimpleAutoBind.class).getString(), "we are the music makers");
     }
 
     private static class CustomAutoBindProvider implements AutoBindProvider<CustomAutoBind>
