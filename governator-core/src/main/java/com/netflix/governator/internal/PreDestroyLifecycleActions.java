@@ -69,12 +69,11 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
                 final int modifiers = method.getModifiers();
                 String methodName = method.getName();
                 if (Modifier.isStatic(modifiers)) {
-                    LOG.info("invalid static @PreDestroy method {}.{}()", method.getDeclaringClass().getName(),
-                            methodName);
+                    LOG.info("invalid static @PreDestroy method {}.{}()", new Object[] { method.getDeclaringClass().getName(), methodName });
                 } else if (method.getParameterCount() > 0) {
-                    LOG.info("invalid @PreDestroy method {}.{}() with {} parameters", method.getDeclaringClass().getName(), methodName, method.getParameterCount());
+                    LOG.info("invalid @PreDestroy method {}.{}() with {} parameters", new Object[] { method.getDeclaringClass().getName(), methodName, method.getParameterCount() });
                 } else if (Void.TYPE != method.getReturnType()) {
-                    LOG.info("invalid @PreDestroy method {}.{}() with return type {}", method.getDeclaringClass().getName(), methodName, method.getReturnType().getName());
+                    LOG.info("invalid @PreDestroy method {}.{}() with return type {}", new Object[] { method.getDeclaringClass().getName(), methodName, method.getReturnType().getName() });
                 } else {
                     if (!visitContext.contains(methodName)) {
                         if (!method.isAccessible()) {

@@ -59,12 +59,11 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 String methodName = method.getName();
                 if (Modifier.isStatic(modifiers)) {
-                    LOG.info("invalid static @PostConstruct method {}.{}()", method.getDeclaringClass().getName(),
-                            methodName);
+                    LOG.info("invalid static @PostConstruct method {}.{}()", new Object[] { method.getDeclaringClass().getName(), methodName });
                 } else if (method.getParameterCount() > 0) {
-                    LOG.info("invalid @PostConstruct method {}.{}() with {} parameters", method.getDeclaringClass().getName(), methodName, method.getParameterCount());
+                    LOG.info("invalid @PostConstruct method {}.{}() with {} parameters", new Object[] { method.getDeclaringClass().getName(), methodName, method.getParameterCount() });
                 } else if (Void.TYPE != method.getReturnType()) {
-                    LOG.info("invalid @PostConstruct method {}.{}() with return type {}", method.getDeclaringClass().getName(), methodName, method.getReturnType().getName());
+                    LOG.info("invalid @PostConstruct method {}.{}() with return type {}", new Object[] { method.getDeclaringClass().getName(), methodName, method.getReturnType().getName() });
                 } else {
                     if (!visitContext.contains(methodName)) {
                         if (!method.isAccessible()) {
