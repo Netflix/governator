@@ -12,6 +12,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -21,6 +22,18 @@ import com.netflix.governator.spi.LifecycleListener;
 
 public class LifecycleModuleTest {
     
+    private static final class AssertionErrorListener extends TrackingLifecycleListener {
+        public AssertionErrorListener(String name) {
+            super(name);
+        }
+        @PreDestroy
+        @Override
+        public void destroyed() {
+            super.destroyed();
+            assertThat(false, equalTo(true));
+        }
+    }
+
     private static enum Events {
         Injected,
         Initialized,
@@ -33,8 +46,13 @@ public class LifecycleModuleTest {
     @Rule
     public final TestName name = new TestName();
     
-    class TrackingLifecycleListener implements LifecycleListener {
+    static class TrackingLifecycleListener implements LifecycleListener {
         final List<Events> events = new ArrayList<>();
+        private String name;
+        
+        public TrackingLifecycleListener(String name) {
+            this.name = name;
+        }
         
         @Inject
         public void initialize(Injector injector) {
@@ -66,22 +84,22 @@ public class LifecycleModuleTest {
 
         @Override
         public String toString() {
-            return "TrackingLifecycleListener[" + name.getMethodName() + "]";
+            return "TrackingLifecycleListener[" + name + "]";
         }
     }
     
     @Test
     public void confirmLifecycleListenerEventsForSuccessfulStart() {
-        final TrackingLifecycleListener listener = new TrackingLifecycleListener();
+        final TrackingLifecycleListener listener = new TrackingLifecycleListener(name.getMethodName());
         
         TestSupport.inject(listener).close();
         
-        assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Started, Events.Stopped, Events.Destroyed )));
+        assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Started, Events.Stopped, Events.Destroyed)));
     }
     
     @Test(expected=RuntimeException.class)
     public void confirmLifecycleListenerEventsForFailedStart() {
-        final TrackingLifecycleListener listener = new TrackingLifecycleListener() {
+        final TrackingLifecycleListener listener = new TrackingLifecycleListener(name.getMethodName()) {
             @Override
             @Inject
             public void initialize(Injector injector) {
@@ -97,7 +115,9 @@ public class LifecycleModuleTest {
         }
     }
     
+    @Ignore // deprecated governator.run() does not invoke lifecycle methods 
     @Test(expected=AssertionError.class)
+<<<<<<< 31d39215f31ed941452ddfb04d9ea74fd36f7815
     public void assertionExceptionInListener() {
         TrackingLifecycleListener listener = new TrackingLifecycleListener() {
             @Override
@@ -109,6 +129,13 @@ public class LifecycleModuleTest {
         };
         try (LifecycleInjector injector = TestSupport.inject(listener)){
         }
+=======
+    public void assertionErrorInListener() {
+        AssertionErrorListener listener = new AssertionErrorListener(name.getMethodName());
+        LifecycleInjector lifecycleInjector = new Governator().run(listener);
+        lifecycleInjector.getInstance(AssertionErrorListener.class);
+        lifecycleInjector.shutdown();
+>>>>>>> ordering for lifecycle listeners, fix equality in SafeLifecycleListener
     }
 
 }

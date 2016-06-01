@@ -59,7 +59,7 @@ final class SafeLifecycleListener implements LifecycleListener {
         if (getClass() != obj.getClass())
             return false;
         SafeLifecycleListener other = (SafeLifecycleListener) obj;
-        return !delegate.equals(other.delegate);
+        return delegate == other.delegate || delegate.equals(other.delegate);
     }
     
 

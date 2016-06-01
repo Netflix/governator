@@ -1,6 +1,6 @@
 package com.netflix.governator;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,7 +22,7 @@ import com.netflix.governator.spi.LifecycleListener;
 public final class LifecycleManager {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleManager.class);
     
-    private final Set<LifecycleListener> listeners = new HashSet<>();
+    private final Set<LifecycleListener> listeners = new LinkedHashSet<>();
     private final AtomicReference<State> state = new AtomicReference<>(State.Starting);
     private volatile Throwable failureReason;
     
@@ -45,7 +45,8 @@ public final class LifecycleManager {
             case Stopped:
                 listener.onStopped(failureReason);
                 break;
-
+            default:
+                // ignore
             }
         }
     }
@@ -61,8 +62,9 @@ public final class LifecycleManager {
     public synchronized void notifyStartFailed(Throwable t) {
         if (state.compareAndSet(State.Starting, State.Stopped)) {
             failureReason = t;
-            for (LifecycleListener listener : listeners) {
-                listener.onStopped(t);
+            LifecycleListener[] asArray = listeners.toArray(new LifecycleListener[0]);
+            for (int i=asArray.length-1; i >=0; i--) {
+                asArray[i].onStopped(t);
             }
         }
     }
@@ -70,8 +72,9 @@ public final class LifecycleManager {
     public synchronized void notifyShutdown() {
         if (state.compareAndSet(State.Started, State.Done)) {
             LOG.info("Shutting down LifecycleManager");
-            for (LifecycleListener listener : listeners) {
-                listener.onStopped(null);
+            LifecycleListener[] asArray = listeners.toArray(new LifecycleListener[0]);
+            for (int i=asArray.length-1; i >=0; i--) {
+                asArray[i].onStopped(null);
             }
         }
     }
