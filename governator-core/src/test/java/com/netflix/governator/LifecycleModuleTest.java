@@ -74,11 +74,9 @@ public class LifecycleModuleTest {
     public void confirmLifecycleListenerEventsForSuccessfulStart() {
         final TrackingLifecycleListener listener = new TrackingLifecycleListener();
         
-        new Governator()
-            .run(listener)
-            .shutdown();
+        TestSupport.inject(listener).close();
         
-        assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Started, Events.Destroyed, Events.Stopped)));
+        assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Started, Events.Stopped, Events.Destroyed )));
     }
     
     @Test(expected=RuntimeException.class)
@@ -92,27 +90,25 @@ public class LifecycleModuleTest {
             } 
         };
         
-        try {
-            new Governator()
-                .run(listener)
-                .shutdown();
+        try (LifecycleInjector injector = TestSupport.inject(listener)){
         }
         finally {
-            assertThat(listener.events, equalTo(Arrays.asList(Events.Injected, Events.Initialized, Events.Stopped, Events.Error, Events.Destroyed)));
+            assertThat(listener.events, equalTo(Arrays.asList(Events.Injected)));
         }
     }
     
     @Test(expected=AssertionError.class)
-    public void assertionExampleInListener() {
-        new Governator()
-            .run(new TrackingLifecycleListener() {
-                @Override
-                public void onStopped(Throwable t) {
-                    super.onStopped(t);
-                    assertThat(t, nullValue());
-                    assertThat(false, equalTo(true));
-                }
-            })
-            .shutdown();
+    public void assertionExceptionInListener() {
+        TrackingLifecycleListener listener = new TrackingLifecycleListener() {
+            @Override
+            public void onStopped(Throwable t) {
+                super.onStopped(t);
+                assertThat(t, nullValue());
+                assertThat(false, equalTo(true));
+            }
+        };
+        try (LifecycleInjector injector = TestSupport.inject(listener)){
+        }
     }
+
 }

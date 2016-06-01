@@ -95,7 +95,7 @@ public class PreDestroyTest {
     private static class PreDestroyChild extends PreDestroyParent {
         @PreDestroy
         public void shutdown() {
-
+            System.out.println("shutdown invoked");
         }
 
         public void yetAnotherShutdown() {
@@ -105,11 +105,11 @@ public class PreDestroyTest {
 
     @Test
     public void testLifecycleShutdownInheritance() {
-        final PreDestroyChild preDestroyChild = Mockito.mock(PreDestroyChild.class);
+        final PreDestroyChild preDestroyChild = Mockito.spy(new PreDestroyChild());
         InOrder inOrder = Mockito.inOrder(preDestroyChild);
 
         try (LifecycleInjector injector = TestSupport.inject(preDestroyChild)) {
-            Assert.assertNotNull(injector.getInstance(PreDestroyChild.class));
+            Assert.assertNotNull(injector.getInstance(preDestroyChild.getClass()));
             Mockito.verify(preDestroyChild, Mockito.never()).shutdown();
             Mockito.verify(preDestroyChild, Mockito.never()).anotherShutdown();
             Mockito.verify(preDestroyChild, Mockito.never()).yetAnotherShutdown();

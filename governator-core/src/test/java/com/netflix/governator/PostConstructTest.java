@@ -1,5 +1,8 @@
 package com.netflix.governator;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 
@@ -44,14 +47,17 @@ public class PostConstructTest {
     private static class PostConstructParent {
         @PostConstruct
         public void init() {
+            System.out.println("parent.init");
         }
 
         @PostConstruct
         public void anotherInit() {
+            System.out.println("parent.anotherInit");
         }
 
         @PostConstruct
         public void yetAnotherInit() {
+            System.out.println("parent.yetAnotherInit");
         }
 
     }
@@ -59,9 +65,11 @@ public class PostConstructTest {
     private static class PostConstructChild extends PostConstructParent {
         @PostConstruct
         public void init() {
+            System.out.println("child.init");
         }
 
         public void yetAnotherInit() {
+            System.out.println("child.yetAnotherInit");
         }
     }
 
@@ -127,5 +135,28 @@ public class PostConstructTest {
 
     @Rule
     public TestName name = new TestName();
+    
+    interface TestInt {
+        @PostConstruct
+        public void foo();
+    }
+    
+    private static class T implements Runnable, TestInt {
+        @Override
+        public void run() {
+            
+        }
+        
+        @Override
+        public String toString() {
+            return "yay!";
+        }
+        
+        @Override
+        public void foo() {
+            
+        }
+
+    }
 
 }

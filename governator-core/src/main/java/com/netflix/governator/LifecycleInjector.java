@@ -89,7 +89,10 @@ final public class LifecycleInjector extends DelegatingInjector implements AutoC
     /**
      * Shutdown LifecycleManager on this Injector which will invoke all registered
      * {@link LifecycleListener}s and unblock awaitTermination. 
+     * 
+     * @deprecated use LifecycleInjector.close() instead
      */
+    @Deprecated
     public void shutdown() {
         signal.signal();
     }

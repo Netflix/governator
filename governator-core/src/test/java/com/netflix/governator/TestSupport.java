@@ -15,7 +15,8 @@ public class TestSupport {
         @Override
         protected void configure() {
             for (Object o : instances) {
-                bind((Class) o.getClass()).toInstance(o);
+                Class clz = (Class) o.getClass();
+                bind(clz).toInstance(o);
             }
         }
     }
@@ -29,7 +30,7 @@ public class TestSupport {
     }
 
     public static LifecycleInjector inject(final Object... instances) {
-        return InjectorBuilder.fromModule(new InstancesModule()).createInjector();
+        return InjectorBuilder.fromModule(new InstancesModule(instances)).createInjector();
     }
 
 }

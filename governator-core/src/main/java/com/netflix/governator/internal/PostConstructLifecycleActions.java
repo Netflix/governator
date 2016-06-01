@@ -1,93 +1,120 @@
 package com.netflix.governator.internal;
 
-import static com.netflix.governator.internal.AbstractLifecycleFeature.TypeVisitor.ElementType.METHOD;
-import static com.netflix.governator.internal.AbstractLifecycleFeature.TypeVisitor.ElementType.SUPERCLASS;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Supplier;
 import com.netflix.governator.LifecycleAction;
+import com.netflix.governator.LifecycleFeature;
+import com.netflix.governator.internal.TypeInspector.TypeVisitor;
 
 /**
- * Special AbstractLifecycleFeature to support @PostConstruct annotation
- * processing. Note that this feature is implicit in LifecycleModule and
- * therefore does not need to be added using the LifecycleFeature multibinding.
+ * Special LifecycleFeature to support @PostConstruct annotation processing.
+ * Note that this feature is implicit in LifecycleModule and therefore does not
+ * need to be added using the LifecycleFeature multibinding.
  * 
  * @author elandau
  */
-public final class PostConstructLifecycleActions extends AbstractLifecycleFeature {
-
+public final class PostConstructLifecycleActions implements LifecycleFeature {
+    private static final Logger LOG = LoggerFactory.getLogger(PostConstructLifecycleActions.class);
     public static PostConstructLifecycleActions INSTANCE = new PostConstructLifecycleActions();
 
-    static class PostConstructVisitor implements TypeVisitor {
-        private Set<String> visitContext = new HashSet<>();
-
-        @Override
-        public List<LifecycleAction> getMethodActions(final Class<?> type, final Method method) {
-            int modifiers = method.getModifiers();
-            if (!Modifier.isStatic(modifiers) && !Modifier.isAbstract(modifiers) && method.getParameterCount() == 0
-                    && Void.TYPE.equals(method.getReturnType())) {
-                if (!visitContext.contains(method.getName())) {
-                    if (null != method.getAnnotation(PostConstruct.class)) {
-                        if (!method.isAccessible()) {
-                            method.setAccessible(true);
-                        }
-                        visitContext.add(method.getName());
-                        return Collections.<LifecycleAction> singletonList(new LifecycleAction() {
-                            @Override
-                            public void call(Object obj)
-                                    throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-                                method.invoke(obj);
-                            }
-
-                            @Override
-                            public String toString() {
-                                return new StringBuilder().append("PostConstruct[").append(type.getName()).append("#")
-                                        .append(method.getName()).append("]").toString();
-                            }
-                        });
-                    }
-                }
-            }
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<LifecycleAction> getFieldActions(Class<?> type, Field field) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public boolean accept(ElementType elementType) {
-            return elementType == METHOD || elementType == SUPERCLASS;
-        }
-
-    }
-
-    @Override
-    protected TypeVisitor newTypeVisitor() {
-        return new PostConstructVisitor();
+    private PostConstructLifecycleActions() {
     }
 
     @Override
     public List<LifecycleAction> getActionsForType(final Class<?> type) {
-        List<LifecycleAction> typeActions = super.getActionsForType(type);
-        Collections.reverse(typeActions); // apply actions in reverse order;
-                                          // super->child
-        return typeActions;
+        return TypeInspector.accept(type, new PostConstructVisitor());
     }
 
     @Override
     public String toString() {
         return "PostConstruct";
+    }
+
+    private static class PostConstructVisitor implements TypeVisitor, Supplier<List<LifecycleAction>> {
+        private Set<String> visitContext = new HashSet<>();
+        private LinkedList<LifecycleAction> typeActions = new LinkedList<>();
+
+        @Override
+        public boolean visit(final Class<?> clazz) {
+            return !clazz.isInterface();
+        }
+
+        @Override
+        public boolean visit(final Method method) {
+            int modifiers = method.getModifiers();
+            if (method.isAnnotationPresent(PostConstruct.class)) {
+                String methodName = method.getName();
+                if (Modifier.isStatic(modifiers)) {
+                    LOG.info("invalid static @PostConstruct method {}.{}()", method.getDeclaringClass().getName(),
+                            methodName);
+                } else if (method.getParameterCount() > 0) {
+                    LOG.info("invalid @PostConstruct method {}.{}() with {} parameters", method.getDeclaringClass().getName(), methodName, method.getParameterCount());
+                } else if (Void.TYPE != method.getReturnType()) {
+                    LOG.info("invalid @PostConstruct method {}.{}() with return type {}", method.getDeclaringClass().getName(), methodName, method.getReturnType().getName());
+                } else {
+                    if (!visitContext.contains(methodName)) {
+                        if (!method.isAccessible()) {
+                            method.setAccessible(true);
+                        }
+                        // order the members in the list, so superclass
+                        // @PostContruct actions are first
+                        PostConstructAction postConstructAction = new PostConstructAction(method);
+                        LOG.debug("adding lifecycle action for {}", postConstructAction.description);
+                        this.typeActions.addFirst(postConstructAction);
+                        visitContext.add(methodName);
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visit(Field field) {
+            return true;
+        }
+
+        @Override
+        public List<LifecycleAction> get() {
+            return Collections.unmodifiableList(typeActions);
+        }
+
+    }
+
+    private static final class PostConstructAction implements LifecycleAction {
+        private final Method method;
+        private final String description;
+
+        private PostConstructAction(Method method) {
+            this.method = method;
+            this.description = new StringBuilder().append("PostConstruct[").append(method.getDeclaringClass().getName())
+                    .append("#").append(method.getName()).append("]").toString();
+        }
+
+        @Override
+        public void call(Object obj)
+                throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            LOG.info("invoking lifecycle action {}", description);
+            method.invoke(obj);
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
     }
 
 }
