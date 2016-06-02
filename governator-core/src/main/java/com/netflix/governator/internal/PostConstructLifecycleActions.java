@@ -65,7 +65,16 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
                 } else if (Void.TYPE != method.getReturnType()) {
                     LOG.info("invalid @PostConstruct method {}.{}() with return type {}", new Object[] { method.getDeclaringClass().getName(), methodName, method.getReturnType().getName() });
                 } else {
-                    if (!visitContext.contains(methodName)) {
+                    boolean hasCheckedException=false;
+                    if (method.getExceptionTypes().length > 0) {
+                        for (Class<?> e : method.getExceptionTypes()) {
+                            if (!RuntimeException.class.isAssignableFrom(e)) {
+                                LOG.info("invalid @PostConstruct method {}.{}() with checked exception type {}", new Object[] { method.getDeclaringClass().getName(), methodName, e.getName() });
+                                hasCheckedException = true;
+                            }
+                        }
+                    }
+                    if (!hasCheckedException && !visitContext.contains(methodName)) {
                         if (!method.isAccessible()) {
                             method.setAccessible(true);
                         }
@@ -106,7 +115,7 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
         @Override
         public void call(Object obj)
                 throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            LOG.info("invoking lifecycle action {}", description);
+            LOG.debug("invoking lifecycle action {}", description);
             method.invoke(obj);
         }
 

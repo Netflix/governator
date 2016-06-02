@@ -75,7 +75,16 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
                 } else if (Void.TYPE != method.getReturnType()) {
                     LOG.info("invalid @PreDestroy method {}.{}() with return type {}", new Object[] { method.getDeclaringClass().getName(), methodName, method.getReturnType().getName() });
                 } else {
-                    if (!visitContext.contains(methodName)) {
+                    boolean hasCheckedException=false;
+                    if (method.getExceptionTypes().length > 0) {
+                        for (Class<?> e : method.getExceptionTypes()) {
+                            if (!RuntimeException.class.isAssignableFrom(e)) {
+                                LOG.info("invalid @PreDestroy method {}.{}() with checked exception type {}", new Object[] { method.getDeclaringClass().getName(), methodName, e.getName() });
+                                hasCheckedException = true;
+                            }
+                        }
+                    }
+                    if (!hasCheckedException && !visitContext.contains(methodName)) {
                         if (!method.isAccessible()) {
                             method.setAccessible(true);
                         }
@@ -113,7 +122,7 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
         @Override
         public void call(Object obj)
                 throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            LOG.info("invoking lifecycle action {}", description);
+            LOG.debug("invoking lifecycle action {}", description);
             method.invoke(obj);
         }
 
@@ -127,7 +136,7 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
         private final String description;
 
         private AutoCloseableLifecycleAction(Class<? extends AutoCloseable> clazz) {
-            this.description = new StringBuilder().append("PreDestroy[").append(clazz.getName()).append("#")
+            this.description = new StringBuilder().append("AutoCloseable[").append(clazz.getName()).append("#")
                     .append("close").append("]").toString();
         }
 
