@@ -45,6 +45,7 @@ public final class LifecycleManager {
             case Stopped:
                 listener.onStopped(failureReason);
                 break;
+
             }
         }
     }

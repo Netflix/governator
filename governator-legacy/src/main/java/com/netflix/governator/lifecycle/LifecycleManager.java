@@ -16,6 +16,36 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.beans.Introspector;
+import java.io.Closeable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import javax.annotation.Resources;
+import javax.naming.NamingException;
+import javax.validation.ConstraintViolation;
+import javax.validation.Path;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -27,39 +57,11 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.governator.annotations.PreConfiguration;
+import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationColumnWriter;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.lifecycle.warmup.DAGManager;
-import com.netflix.governator.lifecycle.warmup.WarmUpDriver;
-import com.netflix.governator.lifecycle.warmup.WarmUpSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.annotation.Resources;
-import javax.naming.NamingException;
-import javax.validation.ConstraintViolation;
-import javax.validation.Path;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
-import java.beans.Introspector;
-import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Main instance management container
@@ -77,9 +79,6 @@ public class LifecycleManager implements Closeable
     private final Collection<LifecycleListener> listeners;
     private final Collection<ResourceLocator> resourceLocators;
     private final ValidatorFactory factory;
-    private final DAGManager dagManager = new DAGManager();
-    private final PostStartArguments postStartArguments;
-    private final AtomicReference<WarmUpSession> postStartWarmUpSession = new AtomicReference<WarmUpSession>(null);
     private final Injector injector;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
@@ -102,7 +101,6 @@ public class LifecycleManager implements Closeable
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
         factory = Validation.buildDefaultValidatorFactory();
-        postStartArguments = arguments.getPostStartArguments();
         configurationDocumentation = arguments.getConfigurationDocumentation();
         configurationProvider = arguments.getConfigurationProvider();
     }
@@ -208,15 +206,12 @@ public class LifecycleManager implements Closeable
      * @return true if warm up methods successfully executed, false if the time elapses
      * @throws Exception errors
      */
+    @Deprecated
     public boolean start(long maxWait, TimeUnit unit) throws Exception
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
 
         validate();
-
-        long maxMs = (unit != null) ? unit.toMillis(maxWait) : Long.MAX_VALUE;
-        WarmUpSession warmUpSession = new WarmUpSession(getWarmUpDriver(), dagManager);
-        boolean success = warmUpSession.doImmediate(maxMs);
 
         new ConfigurationColumnWriter(configurationDocumentation).output(log);
         if (newLifecycleManager != null) {
@@ -224,7 +219,7 @@ public class LifecycleManager implements Closeable
         }
         state.set(State.STARTED);
 
-        return success;
+        return true;
     }
 
     @Override
@@ -289,14 +284,6 @@ public class LifecycleManager implements Closeable
         }
     }
 
-    /**
-     * @return the internal DAG manager
-     */
-    public DAGManager getDAGManager()
-    {
-        return dagManager;
-    }
-
     private void setState(Object obj, LifecycleState state)
     {
         objectStates.put(new StateKey(obj), state);
@@ -343,12 +330,15 @@ public class LifecycleManager implements Closeable
         setResources(obj, methods);
 
         setState(obj, LifecycleState.POST_CONSTRUCTING);
-        for ( Method postConstruct : methods.methodsFor(PostConstruct.class) )
+        LinkedHashSet<Method> postConstructs = new LinkedHashSet<>();
+        postConstructs.addAll(methods.methodsFor(PostConstruct.class));
+        postConstructs.addAll(methods.methodsFor(WarmUp.class));
+        for ( Method postConstruct : postConstructs )
         {
             log.debug(String.format("\t%s()", postConstruct.getName()));
             postConstruct.invoke(obj);
         }
-
+        
         Collection<Method> preDestroyMethods = methods.methodsFor(PreDestroy.class);
         if ( preDestroyMethods.size() > 0 )
         {
@@ -581,50 +571,6 @@ public class LifecycleManager implements Closeable
     private void initializeObjectPostStart(Object obj) throws ValidationException
     {
         validate(obj);
-
-        postStartWarmUpSession.compareAndSet(null, new WarmUpSession(getWarmUpDriver(), dagManager));
-        WarmUpSession session = postStartWarmUpSession.get();
-        session.doInBackground();
-    }
-
-    private WarmUpDriver getWarmUpDriver()
-    {
-        return new WarmUpDriver()
-        {
-            @Override
-            public void setPreWarmUpState()
-            {
-                for ( StateKey key : objectStates.keySet() )
-                {
-                    objectStates.put(key, LifecycleState.PRE_WARMING_UP);
-                }
-            }
-
-            @Override
-            public void setPostWarmUpState()
-            {
-                Iterator<LifecycleState> iterator = objectStates.values().iterator();
-                while ( iterator.hasNext() )
-                {
-                    if ( iterator.next() != LifecycleState.ERROR )
-                    {
-                        iterator.remove();
-                    }
-                }
-            }
-
-            @Override
-            public PostStartArguments getPostStartArguments()
-            {
-                return postStartArguments;
-            }
-
-            @Override
-            public void setState(Object obj, LifecycleState state)
-            {
-                LifecycleManager.this.setState(obj, state);
-            }
-        };
     }
 
     private enum State

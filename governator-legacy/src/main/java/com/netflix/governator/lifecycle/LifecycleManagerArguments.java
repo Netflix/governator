@@ -16,6 +16,13 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -23,12 +30,6 @@ import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
-import com.netflix.governator.lifecycle.warmup.WarmUpException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public class LifecycleManagerArguments
 {
@@ -54,29 +55,6 @@ public class LifecycleManagerArguments
 
     @Inject(optional = true)
     private Set<ResourceLocator>            resourceLocators = ImmutableSet.of();
-
-    @Inject(optional = true)
-    private PostStartArguments              postStartArguments = new PostStartArguments()
-    {
-        @Override
-        public WarmUpErrorHandler getWarmUpErrorHandler()
-        {
-            return new WarmUpErrorHandler()
-            {
-                @Override
-                public void warmUpError(WarmUpException exception)
-                {
-                    log.error("warm-up error after LifecycleManager.start() has been called.", exception);
-                }
-            };
-        }
-
-        @Override
-        public long getWarmUpPaddingMs()
-        {
-            return DEFAULT_WARM_UP_PADDING_MS;
-        }
-    };
 
     @Inject
     public LifecycleManagerArguments(
@@ -121,16 +99,6 @@ public class LifecycleManagerArguments
     public void setLifecycleListeners(Collection<LifecycleListener> lifecycleListeners)
     {
         this.lifecycleListeners = ImmutableSet.copyOf(lifecycleListeners);
-    }
-
-    public PostStartArguments getPostStartArguments()
-    {
-        return postStartArguments;
-    }
-
-    public void setPostStartArguments(PostStartArguments postStartArguments)
-    {
-        this.postStartArguments = postStartArguments;
     }
 
     public Set<ResourceLocator> getResourceLocators()

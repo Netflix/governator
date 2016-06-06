@@ -16,13 +16,12 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.TypeLiteral;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Wrapper listener that forwards to the provided listener only when the obj is in one of the
@@ -93,20 +92,4 @@ public class FilteredLifecycleListener extends DefaultLifecycleListener
         }
         return false;
     }
-
-//    @Override
-//    public <T> void objectInjected(TypeLiteral<T> type, T obj, long duration, TimeUnit units) {
-//        if ( isInPackages(obj) )
-//        {
-//            listener.objectInjected(type, obj, duration, units);
-//        }
-//    }
-//
-//    @Override
-//    public <T> void objectInjecting(TypeLiteral<T> type) {
-//        if ( isInPackages(type.getRawType()) )
-//        {
-//            listener.objectInjecting(type);
-//        }
-//    }
 }

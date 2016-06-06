@@ -55,7 +55,7 @@ import com.netflix.governator.spi.LifecycleListener;
  * </code>
  * </pre>
  */
-final public class LifecycleInjector extends DelegatingInjector {
+final public class LifecycleInjector extends DelegatingInjector implements AutoCloseable {
     private final LifecycleManager manager;
     private final LifecycleShutdownSignal signal;
     
@@ -89,7 +89,10 @@ final public class LifecycleInjector extends DelegatingInjector {
     /**
      * Shutdown LifecycleManager on this Injector which will invoke all registered
      * {@link LifecycleListener}s and unblock awaitTermination. 
+     * 
+     * @deprecated use LifecycleInjector.close() instead
      */
+    @Deprecated
     public void shutdown() {
         signal.signal();
     }
@@ -101,5 +104,10 @@ final public class LifecycleInjector extends DelegatingInjector {
      */
     public void addListener(LifecycleListener listener) {
         manager.addListener(listener);
+    }
+    
+    @Override
+    public void close() {
+    	shutdown();
     }
 }
