@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.CreationException;
 import com.google.inject.Injector;
 import com.netflix.governator.InjectorBuilder;
 import com.netflix.governator.event.guava.GuavaApplicationEventModule;
@@ -135,6 +136,16 @@ public class ApplicationEventModuleTest {
         registration.unregister();
         assertEquals(1, testEventCounter.get());        
     }
+    
+    @Test(expected=CreationException.class)
+    public void testEventListenerWithInvalidArgumentsFailsFast() {
+        injector = InjectorBuilder.fromModules(new GuavaApplicationEventModule(), new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(TestFailFastEventListener.class).toInstance(new TestFailFastEventListener());
+            }
+        }).createInjector();
+    }
 
     private class TestAnnotatedListener {
         AtomicInteger invocationCount = new AtomicInteger();
@@ -143,14 +154,11 @@ public class ApplicationEventModuleTest {
         public void doThing(TestEvent event) {
             invocationCount.incrementAndGet();
         }
-
+    }
+    
+    private class TestFailFastEventListener {
         @EventListener
         public void doNothing(String invalidArgumentType) {
-            fail("This should never be called");
-        }
-
-        @EventListener
-        public void doNothing(Class<Object> arg1, Object arg2) {
             fail("This should never be called");
         }
     }

@@ -1,7 +1,6 @@
 package com.netflix.governator.internal;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -55,7 +54,7 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
             if (continueVisit && AutoCloseable.class.isAssignableFrom(clazz)) {
                 AutoCloseableLifecycleAction closeableAction = new AutoCloseableLifecycleAction(
                         clazz.asSubclass(AutoCloseable.class));
-                LOG.debug("adding action {}", closeableAction.description);
+                LOG.debug("adding action {}", closeableAction);
                 typeActions.add(closeableAction);
                 continueVisit = false;
             }
@@ -65,35 +64,22 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
         @Override
         public boolean visit(final Method method) {
 
+            final String methodName = method.getName();
             if (method.isAnnotationPresent(PreDestroy.class)) {
-                final int modifiers = method.getModifiers();
-                String methodName = method.getName();
-                if (Modifier.isStatic(modifiers)) {
-                    LOG.info("invalid static @PreDestroy method {}.{}()", new Object[] { method.getDeclaringClass().getName(), methodName });
-                } else if (method.getParameterCount() > 0) {
-                    LOG.info("invalid @PreDestroy method {}.{}() with {} parameters", new Object[] { method.getDeclaringClass().getName(), methodName, method.getParameterCount() });
-                } else if (Void.TYPE != method.getReturnType()) {
-                    LOG.info("invalid @PreDestroy method {}.{}() with return type {}", new Object[] { method.getDeclaringClass().getName(), methodName, method.getReturnType().getName() });
-                } else {
-                    boolean hasCheckedException=false;
-                    if (method.getExceptionTypes().length > 0) {
-                        for (Class<?> e : method.getExceptionTypes()) {
-                            if (!RuntimeException.class.isAssignableFrom(e)) {
-                                LOG.info("invalid @PreDestroy method {}.{}() with checked exception type {}", new Object[] { method.getDeclaringClass().getName(), methodName, e.getName() });
-                                hasCheckedException = true;
-                            }
-                        }
-                    }
-                    if (!hasCheckedException && !visitContext.contains(methodName)) {
-                        if (!method.isAccessible()) {
-                            method.setAccessible(true);
-                        }
-                        DestroyLifecycleAction destroyAction = new DestroyLifecycleAction(method);
-                        LOG.debug("adding action {}", destroyAction.description);
+                if (!visitContext.contains(methodName)) {
+                    try {
+                        LifecycleAction destroyAction = new JSR250LifecycleAction(PreDestroy.class, method);
+                        LOG.debug("adding action {}", destroyAction);
                         typeActions.add(destroyAction);
                         visitContext.add(methodName);
+                    } catch (IllegalArgumentException e) {
+                        LOG.info("ignoring @PreDestroy method {}.{}() - {}", method.getDeclaringClass().getName(),
+                                methodName, e.getMessage());
                     }
                 }
+            } else if (method.getReturnType() == Void.TYPE && method.getParameterTypes().length == 0 && !Modifier.isFinal(method.getModifiers())) {
+                // method potentially overrides superclass method and annotations
+                visitContext.add(methodName);
             }
             return true;
         }
@@ -109,28 +95,6 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
         }
     }
 
-    private static final class DestroyLifecycleAction implements LifecycleAction {
-        private final Method method;
-        private final String description;
-
-        private DestroyLifecycleAction(Method method) {
-            this.method = method;
-            this.description = new StringBuilder().append("PreDestroy@").append(System.identityHashCode(this)).append("[").append(method.getDeclaringClass().getName())
-                    .append(".").append(method.getName()).append("()]").toString();
-        }
-
-        @Override
-        public void call(Object obj)
-                throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            LOG.debug("calling action {}", description);
-            TypeInspector.invoke(method, obj);
-        }
-
-        @Override
-        public String toString() {
-            return description;
-        }
-    }
 
     private static final class AutoCloseableLifecycleAction implements LifecycleAction {
         private final String description;

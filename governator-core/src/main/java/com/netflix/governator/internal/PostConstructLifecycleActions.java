@@ -1,7 +1,6 @@
 package com.netflix.governator.internal;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -55,38 +54,24 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
 
         @Override
         public boolean visit(final Method method) {
-            int modifiers = method.getModifiers();
+            final String methodName = method.getName();
             if (method.isAnnotationPresent(PostConstruct.class)) {
-                String methodName = method.getName();
-                if (Modifier.isStatic(modifiers)) {
-                    LOG.info("invalid static @PostConstruct method {}.{}()", new Object[] { method.getDeclaringClass().getName(), methodName });
-                } else if (method.getParameterCount() > 0) {
-                    LOG.info("invalid @PostConstruct method {}.{}() with {} parameters", new Object[] { method.getDeclaringClass().getName(), methodName, method.getParameterCount() });
-                } else if (Void.TYPE != method.getReturnType()) {
-                    LOG.info("invalid @PostConstruct method {}.{}() with return type {}", new Object[] { method.getDeclaringClass().getName(), methodName, method.getReturnType().getName() });
-                } else {
-                    boolean hasCheckedException=false;
-                    if (method.getExceptionTypes().length > 0) {
-                        for (Class<?> e : method.getExceptionTypes()) {
-                            if (!RuntimeException.class.isAssignableFrom(e)) {
-                                LOG.info("invalid @PostConstruct method {}.{}() with checked exception type {}", new Object[] { method.getDeclaringClass().getName(), methodName, e.getName() });
-                                hasCheckedException = true;
-                            }
-                        }
-                    }
-                    if (!hasCheckedException && !visitContext.contains(methodName)) {
-                        if (!method.isAccessible()) {
-                            method.setAccessible(true);
-                        }
-                        // order the members in the list, so superclass
-                        // @PostContruct actions are first
-                        PostConstructAction postConstructAction = new PostConstructAction(method);
-                        LOG.debug("adding action {}", postConstructAction.description);
+                if (!visitContext.contains(methodName)) {
+                    try {
+                        LifecycleAction postConstructAction = new JSR250LifecycleAction(PostConstruct.class, method);
+                        LOG.debug("adding action {}", postConstructAction);
                         this.typeActions.addFirst(postConstructAction);
                         visitContext.add(methodName);
                     }
+                    catch (IllegalArgumentException e) {
+                        LOG.info("ignoring @PostConstruct method {}.{}() - {}", method.getDeclaringClass().getName(), methodName, e.getMessage());                        
+                    }                
                 }
+            } else if (method.getReturnType() == Void.TYPE && method.getParameterTypes().length == 0 && !Modifier.isFinal(method.getModifiers())) {
+                // method potentially overrides superclass method and annotations
+                visitContext.add(methodName);
             }
+            
             return true;
         }
 
@@ -100,29 +85,6 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
             return Collections.unmodifiableList(typeActions);
         }
 
-    }
-
-    private static final class PostConstructAction implements LifecycleAction {
-        private final Method method;
-        private final String description;
-
-        private PostConstructAction(Method method) {
-            this.method = method;
-            this.description = new StringBuilder().append("PostConstruct@").append(System.identityHashCode(this)).append("[").append(method.getDeclaringClass().getName())
-                    .append(".").append(method.getName()).append("()]").toString();
-        }
-
-        @Override
-        public void call(Object obj)
-                throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            LOG.debug("calling action {}", description);
-            TypeInspector.invoke(method, obj);
-        }
-
-        @Override
-        public String toString() {
-            return description;
-        }
     }
 
 }

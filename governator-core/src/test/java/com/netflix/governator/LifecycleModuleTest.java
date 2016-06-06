@@ -178,6 +178,7 @@ public class LifecycleModuleTest {
     @Test
     public void confirmLifecycleListenerEventsForRTExceptionPreDestroy() {
         final TrackingLifecycleListener listener = new TrackingLifecycleListener(name.getMethodName()) {
+            @PreDestroy
             @Override
             public void destroyed() {
                 super.destroyed();

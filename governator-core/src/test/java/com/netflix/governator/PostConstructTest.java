@@ -41,48 +41,115 @@ public class PostConstructTest {
         }
     }
 
-    private static class PostConstructParent {
+    private static class PostConstructParent1 {
         @PostConstruct
         public void init() {
             System.out.println("parent.init");
         }
-
-        @PostConstruct
-        public void anotherInit() {
-            System.out.println("parent.anotherInit");
-        }
-
-        @PostConstruct
-        public void yetAnotherInit() {
-            System.out.println("parent.yetAnotherInit");
-        }
-
     }
 
-    private static class PostConstructChild extends PostConstructParent {
+    private static class PostConstructChild1 extends PostConstructParent1 {
         @PostConstruct
         public void init() {
             System.out.println("child.init");
         }
+    }
+    
+    private static class PostConstructParent2 {
+        @PostConstruct
+        public void anotherInit() {
+            System.out.println("parent.anotherInit");
+        }
+    }
 
-        public void yetAnotherInit() {
-            System.out.println("child.yetAnotherInit");
+    private static class PostConstructChild2 extends PostConstructParent2 {
+        @PostConstruct
+        public void init() {
+            System.out.println("child.init");
+        }
+    }
+    
+    private static class PostConstructParent3 {
+        @PostConstruct
+        public void init() {
+
+        }
+    }
+
+    private static class PostConstructChild3 extends PostConstructParent3 {
+        public void init() {
+            System.out.println("init invoked");
+        }
+    }
+
+    
+    private static class MultiplePostConstructs {
+        @PostConstruct
+        public void init1() {
+            System.out.println("init1");
+        }
+        
+        @PostConstruct
+        public void init2() {
+            System.out.println("init2");
+        }       
+    }
+    
+
+    @Test
+    public void testLifecycleInitInheritance1() {
+        final PostConstructChild1 postConstructChild = Mockito.mock(PostConstructChild1.class);
+        InOrder inOrder = Mockito.inOrder(postConstructChild);
+
+        try (LifecycleInjector injector = TestSupport.inject(postConstructChild)) {
+            Assert.assertNotNull(injector.getInstance(postConstructChild.getClass()));
+            // not twice
+            inOrder.verify(postConstructChild, Mockito.times(1)).init();
         }
     }
 
     @Test
-    public void testLifecycleInitInheritance() {
-        final PostConstructChild postConstructChild = Mockito.mock(PostConstructChild.class);
+    public void testLifecycleInitInheritance2() {
+        final PostConstructChild2 postConstructChild = Mockito.mock(PostConstructChild2.class);
         InOrder inOrder = Mockito.inOrder(postConstructChild);
 
         try (LifecycleInjector injector = TestSupport.inject(postConstructChild)) {
-            Assert.assertNotNull(injector.getInstance(PostConstructChild.class));
+            Assert.assertNotNull(injector.getInstance(postConstructChild.getClass()));
             // parent postConstruct before child postConstruct
             inOrder.verify(postConstructChild, Mockito.times(1)).anotherInit();
             // not twice
             inOrder.verify(postConstructChild, Mockito.times(1)).init();
         }
     }
+    
+    @Test
+    public void testLifecycleShutdownInheritance3() {
+        final PostConstructChild3 postConstructChild = Mockito.spy(new PostConstructChild3());
+        InOrder inOrder = Mockito.inOrder(postConstructChild);
+
+        try (LifecycleInjector injector = TestSupport.inject(postConstructChild)) {
+            Assert.assertNotNull(injector.getInstance(postConstructChild.getClass()));
+            Mockito.verify(postConstructChild, Mockito.never()).init();
+        }
+        // never, child class overrides method without annotation
+        inOrder.verify(postConstructChild, Mockito.never()).init(); 
+    }
+    
+
+    @Test
+    public void testLifecycleMultipleAnnotations() {
+        final MultiplePostConstructs MultiplePostConstructs = Mockito.spy(new MultiplePostConstructs());
+
+        try (LifecycleInjector injector = TestSupport.inject(MultiplePostConstructs)) {
+            Assert.assertNotNull(injector.getInstance(MultiplePostConstructs.getClass()));
+            Mockito.verify(MultiplePostConstructs, Mockito.never()).init1();
+            Mockito.verify(MultiplePostConstructs, Mockito.never()).init2();
+        }
+        // never, multiple annotations should be ignored
+        Mockito.verify(MultiplePostConstructs, Mockito.never()).init1(); 
+        Mockito.verify(MultiplePostConstructs, Mockito.never()).init2(); 
+    }    
+    
 
     @Test
     public void testLifecycleInitWithInvalidPostConstructs() {

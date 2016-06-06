@@ -13,5 +13,11 @@ dependencies {
     testCompile "org.mockito:mockito-all:1.9.5"
     testCompile "junit:junit:4.10"
     testCompile "com.google.code.findbugs:jsr305:3.0.0"
+    
+    test {
+        useJUnit()
+    }
+
+
 
 }
