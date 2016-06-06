@@ -81,7 +81,7 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
                         // order the members in the list, so superclass
                         // @PostContruct actions are first
                         PostConstructAction postConstructAction = new PostConstructAction(method);
-                        LOG.debug("adding lifecycle action for {}", postConstructAction.description);
+                        LOG.debug("adding action {}", postConstructAction.description);
                         this.typeActions.addFirst(postConstructAction);
                         visitContext.add(methodName);
                     }
@@ -108,15 +108,26 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
 
         private PostConstructAction(Method method) {
             this.method = method;
-            this.description = new StringBuilder().append("PostConstruct[").append(method.getDeclaringClass().getName())
-                    .append("#").append(method.getName()).append("]").toString();
+            this.description = new StringBuilder().append("PostConstruct@").append(System.identityHashCode(this)).append("[").append(method.getDeclaringClass().getName())
+                    .append(".").append(method.getName()).append("()]").toString();
         }
 
         @Override
         public void call(Object obj)
                 throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            LOG.debug("invoking lifecycle action {}", description);
-            method.invoke(obj);
+            LOG.debug("calling action {}", description);
+            try {
+                method.invoke(obj);
+            } catch (InvocationTargetException ite) {
+                Throwable cause = ite.getCause();
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException)cause;
+                }
+                else if (cause instanceof Error) {
+                    throw (Error)cause;
+                }
+                throw ite;
+            }
         }
 
         @Override

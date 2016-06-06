@@ -55,7 +55,7 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
             if (continueVisit && AutoCloseable.class.isAssignableFrom(clazz)) {
                 AutoCloseableLifecycleAction closeableAction = new AutoCloseableLifecycleAction(
                         clazz.asSubclass(AutoCloseable.class));
-                LOG.debug("adding lifecycle action for {}", closeableAction.description);
+                LOG.debug("adding action {}", closeableAction.description);
                 typeActions.add(closeableAction);
                 continueVisit = false;
             }
@@ -89,7 +89,7 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
                             method.setAccessible(true);
                         }
                         DestroyLifecycleAction destroyAction = new DestroyLifecycleAction(method);
-                        LOG.debug("adding lifecycle action for {}", destroyAction.description);
+                        LOG.debug("adding action {}", destroyAction.description);
                         typeActions.add(destroyAction);
                         visitContext.add(methodName);
                     }
@@ -115,15 +115,26 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
 
         private DestroyLifecycleAction(Method method) {
             this.method = method;
-            this.description = new StringBuilder().append("PreDestroy[").append(method.getDeclaringClass().getName())
-                    .append("#").append(method.getName()).append("]").toString();
+            this.description = new StringBuilder().append("PreDestroy@").append(System.identityHashCode(this)).append("[").append(method.getDeclaringClass().getName())
+                    .append(".").append(method.getName()).append("()]").toString();
         }
 
         @Override
         public void call(Object obj)
                 throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            LOG.debug("invoking lifecycle action {}", description);
-            method.invoke(obj);
+            LOG.debug("calling action {}", description);
+            try {
+                method.invoke(obj);
+            } catch (InvocationTargetException ite) {
+                Throwable cause = ite.getCause();
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException)cause;
+                }
+                else if (cause instanceof Error) {
+                    throw (Error)cause;
+                }
+                throw ite;
+            }
         }
 
         @Override
@@ -136,13 +147,13 @@ public final class PreDestroyLifecycleActions implements LifecycleFeature {
         private final String description;
 
         private AutoCloseableLifecycleAction(Class<? extends AutoCloseable> clazz) {
-            this.description = new StringBuilder().append("AutoCloseable[").append(clazz.getName()).append("#")
-                    .append("close").append("]").toString();
+            this.description = new StringBuilder().append("AutoCloseable@").append(System.identityHashCode(this)).append("[").append(clazz.getName()).append(".")
+                    .append("close()").append("]").toString();
         }
 
         @Override
         public void call(Object obj) throws Exception {
-            LOG.info("invoking lifecycle action {}", description);
+            LOG.info("calling action {}", description);
             AutoCloseable.class.cast(obj).close();
         }
 

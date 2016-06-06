@@ -1,8 +1,5 @@
 package com.netflix.governator;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 

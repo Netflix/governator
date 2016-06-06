@@ -116,10 +116,10 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
             return lifecycleInjector;
         }
         catch (Exception e) {
-            LOG.error("Failed to create injector", e);
+            LOG.error(String.format("Failed to create injector - %s@%d", e.getClass().getSimpleName(), System.identityHashCode(e)), e);
             onFailedInjectorCreate(e);
             try {
-                manager.notifyStartFailed(e);
+              manager.notifyStartFailed(e);
             }
             catch (Exception e2) {
                 LOG.error("Failed to notify injector creation failure", e2 );
