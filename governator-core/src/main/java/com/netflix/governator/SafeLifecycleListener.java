@@ -32,7 +32,7 @@ final class SafeLifecycleListener implements LifecycleListener {
     @Override
     public void onStopped(Throwable t) {
         if (t != null) {
-            LOG.info(String.format("Stopping '%s' due to '%s@%d'", delegate, t.getClass().getSimpleName(), System.identityHashCode(t)));
+            LOG.info("Stopping '{}' due to '{}@{}'", delegate, t.getClass().getSimpleName(), System.identityHashCode(t));
         }
         else {
             LOG.info("Stopping '{}'", delegate);            

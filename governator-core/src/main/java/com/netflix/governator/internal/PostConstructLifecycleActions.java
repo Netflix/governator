@@ -116,18 +116,7 @@ public final class PostConstructLifecycleActions implements LifecycleFeature {
         public void call(Object obj)
                 throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
             LOG.debug("calling action {}", description);
-            try {
-                method.invoke(obj);
-            } catch (InvocationTargetException ite) {
-                Throwable cause = ite.getCause();
-                if (cause instanceof RuntimeException) {
-                    throw (RuntimeException)cause;
-                }
-                else if (cause instanceof Error) {
-                    throw (Error)cause;
-                }
-                throw ite;
-            }
+            TypeInspector.invoke(method, obj);
         }
 
         @Override

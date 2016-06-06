@@ -3,7 +3,7 @@ apply plugin: 'java'
 dependencies {
     compile     project(':governator-api')
     compile     "javax.inject:javax.inject:1"
-    compile     "org.slf4j:slf4j-api:1.6.3"
+    compile     "org.slf4j:slf4j-api:${slf4j_version}"
     compile     "com.google.inject:guice:${guice_version}"
     compile     "com.google.inject.extensions:guice-multibindings:${guice_version}"
     compile     "com.google.inject.extensions:guice-grapher:${guice_version}"    // should be provided - only if you want graphing

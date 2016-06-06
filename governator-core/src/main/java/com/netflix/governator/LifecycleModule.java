@@ -170,14 +170,14 @@ public final class LifecycleModule extends AbstractModule {
                                     m.call(injectee);
                                 } 
                                 catch (Exception e) {
-                                    LOG.error(String.format("Exception thrown by action %s [%s]", m, bindingSource), e);
+                                    LOG.error("Exception thrown by action {} [{}]", m, bindingSource, e);
                                 }
                             }
                         }
                     });
                 }
                 else {
-                    LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", new Object[]{actions.preDestroyActions, injectee.getClass().getName()});
+                    LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", actions.preDestroyActions, injectee.getClass().getName());
                 }
             }
         }

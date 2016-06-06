@@ -1,6 +1,7 @@
 package com.netflix.governator.internal;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import com.google.common.base.Supplier;
@@ -61,6 +62,31 @@ public class TypeInspector {
             }
         }
         return continueVisit;
+    }
+    
+    /**
+     * convenience method for invoking a reflected method with no parameters and return type 'void'
+     * 
+     * @param noArgsMethod
+     * @param instance
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     * @throws InvocationTargetException
+     */
+    public static void invoke(Method noArgsMethod, Object instance) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        try {
+            noArgsMethod.invoke(instance);
+        } catch (InvocationTargetException ite) {
+            Throwable cause = ite.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException)cause;
+            }
+            else if (cause instanceof Error) {
+                throw (Error)cause;
+            }
+            throw ite;
+        }
+
     }
 
 }
