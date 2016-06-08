@@ -9,8 +9,6 @@ import java.lang.annotation.Target;
 
 import org.mockito.Spy;
 
-import com.google.inject.BindingAnnotation;
-
 /**
  * Wraps an existing binding with a Mockito {@link Spy}.
  * 
@@ -47,6 +45,9 @@ import com.google.inject.BindingAnnotation;
 @Documented
 public @interface WrapWithSpy {
 
+    /**
+     * The name of the binding you wish to wrap with a Spy.
+     */
     String name() default "";
     
 }

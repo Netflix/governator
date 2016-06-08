@@ -17,9 +17,9 @@ import com.google.inject.spi.UntargettedBinding;
 
 public class CopyBindingTargetVisitor<T> implements BindingTargetVisitor<T, Void> {
     
-    private LinkedBindingBuilder builder;
+    private LinkedBindingBuilder<T> builder;
 
-    public CopyBindingTargetVisitor(LinkedBindingBuilder builder) {
+    public CopyBindingTargetVisitor(LinkedBindingBuilder<T> builder) {
         this.builder = builder;
     }
 
@@ -29,6 +29,7 @@ public class CopyBindingTargetVisitor<T> implements BindingTargetVisitor<T, Void
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public Void visit(ProviderInstanceBinding<? extends T> binding) {
         builder.toProvider(binding.getProviderInstance()).in(Scopes.SINGLETON);
@@ -55,10 +56,11 @@ public class CopyBindingTargetVisitor<T> implements BindingTargetVisitor<T, Void
 
     @Override
     public Void visit(UntargettedBinding<? extends T> binding) {
-        builder.to(binding.getKey().getTypeLiteral().getRawType()).in(Scopes.SINGLETON);
+        builder.to(binding.getKey().getTypeLiteral()).in(Scopes.SINGLETON);
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Void visit(ConstructorBinding<? extends T> binding) {
         builder.toConstructor((Constructor<T>) binding.getConstructor().getMember()).in(Scopes.SINGLETON);

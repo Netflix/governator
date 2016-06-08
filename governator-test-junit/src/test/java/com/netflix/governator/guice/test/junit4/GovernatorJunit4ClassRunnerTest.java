@@ -1,6 +1,7 @@
 package com.netflix.governator.guice.test.junit4;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -40,6 +41,8 @@ public class GovernatorJunit4ClassRunnerTest {
     @Inject @ReplaceWithMock(name="namedMock") NamedMock namedMock;
     @Inject InvokesMock invokesMock;
     @Inject @WrapWithSpy Spied spied;
+    @Inject @WrapWithSpy(name="namedSpied") Spied namedSpied;
+    @Inject @Named("notSpied") Spied notSpied;
     @Inject InvokesSpy invokesSpy;
     
     @Test
@@ -86,6 +89,9 @@ public class GovernatorJunit4ClassRunnerTest {
         assertNotNull(spied);
         assertNotNull(invokesSpy);
         assertTrue(mockUtil.isSpy(spied));
+        assertTrue(mockUtil.isSpy(namedSpied));
+        assertFalse(mockUtil.isSpy(notSpied));
+        
         assertTrue(mockUtil.isSpy(invokesSpy.spied));
         invokesSpy.invoke();
         assertSame(spied,invokesSpy.spied);
@@ -107,6 +113,20 @@ class TestInjectorRuleTestModule extends AbstractModule {
     @Provides
     @Singleton
     public Spied spied() {
+        return new Spied();
+    }
+    
+    @Provides
+    @Singleton
+    @Named("namedSpied")
+    public Spied namedSpied() {
+        return new Spied();
+    }
+    
+    @Provides
+    @Singleton
+    @Named("notSpied")
+    public Spied notSpied() {
         return new Spied();
     }
 

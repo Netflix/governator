@@ -49,9 +49,9 @@ public class AnnotationBasedTestInjectorManager {
     private TestCompositeConfig testCompositeConfig;
 
     public AnnotationBasedTestInjectorManager(Class<?> classUnderTest) {
-        getModulesForTestClass(classUnderTest);
-        getMocksForTestClass(classUnderTest);
-        getSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
+        inspectModulesForTestClass(classUnderTest);
+        inspectMocksForTestClass(classUnderTest);
+        inspectSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
         testCompositeConfig = new TestCompositeConfig(classLevelOverrides, methodLevelOverrides);
         overrideModules.add(new ArchaiusTestConfigOverrideModule(testCompositeConfig));
         injector = createInjector(modulesForTestClass, overrideModules);
@@ -71,18 +71,18 @@ public class AnnotationBasedTestInjectorManager {
     }
 
     public void cleanupInjector() {
-        injector.shutdown();
+        injector.close();
     }
 
-    private LifecycleInjector createInjector(List<Module> modules, List<Module> overrides) {
+    protected LifecycleInjector createInjector(List<Module> modules, List<Module> overrides) {
         return InjectorBuilder.fromModules(modules).overrideWith(overrides).createInjector();
     }
 
-    private void getModulesForTestClass(Class<?> testClass) {
+    private void inspectModulesForTestClass(Class<?> testClass) {
         final List<Class<? extends Module>> moduleClasses = new ArrayList<>();
 
         moduleClasses.addAll(getModulesForAnnotatedClass(testClass));
-        for (Class<?> parentClass : ClassUtils.getAllSuperclasses(testClass)) {
+        for (Class<?> parentClass : getAllSuperClassesInReverseOrder(testClass)) {
             moduleClasses.addAll(getModulesForAnnotatedClass(parentClass));
         }
         for (Class<? extends Module> moduleClass : moduleClasses) {
@@ -110,27 +110,32 @@ public class AnnotationBasedTestInjectorManager {
         }
     }
 
-    private void getMocksForTestClass(Class<?> testClass) {
+    private void inspectMocksForTestClass(Class<?> testClass) {
         getMocksForAnnotatedFields(testClass);
-        for (Class<?> parentClass : ClassUtils.getAllSuperclasses(testClass)) {
+        for (Class<?> parentClass : getAllSuperClassesInReverseOrder(testClass)) {
             getMocksForAnnotatedFields(parentClass);
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private void getMocksForAnnotatedFields(Class<?> testClass) {
 
         for (Field field : testClass.getDeclaredFields()) {
             if (field.isAnnotationPresent(ReplaceWithMock.class)) {
-                overrideModules.add(new MockitoOverrideModule(field.getAnnotation(ReplaceWithMock.class), field.getType()));
+                overrideModules.add(new MockitoOverrideModule<>(field.getAnnotation(ReplaceWithMock.class), field.getType()));
             }
             if (field.isAnnotationPresent(WrapWithSpy.class)) {
-                spyTargets.add(Key.get(field.getType()));
+                WrapWithSpy spyAnnotation = field.getAnnotation(WrapWithSpy.class);
+                if (spyAnnotation.name().isEmpty()) {
+                    spyTargets.add(Key.get(field.getType()));
+                }
+                else {
+                    spyTargets.add(Key.get(field.getType(), Names.named(spyAnnotation.name())));
+                }
             }
         }
     }
 
-    private void getSpiesForTargetKeys(List<Element> elements) {
+    private void inspectSpiesForTargetKeys(List<Element> elements) {
         for (Element element : elements) {
             element.acceptVisitor(new DefaultElementVisitor<Void>() {
                 @Override
@@ -139,9 +144,12 @@ public class AnnotationBasedTestInjectorManager {
                     if (spyTargets.contains(binding.getKey())) {
                         AbstractModule spyModule = new AbstractModule() {
                             protected void configure() {
-
-                                final Key newUniqueKey = Key.get(finalBinding.getKey().getTypeLiteral().getRawType(),
-                                        Names.named("Spied " + finalBinding.getKey().getTypeLiteral().getRawType()));
+                                final String finalBindingName = "Spied "
+                                        + (finalBinding.getKey().getAnnotation() != null
+                                                ? finalBinding.getKey().getAnnotation().toString() : "")
+                                        + finalBinding.getKey().getTypeLiteral();
+                                final Key<T> newUniqueKey = Key.get(finalBinding.getKey().getTypeLiteral(),
+                                        Names.named(finalBindingName));
                                 finalBinding.acceptTargetVisitor(new CopyBindingTargetVisitor<>(binder().bind(newUniqueKey)));
                                 bind(finalBinding.getKey()).toProvider(new SingletonProvider<T>() {
                                     @Inject
@@ -163,7 +171,7 @@ public class AnnotationBasedTestInjectorManager {
     }
     
     public void prepareConfigForTestClass(Class<?> testClass, Method testMethod) {
-        for(Class<?> parentClass : ClassUtils.getAllSuperclasses(testClass)) {
+        for(Class<?> parentClass : getAllSuperClassesInReverseOrder(testClass)) {
             classLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(parentClass.getAnnotation(TestPropertyOverride.class)));
         }
         classLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testClass.getAnnotation(TestPropertyOverride.class)));
@@ -172,6 +180,11 @@ public class AnnotationBasedTestInjectorManager {
     
     public void cleanUpMethodLevelConfig() {
         testCompositeConfig.resetForTest();
+    }
+    private List<Class<?>> getAllSuperClassesInReverseOrder(Class<?> clazz) {
+        List<Class<?>> allSuperclasses = ClassUtils.getAllSuperclasses(clazz);
+        Collections.reverse(allSuperclasses);
+        return allSuperclasses;
     }
 
     private class MockitoOverrideModule<T> extends AbstractModule {
