@@ -8,13 +8,12 @@ import com.google.inject.Guice;
 import com.google.inject.Module;
 import com.netflix.governator.annotations.Modules;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
 
 import javax.inject.Inject;
-
-import junit.framework.Assert;
 
 public class TestModuleDependency {
     public static class EmptyModule extends AbstractModule {
