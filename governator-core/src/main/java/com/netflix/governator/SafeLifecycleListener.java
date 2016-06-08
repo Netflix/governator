@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.netflix.governator.spi.LifecycleListener;
 
 /**
- * Wrapper for any LifecycleListener to provide this following funcionality
+ * Wrapper for any LifecycleListener to provide this following functionality
  * 1.  Logging of events as INFO
  * 2.  Swallow any event handler exceptions during shutdown
  */
@@ -25,24 +25,29 @@ final class SafeLifecycleListener implements LifecycleListener {
     
     @Override
     public void onStarted() {
-        LOG.info("Starting LifecycleListener '{}'", delegate);
+        LOG.info("Starting '{}'", delegate);
         delegate.onStarted();
     }
 
     @Override
     public void onStopped(Throwable t) {
-        LOG.info("Stopping LifecycleListener '{}'", delegate, t);
+        if (t != null) {
+            LOG.info("Stopping '{}' due to '{}@{}'", delegate, t.getClass().getSimpleName(), System.identityHashCode(t));
+        }
+        else {
+            LOG.info("Stopping '{}'", delegate);            
+        }
         try {
             delegate.onStopped(t);
         }
         catch (Exception e) {
-            LOG.info("onStopped failed for listener {}", delegate, e);
+            LOG.info("onStopped failed for {}", delegate, e);
         }
     }
 
     @Override
     public String toString() {
-        return "Safe[" + delegate.toString() + "]";
+        return "SafeLifecycleListener@" + System.identityHashCode(this) + " [" + delegate.toString() + "]";
     }
 
     @Override
@@ -59,7 +64,7 @@ final class SafeLifecycleListener implements LifecycleListener {
         if (getClass() != obj.getClass())
             return false;
         SafeLifecycleListener other = (SafeLifecycleListener) obj;
-        return !delegate.equals(other.delegate);
+        return delegate == other.delegate || delegate.equals(other.delegate);
     }
     
 

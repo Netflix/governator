@@ -74,53 +74,113 @@ public class PreDestroyTest {
         }
     }
 
-    private static class PreDestroyParent {
+    private static class PreDestroyParent1 {
         @PreDestroy
         public void shutdown() {
 
         }
-
-        @PreDestroy
-        public void anotherShutdown() {
-
-        }
-
-        @PreDestroy
-        public void yetAnotherShutdown() {
-
-        }
-
     }
 
-    private static class PreDestroyChild extends PreDestroyParent {
+    private static class PreDestroyChild1 extends PreDestroyParent1 {
         @PreDestroy
         public void shutdown() {
             System.out.println("shutdown invoked");
         }
-
-        public void yetAnotherShutdown() {
+    }
+    
+    private static class PreDestroyParent2 {
+        @PreDestroy
+        public void anotherShutdown() {
 
         }
     }
 
+    private static class PreDestroyChild2 extends PreDestroyParent2 {
+        @PreDestroy
+        public void shutdown() {
+            System.out.println("shutdown invoked");
+        }
+    }
+    
+    private static class PreDestroyParent3 {
+        @PreDestroy
+        public void shutdown() {
+
+        }
+    }
+
+    private static class PreDestroyChild3 extends PreDestroyParent3 {
+        public void shutdown() {
+            System.out.println("shutdown invoked");
+        }
+    }
+    
+    private static class MultipleDestroys  {
+        @PreDestroy
+        public void shutdown1() {
+            System.out.println("shutdown1 invoked");
+        }
+        @PreDestroy
+        public void shutdown2() {
+            System.out.println("shutdown2 invoked");
+        }
+    }
+    
+    
     @Test
-    public void testLifecycleShutdownInheritance() {
-        final PreDestroyChild preDestroyChild = Mockito.spy(new PreDestroyChild());
+    public void testLifecycleShutdownInheritance1() {
+        final PreDestroyChild1 preDestroyChild = Mockito.spy(new PreDestroyChild1());
         InOrder inOrder = Mockito.inOrder(preDestroyChild);
 
         try (LifecycleInjector injector = TestSupport.inject(preDestroyChild)) {
             Assert.assertNotNull(injector.getInstance(preDestroyChild.getClass()));
             Mockito.verify(preDestroyChild, Mockito.never()).shutdown();
-            Mockito.verify(preDestroyChild, Mockito.never()).anotherShutdown();
-            Mockito.verify(preDestroyChild, Mockito.never()).yetAnotherShutdown();
         }
-
         // once not twice
         inOrder.verify(preDestroyChild, Mockito.times(1)).shutdown(); 
-        // once to parent anotherShutdown(), after shutdown()
-        inOrder.verify(preDestroyChild, Mockito.times(1)).anotherShutdown();
     }
 
+    @Test
+    public void testLifecycleShutdownInheritance2() {
+        final PreDestroyChild2 preDestroyChild = Mockito.spy(new PreDestroyChild2());
+        InOrder inOrder = Mockito.inOrder(preDestroyChild);
+
+        try (LifecycleInjector injector = TestSupport.inject(preDestroyChild)) {
+            Assert.assertNotNull(injector.getInstance(preDestroyChild.getClass()));
+            Mockito.verify(preDestroyChild, Mockito.never()).shutdown();
+        }
+        // once not twice
+        inOrder.verify(preDestroyChild, Mockito.times(1)).shutdown(); 
+        inOrder.verify(preDestroyChild, Mockito.times(1)).anotherShutdown(); 
+    }
+    
+    @Test
+    public void testLifecycleShutdownInheritance3() {
+        final PreDestroyChild3 preDestroyChild = Mockito.spy(new PreDestroyChild3());
+        InOrder inOrder = Mockito.inOrder(preDestroyChild);
+
+        try (LifecycleInjector injector = TestSupport.inject(preDestroyChild)) {
+            Assert.assertNotNull(injector.getInstance(preDestroyChild.getClass()));
+            Mockito.verify(preDestroyChild, Mockito.never()).shutdown();
+        }
+        // never, child class overrides method without annotation
+        inOrder.verify(preDestroyChild, Mockito.never()).shutdown(); 
+    }
+    
+    @Test
+    public void testLifecycleMultipleAnnotations() {
+        final MultipleDestroys multipleDestroys = Mockito.spy(new MultipleDestroys());
+
+        try (LifecycleInjector injector = TestSupport.inject(multipleDestroys)) {
+            Assert.assertNotNull(injector.getInstance(multipleDestroys.getClass()));
+            Mockito.verify(multipleDestroys, Mockito.never()).shutdown1();
+            Mockito.verify(multipleDestroys, Mockito.never()).shutdown2();
+        }
+        // never, multiple annotations should be ignored
+        Mockito.verify(multipleDestroys, Mockito.never()).shutdown1(); 
+        Mockito.verify(multipleDestroys, Mockito.never()).shutdown2(); 
+    }
+    
     @Test
     public void testLifecycleDeclaredInterfaceMethod() {
         final RunnableType runnableInstance = Mockito.mock(RunnableType.class);
@@ -168,9 +228,8 @@ public class PreDestroyTest {
         }
 
         try (LifecycleInjector injector = TestSupport.inject(closeableType)) {
-            Assert.assertNotNull(injector.getInstance(CloseableType.class));
+            Assert.assertNotNull(injector.getInstance(closeableType.getClass()));
             try {
-                Mockito.verify(closeableType, Mockito.never()).close();
                 Mockito.verify(closeableType, Mockito.never()).close();
             } catch (IOException e) {
                 // close() called before shutdown and failed
@@ -192,7 +251,7 @@ public class PreDestroyTest {
     public void testLifecycleShutdown() {
         final Foo foo = Mockito.mock(Foo.class);
         try (LifecycleInjector injector = TestSupport.inject(foo)) {
-            Assert.assertNotNull(injector.getInstance(Foo.class));
+            Assert.assertNotNull(injector.getInstance(foo.getClass()));
             Mockito.verify(foo, Mockito.never()).shutdown();
         }
         Mockito.verify(foo, Mockito.times(1)).shutdown();
