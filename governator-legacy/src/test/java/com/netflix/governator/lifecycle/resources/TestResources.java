@@ -4,19 +4,26 @@ import com.google.inject.Injector;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
-import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.lifecycle.ResourceLocator;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import javax.annotation.Resource;
-import java.awt.*;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Resource;
+
+@RunWith(DataProviderRunner.class)
 public class TestResources extends LifecycleInjectorBuilderProvider
 {
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void basicTest(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final AtomicInteger classResourceCount = new AtomicInteger(0);
@@ -75,7 +82,7 @@ public class TestResources extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(classResourceCount.get(), 1);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testChained(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final AtomicInteger resourceLocator1Count = new AtomicInteger(0);

@@ -10,10 +10,16 @@ import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.autobindmultiple.basic.BaseForMocks;
 import com.netflix.governator.autobindmultiple.generic.BaseForGenericMocks;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.Set;
 
+@RunWith(DataProviderRunner.class)
 public class TestAutoBindMultiple extends LifecycleInjectorBuilderProvider
 {
     @Singleton
@@ -50,7 +56,8 @@ public class TestAutoBindMultiple extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void testBasic(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector injector = lifecycleInjectorBuilder.usingBasePackages("com.netflix.governator.autobindmultiple.basic").createInjector();
@@ -71,7 +78,8 @@ public class TestAutoBindMultiple extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(Sets.<String>newHashSet(transformed), Sets.newHashSet("A", "B", "C"));
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void testGeneric(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector injector = lifecycleInjectorBuilder.usingBasePackages("com.netflix.governator.autobindmultiple.generic").createInjector();

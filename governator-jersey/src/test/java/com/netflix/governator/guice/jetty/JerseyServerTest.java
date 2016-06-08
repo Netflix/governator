@@ -7,7 +7,7 @@ import java.net.URL;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
@@ -74,7 +74,7 @@ public class JerseyServerTest {
         injector.shutdown();
     }
     
-    @Test(expectedExceptions={CreationException.class})
+    @Test(expected=CreationException.class)
     public void confirmFailedToCreateWithoutRootResources() throws InterruptedException, MalformedURLException, IOException {
         // Create the injector and autostart Jetty
         LifecycleInjector injector = InjectorBuilder.fromModules(

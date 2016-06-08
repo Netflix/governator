@@ -22,17 +22,22 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
-import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.mocks.AnnotatedFineGrainedLazySingletonObject;
 import com.netflix.governator.guice.mocks.LazySingletonObject;
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
+@RunWith(DataProviderRunner.class)
 public class TestFineGrainedLazySingleton extends LifecycleInjectorBuilderProvider
 {
     public static class InjectedAnnotatedProvider
@@ -46,7 +51,7 @@ public class TestFineGrainedLazySingleton extends LifecycleInjectorBuilderProvid
         }
     }
 
-    @BeforeMethod
+    @Before
     public void     setup()
     {
         AnnotatedFineGrainedLazySingletonObject.constructorCount.set(0);
@@ -96,7 +101,7 @@ public class TestFineGrainedLazySingleton extends LifecycleInjectorBuilderProvid
         Assert.assertEquals(AnnotatedFineGrainedLazySingletonObject.constructorCount.get(), 1);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testUsingAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector    injector = lifecycleInjectorBuilder.createInjector();
@@ -115,7 +120,7 @@ public class TestFineGrainedLazySingleton extends LifecycleInjectorBuilderProvid
         Assert.assertSame(instance, instance2);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testUsingInWithProviderAndAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector    injector = lifecycleInjectorBuilder.createInjector();

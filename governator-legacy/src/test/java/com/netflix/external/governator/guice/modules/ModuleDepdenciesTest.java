@@ -9,7 +9,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
@@ -18,14 +17,20 @@ import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+@RunWith(DataProviderRunner.class)
 public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
 {
     private static final Logger LOG = LoggerFactory.getLogger(ModuleDepdenciesTest.class);
@@ -50,7 +55,7 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @AfterMethod
+    @After
     public void afterEachTest()
     {
         counter.set(0);
@@ -73,7 +78,8 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void testModuleDependency(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         lifecycleInjectorBuilder.withAdditionalModuleClasses(ModuleB.class).build().createInjector();
@@ -182,7 +188,8 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void confirmBindingSingletonOrder(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<Integer> actual = Lists.newArrayList();
@@ -202,7 +209,8 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(actual, expected);
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void confirmBindingReverseSingletonOrder(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<Integer> actual = Lists.newArrayList();
@@ -224,7 +232,8 @@ public class ModuleDepdenciesTest extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(actual, Lists.reverse(expected));
     }
     
-    @Test(dataProvider = "builders") 
+    @Test 
+    @UseDataProvider("builders")
     public void confirmMultiWithModuleClasses(LifecycleInjectorBuilder lifecycleInjectorBuilder) 
     {
         final List<Integer> actual = Lists.newArrayList();

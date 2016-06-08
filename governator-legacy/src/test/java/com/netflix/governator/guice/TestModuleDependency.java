@@ -1,13 +1,5 @@
 package com.netflix.governator.guice;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import junit.framework.Assert;
-
-import org.testng.annotations.Test;
-
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -15,6 +7,14 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Module;
 import com.netflix.governator.annotations.Modules;
+
+import org.junit.Test;
+
+import java.util.List;
+
+import javax.inject.Inject;
+
+import junit.framework.Assert;
 
 public class TestModuleDependency {
     public static class EmptyModule extends AbstractModule {

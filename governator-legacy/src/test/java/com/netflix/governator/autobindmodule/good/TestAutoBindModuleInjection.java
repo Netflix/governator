@@ -1,16 +1,16 @@
 package com.netflix.governator.autobindmodule.good;
 
-import javax.inject.Inject;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import com.google.inject.AbstractModule; 
+import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.LifecycleInjector;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import javax.inject.Inject;
 
 public class TestAutoBindModuleInjection {
     public static class FooModule extends AbstractModule {

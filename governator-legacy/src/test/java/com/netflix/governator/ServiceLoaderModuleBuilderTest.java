@@ -1,11 +1,5 @@
 package com.netflix.governator;
 
-import java.util.Set;
-
-import junit.framework.Assert;
-
-import org.testng.annotations.Test;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -17,6 +11,11 @@ import com.google.inject.util.Types;
 import com.netflix.governator.guice.serviceloader.MyServiceLoadedModule;
 import com.netflix.governator.guice.serviceloader.ServiceLoaderTest.BoundServiceImpl;
 import com.netflix.governator.guice.serviceloader.TestService;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.Set;
 
 public class ServiceLoaderModuleBuilderTest {
     @Test

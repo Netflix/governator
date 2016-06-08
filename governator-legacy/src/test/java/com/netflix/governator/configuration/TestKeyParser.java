@@ -16,8 +16,9 @@
 
 package com.netflix.governator.configuration;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,14 +50,14 @@ public class TestKeyParser
         for ( String[] spec : tests )
         {
             List<ConfigurationKeyPart> parts = KeyParser.parse(spec[0]);
-            Assert.assertEquals(parts.size(), (spec.length - 1) / 2, Arrays.toString(spec));
+            Assert.assertEquals(Arrays.toString(spec), parts.size(), (spec.length - 1) / 2);
 
             for ( int i = 1; (i + 1) < spec.length; i += 2 )
             {
                 ConfigurationKeyPart thisPart = parts.get((i - 1) / 2);
                 boolean                 isVariable = spec[i].equals(VARIABLE);
-                Assert.assertEquals(isVariable, thisPart.isVariable(), Arrays.toString(spec) + " : index " + i);
-                Assert.assertEquals(spec[i + 1], thisPart.getValue(), Arrays.toString(spec) + " : index " + i);
+                Assert.assertEquals(Arrays.toString(spec) + " : index " + i, isVariable, thisPart.isVariable());
+                Assert.assertEquals(Arrays.toString(spec) + " : index " + i, spec[i + 1], thisPart.getValue());
             }
         }
     }

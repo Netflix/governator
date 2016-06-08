@@ -22,14 +22,18 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
-import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.mocks.AnnotatedLazySingletonObject;
 import com.netflix.governator.guice.mocks.LazySingletonObject;
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(DataProviderRunner.class)
 public class TestLazySingleton extends LifecycleInjectorBuilderProvider
 {
     public static class InjectedProvider
@@ -54,7 +58,7 @@ public class TestLazySingleton extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @BeforeMethod
+    @Before
     public void     setup()
     {
         AnnotatedLazySingletonObject.constructorCount.set(0);
@@ -63,7 +67,7 @@ public class TestLazySingleton extends LifecycleInjectorBuilderProvider
         LazySingletonObject.postConstructCount.set(0);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testUsingAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector    injector = lifecycleInjectorBuilder.createInjector();
@@ -82,7 +86,7 @@ public class TestLazySingleton extends LifecycleInjectorBuilderProvider
         Assert.assertSame(instance, instance2);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testUsingInWithProviderAndAnnotation(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector    injector = lifecycleInjectorBuilder.createInjector();
@@ -105,7 +109,7 @@ public class TestLazySingleton extends LifecycleInjectorBuilderProvider
         Assert.assertSame(instance, instance2);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testUsingIn(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector    injector = lifecycleInjectorBuilder
@@ -136,7 +140,7 @@ public class TestLazySingleton extends LifecycleInjectorBuilderProvider
         Assert.assertSame(instance, instance2);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void testUsingInWithProvider(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         Injector    injector = lifecycleInjectorBuilder

@@ -1,6 +1,6 @@
 package com.netflix.governator.guice;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.CreationException;
@@ -32,7 +32,7 @@ public class TestSingletonModule {
         }
     }
 
-    @Test(expectedExceptions={CreationException.class})
+    @Test(expected=CreationException.class)
     public void confirmDupExceptionBehavior() {
         Guice.createInjector(new NoDedupTestModule(), new NoDedupTestModule());
     }

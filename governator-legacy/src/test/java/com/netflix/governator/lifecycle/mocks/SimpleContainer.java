@@ -18,7 +18,7 @@ package com.netflix.governator.lifecycle.mocks;
 
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleState;
-import org.testng.Assert;
+import org.junit.Assert;
 
 public class SimpleContainer extends SimpleObject
 {

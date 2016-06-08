@@ -49,4 +49,9 @@ public class ConfigurationKeyPart
     {
         return isVariable;
     }
+    
+    @Override
+    public String toString() {
+        return "ConfigurationKeyPart [value=" + value + ", isVariable=" + isVariable + "]";
+    }
 }

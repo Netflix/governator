@@ -6,6 +6,12 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.is;
 import static org.objectweb.asm.ClassReader.SKIP_CODE;
 
+import org.hamcrest.Matchers;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -15,19 +21,13 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.hamcrest.Matchers;
-import org.objectweb.asm.ClassReader;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 public class TestAnnotationFinder {
     JavaClasspath cp;
 
     String a = "governator.test.A";
     String b = "governator.test.B";
 
-    @BeforeMethod
+    @Before
     public void before()
     {
         cp = new JavaClasspath();
@@ -39,7 +39,7 @@ public class TestAnnotationFinder {
                         "public @interface B {}");
     }
 
-    @AfterMethod
+    @After
     public void after()
     {
         cp.cleanup();

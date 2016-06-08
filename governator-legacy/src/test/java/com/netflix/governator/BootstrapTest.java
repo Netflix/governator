@@ -1,13 +1,5 @@
 package com.netflix.governator;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.CreationException;
 import com.google.inject.Guice;
@@ -15,6 +7,14 @@ import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.netflix.governator.guice.ModulesEx;
 import com.netflix.governator.guice.annotations.Bootstrap;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 public class BootstrapTest {
     
@@ -68,7 +68,7 @@ public class BootstrapTest {
         Assert.assertEquals(Foo1.class, injector.getInstance(Foo.class).getClass());
     }
 
-    @Test(expectedExceptions=CreationException.class)
+    @Test(expected=CreationException.class)
     public void testDuplicateWithoutOverride() {
         Injector injector = Guice.createInjector(Stage.DEVELOPMENT, ModulesEx.fromClass(MyApplicationWithOverride.class, false));
         Assert.fail("Should have failed with duplicate binding exception");
