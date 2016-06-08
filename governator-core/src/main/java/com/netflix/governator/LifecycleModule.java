@@ -21,8 +21,8 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.GovernatorFeatureSet;
-import com.netflix.governator.internal.PostConstructLifecycleActions;
-import com.netflix.governator.internal.PreDestroyLifecycleActions;
+import com.netflix.governator.internal.PostConstructLifecycleFeature;
+import com.netflix.governator.internal.PreDestroyLifecycleFeature;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
@@ -99,10 +99,10 @@ public final class LifecycleModule extends AbstractModule {
                 }
                 
                 // Finally, add @PostConstruct methods
-                actions.postConstructActions.addAll(PostConstructLifecycleActions.INSTANCE.getActionsForType(type));
+                actions.postConstructActions.addAll(PostConstructLifecycleFeature.INSTANCE.getActionsForType(type));
                 
                 // Determine @PreDestroy methods
-                actions.preDestroyActions.addAll(PreDestroyLifecycleActions.INSTANCE.getActionsForType(type));
+                actions.preDestroyActions.addAll(PreDestroyLifecycleFeature.INSTANCE.getActionsForType(type));
                 
                 TypeLifecycleActions existing = cache.putIfAbsent(type, actions);
                 if (existing != null) {

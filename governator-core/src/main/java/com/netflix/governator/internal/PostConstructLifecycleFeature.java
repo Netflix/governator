@@ -26,11 +26,11 @@ import com.netflix.governator.internal.TypeInspector.TypeVisitor;
  * 
  * @author elandau
  */
-public final class PostConstructLifecycleActions implements LifecycleFeature {
-    private static final Logger LOG = LoggerFactory.getLogger(PostConstructLifecycleActions.class);
-    public static PostConstructLifecycleActions INSTANCE = new PostConstructLifecycleActions();
+public final class PostConstructLifecycleFeature implements LifecycleFeature {
+    private static final Logger LOG = LoggerFactory.getLogger(PostConstructLifecycleFeature.class);
+    public static PostConstructLifecycleFeature INSTANCE = new PostConstructLifecycleFeature();
 
-    private PostConstructLifecycleActions() {
+    private PostConstructLifecycleFeature() {
     }
 
     @Override

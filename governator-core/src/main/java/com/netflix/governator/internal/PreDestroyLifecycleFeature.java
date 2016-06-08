@@ -27,11 +27,11 @@ import com.netflix.governator.internal.TypeInspector.TypeVisitor;
  * 
  * @author elandau
  */
-public final class PreDestroyLifecycleActions implements LifecycleFeature {
-    private static final Logger LOG = LoggerFactory.getLogger(PreDestroyLifecycleActions.class);
-    public static PreDestroyLifecycleActions INSTANCE = new PreDestroyLifecycleActions();
+public final class PreDestroyLifecycleFeature implements LifecycleFeature {
+    private static final Logger LOG = LoggerFactory.getLogger(PreDestroyLifecycleFeature.class);
+    public static PreDestroyLifecycleFeature INSTANCE = new PreDestroyLifecycleFeature();
 
-    private PreDestroyLifecycleActions() {
+    private PreDestroyLifecycleFeature() {
     }
 
     @Override
