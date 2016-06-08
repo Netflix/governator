@@ -73,7 +73,7 @@ public class InjectorBuilderTest {
     
     @Test
     public void testKeyTracing() {
-        InjectorBuilder
+        try (LifecycleInjector li = InjectorBuilder
             .fromModule(new AbstractModule() {
                 @Override
                 protected void configure() {
@@ -81,7 +81,7 @@ public class InjectorBuilderTest {
                 }
             })
             .traceEachElement(new KeyTracingVisitor())
-            .createInjector();
+            .createInjector()) {}
     }
     
     @Test

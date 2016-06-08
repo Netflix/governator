@@ -21,9 +21,8 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.GovernatorFeatureSet;
-import com.netflix.governator.internal.PostConstructLifecycleActions;
-import com.netflix.governator.internal.PreDestroyLifecycleActions;
-import com.netflix.governator.spi.LifecycleListener;
+import com.netflix.governator.internal.PostConstructLifecycleFeature;
+import com.netflix.governator.internal.PreDestroyLifecycleFeature;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
@@ -87,7 +86,7 @@ public final class LifecycleModule extends AbstractModule {
             provisionListener.features = features;
             provisionListener.shutdownOnFailure =  args.hasShutdownOnFailure();
             
-            LOG.debug("LifecycleProvisionListener initialized {}", features);
+            LOG.debug("LifecycleProvisionListener initialized with features {}", features);
         }
         
         public TypeLifecycleActions getOrCreateActions(Class<?> type) {
@@ -100,10 +99,10 @@ public final class LifecycleModule extends AbstractModule {
                 }
                 
                 // Finally, add @PostConstruct methods
-                actions.postConstructActions.addAll(PostConstructLifecycleActions.INSTANCE.getActionsForType(type));
+                actions.postConstructActions.addAll(PostConstructLifecycleFeature.INSTANCE.getActionsForType(type));
                 
                 // Determine @PreDestroy methods
-                actions.preDestroyActions.addAll(PreDestroyLifecycleActions.INSTANCE.getActionsForType(type));
+                actions.preDestroyActions.addAll(PreDestroyLifecycleFeature.INSTANCE.getActionsForType(type));
                 
                 TypeLifecycleActions existing = cache.putIfAbsent(type, actions);
                 if (existing != null) {
@@ -129,7 +128,7 @@ public final class LifecycleModule extends AbstractModule {
         
         @Override
         public String toString() {
-            return "LifecycleProvisionListener[]";
+            return "LifecycleProvisionListener@" + System.identityHashCode(this);
         }
 
         @Override
@@ -147,6 +146,7 @@ public final class LifecycleModule extends AbstractModule {
                 return;
             }
             
+            final Object bindingSource = provision.getBinding().getSource();
             final TypeLifecycleActions actions = getOrCreateActions(injectee.getClass());
             
             // Call all the LifecycleActions with PostConstruct methods being the last 
@@ -155,7 +155,7 @@ public final class LifecycleModule extends AbstractModule {
                     action.call(injectee);
                 } 
                 catch (Exception e) {
-                    throw new ProvisionException("Failed to provision object of type " + injectee.getClass(), e);
+                    throw new ProvisionException("Exception thrown by action %s " + action + " [" + bindingSource + "]", e);
                 }
             }
             
@@ -170,14 +170,14 @@ public final class LifecycleModule extends AbstractModule {
                                     m.call(injectee);
                                 } 
                                 catch (Exception e) {
-                                    LOG.error("Failed to call @PreDestroy method {} on {}", new Object[]{m, injectee.getClass().getName()}, e);
+                                    LOG.error("Exception thrown by action {} [{}]", m, bindingSource, e);
                                 }
                             }
                         }
                     });
                 }
                 else {
-                    LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", new Object[]{actions.preDestroyActions, injectee.getClass().getName()});
+                    LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", actions.preDestroyActions, injectee.getClass().getName());
                 }
             }
         }
@@ -203,6 +203,6 @@ public final class LifecycleModule extends AbstractModule {
 
     @Override
     public String toString() {
-        return "LifecycleModule[]";
+        return "LifecycleModule@" + System.identityHashCode(this);
     }
 }

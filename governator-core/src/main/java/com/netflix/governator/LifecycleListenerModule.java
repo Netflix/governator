@@ -34,7 +34,7 @@ public final class LifecycleListenerModule extends AbstractModule {
     
     @Singleton
     @SuppressLifecycleUninitialized
-    static class LifecycleListenerProvisionListener extends AbstractLifecycleListener implements ProvisionListener {
+    static class LifecycleListenerProvisionListener implements ProvisionListener {
         private LifecycleManager manager;
         private List<LifecycleListener> pendingLifecycleListeners = new ArrayList<>();
         
