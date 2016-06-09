@@ -18,12 +18,12 @@ package com.netflix.governator;
 
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorMode;
-import org.testng.annotations.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProvider;
 
 public class LifecycleInjectorBuilderProvider
 {
-    @DataProvider(name = "builders")
-    public static Object[][] getBuilders()
+    @DataProvider
+    public static Object[][] builders()
     {
         return new Object[][]
         {

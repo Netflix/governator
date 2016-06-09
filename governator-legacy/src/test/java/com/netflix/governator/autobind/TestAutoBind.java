@@ -29,13 +29,20 @@ import com.netflix.governator.guice.AutoBinds;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.Collections;
 
+@RunWith(DataProviderRunner.class)
 public class TestAutoBind extends LifecycleInjectorBuilderProvider
 {
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testSimple(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
@@ -66,7 +73,8 @@ public class TestAutoBind extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(instance.getString(), "a is a");
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testCustom(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         @SuppressWarnings("RedundantCast")
@@ -90,7 +98,8 @@ public class TestAutoBind extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(instance.getInjectable().getValue(), 1234);
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testMultiple(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
@@ -124,7 +133,8 @@ public class TestAutoBind extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(instance.getArg4().getParameter(), "four");
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testField(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()
@@ -158,7 +168,8 @@ public class TestAutoBind extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(instance.field2.getParameter(), "field2");
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testMethod(LifecycleInjectorBuilder lifecycleInjectorBuilder)
     {
         final AutoBindProvider<AutoBind> provider = new AutoBindProvider<AutoBind>()

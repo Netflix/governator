@@ -4,9 +4,14 @@ import com.google.inject.Injector;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.Test;
+
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -16,6 +21,7 @@ import javax.inject.Singleton;
  * and InternalLifecycleModule.warmUpIsInDag(InternalLifecycleModule.java:171) that will ultimately lead to
  * an StackOverflowError.
  */
+@RunWith(DataProviderRunner.class)
 public class CircularDAG extends LifecycleInjectorBuilderProvider
 {
 
@@ -57,7 +63,7 @@ public class CircularDAG extends LifecycleInjectorBuilderProvider
         }
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void circle(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector injector = lifecycleInjectorBuilder.createInjector();

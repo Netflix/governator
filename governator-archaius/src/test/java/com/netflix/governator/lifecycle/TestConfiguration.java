@@ -17,13 +17,28 @@
 package com.netflix.governator.lifecycle;
 
 import com.netflix.config.ConfigurationManager;
-import com.netflix.governator.configuration.*;
-import com.netflix.governator.lifecycle.mocks.*;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import com.netflix.governator.configuration.ArchaiusConfigurationProvider;
+import com.netflix.governator.configuration.CompositeConfigurationProvider;
+import com.netflix.governator.configuration.ConfigurationOwnershipPolicies;
+import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.configuration.PropertiesConfigurationProvider;
+import com.netflix.governator.lifecycle.mocks.ObjectWithConfig;
+import com.netflix.governator.lifecycle.mocks.ObjectWithConfigVariable;
+import com.netflix.governator.lifecycle.mocks.ObjectWithDynamicConfig;
+import com.netflix.governator.lifecycle.mocks.ObjectWithIgnoreTypeMismatchConfig;
+import com.netflix.governator.lifecycle.mocks.PreConfigurationChange;
+import com.netflix.governator.lifecycle.mocks.SubclassedObjectWithConfig;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 public class TestConfiguration
 {
@@ -81,7 +96,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aBool, true);
         Assert.assertEquals(obj.anInt, 100);
         Assert.assertEquals(obj.aLong, 200);
-        Assert.assertEquals(obj.aDouble, 300.4);
+        Assert.assertEquals(obj.aDouble, 300.4, 0);
         Assert.assertEquals(obj.aString, "a is a");
         Assert.assertEquals(obj.mainInt, 2468);
         Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
@@ -113,7 +128,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aBool, true);
         Assert.assertEquals(obj.anInt, 100);
         Assert.assertEquals(obj.aLong, 200);
-        Assert.assertEquals(obj.aDouble, 300.4);
+        Assert.assertEquals(obj.aDouble, 300.4, 0);
         Assert.assertEquals(obj.aString, "a is a");
         Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
         Assert.assertEquals(obj.mapOfMaps, MAP_OF_MAPS_OBJ);
@@ -143,7 +158,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aBool, true);
         Assert.assertEquals(obj.anInt, 101);
         Assert.assertEquals(obj.aLong, 201);
-        Assert.assertEquals(obj.aDouble, 301.4);
+        Assert.assertEquals(obj.aDouble, 301.4, 0);
         Assert.assertEquals(obj.aString, "b is b");
         Assert.assertEquals(obj.ints, Arrays.asList(1,2,3,4));
     }
@@ -196,7 +211,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(1));
         Assert.assertEquals(obj.anDynamicInt2.get(), new Integer(1));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(2L));
-        Assert.assertEquals(obj.aDynamicDouble.get(), 3.4);
+        Assert.assertEquals(obj.aDynamicDouble.get(), 3.4, 0);
         Assert.assertEquals(obj.aDynamicString.get(), "a is a");
         Assert.assertEquals(obj.aDynamicString2.get(), "a is a");
         Assert.assertEquals(obj.aDynamicDate.get(), null);
@@ -215,7 +230,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aDynamicBool.get(), Boolean.FALSE);
         Assert.assertEquals(obj.anDynamicInt.get(), new Integer(101));
         Assert.assertEquals(obj.aDynamicLong.get(), new Long(201L));
-        Assert.assertEquals(obj.aDynamicDouble.get(), 301.4);
+        Assert.assertEquals(obj.aDynamicDouble.get(), 301.4, 0);
         Assert.assertEquals(obj.aDynamicString.get(), "a is b");
         Assert.assertEquals(obj.aDynamicObj.get(), Arrays.asList(1, 2, 3, 4));
         Assert.assertEquals(obj.aDynamicMapOfMaps.get(), MAP_OF_MAPS_OBJ);
@@ -240,7 +255,7 @@ public class TestConfiguration
         Assert.assertEquals(obj.aBool, nonGovernatedSample.aBool);
         Assert.assertEquals(obj.anInt, nonGovernatedSample.anInt);
         Assert.assertEquals(obj.aLong, nonGovernatedSample.aLong);
-        Assert.assertEquals(obj.aDouble, nonGovernatedSample.aDouble);
+        Assert.assertEquals(obj.aDouble, nonGovernatedSample.aDouble, 0);
         Assert.assertEquals(obj.aDate, nonGovernatedSample.aDate);
     }
 }

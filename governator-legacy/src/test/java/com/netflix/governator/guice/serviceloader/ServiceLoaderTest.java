@@ -6,7 +6,7 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

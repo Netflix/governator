@@ -1,15 +1,5 @@
 package com.netflix.governator.guice;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.inject.Singleton;
-
-import junit.framework.Assert;
-
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -18,15 +8,19 @@ import com.google.inject.Stage;
 import com.netflix.governator.guice.actions.BindingReport;
 import com.netflix.governator.guice.actions.CreateAllBoundSingletons;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.inject.Singleton;
+
 public class TestTransitiveNonLazySingletons {
-    
-    private String testName;
-    
-    @BeforeMethod
-    public void handleTestMethodName(Method method)
-    {
-        testName = method.getName(); 
-    }
+    @Rule
+    public TestName testName = new TestName();
     
     @Singleton
     public static class ThisShouldBeLazy {
@@ -49,7 +43,7 @@ public class TestTransitiveNonLazySingletons {
         }
     }
     
-    @BeforeMethod
+    @Before
     public void setup() {
         System.out.println("setup");
         ThisShouldBeLazy.counter.set(0);
@@ -65,7 +59,7 @@ public class TestTransitiveNonLazySingletons {
                         bind(ThisShouldBeEager.class);
                     }
                 })
-                .withPostInjectorAction(new BindingReport(testName))
+                .withPostInjectorAction(new BindingReport(testName.getMethodName()))
                 .build()
                 .createInjector();
             
@@ -83,7 +77,7 @@ public class TestTransitiveNonLazySingletons {
                     bind(ThisShouldBeEager.class);
                 }
             })
-            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new BindingReport(testName.getMethodName()))
             .build()
             .createInjector();
         
@@ -102,7 +96,7 @@ public class TestTransitiveNonLazySingletons {
                     bind(ThisShouldBeEager.class).asEagerSingleton();
                 }
             })
-            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new BindingReport(testName.getMethodName()))
             .build()
             .createInjector();
         
@@ -121,7 +115,7 @@ public class TestTransitiveNonLazySingletons {
                         bind(ThisShouldBeEager.class);
                     }
                 })
-                .withPostInjectorAction(new BindingReport(testName))
+                .withPostInjectorAction(new BindingReport(testName.getMethodName()))
                 .build()
                 .createInjector();
             
@@ -140,7 +134,7 @@ public class TestTransitiveNonLazySingletons {
                         bind(ThisShouldBeEager.class);
                     }
                 })
-                .withPostInjectorAction(new BindingReport(testName))
+                .withPostInjectorAction(new BindingReport(testName.getMethodName()))
                 .withPostInjectorAction(new CreateAllBoundSingletons())
                 .build()
                 .createInjector();

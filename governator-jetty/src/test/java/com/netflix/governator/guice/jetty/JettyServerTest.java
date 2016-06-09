@@ -11,7 +11,7 @@ import junit.framework.Assert;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

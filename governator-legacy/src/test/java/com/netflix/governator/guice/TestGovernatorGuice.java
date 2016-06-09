@@ -16,11 +16,6 @@
 
 package com.netflix.governator.guice;
 
-import java.util.List;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -49,12 +44,22 @@ import com.netflix.governator.lifecycle.FilteredLifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleState;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.List;
+
+@RunWith(DataProviderRunner.class)
 public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
 {
     private static final String PACKAGES = "com.netflix.governator.guice.mocks";
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testAutoBindSingletonToGenericInterface(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector    injector = lifecycleInjectorBuilder
@@ -70,7 +75,8 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(obj.getObj().getValue(), "a is a");
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testAutoBindSingletonToInterface(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector    injector = lifecycleInjectorBuilder
@@ -81,7 +87,8 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(simple.getValue(), 1234);
     }
 
-    @Test(dataProvider = "builders")
+    @Test
+    @UseDataProvider("builders")
     public void     testAutoBindModules(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector    injector = lifecycleInjectorBuilder
@@ -94,7 +101,7 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(objectB.getSize(), "large");
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void     testAutoBindSingletonVsSingleton(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final List<Object>        objects = Lists.newArrayList();
@@ -200,10 +207,10 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
 
         SimplePojoAlt pojoAlt = injector.getInstance(SimplePojoAlt.class);
         Assert.assertEquals(pojoAlt.getL(), 3);
-        Assert.assertEquals(pojoAlt.getD(), 4.5);
+        Assert.assertEquals(pojoAlt.getD(), 4.5, 0);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void     testSimpleSingleton(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector            injector = lifecycleInjectorBuilder.usingBasePackages(PACKAGES).createInjector();
@@ -221,7 +228,7 @@ public class TestGovernatorGuice extends LifecycleInjectorBuilderProvider
         Assert.assertEquals(instance.finishCount.get(), 1);
     }
 
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void     testInjectedIntoAnother(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         Injector            injector = lifecycleInjectorBuilder.usingBasePackages(PACKAGES).createInjector();

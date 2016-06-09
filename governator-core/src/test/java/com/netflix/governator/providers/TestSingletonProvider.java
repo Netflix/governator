@@ -1,8 +1,7 @@
 package com.netflix.governator.providers;
 
-import junit.framework.Assert;
-
-import org.testng.annotations.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestSingletonProvider {
     public static class Foo {

@@ -20,13 +20,19 @@ import com.google.inject.Injector;
 import com.netflix.governator.LifecycleInjectorBuilderProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.guice.mocks.ObjectWithConfig;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.Properties;
 
+@RunWith(DataProviderRunner.class)
 public class TestInjectedConfiguration extends LifecycleInjectorBuilderProvider
 {
-    @Test(dataProvider = "builders")
+    @Test @UseDataProvider("builders")
     public void     testConfigurationProvider(LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception
     {
         final Properties    properties = new Properties();

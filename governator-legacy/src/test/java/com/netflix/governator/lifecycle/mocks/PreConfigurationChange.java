@@ -20,7 +20,7 @@ import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.configuration.CompositeConfigurationProvider;
 import com.netflix.governator.configuration.PropertiesConfigurationProvider;
-import org.testng.Assert;
+import org.junit.Assert;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.util.Properties;

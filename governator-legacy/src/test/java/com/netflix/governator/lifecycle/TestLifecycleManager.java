@@ -16,8 +16,8 @@
 
 package com.netflix.governator.lifecycle;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.Assert;
+import org.junit.Test;
 import javax.validation.constraints.Min;
 
 @SuppressWarnings("UnusedDeclaration")

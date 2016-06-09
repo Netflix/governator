@@ -1,16 +1,5 @@
 package com.netflix.governator.guice;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-
-import junit.framework.Assert;
-
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
@@ -18,6 +7,17 @@ import com.google.inject.Stage;
 import com.netflix.governator.guice.actions.BindingReport;
 import com.netflix.governator.guice.actions.CreateAllBoundSingletons;
 import com.netflix.governator.guice.actions.GrapherAction;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class TestPostInjectAction {
     @Test
@@ -35,13 +35,8 @@ public class TestPostInjectAction {
         
     }
     
-    private String testName;
-    
-    @BeforeMethod
-    public void handleTestMethodName(Method method)
-    {
-        testName = method.getName(); 
-    }
+    @Rule
+    public TestName testName = new TestName();
     
     @Singleton
     public static class Transitive {
@@ -71,7 +66,7 @@ public class TestPostInjectAction {
         }
     }
     
-    @BeforeMethod
+    @Before
     public void before() {
         FooImpl.counter.set(0);
         FooNotAnnotated.counter.set(0);
@@ -83,7 +78,7 @@ public class TestPostInjectAction {
         LifecycleInjector.builder()
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
-            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new BindingReport(testName.getMethodName()))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .withModules(new AbstractModule() {
                 @Override
@@ -101,7 +96,7 @@ public class TestPostInjectAction {
     @Test
     public void testInterfaceSingleton() {
         LifecycleInjector.builder()
-            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new BindingReport(testName.getMethodName()))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
@@ -121,7 +116,7 @@ public class TestPostInjectAction {
     @Test
     public void testInterfaceSingletonProductionStage() {
         LifecycleInjector.builder()
-            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new BindingReport(testName.getMethodName()))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .withModules(new AbstractModule() {
                 @Override
@@ -139,7 +134,7 @@ public class TestPostInjectAction {
     @Test
     public void testScopedSingleton() {
         LifecycleInjector.builder()
-            .withPostInjectorAction(new BindingReport(testName))
+            .withPostInjectorAction(new BindingReport(testName.getMethodName()))
             .withPostInjectorAction(new CreateAllBoundSingletons())
             .inStage(Stage.DEVELOPMENT)
             .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
