@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +20,9 @@ import com.google.inject.ProvisionException;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.servlet.GuiceFilter;
 import com.netflix.governator.AbstractLifecycleListener;
-import com.netflix.governator.spi.LifecycleListener;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.LifecycleShutdownSignal;
+import com.netflix.governator.spi.LifecycleListener;
 
 /**
  * Installing JettyModule will create a Jetty web server within the context
@@ -158,7 +159,7 @@ public final class JettyModule extends AbstractModule {
         ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
         servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
         servletContextHandler.addServlet(DefaultServlet.class, "/");
-
+        servletContextHandler.setBaseResource(Resource.newClassPathResource("/META-INF/resources/"));
         return server;
     }
     
