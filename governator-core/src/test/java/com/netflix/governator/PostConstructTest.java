@@ -40,6 +40,13 @@ public class PostConstructTest {
             // can't use method parameters
         }
     }
+    
+    private static class InvalidPostConstructException {
+        @PostConstruct
+        public String initWithReturnValue() throws Exception {
+            return "invalid return type";
+        }
+    }
 
     private static class PostConstructParent1 {
         @PostConstruct
@@ -76,14 +83,14 @@ public class PostConstructTest {
         }
     }
 
-    private static class PostConstructChild3 extends PostConstructParent3 {
+    static class PostConstructChild3 extends PostConstructParent3 {
         public void init() {
             System.out.println("init invoked");
         }
     }
 
     
-    private static class MultiplePostConstructs {
+    static class MultiplePostConstructs {
         @PostConstruct
         public void init1() {
             System.out.println("init1");
@@ -138,23 +145,41 @@ public class PostConstructTest {
 
     @Test
     public void testLifecycleMultipleAnnotations() {
-        final MultiplePostConstructs MultiplePostConstructs = Mockito.spy(new MultiplePostConstructs());
-
-        try (LifecycleInjector injector = TestSupport.inject(MultiplePostConstructs)) {
-            Assert.assertNotNull(injector.getInstance(MultiplePostConstructs.getClass()));
-            Mockito.verify(MultiplePostConstructs, Mockito.never()).init1();
-            Mockito.verify(MultiplePostConstructs, Mockito.never()).init2();
+        final MultiplePostConstructs multiplePostConstructs = Mockito.spy(new MultiplePostConstructs());
+        try (LifecycleInjector injector = new TestSupport()
+                .withFeature(GovernatorFeatures.STRICT_JSR250_VALIDATION, true)
+                .withSingleton(multiplePostConstructs)
+                .inject()) {
+            Assert.assertNotNull(injector.getInstance(multiplePostConstructs.getClass()));
+            Mockito.verify(multiplePostConstructs, Mockito.never()).init1();
+            Mockito.verify(multiplePostConstructs, Mockito.never()).init2();
         }
         // never, multiple annotations should be ignored
-        Mockito.verify(MultiplePostConstructs, Mockito.never()).init1(); 
-        Mockito.verify(MultiplePostConstructs, Mockito.never()).init2(); 
+        Mockito.verify(multiplePostConstructs, Mockito.never()).init1(); 
+        Mockito.verify(multiplePostConstructs, Mockito.never()).init2(); 
     }    
     
 
     @Test
     public void testLifecycleInitWithInvalidPostConstructs() {
         InvalidPostConstructs mockInstance = Mockito.mock(InvalidPostConstructs.class);
-        try (LifecycleInjector injector = TestSupport.inject(mockInstance)) {
+        try (LifecycleInjector injector = new TestSupport()
+                .withFeature(GovernatorFeatures.STRICT_JSR250_VALIDATION, true)
+                .withSingleton(mockInstance)
+                .inject()) {
+            Assert.assertNotNull(injector.getInstance(InvalidPostConstructs.class));
+            Mockito.verify(mockInstance, Mockito.never()).initWithParameters(Mockito.anyString());
+            Mockito.verify(mockInstance, Mockito.never()).initWithReturnValue();
+        }
+    }
+    
+    @Test
+    public void testLifecycleInitWithPostConstructException() {
+        InvalidPostConstructs mockInstance = Mockito.mock(InvalidPostConstructs.class);
+        try (LifecycleInjector injector = new TestSupport()
+                .withFeature(GovernatorFeatures.STRICT_JSR250_VALIDATION, true)
+                .withSingleton(mockInstance)
+                .inject()) {
             Assert.assertNotNull(injector.getInstance(InvalidPostConstructs.class));
             Mockito.verify(mockInstance, Mockito.never()).initWithParameters(Mockito.anyString());
             Mockito.verify(mockInstance, Mockito.never()).initWithReturnValue();

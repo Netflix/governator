@@ -11,36 +11,20 @@ import org.slf4j.LoggerFactory;
 import com.netflix.governator.LifecycleAction;
 
 public class JSR250LifecycleAction implements LifecycleAction {
+    public enum ValidationMode {
+        STRICT, LAX
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger(JSR250LifecycleAction.class);
     private final Method method;
     private final String description;
 
     public JSR250LifecycleAction(Class<? extends Annotation> annotationClass, Method method) {
-        if (Modifier.isStatic(method.getModifiers())) {
-            throw new IllegalArgumentException("method must not be static");
-        } else if (method.getParameterCount() > 0) {
-            throw new IllegalArgumentException("method parameter count must be zero");
-        } else if (Void.TYPE != method.getReturnType()) {
-            throw new IllegalArgumentException("method must have void return type");
-        } else if (method.getExceptionTypes().length > 0) {
-            for (Class<?> e : method.getExceptionTypes()) {
-                if (!RuntimeException.class.isAssignableFrom(e)) {
-                    throw new IllegalArgumentException(
-                            "method must must not throw checked exception: " + e.getSimpleName());
-                }
-            }
-        } else {
-            int preDestroyCount = 0;
-            for (Method m : method.getDeclaringClass().getDeclaredMethods()) {
-                if (m.isAnnotationPresent(annotationClass)) {
-                    preDestroyCount++;
-                }
-            }
-            if (preDestroyCount > 1) {
-                throw new IllegalArgumentException(
-                        "declaring class must not contain multiple @" + annotationClass.getSimpleName() + " methods");
-            }
-        }
+        this(annotationClass, method, ValidationMode.STRICT);
+    }
+    
+    public JSR250LifecycleAction(Class<? extends Annotation> annotationClass, Method method, ValidationMode validationMode) {
+        validateAnnotationUsage(annotationClass, method, validationMode);
 
         if (!method.isAccessible()) {
             method.setAccessible(true);
@@ -48,6 +32,35 @@ public class JSR250LifecycleAction implements LifecycleAction {
         this.method = method;
         this.description = String.format("%s@%d[%s.%s()]", annotationClass.getSimpleName(),
                 System.identityHashCode(this), method.getDeclaringClass().getSimpleName(), method.getName());
+    }
+
+    private void validateAnnotationUsage(Class<? extends Annotation> annotationClass, Method method, ValidationMode validationMode) {
+        LOG.debug("method validationMode is " + validationMode);
+        if (Modifier.isStatic(method.getModifiers())) {
+            throw new IllegalArgumentException("method must not be static");
+        } else if (method.getParameterCount() > 0) {
+            throw new IllegalArgumentException("method parameter count must be zero");
+        } else if (Void.TYPE != method.getReturnType()  && validationMode == ValidationMode.STRICT) {
+            throw new IllegalArgumentException("method must have void return type");
+        } else if (method.getExceptionTypes().length > 0 && validationMode == ValidationMode.STRICT) {
+            for (Class<?> e : method.getExceptionTypes()) {
+                if (!RuntimeException.class.isAssignableFrom(e)) {
+                    throw new IllegalArgumentException(
+                            "method must must not throw checked exception: " + e.getSimpleName());
+                }
+            }
+        } else {
+            int annotationCount = 0;
+            for (Method m : method.getDeclaringClass().getDeclaredMethods()) {
+                if (m.isAnnotationPresent(annotationClass)) {
+                    annotationCount++;
+                }
+            }
+            if (annotationCount > 1  && validationMode == ValidationMode.STRICT) {
+                throw new IllegalArgumentException(
+                        "declaring class must not contain multiple @" + annotationClass.getSimpleName() + " methods");
+            }
+        }
     }
 
     @Override

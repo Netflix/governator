@@ -17,4 +17,9 @@ public final class GovernatorFeatures  {
      */
     public static final GovernatorFeature<Boolean> DISCOVER_AUTO_BINDERS = GovernatorFeature.create("Governator.features.discoverAutoBinders", true);
     
+    /**
+     * Enables strict validation of @PostConstruct / @PreDestroy annotations at runtime; default is false
+     */
+    public static final GovernatorFeature<Boolean> STRICT_JSR250_VALIDATION = GovernatorFeature.create("Governator.features.strictJsr250Validation", false);
+    
 }

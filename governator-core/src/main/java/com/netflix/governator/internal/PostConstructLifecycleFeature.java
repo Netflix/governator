@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Supplier;
 import com.netflix.governator.LifecycleAction;
 import com.netflix.governator.LifecycleFeature;
+import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 import com.netflix.governator.internal.TypeInspector.TypeVisitor;
 
 /**
@@ -28,11 +29,12 @@ import com.netflix.governator.internal.TypeInspector.TypeVisitor;
  */
 public final class PostConstructLifecycleFeature implements LifecycleFeature {
     private static final Logger LOG = LoggerFactory.getLogger(PostConstructLifecycleFeature.class);
-    public static PostConstructLifecycleFeature INSTANCE = new PostConstructLifecycleFeature();
+    private final ValidationMode validationMode;
 
-    private PostConstructLifecycleFeature() {
+    public PostConstructLifecycleFeature(ValidationMode validationMode) {
+        this.validationMode = validationMode;
     }
-
+    
     @Override
     public List<LifecycleAction> getActionsForType(final Class<?> type) {
         return TypeInspector.accept(type, new PostConstructVisitor());
@@ -43,9 +45,14 @@ public final class PostConstructLifecycleFeature implements LifecycleFeature {
         return "PostConstruct";
     }
 
-    private static class PostConstructVisitor implements TypeVisitor, Supplier<List<LifecycleAction>> {
-        private Set<String> visitContext = new HashSet<>();
-        private LinkedList<LifecycleAction> typeActions = new LinkedList<>();
+    private class PostConstructVisitor implements TypeVisitor, Supplier<List<LifecycleAction>> {
+        private final Set<String> visitContext;
+        private final LinkedList<LifecycleAction> typeActions;
+        
+        public PostConstructVisitor() {
+            this.visitContext = new HashSet<>();
+            this.typeActions = new LinkedList<>();
+        }
 
         @Override
         public boolean visit(final Class<?> clazz) {
@@ -58,7 +65,7 @@ public final class PostConstructLifecycleFeature implements LifecycleFeature {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 if (!visitContext.contains(methodName)) {
                     try {
-                        LifecycleAction postConstructAction = new JSR250LifecycleAction(PostConstruct.class, method);
+                        LifecycleAction postConstructAction = new JSR250LifecycleAction(PostConstruct.class, method, validationMode);
                         LOG.debug("adding action {}", postConstructAction);
                         this.typeActions.addFirst(postConstructAction);
                         visitContext.add(methodName);

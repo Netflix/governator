@@ -171,7 +171,10 @@ public class PreDestroyTest {
     public void testLifecycleMultipleAnnotations() {
         final MultipleDestroys multipleDestroys = Mockito.spy(new MultipleDestroys());
 
-        try (LifecycleInjector injector = TestSupport.inject(multipleDestroys)) {
+        try (LifecycleInjector injector = new TestSupport()
+                .withFeature(GovernatorFeatures.STRICT_JSR250_VALIDATION, true)
+                .withSingleton(multipleDestroys)
+                .inject()) {
             Assert.assertNotNull(injector.getInstance(multipleDestroys.getClass()));
             Mockito.verify(multipleDestroys, Mockito.never()).shutdown1();
             Mockito.verify(multipleDestroys, Mockito.never()).shutdown2();
@@ -209,7 +212,10 @@ public class PreDestroyTest {
     public void testLifecycleShutdownWithInvalidPreDestroys() {
         final InvalidPreDestroys ipd = Mockito.mock(InvalidPreDestroys.class);
 
-        try (LifecycleInjector injector = TestSupport.inject(ipd)) {
+        try (LifecycleInjector injector = new TestSupport()
+                .withFeature(GovernatorFeatures.STRICT_JSR250_VALIDATION, true)
+                .withSingleton(ipd)
+                .inject()) {
             Assert.assertNotNull(injector.getInstance(InvalidPreDestroys.class));
             Mockito.verify(ipd, Mockito.never()).shutdownWithParameters(Mockito.anyString());
             Mockito.verify(ipd, Mockito.never()).shutdownWithReturnValue();
