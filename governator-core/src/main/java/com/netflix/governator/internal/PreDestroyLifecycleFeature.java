@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Supplier;
 import com.netflix.governator.LifecycleAction;
 import com.netflix.governator.LifecycleFeature;
+import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 import com.netflix.governator.internal.TypeInspector.TypeVisitor;
 
 /**
@@ -29,11 +30,12 @@ import com.netflix.governator.internal.TypeInspector.TypeVisitor;
  */
 public final class PreDestroyLifecycleFeature implements LifecycleFeature {
     private static final Logger LOG = LoggerFactory.getLogger(PreDestroyLifecycleFeature.class);
-    public static PreDestroyLifecycleFeature INSTANCE = new PreDestroyLifecycleFeature();
+    private final ValidationMode validationMode;
 
-    private PreDestroyLifecycleFeature() {
+    public PreDestroyLifecycleFeature(ValidationMode validationMode) {
+        this.validationMode = validationMode;
     }
-
+    
     @Override
     public List<LifecycleAction> getActionsForType(final Class<?> type) {
         return TypeInspector.accept(type, new PreDestroyVisitor());
@@ -44,7 +46,7 @@ public final class PreDestroyLifecycleFeature implements LifecycleFeature {
         return "PreDestroy";
     }
 
-    private static class PreDestroyVisitor implements TypeVisitor, Supplier<List<LifecycleAction>> {
+    private  class PreDestroyVisitor implements TypeVisitor, Supplier<List<LifecycleAction>> {
         private Set<String> visitContext = new HashSet<>();
         private List<LifecycleAction> typeActions = new ArrayList<>();
 
@@ -68,7 +70,7 @@ public final class PreDestroyLifecycleFeature implements LifecycleFeature {
             if (method.isAnnotationPresent(PreDestroy.class)) {
                 if (!visitContext.contains(methodName)) {
                     try {
-                        LifecycleAction destroyAction = new JSR250LifecycleAction(PreDestroy.class, method);
+                        LifecycleAction destroyAction = new JSR250LifecycleAction(PreDestroy.class, method, validationMode);
                         LOG.debug("adding action {}", destroyAction);
                         typeActions.add(destroyAction);
                         visitContext.add(methodName);

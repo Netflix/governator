@@ -23,6 +23,7 @@ import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.internal.PostConstructLifecycleFeature;
 import com.netflix.governator.internal.PreDestroyLifecycleFeature;
+import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
@@ -65,6 +66,9 @@ public final class LifecycleModule extends AbstractModule {
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
+        private PostConstructLifecycleFeature postConstructFeature;
+        private PreDestroyLifecycleFeature preDestroyFeature;
+
         private boolean shutdownOnFailure = true;
         
         @SuppressLifecycleUninitialized
@@ -76,6 +80,10 @@ public final class LifecycleModule extends AbstractModule {
             boolean hasShutdownOnFailure() {
                 return governatorFeatures == null ? true : governatorFeatures.get(GovernatorFeatures.SHUTDOWN_ON_ERROR);
             }
+            
+            ValidationMode getJsr250ValidationMode() {
+                return governatorFeatures == null ? ValidationMode.LAX : governatorFeatures.get(GovernatorFeatures.STRICT_JSR250_VALIDATION) ? ValidationMode.STRICT : ValidationMode.LAX;
+            }
         }
         @Inject
         public static void initialize(
@@ -85,7 +93,9 @@ public final class LifecycleModule extends AbstractModule {
                 Set<LifecycleFeature> features) {
             provisionListener.features = features;
             provisionListener.shutdownOnFailure =  args.hasShutdownOnFailure();
-            
+            ValidationMode validationMode = args.getJsr250ValidationMode();
+            provisionListener.postConstructFeature = new PostConstructLifecycleFeature(validationMode);
+            provisionListener.preDestroyFeature = new PreDestroyLifecycleFeature(validationMode);
             LOG.debug("LifecycleProvisionListener initialized with features {}", features);
         }
         
@@ -99,10 +109,10 @@ public final class LifecycleModule extends AbstractModule {
                 }
                 
                 // Finally, add @PostConstruct methods
-                actions.postConstructActions.addAll(PostConstructLifecycleFeature.INSTANCE.getActionsForType(type));
+                actions.postConstructActions.addAll(postConstructFeature.getActionsForType(type));
                 
                 // Determine @PreDestroy methods
-                actions.preDestroyActions.addAll(PreDestroyLifecycleFeature.INSTANCE.getActionsForType(type));
+                actions.preDestroyActions.addAll(preDestroyFeature.getActionsForType(type));
                 
                 TypeLifecycleActions existing = cache.putIfAbsent(type, actions);
                 if (existing != null) {

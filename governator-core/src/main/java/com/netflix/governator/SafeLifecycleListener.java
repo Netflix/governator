@@ -3,6 +3,7 @@ package com.netflix.governator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.netflix.governator.spi.LifecycleListener;
 
 /**
@@ -20,6 +21,7 @@ final class SafeLifecycleListener implements LifecycleListener {
     }
     
     private SafeLifecycleListener(LifecycleListener delegate) {
+        Preconditions.checkNotNull(delegate, "listener argument must be non-null");
         this.delegate = delegate;
     }
     
