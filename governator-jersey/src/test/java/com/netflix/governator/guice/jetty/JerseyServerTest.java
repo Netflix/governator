@@ -106,7 +106,7 @@ public class JerseyServerTest {
         System.out.println("Listening on port : "+ port);
         
         URL url = new URL(String.format("http://localhost:%d/", port));
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         try {
             conn.getResponseCode();
         }
