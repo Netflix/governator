@@ -11,6 +11,13 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.webapp.Configuration;
+import org.eclipse.jetty.webapp.FragmentConfiguration;
+import org.eclipse.jetty.webapp.MetaInfConfiguration;
+import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.webapp.WebInfConfiguration;
+
+import org.eclipse.jetty.webapp.WebXmlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,10 +163,23 @@ public final class JettyModule extends AbstractModule {
     @Singleton
     private Server getServer(JettyConfig config) {
         Server server = new Server(config.getPort());
-        ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
-        servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
-        servletContextHandler.addServlet(DefaultServlet.class, "/");
-        servletContextHandler.setBaseResource(Resource.newClassPathResource("/META-INF/resources/"));
+
+        WebAppContext webAppContext = new WebAppContext();
+        // We want to fail fast if we don't have any root resources defined or we have other issues starting up.
+        webAppContext.setThrowUnavailableOnStartupException(true);
+        webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+        webAppContext.addServlet(DefaultServlet.class, "/");
+        webAppContext.setResourceBase(Resource.newClassPathResource(config.getResourceBase()).getName());
+        webAppContext.setContextPath("/");
+        webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
+        webAppContext.setConfigurations(new Configuration[]{
+                new WebXmlConfiguration(),
+                new WebInfConfiguration(),
+                new MetaInfConfiguration(),
+                new FragmentConfiguration(),
+        });
+        server.setHandler(webAppContext);
+
         return server;
     }
     

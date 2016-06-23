@@ -52,7 +52,7 @@ public class JerseyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0);
+                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
                             }
                         }))
                         .createInjector();
@@ -94,7 +94,7 @@ public class JerseyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0);
+                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
                             }
                         }))
                         .createInjector();
@@ -106,7 +106,7 @@ public class JerseyServerTest {
         System.out.println("Listening on port : "+ port);
         
         URL url = new URL(String.format("http://localhost:%d/", port));
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         try {
             conn.getResponseCode();
         }
@@ -137,7 +137,7 @@ public class JerseyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0);
+                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
                             }
                         }))
                         .createInjector();
