@@ -52,7 +52,7 @@ public class JerseyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
+                                return new DefaultJettyConfig().setPort(0);
                             }
                         }))
                         .createInjector();
@@ -94,7 +94,7 @@ public class JerseyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
+                                return new DefaultJettyConfig().setPort(0);
                             }
                         }))
                         .createInjector();
@@ -137,7 +137,7 @@ public class JerseyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
+                                return new DefaultJettyConfig().setPort(0);
                             }
                         }))
                         .createInjector();

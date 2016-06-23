@@ -163,23 +163,30 @@ public final class JettyModule extends AbstractModule {
     @Singleton
     private Server getServer(JettyConfig config) {
         Server server = new Server(config.getPort());
-
-        WebAppContext webAppContext = new WebAppContext();
-        // We want to fail fast if we don't have any root resources defined or we have other issues starting up.
-        webAppContext.setThrowUnavailableOnStartupException(true);
-        webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
-        webAppContext.addServlet(DefaultServlet.class, "/");
-        webAppContext.setResourceBase(Resource.newClassPathResource(config.getResourceBase()).getName());
-        webAppContext.setContextPath("/");
-        webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
-        webAppContext.setConfigurations(new Configuration[]{
-                new WebXmlConfiguration(),
-                new WebInfConfiguration(),
-                new MetaInfConfiguration(),
-                new FragmentConfiguration(),
-        });
-        server.setHandler(webAppContext);
-
+        Resource staticResourceBase = Resource.newClassPathResource(config.getResourceBase());
+        if (staticResourceBase != null) {
+            // Set up a full web app since we have static content.
+            WebAppContext webAppContext = new WebAppContext();
+            // We want to fail fast if we don't have any root resources defined or we have other issues starting up.
+            webAppContext.setThrowUnavailableOnStartupException(true);
+            webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+            webAppContext.addServlet(DefaultServlet.class, "/");
+            webAppContext.setResourceBase(staticResourceBase.getName());
+            webAppContext.setContextPath("/");
+            webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
+            webAppContext.setConfigurations(new Configuration[]{
+                    new WebXmlConfiguration(),
+                    new WebInfConfiguration(),
+                    new MetaInfConfiguration(),
+                    new FragmentConfiguration(),
+            });
+            server.setHandler(webAppContext);
+        } else {
+            // We don't have static content so just set up servlets.
+            ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
+            servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+            servletContextHandler.addServlet(DefaultServlet.class, "/");
+        }
         return server;
     }
     

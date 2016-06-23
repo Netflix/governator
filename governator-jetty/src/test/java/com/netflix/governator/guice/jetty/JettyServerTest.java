@@ -50,7 +50,7 @@ public class JettyServerTest {
                             @Provides
                             JettyConfig getConfig() {
                                 // Use emphemeral ports
-                                return new DefaultJettyConfig().setPort(0).setResourceBase(".");
+                                return new DefaultJettyConfig().setPort(0);
                             }
                         }))
                         .createInjector();
