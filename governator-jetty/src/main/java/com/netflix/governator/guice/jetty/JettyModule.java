@@ -165,13 +165,15 @@ public final class JettyModule extends AbstractModule {
         Server server = new Server(config.getPort());
         Resource staticResourceBase = Resource.newClassPathResource(config.getResourceBase());
         if (staticResourceBase != null) {
-            // Set up a full web app since we have static content.
+            // Set up a full web app since we have static content. We require the app to have its static content
+            // under src/main/webapp and any other static resources that are packaged into jars are expected under
+            // META-INF/resources.
             WebAppContext webAppContext = new WebAppContext();
             // We want to fail fast if we don't have any root resources defined or we have other issues starting up.
             webAppContext.setThrowUnavailableOnStartupException(true);
             webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             webAppContext.addServlet(DefaultServlet.class, "/");
-            webAppContext.setResourceBase(staticResourceBase.getName());
+            webAppContext.setResourceBase("src/main/webapp");
             webAppContext.setContextPath("/");
             webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
             webAppContext.setConfigurations(new Configuration[]{
@@ -186,6 +188,7 @@ public final class JettyModule extends AbstractModule {
             ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
             servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             servletContextHandler.addServlet(DefaultServlet.class, "/");
+            servletContextHandler.setResourceBase("src/main/webapp");
         }
         return server;
     }
