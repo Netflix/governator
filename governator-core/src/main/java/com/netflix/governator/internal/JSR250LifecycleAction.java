@@ -65,7 +65,7 @@ public class JSR250LifecycleAction implements LifecycleAction {
 
     @Override
     public void call(Object obj) throws InvocationTargetException {
-        LOG.debug("calling action {}", description);
+        LOG.debug("calling action {} on instance {}", description, obj);
         try {
             method.invoke(obj);
         } catch (InvocationTargetException ite) {
