@@ -82,7 +82,6 @@ public class PreDestroyMonitor implements AutoCloseable {
     
     public void addScopeBindings(Map<Class<? extends Annotation>, Scope> bindings) {
         scopeBindings.putAll(bindings);
-        System.out.println("new scope bindings: " + scopeBindings);
     }
 
     /*
