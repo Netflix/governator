@@ -122,12 +122,12 @@ public class PreDestroyStressTest {
 
         injector.getInstance(LifecycleManager.class);
         legacyLifecycleManager.start();
-        org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.WARN);
+//        org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.WARN);
     }
     
     @Test
     public void testInParallel() throws Exception {
-        int concurrency = 1200;
+        int concurrency = 20;
         ExecutorService es = Executors.newFixedThreadPool(concurrency);
         final Random r = new Random(System.currentTimeMillis());
         long initialMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
