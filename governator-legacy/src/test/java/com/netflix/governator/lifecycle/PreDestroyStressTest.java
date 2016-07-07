@@ -15,6 +15,7 @@ import javax.inject.Named;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -29,6 +30,7 @@ import com.google.inject.name.Names;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.guice.LifecycleInjector;
 
+@Ignore
 @RunWith(MockitoJUnitRunner.class)
 public class PreDestroyStressTest {
     private final class ScopingModule extends AbstractModule {

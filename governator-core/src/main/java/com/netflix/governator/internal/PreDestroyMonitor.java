@@ -104,7 +104,9 @@ public class PreDestroyMonitor implements AutoCloseable {
         if (running.compareAndSet(true, false)) {
             reqQueueExecutor.shutdown();
             reqQueueExecutor.awaitTermination(2, TimeUnit.SECONDS);
-            if (!reqQueueExecutor.isTerminated()) reqQueueExecutor.shutdownNow();
+            if (!reqQueueExecutor.isTerminated()) {
+                reqQueueExecutor.shutdownNow();
+            }
             synchronized(scopedCleanupActions) {
                 for (Callable<Void> actions : scopedCleanupActions.values()) {
                     actions.call();
