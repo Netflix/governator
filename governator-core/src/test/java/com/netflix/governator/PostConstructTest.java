@@ -40,13 +40,6 @@ public class PostConstructTest {
             // can't use method parameters
         }
     }
-    
-    private static class InvalidPostConstructException {
-        @PostConstruct
-        public String initWithReturnValue() throws Exception {
-            return "invalid return type";
-        }
-    }
 
     private static class PostConstructParent1 {
         @PostConstruct
@@ -224,28 +217,5 @@ public class PostConstructTest {
 
     @Rule
     public TestName name = new TestName();
-    
-    interface TestInt {
-        @PostConstruct
-        public void foo();
-    }
-    
-    private static class T implements Runnable, TestInt {
-        @Override
-        public void run() {
-            
-        }
-        
-        @Override
-        public String toString() {
-            return "yay!";
-        }
-        
-        @Override
-        public void foo() {
-            
-        }
-
-    }
 
 }

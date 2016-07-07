@@ -22,18 +22,15 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
 import javax.naming.NamingException;
@@ -51,27 +48,32 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.MapMaker;
+import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.governator.LifecycleAction;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationColumnWriter;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.guice.PostInjectorAction;
+import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
+import com.netflix.governator.internal.PreDestroyLifecycleFeature;
+import com.netflix.governator.internal.PreDestroyMonitor;
 
 /**
  * Main instance management container
  */
 @Singleton
-public class LifecycleManager implements Closeable
+public class LifecycleManager implements Closeable, PostInjectorAction
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
-    private final List<PreDestroyRecord> preDestroys = new CopyOnWriteArrayList<PreDestroyRecord>();
+    private final ConcurrentMap<Object, LifecycleState> objectStates = new MapMaker().weakKeys().makeMap();
+    private final PreDestroyLifecycleFeature preDestroyLifecycleFeature = new PreDestroyLifecycleFeature(ValidationMode.LAX);
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
@@ -80,6 +82,7 @@ public class LifecycleManager implements Closeable
     private final Collection<ResourceLocator> resourceLocators;
     private final ValidatorFactory factory;
     private final Injector injector;
+    private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
     public LifecycleManager()
@@ -96,6 +99,12 @@ public class LifecycleManager implements Closeable
     public LifecycleManager(LifecycleManagerArguments arguments, Injector injector)
     {
         this.injector = injector;
+        if (injector != null) {
+            preDestroyMonitor =  new PreDestroyMonitor(injector.getScopeBindings());
+        }
+        else {
+            preDestroyMonitor = null;
+        }
         configurationMapper = arguments.getConfigurationMapper();
         newLifecycleManager = arguments.getLifecycleManager();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
@@ -121,6 +130,7 @@ public class LifecycleManager implements Closeable
      * @param objects objects to add
      * @throws Exception errors
      */
+    @Deprecated
     public void add(Object... objects) throws Exception
     {
         for ( Object obj : objects )
@@ -135,9 +145,10 @@ public class LifecycleManager implements Closeable
      * @param obj object to add
      * @throws Exception errors
      */
+    @Deprecated
     public void add(Object obj) throws Exception
     {
-        add(obj, new LifecycleMethods(obj.getClass()));
+        add(obj, null, new LifecycleMethods(obj.getClass()));
     }
 
     /**
@@ -148,17 +159,39 @@ public class LifecycleManager implements Closeable
      * @param methods calculated lifecycle methods
      * @throws Exception errors
      */
+    @Deprecated
     public void add(Object obj, LifecycleMethods methods) throws Exception
     {
         Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
 
-        startInstance(obj, methods);
+        startInstance(obj, null, methods);
 
         if ( hasStarted() )
         {
             initializeObjectPostStart(obj);
         }
     }
+    
+    /**
+     * Add the object to the container. Its assets will be loaded, post construct methods called, etc.
+     * This version helps performance when the lifecycle methods have already been calculated
+     *
+     * @param obj     object to add
+     * @param methods calculated lifecycle methods
+     * @throws Exception errors
+     */
+    public <T> void add(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
+    {
+        Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
+
+        startInstance(obj, binding, methods);
+
+        if ( hasStarted() )
+        {
+            initializeObjectPostStart(obj);
+        }
+    }
+    
 
     /**
      * Returns true if the lifecycle has started (i.e. {@link #start()} has been called).
@@ -178,7 +211,7 @@ public class LifecycleManager implements Closeable
      */
     public LifecycleState getState(Object obj)
     {
-        LifecycleState lifecycleState = objectStates.get(new StateKey(obj));
+        LifecycleState lifecycleState = objectStates.get(obj);
         if ( lifecycleState == null )
         {
             lifecycleState = hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
@@ -240,7 +273,6 @@ public class LifecycleManager implements Closeable
             }
             finally
             {
-                preDestroys.clear();
                 objectStates.clear();
             }
         }
@@ -256,10 +288,11 @@ public class LifecycleManager implements Closeable
     {
         ValidationException exception = null;
         Validator validator = factory.getValidator();
-        for ( StateKey key : objectStates.keySet() )
+        for ( Object managedInstance : objectStates.keySet() )
         {
-            Object obj = key.obj;
-            exception = internalValidateObject(exception, obj, validator);
+            if (managedInstance != null) {
+                exception = internalValidateObject(exception, managedInstance, validator);
+            }
         }
 
         if ( exception != null )
@@ -286,7 +319,7 @@ public class LifecycleManager implements Closeable
 
     private void setState(Object obj, LifecycleState state)
     {
-        objectStates.put(new StateKey(obj), state);
+        objectStates.put(obj, state);
         for ( LifecycleListener listener : listeners )
         {
             listener.stateChanged(obj, state);
@@ -312,7 +345,8 @@ public class LifecycleManager implements Closeable
         return exception;
     }
 
-    private void startInstance(Object obj, LifecycleMethods methods) throws Exception
+    @SuppressWarnings("deprecation")
+    private <T> void startInstance(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
     {
         log.debug(String.format("Starting %s", obj.getClass().getName()));
 
@@ -339,11 +373,17 @@ public class LifecycleManager implements Closeable
             postConstruct.invoke(obj);
         }
         
-        Collection<Method> preDestroyMethods = methods.methodsFor(PreDestroy.class);
-        if ( preDestroyMethods.size() > 0 )
+        List<LifecycleAction> preDestroyActions = preDestroyLifecycleFeature.getActionsForType(obj.getClass());
+        if ( !preDestroyActions.isEmpty() )
         {
-            preDestroys.add(new PreDestroyRecord(obj, preDestroyMethods));
+            if (binding != null) {
+                preDestroyMonitor.register(obj, binding, preDestroyActions);
+            }
+            else {
+                preDestroyMonitor.register(obj, "legacy", preDestroyActions);
+            }
         }
+
     }
 
     private void setResources(Object obj, LifecycleMethods methods) throws Exception
@@ -430,7 +470,7 @@ public class LifecycleManager implements Closeable
         field.set(obj, resourceObj);
     }
 
-    private Resource adjustResource(final Resource resource, final Class siteType, final String siteName)
+    private Resource adjustResource(final Resource resource, final Class<?> siteType, final String siteName)
     {
         return new Resource()
         {
@@ -449,7 +489,7 @@ public class LifecycleManager implements Closeable
             }
 
             @Override
-            public Class type()
+            public Class<?> type()
             {
                 return (resource.type() == Object.class) ? siteType : resource.type();
             }
@@ -522,33 +562,7 @@ public class LifecycleManager implements Closeable
 
     private void stopInstances() throws Exception
     {
-        for ( PreDestroyRecord record : getReversed(preDestroys) )
-        {
-            log.debug(String.format("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
-            setState(record.obj, LifecycleState.PRE_DESTROYING);
-
-            for ( Method preDestroy : record.preDestroyMethods )
-            {
-                log.debug(String.format("\t%s()", preDestroy.getName()));
-                try
-                {
-                    preDestroy.invoke(record.obj);
-                }
-                catch ( Throwable e )
-                {
-                    log.error("Couldn't stop lifecycle managed instance", e);
-                }
-            }
-
-            objectStates.remove(new StateKey(record.obj));
-        }
-    }
-
-    private List<PreDestroyRecord> getReversed(List<PreDestroyRecord> records)
-    {
-        List<PreDestroyRecord> reversed = Lists.newArrayList(records);
-        Collections.reverse(reversed);
-        return reversed;
+        preDestroyMonitor.close();
     }
 
     private String getPath(ConstraintViolation<Object> violation)
@@ -581,50 +595,8 @@ public class LifecycleManager implements Closeable
         CLOSED
     }
 
-    /**
-     * Lifecycle managed objects have to be referenced via Object identity not equals()
-     */
-    private static class StateKey
-    {
-        final Object obj;
-
-        private StateKey(Object obj)
-        {
-            this.obj = obj;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return System.identityHashCode(obj);
-        }
-
-        @SuppressWarnings("SimplifiableIfStatement")
-        @Override
-        public boolean equals(Object o)
-        {
-            if ( this == o )
-            {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() )
-            {
-                return false;
-            }
-
-            return hashCode() == o.hashCode();
-        }
-    }
-
-    private static class PreDestroyRecord
-    {
-        final Object obj;
-        final Collection<Method> preDestroyMethods;
-
-        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
-        {
-            this.obj = obj;
-            this.preDestroyMethods = preDestroyMethods;
-        }
-    }
+    @Override
+    public void call(Injector injector) {
+        preDestroyMonitor.addScopeBindings(injector.getScopeBindings());
+    }   
 }
