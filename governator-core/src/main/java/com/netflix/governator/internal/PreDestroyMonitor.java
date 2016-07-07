@@ -6,6 +6,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,6 +16,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.inject.Binding;
 import com.google.inject.Key;
@@ -37,12 +40,13 @@ public class PreDestroyMonitor implements AutoCloseable {
     private static class ScopeCleanupMarker {
     }
     
-    private final Deque<Callable<Void>> cleanupActions = new ConcurrentLinkedDeque<>();
+    private Deque<Callable<Void>> cleanupActions = new ConcurrentLinkedDeque<>();
     
-    private final Map<Integer, ScopeCleanupAction> scopedCleanupActions = new LinkedHashMap<>();
-    private final Map<Class<? extends Annotation>, Scope> scopeBindings;
-    private final ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
+    private Map<Integer, ScopeCleanupAction> scopedCleanupActions = new LinkedHashMap<>();
+    private Map<Class<? extends Annotation>, Scope> scopeBindings;
+    private ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
     private final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor();
+    private final AtomicBoolean running;
     
     private final Provider<ScopeCleanupMarker> markerProvider = new Provider<ScopeCleanupMarker>() {
         @Override
@@ -53,25 +57,26 @@ public class PreDestroyMonitor implements AutoCloseable {
     
     public PreDestroyMonitor(Map<Class<? extends Annotation>, Scope> scopeBindings) {
         this.scopeBindings = new HashMap<>(scopeBindings);
+        running = new AtomicBoolean(true);
         reqQueueExecutor.submit(new Runnable() {
             public void run() {
-                while (true) {
-                    try {
-                        Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(500);
-                        if (ref != null && ref instanceof ScopeCleanupAction) { 
-                            Integer markerKey = ((ScopeCleanupAction)ref).getId();
-                            ScopeCleanupAction cleanupAction;
-                            synchronized(scopedCleanupActions) {
-                                cleanupAction = scopedCleanupActions.remove(markerKey);
+                try {
+                    while (running.get()) {
+                            Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
+                            if (ref != null && ref instanceof ScopeCleanupAction) { 
+                                Integer markerKey = ((ScopeCleanupAction)ref).getId();
+                                ScopeCleanupAction cleanupAction;
+                                synchronized(scopedCleanupActions) {
+                                    cleanupAction = scopedCleanupActions.remove(markerKey);
+                                }
+                                if (cleanupAction != null) {
+                                    cleanupAction.call();
+                                }
                             }
-                            if (cleanupAction != null) {
-                                cleanupAction.call();
-                            }
-                        }
-                    } 
-                    catch (InterruptedException e) {
                     }
-                }
+                } 
+                catch (InterruptedException e) {
+                }                
             }
         });
     }
@@ -96,18 +101,28 @@ public class PreDestroyMonitor implements AutoCloseable {
      */
     @Override
     public synchronized void close() throws Exception {
-        if (!reqQueueExecutor.isShutdown()) reqQueueExecutor.shutdown();
-        synchronized(scopedCleanupActions) {
-            for (Callable<Void> actions : scopedCleanupActions.values()) {
-                actions.call();
+        if (running.compareAndSet(true, false)) {
+            reqQueueExecutor.shutdown();
+            reqQueueExecutor.awaitTermination(2, TimeUnit.SECONDS);
+            if (!reqQueueExecutor.isTerminated()) reqQueueExecutor.shutdownNow();
+            synchronized(scopedCleanupActions) {
+                for (Callable<Void> actions : scopedCleanupActions.values()) {
+                    actions.call();
+                }
+                scopedCleanupActions.clear();
+                scopedCleanupActions = Collections.emptyMap();
             }
-            scopedCleanupActions.clear();
+            
+            
+            
+            for (Callable<Void> action : cleanupActions) {
+                action.call();
+            }     
+            cleanupActions.clear();
+            markerReferenceQueue = null;
+            scopeBindings.clear();
+            scopeBindings = Collections.emptyMap();
         }
-        
-        for (Callable<Void> action : cleanupActions) {
-            action.call();
-        }     
-        cleanupActions.clear();
     }
     
     /**
