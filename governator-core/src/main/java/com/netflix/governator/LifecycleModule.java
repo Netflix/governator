@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,15 +14,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.GovernatorFeatureSet;
+import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 import com.netflix.governator.internal.PostConstructLifecycleFeature;
 import com.netflix.governator.internal.PreDestroyLifecycleFeature;
-import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
+import com.netflix.governator.internal.PreDestroyMonitor;
 
 /**
  * Adds support for standard lifecycle annotations @PostConstruct and @PreDestroy to Guice.
@@ -62,16 +63,16 @@ public final class LifecycleModule extends AbstractModule {
     @Singleton
     @SuppressLifecycleUninitialized
     static class LifecycleProvisionListener extends AbstractLifecycleListener implements ProvisionListener {
-        private final ConcurrentLinkedDeque<Runnable> shutdownActions = new ConcurrentLinkedDeque<Runnable>();
         private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
         private PostConstructLifecycleFeature postConstructFeature;
         private PreDestroyLifecycleFeature preDestroyFeature;
-
+        private PreDestroyMonitor preDestroyMonitor;
         private boolean shutdownOnFailure = true;
         
-        @SuppressLifecycleUninitialized
+
+          @SuppressLifecycleUninitialized
         @Singleton
         static class OptionalArgs {
             @com.google.inject.Inject(optional = true)
@@ -87,6 +88,7 @@ public final class LifecycleModule extends AbstractModule {
         }
         @Inject
         public static void initialize(
+                final Injector injector,
                 OptionalArgs args,
                 LifecycleManager manager, 
                 LifecycleProvisionListener provisionListener, 
@@ -96,6 +98,7 @@ public final class LifecycleModule extends AbstractModule {
             ValidationMode validationMode = args.getJsr250ValidationMode();
             provisionListener.postConstructFeature = new PostConstructLifecycleFeature(validationMode);
             provisionListener.preDestroyFeature = new PreDestroyLifecycleFeature(validationMode);
+            provisionListener.preDestroyMonitor = new PreDestroyMonitor(injector.getScopeBindings());
             LOG.debug("LifecycleProvisionListener initialized with features {}", features);
         }
         
@@ -129,13 +132,15 @@ public final class LifecycleModule extends AbstractModule {
         public synchronized void onStopped(Throwable optionalFailureReason) {
             if (shutdownOnFailure || optionalFailureReason == null) {
                 if (isShutdown.compareAndSet(false, true)) {
-                    for (Runnable action : shutdownActions) {
-                        action.run();
+                    try {
+                        preDestroyMonitor.close();
+                    } catch (Exception e) {
+                        LOG.error("failed closing preDestroyMonitor", e);
                     }
                 }
             }
         }
-        
+                
         @Override
         public String toString() {
             return "LifecycleProvisionListener@" + System.identityHashCode(this);
@@ -144,7 +149,7 @@ public final class LifecycleModule extends AbstractModule {
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
             final T injectee = provision.provision();
-            if(injectee == null) {
+            if (injectee == null) {
                 return;
             }
             if (features == null) {
@@ -156,35 +161,21 @@ public final class LifecycleModule extends AbstractModule {
                 return;
             }
             
-            final Object bindingSource = provision.getBinding().getSource();
             final TypeLifecycleActions actions = getOrCreateActions(injectee.getClass());
             
-            // Call all the LifecycleActions with PostConstruct methods being the last 
-            for (LifecycleAction action : actions.postConstructActions) {
+            // Call all postConstructActions for this injectee
+            if (!actions.postConstructActions.isEmpty()) {
                 try {
-                    action.call(injectee);
-                } 
-                catch (Exception e) {
-                    throw new ProvisionException("Exception thrown by action %s " + action + " [" + bindingSource + "]", e);
+                    new ManagedInstanceAction(injectee, actions.postConstructActions).call();
+                } catch (Exception e) {
+                    throw new ProvisionException("postConstruct failed", e);
                 }
             }
             
             // Add any PreDestroy methods to the shutdown list of actions
             if (!actions.preDestroyActions.isEmpty()) {
                 if (isShutdown.get() == false) {
-                    shutdownActions.addFirst(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (LifecycleAction m : actions.preDestroyActions) {
-                                try {
-                                    m.call(injectee);
-                                } 
-                                catch (Exception e) {
-                                    LOG.error("Exception thrown by action {} [{}]", m, bindingSource, e);
-                                }
-                            }
-                        }
-                    });
+                    preDestroyMonitor.register(injectee, provision.getBinding(), actions.preDestroyActions);
                 }
                 else {
                     LOG.warn("Already shutting down.  Shutdown methods {} on {} will not be invoked", actions.preDestroyActions, injectee.getClass().getName());

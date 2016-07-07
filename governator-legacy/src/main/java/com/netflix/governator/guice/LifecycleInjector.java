@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -432,7 +433,7 @@ public class LifecycleInjector
         this.ignoreAllClasses = internalBootstrapModule.isDisableAutoBinding();
         this.ignoreClasses = ImmutableList.copyOf(builder.getIgnoreClasses());
         
-        this.actions = injector.getInstance(Key.get(new TypeLiteral<Set<PostInjectorAction>>() {}));
+        Set<PostInjectorAction> actions = injector.getInstance(Key.get(new TypeLiteral<Set<PostInjectorAction>>() {}));
         this.transformers = injector.getInstance(Key.get(new TypeLiteral<Set<ModuleTransformer>>() {}));
         
         try {
@@ -441,6 +442,9 @@ public class LifecycleInjector
             throw new ProvisionException("Unable to resolve list of modules", e);
         }
         lifecycleManager = injector.getInstance(LifecycleManager.class);
+        this.actions = new LinkedHashSet<>();
+        this.actions.add(lifecycleManager);
+        this.actions.addAll(actions);
         lifecycleManagerRef.set(lifecycleManager);
     }
 

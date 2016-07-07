@@ -1,9 +1,17 @@
 package com.netflix.governator;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Singleton;
@@ -11,6 +19,7 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.spi.LifecycleListener;
 
@@ -24,9 +33,35 @@ import com.netflix.governator.spi.LifecycleListener;
 public final class LifecycleManager {
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleManager.class);
     
-    private final Set<LifecycleListener> listeners = new LinkedHashSet<>();
+    /**
+     * Processes unreferenced LifecycleListeners from the referenceQueue, until
+     * the 'running' flag is false or interrupted
+     * 
+     */
+    private final class ListenerCleanupWorker implements Runnable {
+        public void run() {
+            try {
+                while (running.get()) {
+                    Reference<? extends LifecycleListener> ref = unreferencedListenersQueue.remove(1000);
+                    if (ref != null && ref instanceof SafeLifecycleListener) { 
+                        removeListener((SafeLifecycleListener)ref);
+                    }
+                }
+                LOG.info("LifecycleManager.ListenerCleanupWorker is exiting");
+            } 
+            catch (InterruptedException e) {
+                LOG.info("LifecycleManager.ListenerCleanupWorker is exiting due to thread interrupt");
+            }                
+        }
+    }
+
+    
+    private final Set<SafeLifecycleListener> listeners = new LinkedHashSet<>();
     private final AtomicReference<State> state;
+    private final ReferenceQueue<LifecycleListener> unreferencedListenersQueue = new ReferenceQueue<>();
     private volatile Throwable failureReason;
+    private final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("lifecycle-listener-monitor-%d").build());
+    private final AtomicBoolean running= new AtomicBoolean(true);
     
     public enum State {
         Starting,
@@ -37,20 +72,25 @@ public final class LifecycleManager {
     
     public LifecycleManager() {        
         LOG.info("Starting '{}'", this);
-        state = new AtomicReference<>(State.Starting);               
+        state = new AtomicReference<>(State.Starting);      
+        reqQueueExecutor.submit(new ListenerCleanupWorker());
+    }
+    
+    private synchronized void removeListener(SafeLifecycleListener listenerRef) {
+        listeners.remove(listenerRef);
     }
     
     public synchronized void addListener(LifecycleListener listener) {
-        listener = SafeLifecycleListener.wrap(listener);
+        SafeLifecycleListener safeListener = SafeLifecycleListener.wrap(listener, unreferencedListenersQueue);
         
-        if (!listeners.contains(listener) && listeners.add(listener)) {
-            LOG.info("Adding listener '{}'", listener);
+        if (!listeners.contains(safeListener) && listeners.add(safeListener)) {
+            LOG.info("Adding listener '{}'", safeListener);
             switch (state.get()) {
             case Started:
-                listener.onStarted();
+                safeListener.onStarted();
                 break;
             case Stopped:
-                listener.onStopped(failureReason);
+                safeListener.onStopped(failureReason);
                 break;
             default:
                 // ignore
@@ -71,22 +111,28 @@ public final class LifecycleManager {
         // State.Started added here to allow for failure  when LifecycleListener.onStarted() is called, post-injector creation
         if (state.compareAndSet(State.Starting, State.Stopped) || state.compareAndSet(State.Started, State.Stopped)) {
             LOG.info("Failed start of '{}'", this);
+            running.set(false);
+            reqQueueExecutor.shutdown();
             this.failureReason = t;
-            Iterator<LifecycleListener> shutdownIter = new LinkedList<>(listeners).descendingIterator();
+            Iterator<SafeLifecycleListener> shutdownIter = new LinkedList<>(listeners).descendingIterator();
             while (shutdownIter.hasNext()) {
                 shutdownIter.next().onStopped(t);
             }
+            listeners.clear();
         }
     }
     
     public synchronized void notifyShutdown() {
         if (state.compareAndSet(State.Started, State.Stopped)) {
             LOG.info("Stopping '{}'", this);
-            Iterator<LifecycleListener> shutdownIter = new LinkedList<>(listeners).descendingIterator();
+            Iterator<SafeLifecycleListener> shutdownIter = new LinkedList<>(listeners).descendingIterator();
+            running.set(false);
+            reqQueueExecutor.shutdown();
             while (shutdownIter.hasNext()) {
                 shutdownIter.next().onStopped(null);
             }
             state.set(State.Done);
+            listeners.clear();
         }
     }
     

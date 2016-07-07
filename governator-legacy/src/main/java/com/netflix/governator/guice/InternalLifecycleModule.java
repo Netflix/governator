@@ -23,11 +23,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.AbstractModule;
-import com.google.inject.TypeLiteral;
+import com.google.inject.Binding;
 import com.google.inject.matcher.Matchers;
-import com.google.inject.spi.InjectionListener;
-import com.google.inject.spi.TypeEncounter;
-import com.google.inject.spi.TypeListener;
+import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
@@ -51,28 +49,22 @@ class InternalLifecycleModule extends AbstractModule {
     @Override
     public void configure() {
         bindListener(
-            Matchers.any(),
-            new TypeListener(){
-                @Override
-                public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter) {
-                    encounter.register(
-                        new InjectionListener<T>() {
-                            @Override
-                            public void afterInjection(T obj) {
-                                processInjectedObject(obj, type);
-                            }
-                        }
-                    );
+                Matchers.any(),
+                new ProvisionListener() {                    
+                    @Override
+                    public <T> void onProvision(ProvisionInvocation<T> provision) {                        
+                        T instance = provision.provision();
+                        processInjectedObject(instance, provision.getBinding());                        
+                    }
                 }
-            }
-        );
+            ); 
     }
 
-    private <T> void processInjectedObject(T obj, TypeLiteral<T> type){
+    private <T> void processInjectedObject(T obj, Binding<T> binding){
         LifecycleManager manager = lifecycleManager.get();
         if ( manager != null ) {
             for ( LifecycleListener listener : manager.getListeners() ) {
-                listener.objectInjected(type, obj);
+                listener.objectInjected(binding.getKey().getTypeLiteral(), obj);
             }
 
             Class<?> clazz = obj.getClass();
@@ -80,7 +72,7 @@ class InternalLifecycleModule extends AbstractModule {
 
             if ( methods.hasLifecycleAnnotations() ) {
                 try {
-                    manager.add(obj, methods);
+                    manager.add(obj, binding, methods);
                 }
                 catch ( Exception e ) {
                     throw new Error(e);
@@ -97,4 +89,6 @@ class InternalLifecycleModule extends AbstractModule {
             throw new RuntimeException(e);
         }
     }
+    
+
 }
