@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
@@ -52,7 +53,7 @@ public class PreDestroyMonitor implements AutoCloseable {
                 while (running.get()) {
                         Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
                         if (ref != null && ref instanceof ScopeCleanupAction) { 
-                            Integer markerKey = ((ScopeCleanupAction)ref).getId();
+                            UUID markerKey = ((ScopeCleanupAction)ref).getId();
                             ScopeCleanupAction cleanupAction;
                             synchronized(scopedCleanupActions) {
                                 cleanupAction = scopedCleanupActions.remove(markerKey);
@@ -71,11 +72,15 @@ public class PreDestroyMonitor implements AutoCloseable {
     }
 
     private static class ScopeCleanupMarker {
+        private final UUID id = UUID.randomUUID();
+        UUID getId() {
+            return id;
+        }
     }
     private static final Key<ScopeCleanupMarker> MARKER_KEY = Key.get(ScopeCleanupMarker.class);
     private Deque<Callable<Void>> cleanupActions = new ConcurrentLinkedDeque<>();
     
-    private Map<Integer, ScopeCleanupAction> scopedCleanupActions = new LinkedHashMap<>();
+    private Map<UUID, ScopeCleanupAction> scopedCleanupActions = new LinkedHashMap<>();
     private Map<Class<? extends Annotation>, Scope> scopeBindings;
     private ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
     private final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("predestroy-monitor-%d").build());
@@ -132,8 +137,8 @@ public class PreDestroyMonitor implements AutoCloseable {
                 scopedCleanupActions = Collections.emptyMap();
             }
             // make sure executor thread really ended
-            if (!reqQueueExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                LOGGER.info("internal executor still active; shutting down now");
+            if (!reqQueueExecutor.awaitTermination(90, TimeUnit.SECONDS)) {
+                LOGGER.error("internal executor still active; shutting down now");
                 reqQueueExecutor.shutdownNow();
             }
             
@@ -186,7 +191,7 @@ public class PreDestroyMonitor implements AutoCloseable {
             Provider<ScopeCleanupMarker> scopedMarkerProvider = scope.scope(MARKER_KEY, markerProvider);
             ManagedInstanceAction instanceAction = new ManagedInstanceAction(injectee, lifecycleActions);
             ScopeCleanupMarker marker = scopedMarkerProvider.get();
-            Integer markerKey = System.identityHashCode(marker);
+            UUID markerKey = marker.getId();
             synchronized(scopedCleanupActions) {
                 if (scopedCleanupActions.containsKey(markerKey)) {
                     scopedCleanupActions.get(markerKey).add(scopedMarkerProvider, instanceAction);
@@ -233,19 +238,19 @@ public class PreDestroyMonitor implements AutoCloseable {
       * is unreferenced, delegates will be invoked in the reverse order of addition.
       */
      private static final class ScopeCleanupAction extends WeakReference<ScopeCleanupMarker> implements Callable<Void> {
-         private final Integer id;
+         private final UUID id;
          private final List<Callable<Void>> delegates = new ArrayList<>();
          private final List<Provider<ScopeCleanupMarker>> scopeProviders = new ArrayList<>();
          private final AtomicBoolean complete = new AtomicBoolean(false);
          
-         public ScopeCleanupAction(Integer id, Provider<ScopeCleanupMarker> scopeProvider, ScopeCleanupMarker marker, ReferenceQueue<ScopeCleanupMarker> refQueue, Callable<Void> delegate) {
+         public ScopeCleanupAction(UUID id, Provider<ScopeCleanupMarker> scopeProvider, ScopeCleanupMarker marker, ReferenceQueue<ScopeCleanupMarker> refQueue, Callable<Void> delegate) {
              super(marker, refQueue);
              this.id = id;             
              scopeProviders.add(scopeProvider);
              delegates.add(delegate);
          }
          
-         public Integer getId() {
+         public UUID getId() {
              return id;
          }
          

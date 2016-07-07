@@ -15,7 +15,6 @@ import javax.inject.Named;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -30,17 +29,18 @@ import com.google.inject.name.Names;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.guice.LifecycleInjector;
 
-@Ignore
+//@Ignore
 @RunWith(MockitoJUnitRunner.class)
 public class PreDestroyStressTest {
     private final class ScopingModule extends AbstractModule {
         @Override
         protected void configure() {
             bindScope(LocalScoped.class, localScope);
+            bind(LifecycleSubject.class).in(localScope);
         }
 
         @Provides
-        @LocalScoped
+//        @LocalScoped
         @Named("thing1")
         public LifecycleSubject thing1() {
             return new LifecycleSubject("thing1");
@@ -57,9 +57,13 @@ public class PreDestroyStressTest {
 
         private static AtomicInteger instanceCounter = new AtomicInteger(0);
 
+        public LifecycleSubject() {
+            this("anonymous");
+        }
+        
         public LifecycleSubject(String name) {
             this.name = name;
-            this.bulk = new byte[1024*500]; 
+            this.bulk = new byte[1024*100]; 
             Arrays.fill(bulk, (byte)0);        
             instanceCounter.incrementAndGet();
             logger.info("created instance " + this);
@@ -138,7 +142,7 @@ public class PreDestroyStressTest {
                         while (running.get()) {
                             try {
                                 allocateScopedInstance(r.nextInt(500));
-                            } catch (InterruptedException e) {
+                            } catch (Exception e) {
                                 // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
@@ -148,21 +152,19 @@ public class PreDestroyStressTest {
                     
                 });
             }
-                
-            es.awaitTermination(60, TimeUnit.SECONDS);
-            running.set(false);
-            Thread.sleep(500);
         }
         finally {
+            running.set(false);
             es.shutdown();
+            es.awaitTermination(10, TimeUnit.SECONDS);
         }
         legacyLifecycleManager.close();        
         es = null;
         System.gc();
         Thread.sleep(1000);
-        System.out.flush();
         System.out.println("total memory: " + initialMemory + "->" + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
         System.out.println("instances count: " + LifecycleSubject.getInstanceCount());
+        System.out.flush();
         Assert.assertEquals("instances not predestroyed", 0, LifecycleSubject.getInstanceCount());
         Thread.yield();
     }
@@ -171,11 +173,10 @@ public class PreDestroyStressTest {
     public void allocateScopedInstance(long sleepTime) throws InterruptedException {
         localScope.enter();
         try {
-            injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing1")));
-            LifecycleSubject thing1 = injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing1")));
+            LifecycleSubject anonymous = injector.getInstance(LifecycleSubject.class);
             Thread.sleep(sleepTime);
-            Assert.assertTrue(thing1.isPostConstructed());
-            Assert.assertFalse(thing1.isPreDestroyed());
+            Assert.assertTrue(anonymous.isPostConstructed());
+            Assert.assertFalse(anonymous.isPreDestroyed());
         }
         finally {
             localScope.exit();

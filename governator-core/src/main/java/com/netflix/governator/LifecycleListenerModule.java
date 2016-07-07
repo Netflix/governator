@@ -26,12 +26,6 @@ public final class LifecycleListenerModule extends AbstractModule {
         bindListener(Matchers.any(), provisionListener);
     }
     
-    static class TypeLifecycleActions {
-        final List<LifecycleAction> postConstructActions = new ArrayList<LifecycleAction>();
-        final List<LifecycleAction> preDestroyActions = new ArrayList<>();
-    }
-    
-    
     @Singleton
     @SuppressLifecycleUninitialized
     static class LifecycleListenerProvisionListener implements ProvisionListener {
