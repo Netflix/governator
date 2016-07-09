@@ -32,7 +32,7 @@ public class PreDestroyTest {
         }
         
         @PreDestroy
-        public void shutdown() {
+        protected void shutdown() {
             shutdown = true;
         }
         

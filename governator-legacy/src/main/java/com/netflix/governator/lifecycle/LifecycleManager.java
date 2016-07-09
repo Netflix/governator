@@ -19,11 +19,14 @@ package com.netflix.governator.lifecycle;
 import java.beans.Introspector;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +43,7 @@ import javax.validation.Path;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import javax.validation.groups.Default;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,10 +76,11 @@ import com.netflix.governator.internal.PreDestroyMonitor;
 @Singleton
 public class LifecycleManager implements Closeable, PostInjectorAction
 {
+    private static final Lookup METHOD_HANDLE_LOOKUP = MethodHandles.lookup();
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final ConcurrentMap<Object, LifecycleState> objectStates = new MapMaker().weakKeys().concurrencyLevel(1<<4).makeMap();
+    private final ConcurrentMap<Object, AtomicReference<LifecycleState>> objectStates = new MapMaker().weakKeys().initialCapacity(1<<15).concurrencyLevel(1<<8).makeMap();
     private final PreDestroyLifecycleFeature preDestroyLifecycleFeature = new PreDestroyLifecycleFeature(ValidationMode.LAX);
-    private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(1<<13);
+    private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(1<<15);
 
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation;
@@ -214,12 +219,12 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public LifecycleState getState(Object obj)
     {
-        LifecycleState lifecycleState = objectStates.get(obj);
+        AtomicReference<LifecycleState> lifecycleState = objectStates.get(obj);
         if ( lifecycleState == null )
         {
-            lifecycleState = hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
+            return hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
         }
-        return lifecycleState;
+        return lifecycleState.get();
     }
 
     /**
@@ -277,6 +282,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             finally
             {
                 objectStates.clear();
+                preDestroyActionCache.clear();
             }
         }
     }
@@ -322,7 +328,13 @@ public class LifecycleManager implements Closeable, PostInjectorAction
 
     private void setState(Object obj, LifecycleState state)
     {
-        objectStates.put(obj, state);
+        AtomicReference<LifecycleState> stateWrapper = objectStates.get(obj);
+        if (stateWrapper != null) {
+            stateWrapper.set(state);
+        }
+        else {
+            objectStates.put(obj, new AtomicReference<LifecycleState>(state));
+        }
         for ( LifecycleListener listener : listeners )
         {
             listener.stateChanged(obj, state);
@@ -331,18 +343,20 @@ public class LifecycleManager implements Closeable, PostInjectorAction
 
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
     {
-        Set<ConstraintViolation<Object>> violations = validator.validate(obj);
-        for ( ConstraintViolation<Object> violation : violations )
-        {
-            String path = getPath(violation);
-            String message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
-            if ( exception == null )
+        Set<ConstraintViolation<Object>> violations = validator.validate(obj, Default.class);
+        if (!violations.isEmpty()) {
+            for ( ConstraintViolation<Object> violation : violations )
             {
-                exception = new ValidationException(message);
-            }
-            else
-            {
-                exception = new ValidationException(message, exception);
+                String path = getPath(violation);
+                String message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
+                if ( exception == null )
+                {
+                    exception = new ValidationException(message);
+                }
+                else
+                {
+                    exception = new ValidationException(message, exception);
+                }
             }
         }
         return exception;
@@ -352,13 +366,16 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private <T> void startInstance(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
     {
         final Class<?> instanceType = obj.getClass();
-        log.debug(String.format("Starting %s", instanceType.getName()));
+        log.debug("Starting {}", instanceType.getName());
 
         setState(obj, LifecycleState.PRE_CONFIGURATION);
-        for ( Method preConfiguration : methods.methodsFor(PreConfiguration.class) )
-        {
-            log.debug(String.format("\t%s()", preConfiguration.getName()));
-            preConfiguration.invoke(obj);
+        Collection<Method> preConfigMethods = methods.methodsFor(PreConfiguration.class);
+        if (!preConfigMethods.isEmpty()) {
+            for ( Method preConfiguration : preConfigMethods )
+            {
+                log.debug("\t{}()", preConfiguration.getName());
+                invokeLifecycleMethod(preConfiguration, obj);
+            }
         }
 
         setState(obj, LifecycleState.SETTING_CONFIGURATION);
@@ -368,15 +385,24 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         setResources(obj, methods);
 
         setState(obj, LifecycleState.POST_CONSTRUCTING);
-        LinkedHashSet<Method> postConstructs = new LinkedHashSet<>();
-        postConstructs.addAll(methods.methodsFor(PostConstruct.class));
-        postConstructs.addAll(methods.methodsFor(WarmUp.class));
-        for ( Method postConstruct : postConstructs )
+        Collection<Method> postConstructMethods = methods.methodsFor(PostConstruct.class);
+        for ( Method postConstruct : postConstructMethods )
         {
-            log.debug(String.format("\t%s()", postConstruct.getName()));
-            postConstruct.invoke(obj);
+            log.debug("\t{}()", postConstruct.getName());
+            invokeLifecycleMethod(postConstruct, obj);
         }
-        
+        Collection<Method> warmUpMethods = methods.methodsFor(WarmUp.class);
+        if (!warmUpMethods.isEmpty()) {
+            for ( Method warmupMethod : warmUpMethods)
+            {
+                // assuming very few methods in both WarmUp and PostConstruct
+                if (!postConstructMethods.contains(warmupMethod)) {
+                    log.debug("\t{}()", warmupMethod.getName());
+                    invokeLifecycleMethod(warmupMethod, obj);
+                }
+            }
+        }
+
         List<LifecycleAction> preDestroyActions;
         if (preDestroyActionCache.containsKey(instanceType)) {
             preDestroyActions = preDestroyActionCache.get(instanceType);
@@ -385,6 +411,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             preDestroyActions = preDestroyLifecycleFeature.getActionsForType(instanceType);
             preDestroyActionCache.put(instanceType, preDestroyActions);
         }
+        
         if ( !preDestroyActions.isEmpty() )
         {
             if (binding != null) {
@@ -397,55 +424,72 @@ public class LifecycleManager implements Closeable, PostInjectorAction
 
     }
 
+    private <T,R> void invokeLifecycleMethod(Method method, T obj) throws Exception {
+        MethodHandle mh;
+        try {
+            mh = METHOD_HANDLE_LOOKUP.unreflect(method);
+        } catch (IllegalAccessException e) {
+            method.invoke(obj);
+            return;
+        }
+        try {
+            mh.invoke(obj);
+        } catch (Throwable e) {
+            throw new InvocationTargetException(e, "invokedynamic");
+        }
+    }
+
     private void setResources(Object obj, LifecycleMethods methods) throws Exception
     {
-        for ( Field field : methods.fieldsFor(Resources.class) )
-        {
-            Resources resources = field.getAnnotation(Resources.class);
-            for ( Resource resource : resources.value() )
+        if (methods.hasResources()) {        
+            for ( Field field : methods.fieldsFor(Resources.class) )
             {
+                Resources resources = field.getAnnotation(Resources.class);
+                for ( Resource resource : resources.value() )
+                {
+                    setFieldResource(obj, field, resource);
+                }
+            }
+    
+            for ( Field field : methods.fieldsFor(Resource.class) )
+            {
+                Resource resource = field.getAnnotation(Resource.class);
                 setFieldResource(obj, field, resource);
             }
-        }
-
-        for ( Field field : methods.fieldsFor(Resource.class) )
-        {
-            Resource resource = field.getAnnotation(Resource.class);
-            setFieldResource(obj, field, resource);
-        }
-
-        for ( Method method : methods.methodsFor(Resources.class) )
-        {
-            Resources resources = method.getAnnotation(Resources.class);
-            for ( Resource resource : resources.value() )
+    
+            for ( Method method : methods.methodsFor(Resources.class) )
             {
+                Resources resources = method.getAnnotation(Resources.class);
+                for ( Resource resource : resources.value() )
+                {
+                    setMethodResource(obj, method, resource);
+                }
+            }
+    
+            for ( Method method : methods.methodsFor(Resource.class) )
+            {
+                Resource resource = method.getAnnotation(Resource.class);
                 setMethodResource(obj, method, resource);
             }
-        }
-
-        for ( Method method : methods.methodsFor(Resource.class) )
-        {
-            Resource resource = method.getAnnotation(Resource.class);
-            setMethodResource(obj, method, resource);
-        }
-
-        for ( Resources resources : methods.classAnnotationsFor(Resources.class) )
-        {
-            for ( Resource resource : resources.value() )
+    
+            for ( Resources resources : methods.classAnnotationsFor(Resources.class) )
+            {
+                for ( Resource resource : resources.value() )
+                {
+                    loadClassResource(resource);
+                }
+            }
+    
+            for ( Resource resource : methods.classAnnotationsFor(Resource.class) )
             {
                 loadClassResource(resource);
             }
-        }
-
-        for ( Resource resource : methods.classAnnotationsFor(Resource.class) )
-        {
-            loadClassResource(resource);
         }
     }
 
     private void loadClassResource(Resource resource) throws Exception
     {
-        if ( (resource.name().length() == 0) || (resource.type() == Object.class) )
+        if ( (resource.name().isEmpty()) || (resource.type() == Object.class) )
         {
             throw new Exception("Class resources must have both name() and type(): " + resource);
         }
@@ -539,7 +583,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
 
     private Object findResource(Resource resource) throws Exception
     {
-        if ( resourceLocators.size() > 0 )
+        if ( !resourceLocators.isEmpty() )
         {
             final Iterator<ResourceLocator> iterator = resourceLocators.iterator();
             ResourceLocator locator = iterator.next();

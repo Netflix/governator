@@ -63,7 +63,7 @@ public final class LifecycleModule extends AbstractModule {
     @Singleton
     @SuppressLifecycleUninitialized
     static class LifecycleProvisionListener extends AbstractLifecycleListener implements ProvisionListener {
-        private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>(1<<12);
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
         private PostConstructLifecycleFeature postConstructFeature;

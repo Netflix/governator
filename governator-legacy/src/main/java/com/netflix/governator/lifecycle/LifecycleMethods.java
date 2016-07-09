@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -30,11 +31,8 @@ import javax.validation.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.netflix.governator.annotations.Configuration;
 import com.netflix.governator.annotations.ConfigurationVariable;
@@ -45,12 +43,15 @@ import com.netflix.governator.annotations.WarmUp;
  * Used internally to hold the methods important to the LifecycleManager
  */
 public class LifecycleMethods {
+    private static final Field[] EMPTY_FIELDS = new Field[] {};
+    private static final Method[] EMPTY_METHODS = new Method[] {};
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
     private final Multimap<Class<? extends Annotation>, Annotation> classMap = ArrayListMultimap.create();
 
     private boolean hasValidations = false;
+    private final boolean hasResources;
 
     private static final Collection<Class<? extends Annotation>> fieldAnnotations;
     private static final Collection<Class<? extends Annotation>> methodAnnotations;
@@ -81,31 +82,35 @@ public class LifecycleMethods {
 
     public LifecycleMethods(Class<?> clazz) {
         addLifeCycleMethods(clazz, ArrayListMultimap.<Class<? extends Annotation>, String> create());
+        this.hasResources = fieldMap.containsKey(Resource.class) || 
+                fieldMap.containsKey(Resources.class) ||
+                methodMap.containsKey(Resource.class) ||
+                methodMap.containsKey(Resources.class) ||
+                classMap.containsKey(Resource.class) ||
+                classMap.containsKey(Resources.class);
     }
 
     public boolean hasLifecycleAnnotations() {
-        return hasValidations || (methodMap.size() > 0) || (fieldMap.size() > 0);
+        return hasValidations || !methodMap.isEmpty() || !fieldMap.isEmpty();
+    }
+
+    public boolean hasResources() {
+        return hasResources;
     }
 
     public Collection<Method> methodsFor(Class<? extends Annotation> annotation) {
         Collection<Method> methods = methodMap.get(annotation);
-        return (methods != null) ? methods : Lists.<Method> newArrayList();
+        return (methods != null) ? methods : Collections.<Method>emptySet();
     }
 
     public Collection<Field> fieldsFor(Class<? extends Annotation> annotation) {
         Collection<Field> fields = fieldMap.get(annotation);
-        return (fields != null) ? fields : Lists.<Field> newArrayList();
+        return (fields != null) ? fields : Collections.<Field>emptySet();
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Annotation> Collection<T> classAnnotationsFor(Class<T> annotation) {
-        Collection<Annotation> annotations = classMap.get(annotation);
-        return Collections2.transform(annotations, new Function<Annotation, T>() {
-            @Override
-            public T apply(Annotation annotation) {
-                // noinspection unchecked
-                return (T) annotation;
-            }
-        });
+        return (Collection<T>)classMap.get(annotation);
     }
 
     private void addLifeCycleMethods(Class<?> clazz, Multimap<Class<? extends Annotation>, String> usedNames) {
@@ -156,7 +161,7 @@ public class LifecycleMethods {
             handleReflectionError(clazz, e);
         }
 
-        return new Method[] {};
+        return EMPTY_METHODS;
     }
 
     private Field[] getDeclardFields(Class<?> clazz) {
@@ -166,7 +171,7 @@ public class LifecycleMethods {
             handleReflectionError(clazz, e);
         }
 
-        return new Field[] {};
+        return EMPTY_FIELDS;
     }
 
     private void handleReflectionError(Class<?> clazz, Throwable e) {

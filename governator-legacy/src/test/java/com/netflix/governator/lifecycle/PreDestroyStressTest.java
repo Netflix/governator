@@ -186,7 +186,7 @@ public class PreDestroyStressTest {
         finally {
             running.set(false);            
             es.shutdown();
-            es.awaitTermination(10, TimeUnit.SECONDS);
+            es.awaitTermination(10, TimeUnit.MINUTES);
         }
         es = null;
     }

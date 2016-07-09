@@ -81,7 +81,7 @@ class InternalLifecycleModule extends AbstractModule implements ProvisionListene
                 try {
                     manager.add(obj, binding, methods);
                 }
-                catch ( Exception e ) {
+                catch ( Throwable e ) {
                     throw new Error(e);
                 }
             }

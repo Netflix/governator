@@ -16,7 +16,11 @@
 
 package com.netflix.governator.lifecycle;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Date;
@@ -37,7 +41,8 @@ import com.netflix.governator.configuration.Property;
 
 class ConfigurationProcessor
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final static Lookup METHOD_HANDLE_LOOKUP = MethodHandles.lookup();
+    private final static Logger log = LoggerFactory.getLogger(ConfigurationProcessor.class);
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationDocumentation configurationDocumentation;
 
@@ -55,6 +60,7 @@ class ConfigurationProcessor
 
         Object value = null;
 
+        MethodHandle fieldGetter = METHOD_HANDLE_LOOKUP.unreflectGetter(field);
         boolean has = configurationProvider.has(key);
         if ( has )
         {
@@ -73,7 +79,7 @@ class ConfigurationProcessor
                         throw new UnsupportedOperationException("Supplier parameter type " + actualType
                                 + " not supported (" + field.getName() + ")");
                     }
-                    Supplier<?> current = (Supplier<?>)field.get(obj);
+                    Supplier<?> current = invoke(fieldGetter, obj);
                     value = getConfigurationSupplier(field, key, actualClass, current);
                     if ( value == null )
                     {
@@ -94,7 +100,7 @@ class ConfigurationProcessor
                         throw new UnsupportedOperationException("Supplier parameter type " + actualType
                                 + " not supported (" + field.getName() + ")");
                     }
-                    Property<?> current = (Property<?>)field.get(obj);
+                    Property<?> current = invoke(fieldGetter, obj);
                     value = getConfigurationProperty(field, key, actualClass, current);
                     if ( value == null )
                     {
@@ -104,7 +110,7 @@ class ConfigurationProcessor
                 }
                 else
                 {
-                    Supplier<?> supplier = getConfigurationSupplier(field, key, field.getType(), Suppliers.ofInstance(field.get(obj)));
+                    Supplier<?> supplier = getConfigurationSupplier(field, key, field.getType(), Suppliers.ofInstance(invoke(fieldGetter, obj)));
                     if ( supplier == null )
                     {
                         log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
@@ -130,20 +136,23 @@ class ConfigurationProcessor
 
         if ( field != null )
         {
+            MethodHandle fieldSetter = METHOD_HANDLE_LOOKUP.unreflectSetter(field);
+            
             String defaultValue;
             if ( Supplier.class.isAssignableFrom(field.getType()) )
             {
-                defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
+                Supplier<?> supplier = invoke(fieldGetter, obj);
+                defaultValue = String.valueOf(supplier.get());
             }
             else
             {
-                defaultValue = String.valueOf(field.get(obj));
+                defaultValue = String.valueOf(invoke(fieldGetter, obj));
             }
 
             String documentationValue;
             if ( has )
             {
-                field.set(obj, value);
+                invoke(fieldSetter, obj, value);
 
                 documentationValue = String.valueOf(value);
                 if ( Supplier.class.isAssignableFrom(field.getType()) )
@@ -160,6 +169,14 @@ class ConfigurationProcessor
                 documentationValue = "";
             }
             configurationDocumentation.registerConfiguration(field, configurationName, has, defaultValue, documentationValue, configuration.documentation());
+        }
+    }
+
+    private <T> T invoke(MethodHandle handle, Object... args) throws InvocationTargetException {
+        try {
+            return (T)handle.invoke(args);
+        } catch (Throwable e) {
+            throw new InvocationTargetException(e);
         }
     }
 

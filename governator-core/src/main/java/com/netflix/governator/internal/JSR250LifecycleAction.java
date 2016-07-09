@@ -1,6 +1,8 @@
 package com.netflix.governator.internal;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -18,6 +20,7 @@ public class JSR250LifecycleAction implements LifecycleAction {
     private static final Logger LOG = LoggerFactory.getLogger(JSR250LifecycleAction.class);
     private final Method method;
     private final String description;
+    private MethodHandle mh;
 
     public JSR250LifecycleAction(Class<? extends Annotation> annotationClass, Method method) {
         this(annotationClass, method, ValidationMode.STRICT);
@@ -29,7 +32,13 @@ public class JSR250LifecycleAction implements LifecycleAction {
         if (!method.isAccessible()) {
             method.setAccessible(true);
         }
-        this.method = method;
+        this.method = method;            
+        try {
+            this.mh = MethodHandles.lookup().unreflect(method);
+        } catch (IllegalAccessException e) {
+           // that's ok we'll use reflected method.invoke()
+            
+        }   
         this.description = String.format("%s@%d[%s.%s()]", annotationClass.getSimpleName(),
                 System.identityHashCode(this), method.getDeclaringClass().getSimpleName(), method.getName());
     }
@@ -67,7 +76,12 @@ public class JSR250LifecycleAction implements LifecycleAction {
     public void call(Object obj) throws InvocationTargetException {
         LOG.debug("calling action {} on instance {}", description, obj);
         try {
-            method.invoke(obj);
+           if (mh != null) {
+              mh.invoke(obj);
+           }
+           else {
+              method.invoke(obj);
+           }
         } catch (InvocationTargetException ite) {
             Throwable cause = ite.getCause();
             if (cause instanceof RuntimeException) {
@@ -77,7 +91,7 @@ public class JSR250LifecycleAction implements LifecycleAction {
             }
             throw ite;
         }
-        catch (IllegalAccessException | IllegalArgumentException e) {
+        catch (Throwable e) {
             // extremely unlikely, as constructor sets the method to 'accessible' and validates that it takes no parameters
             throw new RuntimeException("unexpected exception in method invocation", e);
         }
