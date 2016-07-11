@@ -4,8 +4,10 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.junit.Assert;
@@ -24,6 +26,7 @@ import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.spi.LifecycleListener;
@@ -76,6 +79,15 @@ public class LifeCycleFeaturesOnLegacyBuilderTest {
             return "LifecycleSubject@" + System.identityHashCode(this) + '[' + name + ']';
         }
     }
+    
+    static class UsesNullable {
+        private LifecycleSubject subject;
+        @Inject
+        public void UsesNullable(@Nullable @Named("missing") LifecycleSubject subject) {
+            this.subject = subject;
+        }
+        
+    }
 
     private com.netflix.governator.lifecycle.LifecycleManager legacyLifecycleManager;
 
@@ -115,6 +127,7 @@ public class LifeCycleFeaturesOnLegacyBuilderTest {
                     protected void configure() {
                         bind(TestListener.class).toInstance(listener);
                         bindScope(LocalScoped.class, localScope);
+                        bind(Key.get(LifecycleSubject.class, Names.named("missing"))).toProvider(Providers.of((LifecycleSubject)null));
                     }
 
                     @Provides
@@ -176,4 +189,41 @@ public class LifeCycleFeaturesOnLegacyBuilderTest {
         Assert.assertTrue(thing2.isPreDestroyed());
 
     }
+    
+    @Test
+    public void testSingletonScopeManagement() throws Exception {
+        LifecycleSubject thing2 = injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing2")));
+        Assert.assertTrue(thing2.isPostConstructed());
+        Assert.assertFalse(thing2.isPreDestroyed());
+        
+        injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing2")));
+        injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing2")));
+        injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing2")));
+        
+        Assert.assertEquals(1, LifecycleSubject.getInstanceCount()); 
+        
+        System.gc();
+        Thread.sleep(500);
+        Assert.assertFalse(thing2.isPreDestroyed());
+
+        System.gc();
+        Thread.sleep(500);
+        legacyLifecycleManager.close();
+        Assert.assertTrue(thing2.isPreDestroyed());
+
+    }   
+    
+    @Test
+    public void testNullableInjection() throws Exception {
+        LifecycleSubject thing2 = injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing2")));
+        Assert.assertTrue(thing2.isPostConstructed());
+        Assert.assertFalse(thing2.isPreDestroyed());
+        
+        UsesNullable nullableConsumer = injector.getInstance(UsesNullable.class);
+        Assert.assertNull(nullableConsumer.subject);
+        
+        legacyLifecycleManager.close();
+
+    }       
+    
 }

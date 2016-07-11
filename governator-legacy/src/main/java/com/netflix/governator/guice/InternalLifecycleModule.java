@@ -54,7 +54,9 @@ class InternalLifecycleModule extends AbstractModule {
                     @Override
                     public <T> void onProvision(ProvisionInvocation<T> provision) {                        
                         T instance = provision.provision();
-                        processInjectedObject(instance, provision.getBinding());                        
+                        if (instance != null) {
+                            processInjectedObject(instance, provision.getBinding());
+                        }
                     }
                 }
             ); 
