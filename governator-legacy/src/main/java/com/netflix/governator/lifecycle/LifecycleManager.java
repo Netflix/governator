@@ -19,9 +19,6 @@ package com.netflix.governator.lifecycle;
 import java.beans.Introspector;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -76,9 +73,8 @@ import com.netflix.governator.internal.PreDestroyMonitor;
 @Singleton
 public class LifecycleManager implements Closeable, PostInjectorAction
 {
-    private static final Lookup METHOD_HANDLE_LOOKUP = MethodHandles.lookup();
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final ConcurrentMap<Object, AtomicReference<LifecycleState>> objectStates = new MapMaker().weakKeys().initialCapacity(1<<15).concurrencyLevel(1<<8).makeMap();
+    private final ConcurrentMap<Object, LifecycleStateWrapper> objectStates = new MapMaker().weakKeys().initialCapacity(1<<15).concurrencyLevel(1<<10).makeMap();
     private final PreDestroyLifecycleFeature preDestroyLifecycleFeature = new PreDestroyLifecycleFeature(ValidationMode.LAX);
     private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(1<<15);
 
@@ -86,7 +82,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationMapper configurationMapper;
-    private final Collection<LifecycleListener> listeners;
+    final Collection<LifecycleListener> listeners;
     private final Collection<ResourceLocator> resourceLocators;
     private final ValidatorFactory factory;
     private Injector injector;
@@ -219,7 +215,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public LifecycleState getState(Object obj)
     {
-        AtomicReference<LifecycleState> lifecycleState = objectStates.get(obj);
+        LifecycleStateWrapper lifecycleState = objectStates.get(obj);
         if ( lifecycleState == null )
         {
             return hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
@@ -325,20 +321,37 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             throw exception;
         }
     }
+    
+    class LifecycleStateWrapper {
+        volatile LifecycleState state;
 
-    private void setState(Object obj, LifecycleState state)
+        public LifecycleStateWrapper(LifecycleState state) {
+            super();
+            this.state = state;
+        }
+
+        public void set(Object managedInstance, LifecycleState state) {
+            this.state = state;
+            for ( LifecycleListener listener : listeners )
+            {
+                listener.stateChanged(managedInstance, state);
+            }            
+        }
+        
+        public LifecycleState get() {
+            return state;
+        }
+    }
+
+    private LifecycleStateWrapper setState(Object obj, LifecycleState state)
     {
-        AtomicReference<LifecycleState> stateWrapper = objectStates.get(obj);
-        if (stateWrapper != null) {
-            stateWrapper.set(state);
+        LifecycleStateWrapper stateWrapper = objectStates.get(obj);
+        if (stateWrapper == null) {
+            stateWrapper = new LifecycleStateWrapper(state);
+            objectStates.put(obj, stateWrapper);
         }
-        else {
-            objectStates.put(obj, new AtomicReference<LifecycleState>(state));
-        }
-        for ( LifecycleListener listener : listeners )
-        {
-            listener.stateChanged(obj, state);
-        }
+        stateWrapper.set(obj, state);
+        return stateWrapper;
     }
 
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
@@ -368,28 +381,19 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         final Class<?> instanceType = obj.getClass();
         log.debug("Starting {}", instanceType.getName());
 
-        setState(obj, LifecycleState.PRE_CONFIGURATION);
-        Collection<Method> preConfigMethods = methods.methodsFor(PreConfiguration.class);
-        if (!preConfigMethods.isEmpty()) {
-            for ( Method preConfiguration : preConfigMethods )
-            {
-                log.debug("\t{}()", preConfiguration.getName());
-                invokeLifecycleMethod(preConfiguration, obj);
-            }
-        }
+        final LifecycleStateWrapper lifecycleState = setState(obj, LifecycleState.PRE_CONFIGURATION);
+        methods.methodInvoke(PreConfiguration.class, obj);
 
-        setState(obj, LifecycleState.SETTING_CONFIGURATION);
+        lifecycleState.set(obj, LifecycleState.SETTING_CONFIGURATION);
         configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
 
-        setState(obj, LifecycleState.SETTING_RESOURCES);
+        lifecycleState.set(obj, LifecycleState.SETTING_RESOURCES);
         setResources(obj, methods);
 
-        setState(obj, LifecycleState.POST_CONSTRUCTING);
+        lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
         Collection<Method> postConstructMethods = methods.methodsFor(PostConstruct.class);
-        for ( Method postConstruct : postConstructMethods )
-        {
-            log.debug("\t{}()", postConstruct.getName());
-            invokeLifecycleMethod(postConstruct, obj);
+        if (!postConstructMethods.isEmpty()) {
+            methods.methodInvoke(PostConstruct.class, obj);
         }
         Collection<Method> warmUpMethods = methods.methodsFor(WarmUp.class);
         if (!warmUpMethods.isEmpty()) {
@@ -398,7 +402,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
                 // assuming very few methods in both WarmUp and PostConstruct
                 if (!postConstructMethods.contains(warmupMethod)) {
                     log.debug("\t{}()", warmupMethod.getName());
-                    invokeLifecycleMethod(warmupMethod, obj);
+                    LifecycleMethods.methodInvoke(warmupMethod, obj);
                 }
             }
         }
@@ -422,21 +426,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             }
         }
 
-    }
-
-    private <T,R> void invokeLifecycleMethod(Method method, T obj) throws Exception {
-        MethodHandle mh;
-        try {
-            mh = METHOD_HANDLE_LOOKUP.unreflect(method);
-        } catch (IllegalAccessException e) {
-            method.invoke(obj);
-            return;
-        }
-        try {
-            mh.invoke(obj);
-        } catch (Throwable e) {
-            throw new InvocationTargetException(e, "invokedynamic");
-        }
     }
 
     private void setResources(Object obj, LifecycleMethods methods) throws Exception

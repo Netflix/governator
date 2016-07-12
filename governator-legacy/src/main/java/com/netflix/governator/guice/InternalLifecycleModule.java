@@ -27,6 +27,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
+import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
@@ -37,6 +38,8 @@ class InternalLifecycleModule extends AbstractModule implements ProvisionListene
     private static final Logger LOGGER = LoggerFactory.getLogger(InternalLifecycleModule.class);
     private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
         .newBuilder()
+        .initialCapacity(1<<13)
+        .concurrencyLevel(1<<8)
         .softValues()
         .build(new CacheLoader<Class<?>, LifecycleMethods>(){
             @Override
@@ -62,40 +65,36 @@ class InternalLifecycleModule extends AbstractModule implements ProvisionListene
     public <T> void onProvision(ProvisionInvocation<T> provision) {
         T instance = provision.provision();
         if (instance != null) {
-            LOGGER.trace("provisioning instance of {}", provision.getBinding().getKey());
-            processInjectedObject(instance, provision.getBinding());
+            Binding<T> binding = provision.getBinding();
+            LOGGER.trace("provisioning instance of {}", binding.getKey());
+            processInjectedObject(instance, binding);
         }
     }
 
-    private <T> void processInjectedObject(T obj, Binding<T> binding){
+    private <T> void processInjectedObject(T instance, Binding<T> binding){
         LifecycleManager manager = lifecycleManager.get();
         if ( manager != null ) {
+            TypeLiteral<T> bindingType = binding.getKey().getTypeLiteral();
             for ( LifecycleListener listener : manager.getListeners() ) {
-                listener.objectInjected(binding.getKey().getTypeLiteral(), obj);
+                listener.objectInjected(bindingType, instance);
             }
 
-            Class<?> clazz = obj.getClass();
-            LifecycleMethods methods = getLifecycleMethods(clazz);
-
-            if ( methods.hasLifecycleAnnotations() ) {
-                try {
-                    manager.add(obj, binding, methods);
-                }
-                catch ( Throwable e ) {
-                    throw new Error(e);
+            try {
+                LifecycleMethods methods = lifecycleMethods.get(instance.getClass());
+                if ( methods.hasLifecycleAnnotations() ) {
+                        manager.add(instance, binding, methods);
                 }
             }
+            catch ( ExecutionException e ) {
+                // caching problem
+                throw new RuntimeException(e);
+            }
+            catch ( Throwable e ) {
+                // unknown problem will abort injector start up
+                throw new Error(e);
+            }
+            
         }
-    }
-
-    private LifecycleMethods getLifecycleMethods(Class<?> clazz) {
-        try {
-            return lifecycleMethods.get(clazz);
-        }
-        catch ( ExecutionException e ) {
-            throw new RuntimeException(e);
-        }
-    }
-    
+    }    
 
 }

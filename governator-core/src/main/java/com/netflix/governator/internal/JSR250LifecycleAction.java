@@ -3,6 +3,7 @@ package com.netflix.governator.internal;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -13,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import com.netflix.governator.LifecycleAction;
 
 public class JSR250LifecycleAction implements LifecycleAction {
+    private static final Lookup METHOD_HANDLE_LOOKUP = MethodHandles.lookup();
+
     public enum ValidationMode {
         STRICT, LAX
     }
@@ -34,7 +37,7 @@ public class JSR250LifecycleAction implements LifecycleAction {
         }
         this.method = method;            
         try {
-            this.mh = MethodHandles.lookup().unreflect(method);
+            this.mh = METHOD_HANDLE_LOOKUP.unreflect(method);
         } catch (IllegalAccessException e) {
            // that's ok we'll use reflected method.invoke()
             
@@ -75,26 +78,36 @@ public class JSR250LifecycleAction implements LifecycleAction {
     @Override
     public void call(Object obj) throws InvocationTargetException {
         LOG.debug("calling action {} on instance {}", description, obj);
-        try {
-           if (mh != null) {
+       if (mh != null) {
+          try {
               mh.invoke(obj);
-           }
-           else {
+          } catch( Throwable throwable) {
+              if (throwable instanceof RuntimeException) {
+                  throw (RuntimeException) throwable;
+              } else if (throwable instanceof Error) {
+                  throw (Error) throwable;
+              }
+              throw new InvocationTargetException(throwable, "invoke-dynamic");
+          }              
+       }
+       else {
+          try { 
               method.invoke(obj);
-           }
-        } catch (InvocationTargetException ite) {
-            Throwable cause = ite.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            } else if (cause instanceof Error) {
-                throw (Error) cause;
-            }
-            throw ite;
-        }
-        catch (Throwable e) {
-            // extremely unlikely, as constructor sets the method to 'accessible' and validates that it takes no parameters
-            throw new RuntimeException("unexpected exception in method invocation", e);
-        }
+          } catch (InvocationTargetException ite) {
+              Throwable cause = ite.getCause();
+              if (cause instanceof RuntimeException) {
+                  throw (RuntimeException) cause;
+              } else if (cause instanceof Error) {
+                  throw (Error) cause;
+              }
+              throw ite;
+          }
+          catch (Throwable e) {
+              // extremely unlikely, as constructor sets the method to 'accessible' and validates that it takes no parameters
+              throw new RuntimeException("unexpected exception in method invocation", e);
+          }
+       }
+
      }
 
     @Override

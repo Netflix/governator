@@ -17,10 +17,17 @@
 package com.netflix.governator.lifecycle;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -45,10 +52,13 @@ import com.netflix.governator.annotations.WarmUp;
 public class LifecycleMethods {
     private static final Field[] EMPTY_FIELDS = new Field[] {};
     private static final Method[] EMPTY_METHODS = new Method[] {};
+    private static final Lookup METHOD_HANDLE_LOOKUP = MethodHandles.lookup();
+    private static final ConcurrentMap<Object, MethodHandle> methodHandlesMap = new ConcurrentHashMap<>(1<<13, 0.75f);
+
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create();
-    private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create();
-    private final Multimap<Class<? extends Annotation>, Annotation> classMap = ArrayListMultimap.create();
+    private final Multimap<Class<? extends Annotation>, Field> fieldMap = ArrayListMultimap.create(1<<13, 1<<3);
+    private final Multimap<Class<? extends Annotation>, Method> methodMap = ArrayListMultimap.create(1<<13, 1<<3);
+    private final Multimap<Class<? extends Annotation>, Annotation> classMap = ArrayListMultimap.create(1<<13, 1<<3);
 
     private boolean hasValidations = false;
     private final boolean hasResources;
@@ -124,7 +134,7 @@ public class LifecycleMethods {
             }
         }
 
-        for (Field field : getDeclardFields(clazz)) {
+        for (Field field : getDeclaredFields(clazz)) {
             if (field.isSynthetic()) {
                 continue;
             }
@@ -164,7 +174,7 @@ public class LifecycleMethods {
         return EMPTY_METHODS;
     }
 
-    private Field[] getDeclardFields(Class<?> clazz) {
+    private Field[] getDeclaredFields(Class<?> clazz) {
         try {
             return clazz.getDeclaredFields();
         } catch (Throwable e) {
@@ -188,20 +198,16 @@ public class LifecycleMethods {
     }
 
     private void checkForValidations(Field field) {
-        for (Annotation annotation : field.getDeclaredAnnotations()) {
-            if (annotation.annotationType().isAnnotationPresent(Constraint.class)) {
-                hasValidations = true;
-                break;
-            }
-        }
+        this.hasValidations =field.getAnnotationsByType(Constraint.class).length > 0;
     }
 
     private void processField(Field field, Class<? extends Annotation> annotationClass,
             Multimap<Class<? extends Annotation>, String> usedNames) {
         if (field.isAnnotationPresent(annotationClass)) {
-            if (!usedNames.get(annotationClass).contains(field.getName())) {
+            String fieldName = field.getName();
+            if (!usedNames.get(annotationClass).contains(fieldName)) {
                 field.setAccessible(true);
-                usedNames.put(annotationClass, field.getName());
+                usedNames.put(annotationClass, fieldName);
                 fieldMap.put(annotationClass, field);
             }
         }
@@ -210,11 +216,69 @@ public class LifecycleMethods {
     private void processMethod(Method method, Class<? extends Annotation> annotationClass,
             Multimap<Class<? extends Annotation>, String> usedNames) {
         if (method.isAnnotationPresent(annotationClass)) {
-            if (!usedNames.get(annotationClass).contains(method.getName())) {
+            String methodName = method.getName();
+            if (!usedNames.get(annotationClass).contains(methodName)) {
                 method.setAccessible(true);
-                usedNames.put(annotationClass, method.getName());
+                usedNames.put(annotationClass, methodName);
                 methodMap.put(annotationClass, method);
+                try {
+                    methodHandlesMap.put(annotationClass, METHOD_HANDLE_LOOKUP.unreflect(method));
+                } catch (IllegalAccessException e) {
+                    // that's ok, will use reflected method
+                }
             }
         }
     }
+    
+    public void methodInvoke(Class<? extends Annotation> annotation, Object obj) throws Exception {
+        if  (methodMap.containsKey(annotation)) {
+           for (Method m : methodMap.get(annotation)) {
+               methodInvoke(m, obj);
+           }
+        }
+
+    }
+    
+    public static void methodInvoke(Method method, Object target) throws InvocationTargetException, IllegalAccessException {
+        try {
+            MethodHandle handler = methodHandlesMap.get(method);
+            if (handler == null) {
+                handler = METHOD_HANDLE_LOOKUP.unreflect(method);
+                methodHandlesMap.put(method, handler);
+            }            
+            
+            try {
+                handler.invoke(target);
+            } catch (Throwable e) {
+                throw new InvocationTargetException(e, "invokedynamic");
+            }
+        } catch (IllegalAccessException e) {
+            // fall back to reflected invocation
+            method.invoke(target);
+            return;
+        }        
+    }
+
+    public static <T> T fieldGet(Field variableField, Object obj) throws InvocationTargetException, IllegalAccessException {
+        MethodHandle handler = METHOD_HANDLE_LOOKUP.unreflectGetter(variableField);
+        try {
+            return (T)handler.invoke(obj);
+        } catch (Throwable e) {
+            throw new InvocationTargetException(e);
+        }
+    }
+
+    public static <T> T fieldSet(Field field, Object object, Object value) throws InvocationTargetException, IllegalAccessException {
+        MethodHandle handler = methodHandlesMap.get(field);
+        if (handler == null) {
+            handler = METHOD_HANDLE_LOOKUP.unreflectSetter(field);
+            methodHandlesMap.put(field, handler);
+        }
+        try {
+            return (T)handler.invoke(object, value);
+        } catch (Throwable e) {
+            throw new InvocationTargetException(e);
+        }
+    }
+
 }
