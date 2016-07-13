@@ -129,13 +129,14 @@ public class PreDestroyStressTest {
         LifecycleInjector lifecycleInjector = LifecycleInjector.builder()
                 .withAdditionalModules(scopingModule).build();
         SecureRandom random = new SecureRandom();
+        LifecycleSubject thing1 = null;
         try (com.netflix.governator.lifecycle.LifecycleManager legacyLifecycleManager = lifecycleInjector.getLifecycleManager()) {
             org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.WARN);
             final Injector injector = lifecycleInjector.createInjector(); 
             injector.getInstance(LifecycleManager.class);
             legacyLifecycleManager.start();
                     
-            injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing1")));
+            thing1 = injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing1")));
             Assert.assertEquals("singleton instance not postConstructed", LifecycleSubject.postConstructCounter.get(), LifecycleSubject.instanceCounter.get());
             Assert.assertEquals("singleton instance predestroyed too soon", LifecycleSubject.preDestroyCounter.get(), LifecycleSubject.instanceCounter.get()-1);
             
@@ -148,11 +149,12 @@ public class PreDestroyStressTest {
             System.out.flush();
             Assert.assertEquals("instances not postConstructed", LifecycleSubject.postConstructCounter.get(), LifecycleSubject.instanceCounter.get());
             Assert.assertEquals("scoped instances not predestroyed", LifecycleSubject.preDestroyCounter.get(), LifecycleSubject.instanceCounter.get()-1);
+            Assert.assertFalse("singleton instance was predestroyed too soon", thing1.isPreDestroyed());
         }
         finally {
             org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.DEBUG);            
         }
-        Assert.assertEquals("singleton instances not predestroyed", LifecycleSubject.preDestroyCounter.get(), LifecycleSubject.instanceCounter.get());
+        Assert.assertTrue("singleton instance was not predestroyed", thing1.isPreDestroyed());
         Thread.yield();
     }
 
