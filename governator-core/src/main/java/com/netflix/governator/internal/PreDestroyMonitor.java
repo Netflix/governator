@@ -99,24 +99,14 @@ public class PreDestroyMonitor implements AutoCloseable {
     }
     
     public <T> boolean register(T destroyableInstance, Binding<T> binding, Iterable<LifecycleAction> action) {
-        try {
-            return (running.get()) ? binding.acceptScopingVisitor(new ManagedInstanceScopingVisitor(destroyableInstance, binding.getSource(), action)) : false;
-        } catch (Exception e) {
-            LOGGER.warn("failed to register lifecycle actions for {}", destroyableInstance, e);
-            return false;
-        }
+        return (running.get()) ? binding.acceptScopingVisitor(new ManagedInstanceScopingVisitor(destroyableInstance, binding.getSource(), action)) : false;
     }
     
     /*
      * compatibility-mode - scope is assumed to be eager singleton
      */
     public <T> boolean register(T destroyableInstance, Object context, Iterable<LifecycleAction> action) {
-        try {
-            return (running.get()) ? new ManagedInstanceScopingVisitor(destroyableInstance, context, action).visitEagerSingleton() : false;
-        } catch (Exception e) {
-            LOGGER.warn("failed to register lifecycle actions for {}", destroyableInstance);
-            return false;
-        }
+       return (running.get()) ? new ManagedInstanceScopingVisitor(destroyableInstance, context, action).visitEagerSingleton() : false;
     }
 
     /**
