@@ -106,7 +106,7 @@ public class PreDestroyMonitor implements AutoCloseable {
      * compatibility-mode - scope is assumed to be eager singleton
      */
     public <T> boolean register(T destroyableInstance, Object context, Iterable<LifecycleAction> action) {
-        return (running.get()) ? new ManagedInstanceScopingVisitor(destroyableInstance, context, action).visitEagerSingleton() : false;
+       return (running.get()) ? new ManagedInstanceScopingVisitor(destroyableInstance, context, action).visitEagerSingleton() : false;
     }
 
     /**
@@ -189,10 +189,10 @@ public class PreDestroyMonitor implements AutoCloseable {
         @Override
         public Boolean visitScope(Scope scope) {
             Provider<ScopeCleanupMarker> scopedMarkerProvider = scope.scope(MARKER_KEY, markerProvider);
-            ManagedInstanceAction instanceAction = new ManagedInstanceAction(injectee, lifecycleActions);
-            ScopeCleanupMarker marker = scopedMarkerProvider.get();
+            ScopeCleanupMarker marker = scopedMarkerProvider.get();                
             UUID markerKey = marker.getId();
-            synchronized(scopedCleanupActions) {
+            synchronized (markerKey) {
+                ManagedInstanceAction instanceAction = new ManagedInstanceAction(injectee, lifecycleActions);
                 if (scopedCleanupActions.containsKey(markerKey)) {
                     scopedCleanupActions.get(markerKey).add(scopedMarkerProvider, instanceAction);
                 }

@@ -19,6 +19,9 @@ package com.netflix.governator.guice;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -30,7 +33,8 @@ import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
 
-class InternalLifecycleModule extends AbstractModule {
+class InternalLifecycleModule extends AbstractModule implements ProvisionListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InternalLifecycleModule.class);
     private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
         .newBuilder()
         .softValues()
@@ -50,14 +54,17 @@ class InternalLifecycleModule extends AbstractModule {
     public void configure() {
         bindListener(
                 Matchers.any(),
-                new ProvisionListener() {                    
-                    @Override
-                    public <T> void onProvision(ProvisionInvocation<T> provision) {                        
-                        T instance = provision.provision();
-                        processInjectedObject(instance, provision.getBinding());                        
-                    }
-                }
+               this
             ); 
+    }
+    
+    @Override
+    public <T> void onProvision(ProvisionInvocation<T> provision) {
+        T instance = provision.provision();
+        if (instance != null) {
+            LOGGER.trace("provisioning instance of {}", provision.getBinding().getKey());
+            processInjectedObject(instance, provision.getBinding());
+        }
     }
 
     private <T> void processInjectedObject(T obj, Binding<T> binding){

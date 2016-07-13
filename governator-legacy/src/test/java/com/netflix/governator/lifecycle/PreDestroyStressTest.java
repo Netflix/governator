@@ -1,7 +1,10 @@
 package com.netflix.governator.lifecycle;
 
+import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Random;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -14,10 +17,8 @@ import javax.inject.Named;
 
 import org.apache.log4j.Level;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +26,23 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.guice.LifecycleInjector;
+import com.netflix.governator.guice.LifecycleInjectorBuilder;
+import com.netflix.governator.guice.LifecycleInjectorMode;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-//@Ignore
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(DataProviderRunner.class)
 public class PreDestroyStressTest {
+    private static final int TEST_TIME_IN_SECONDS = 10;  // run the stress test for this many seconds
+    private static final int CONCURRENCY_LEVEL = 20; // run the stress test with this many threads
+
     private final class ScopingModule extends AbstractModule {
+        LocalScope localScope = new LocalScope();
         @Override
         protected void configure() {
             bindScope(LocalScoped.class, localScope);
@@ -40,7 +50,7 @@ public class PreDestroyStressTest {
         }
 
         @Provides
-//        @LocalScoped
+        @Singleton
         @Named("thing1")
         public LifecycleSubject thing1() {
             return new LifecycleSubject("thing1");
@@ -49,13 +59,24 @@ public class PreDestroyStressTest {
 
 
     static class LifecycleSubject {
-        private Logger logger = LoggerFactory.getLogger(LifecycleSubject.class);
+        private static byte[] bulkTemplate;
+        static {
+            bulkTemplate = new byte[1024*100]; 
+            Arrays.fill(bulkTemplate, (byte)0);        
+
+        }
+        private static Logger logger = LoggerFactory.getLogger(LifecycleSubject.class);
         private String name;
         private volatile boolean postConstructed = false;
         private volatile boolean preDestroyed = false;
         private byte[] bulk;
+        private final String toString = "LifecycleSubject@" + System.identityHashCode(this) + '[' + name + ']';
+        private final String postConstructMessage = "@PostConstruct called " + toString;
+        private final String preDestroyMessage = "@PreDestroy called " + toString;
 
         private static AtomicInteger instanceCounter = new AtomicInteger(0);
+        private static AtomicInteger preDestroyCounter = new AtomicInteger(0);
+        private static AtomicInteger postConstructCounter = new AtomicInteger(0);
 
         public LifecycleSubject() {
             this("anonymous");
@@ -63,24 +84,23 @@ public class PreDestroyStressTest {
         
         public LifecycleSubject(String name) {
             this.name = name;
-            this.bulk = new byte[1024*100]; 
-            Arrays.fill(bulk, (byte)0);        
-            instanceCounter.incrementAndGet();
-            logger.info("created instance " + this);
+            this.bulk = bulkTemplate.clone(); 
+            logger.info("created instance {} {}", this, instanceCounter.incrementAndGet());
             
         }
 
         @PostConstruct
         public void init() {
-            logger.info("@PostConstruct called " + this);
+            logger.info("{} {}", postConstructMessage, postConstructCounter.incrementAndGet());
+            logger.info(postConstructMessage);
             this.postConstructed = true;
         }
 
         @PreDestroy
         public void destroy() {
-            logger.info("@PreDestroy called " + this);
+            logger.info("{} {}", preDestroyMessage, preDestroyCounter.incrementAndGet());
+            logger.info(preDestroyMessage);
             this.preDestroyed = true;
-            instanceCounter.decrementAndGet();
         }
 
         public boolean isPostConstructed() {
@@ -95,91 +115,110 @@ public class PreDestroyStressTest {
             return name;
         }
 
-        public static int getInstanceCount() {
-            return instanceCounter.get();
-        }
-
         public String toString() {
-            return "LifecycleSubject@" + System.identityHashCode(this) + '[' + name + ']';
+            return toString;
         }
     }
 
-    private com.netflix.governator.lifecycle.LifecycleManager legacyLifecycleManager;
-
-    private Injector injector;
-
-    private LocalScope localScope;
-
-    @Before
-    public void init() throws Exception {
-        LifecycleSubject.instanceCounter.set(0);
-        localScope = new LocalScope();
-        LifecycleInjector lifecycleInjector = LifecycleInjector.builder()
-                // .withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS)
-                .withAdditionalModules(new ScopingModule()).build();
-        injector = lifecycleInjector.createInjector();
-        legacyLifecycleManager = lifecycleInjector.getLifecycleManager();
-
-        injector.getInstance(LifecycleManager.class);
-        legacyLifecycleManager.start();
-//        org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.WARN);
-    }
-    
     @Test
-    public void testInParallel() throws Exception {
-        int concurrency = 20;
-        ExecutorService es = Executors.newFixedThreadPool(concurrency);
-        final Random r = new Random(System.currentTimeMillis());
-        long initialMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        System.out.println("totalMemory " + initialMemory);
-        final AtomicBoolean running = new AtomicBoolean(true);
-        try {
-            for (int i=0; i < concurrency; i++) {
-                es.submit(new Runnable() {
-                   
-                    @Override
-                    public void run() {
-                        while (running.get()) {
-                            try {
-                                allocateScopedInstance(r.nextInt(500));
-                            } catch (Exception e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
-                        
-                    }                
+    @UseDataProvider("builders")
+    public void testInParallel(String name, LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception {
+
+        ScopingModule scopingModule = new ScopingModule();
+        final LocalScope localScope = scopingModule.localScope;
+        LifecycleInjector lifecycleInjector = LifecycleInjector.builder()
+                .withAdditionalModules(scopingModule).build();
+        SecureRandom random = new SecureRandom();
+        try (com.netflix.governator.lifecycle.LifecycleManager legacyLifecycleManager = lifecycleInjector.getLifecycleManager()) {
+            org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.WARN);
+            final Injector injector = lifecycleInjector.createInjector(); 
+            injector.getInstance(LifecycleManager.class);
+            legacyLifecycleManager.start();
                     
-                });
-            }
+            injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing1")));
+            Assert.assertEquals("singleton instance not postConstructed", LifecycleSubject.postConstructCounter.get(), LifecycleSubject.instanceCounter.get());
+            Assert.assertEquals("singleton instance predestroyed too soon", LifecycleSubject.preDestroyCounter.get(), LifecycleSubject.instanceCounter.get()-1);
+            
+            Callable<Void> scopingTask = allocateScopedInstance(injector, localScope, random);
+            runInParallel(CONCURRENCY_LEVEL, scopingTask, TEST_TIME_IN_SECONDS, TimeUnit.SECONDS);
+            
+            System.gc();
+            Thread.sleep(1000);
+            System.out.println("instances count: " + LifecycleSubject.instanceCounter.get());
+            System.out.flush();
+            Assert.assertEquals("instances not postConstructed", LifecycleSubject.postConstructCounter.get(), LifecycleSubject.instanceCounter.get());
+            Assert.assertEquals("scoped instances not predestroyed", LifecycleSubject.preDestroyCounter.get(), LifecycleSubject.instanceCounter.get()-1);
         }
         finally {
-            running.set(false);
-            es.shutdown();
-            es.awaitTermination(10, TimeUnit.SECONDS);
+            org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.DEBUG);            
         }
-        legacyLifecycleManager.close();        
-        es = null;
-        System.gc();
-        Thread.sleep(1000);
-        System.out.println("total memory: " + initialMemory + "->" + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-        System.out.println("instances count: " + LifecycleSubject.getInstanceCount());
-        System.out.flush();
-        Assert.assertEquals("instances not predestroyed", 0, LifecycleSubject.getInstanceCount());
+        Assert.assertEquals("singleton instances not predestroyed", LifecycleSubject.preDestroyCounter.get(), LifecycleSubject.instanceCounter.get());
         Thread.yield();
     }
 
 
-    public void allocateScopedInstance(long sleepTime) throws InterruptedException {
-        localScope.enter();
+    void runInParallel(int concurrency, final Callable<Void> task, int duration, TimeUnit timeUnits) throws InterruptedException {
+
+        ExecutorService es = Executors.newFixedThreadPool(concurrency);
+        final AtomicBoolean running = new AtomicBoolean(true);
         try {
-            LifecycleSubject anonymous = injector.getInstance(LifecycleSubject.class);
-            Thread.sleep(sleepTime);
-            Assert.assertTrue(anonymous.isPostConstructed());
-            Assert.assertFalse(anonymous.isPreDestroyed());
+            List<Callable<Void>> tasks = new ArrayList<>();
+            for (int i=0; i < concurrency; i++) {
+                tasks.add(new Callable<Void>() {                       
+                    @Override
+                    public Void call() {
+                        while (running.get()) {
+                            try {
+                                task.call();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        return null;
+                    }                
+                    
+                });
+            }
+            es.invokeAll(tasks, duration, timeUnits);
         }
         finally {
-            localScope.exit();
+            running.set(false);            
+            es.shutdown();
+            es.awaitTermination(10, TimeUnit.SECONDS);
         }
+        es = null;
+    }
+
+
+    Callable<Void> allocateScopedInstance(final Injector injector, final LocalScope localScope, final SecureRandom random) {
+        return new Callable<Void>() {
+            public Void call() throws InterruptedException {
+                localScope.enter();
+                try {
+                    LifecycleSubject anonymous = injector.getInstance(LifecycleSubject.class);
+                    Thread.sleep(random.nextInt(500));
+                    Assert.assertTrue(anonymous.isPostConstructed());
+                    Assert.assertFalse(anonymous.isPreDestroyed());
+                }
+                catch(InterruptedException e) {
+                    
+                }
+                finally {
+                    localScope.exit();
+                }
+                return null;
+            }
+        };
+
+    }
+    
+    @DataProvider
+    public static Object[][] builders()
+    {
+        return new Object[][]
+        {
+            new Object[] { "simulatedChildInjector", LifecycleInjector.builder().withMode(LifecycleInjectorMode.SIMULATED_CHILD_INJECTORS) },
+            new Object[] { "childInjector", LifecycleInjector.builder() }
+        };
     }
 }

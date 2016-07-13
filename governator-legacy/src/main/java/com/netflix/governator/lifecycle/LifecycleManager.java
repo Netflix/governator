@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -72,8 +73,10 @@ import com.netflix.governator.internal.PreDestroyMonitor;
 public class LifecycleManager implements Closeable, PostInjectorAction
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final ConcurrentMap<Object, LifecycleState> objectStates = new MapMaker().weakKeys().makeMap();
+    private final ConcurrentMap<Object, LifecycleState> objectStates = new MapMaker().weakKeys().concurrencyLevel(1<<4).makeMap();
     private final PreDestroyLifecycleFeature preDestroyLifecycleFeature = new PreDestroyLifecycleFeature(ValidationMode.LAX);
+    private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(1<<13);
+
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
@@ -81,7 +84,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private final Collection<LifecycleListener> listeners;
     private final Collection<ResourceLocator> resourceLocators;
     private final ValidatorFactory factory;
-    private final Injector injector;
+    private Injector injector;
     private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
@@ -348,7 +351,8 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     @SuppressWarnings("deprecation")
     private <T> void startInstance(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
     {
-        log.debug(String.format("Starting %s", obj.getClass().getName()));
+        final Class<?> instanceType = obj.getClass();
+        log.debug(String.format("Starting %s", instanceType.getName()));
 
         setState(obj, LifecycleState.PRE_CONFIGURATION);
         for ( Method preConfiguration : methods.methodsFor(PreConfiguration.class) )
@@ -373,7 +377,14 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             postConstruct.invoke(obj);
         }
         
-        List<LifecycleAction> preDestroyActions = preDestroyLifecycleFeature.getActionsForType(obj.getClass());
+        List<LifecycleAction> preDestroyActions;
+        if (preDestroyActionCache.containsKey(instanceType)) {
+            preDestroyActions = preDestroyActionCache.get(instanceType);
+        }
+        else {
+            preDestroyActions = preDestroyLifecycleFeature.getActionsForType(instanceType);
+            preDestroyActionCache.put(instanceType, preDestroyActions);
+        }
         if ( !preDestroyActions.isEmpty() )
         {
             if (binding != null) {
@@ -556,7 +567,8 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             throw new NamingException("Could not find resource: " + resource);
         }
 
-        //noinspection unchecked
+        //noinspection unchecked     
+        log.debug("defaultFindResource using injector {}", System.identityHashCode(injector));
         return injector.getInstance(resource.type());
     }
 
@@ -597,6 +609,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
 
     @Override
     public void call(Injector injector) {
+        this.injector = injector;
         preDestroyMonitor.addScopeBindings(injector.getScopeBindings());
     }   
 }
