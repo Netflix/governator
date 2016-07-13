@@ -391,12 +391,11 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         setResources(obj, methods);
 
         lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
-        Collection<Method> postConstructMethods = methods.methodsFor(PostConstruct.class);
-        if (!postConstructMethods.isEmpty()) {
-            methods.methodInvoke(PostConstruct.class, obj);
-        }
+        methods.methodInvoke(PostConstruct.class, obj);
+        
         Collection<Method> warmUpMethods = methods.methodsFor(WarmUp.class);
         if (!warmUpMethods.isEmpty()) {
+            Collection<Method> postConstructMethods = methods.methodsFor(PostConstruct.class);
             for ( Method warmupMethod : warmUpMethods)
             {
                 // assuming very few methods in both WarmUp and PostConstruct
@@ -431,47 +430,65 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private void setResources(Object obj, LifecycleMethods methods) throws Exception
     {
         if (methods.hasResources()) {        
-            for ( Field field : methods.fieldsFor(Resources.class) )
-            {
-                Resources resources = field.getAnnotation(Resources.class);
-                for ( Resource resource : resources.value() )
+            Collection<Field> fieldResources = methods.fieldsFor(Resources.class);
+            if (!fieldResources.isEmpty()) {
+                for ( Field field : fieldResources )
                 {
+                    Resources resources = field.getAnnotation(Resources.class);
+                    for ( Resource resource : resources.value() )
+                    {
+                        setFieldResource(obj, field, resource);
+                    }
+                }
+            }
+    
+            Collection<Field> fieldResource = methods.fieldsFor(Resource.class);
+            if (!fieldResource.isEmpty()) {
+                for ( Field field : fieldResource )
+                {
+                    Resource resource = field.getAnnotation(Resource.class);
                     setFieldResource(obj, field, resource);
                 }
             }
     
-            for ( Field field : methods.fieldsFor(Resource.class) )
-            {
-                Resource resource = field.getAnnotation(Resource.class);
-                setFieldResource(obj, field, resource);
+            Collection<Method> methodResources = methods.methodsFor(Resources.class);
+            if (!methodResources.isEmpty()) {
+                for ( Method method : methodResources )
+                {
+                    Resources resources = method.getAnnotation(Resources.class);
+                    for ( Resource resource : resources.value() )
+                    {
+                        setMethodResource(obj, method, resource);
+                    }
+                }
             }
     
-            for ( Method method : methods.methodsFor(Resources.class) )
-            {
-                Resources resources = method.getAnnotation(Resources.class);
-                for ( Resource resource : resources.value() )
+            Collection<Method> methodResource = methods.methodsFor(Resource.class);
+            if (!methodResource.isEmpty()) {
+                for ( Method method : methodResource )
                 {
+                    Resource resource = method.getAnnotation(Resource.class);
                     setMethodResource(obj, method, resource);
                 }
             }
     
-            for ( Method method : methods.methodsFor(Resource.class) )
-            {
-                Resource resource = method.getAnnotation(Resource.class);
-                setMethodResource(obj, method, resource);
-            }
-    
-            for ( Resources resources : methods.classAnnotationsFor(Resources.class) )
-            {
-                for ( Resource resource : resources.value() )
+            Collection<Resources> classResources = methods.classAnnotationsFor(Resources.class);
+            if (!classResources.isEmpty()) {
+                for ( Resources resources : classResources )
                 {
-                    loadClassResource(resource);
+                    for ( Resource resource : resources.value() )
+                    {
+                        loadClassResource(resource);
+                    }
                 }
             }
     
-            for ( Resource resource : methods.classAnnotationsFor(Resource.class) )
-            {
-                loadClassResource(resource);
+            Collection<Resource> classResource = methods.classAnnotationsFor(Resource.class);            
+            if (!classResource.isEmpty()) {
+                for ( Resource resource : classResource )
+                {
+                    loadClassResource(resource);
+                }
             }
         }
     }

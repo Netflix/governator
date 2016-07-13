@@ -196,7 +196,7 @@ public class LifecycleInjector
                     	}
                     	// This is a bootstrap module
                     	if (!bootstrap.bootstrap().equals(Bootstrap.NullBootstrapModule.class)) {
-                    		Preconditions.checkState(added==false, bootstrap.annotationType().getName() + " already added as a LifecycleInjectorBuilderSuite");
+                    		Preconditions.checkState(added==false, "{} already added as a LifecycleInjectorBuilderSuite", bootstrap.annotationType().getName());
                     		added = true;
                             LOG.info("Adding BootstrapModule {}", bootstrap.bootstrap());
 	                        bootstrapModules
@@ -208,7 +208,7 @@ public class LifecycleInjector
                     	}
                     	// This is a plain guice module
                     	if (!bootstrap.module().equals(Bootstrap.NullModule.class)) {
-                    		Preconditions.checkState(added==false, bootstrap.annotationType().getName() + " already added as a BootstrapModule");
+                    		Preconditions.checkState(added==false, "{} already added as a BootstrapModule", bootstrap.annotationType().getName());
                     		added = true;
                             LOG.info("Adding Module {}", bootstrap.bootstrap());
 	                        builder.withAdditionalModuleClasses(bootstrap.module());

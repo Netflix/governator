@@ -38,8 +38,8 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 @RunWith(DataProviderRunner.class)
 public class PreDestroyStressTest {
-    private static final int TEST_TIME_IN_SECONDS = 10;  // run the stress test for this many seconds
-    private static final int CONCURRENCY_LEVEL = 20; // run the stress test with this many threads
+    private static final int TEST_TIME_IN_SECONDS = 60;  // run the stress test for this many seconds
+    private static final int CONCURRENCY_LEVEL = 200; // run the stress test with this many threads
 
     private final class ScopingModule extends AbstractModule {
         LocalScope localScope = new LocalScope();
@@ -71,8 +71,6 @@ public class PreDestroyStressTest {
         private volatile boolean preDestroyed = false;
         private byte[] bulk;
         private final String toString = "LifecycleSubject@" + System.identityHashCode(this) + '[' + name + ']';
-        private final String postConstructMessage = "@PostConstruct called " + toString;
-        private final String preDestroyMessage = "@PreDestroy called " + toString;
 
         private static AtomicInteger instanceCounter = new AtomicInteger(0);
         private static AtomicInteger preDestroyCounter = new AtomicInteger(0);
@@ -85,21 +83,19 @@ public class PreDestroyStressTest {
         public LifecycleSubject(String name) {
             this.name = name;
             this.bulk = bulkTemplate.clone(); 
-            logger.info("created instance {} {}", this, instanceCounter.incrementAndGet());
+            logger.info("created instance {} {}", toString, instanceCounter.incrementAndGet());
             
         }
 
         @PostConstruct
         public void init() {
-            logger.info("{} {}", postConstructMessage, postConstructCounter.incrementAndGet());
-            logger.info(postConstructMessage);
+            logger.info("@PostConstruct called {} {}", toString, postConstructCounter.incrementAndGet());
             this.postConstructed = true;
         }
 
         @PreDestroy
         public void destroy() {
-            logger.info("{} {}", preDestroyMessage, preDestroyCounter.incrementAndGet());
-            logger.info(preDestroyMessage);
+            logger.info("@PreDestroy called {} {}", toString, preDestroyCounter.incrementAndGet());
             this.preDestroyed = true;
         }
 

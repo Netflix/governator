@@ -23,10 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -58,11 +56,7 @@ public class PreDestroyMonitor implements AutoCloseable {
                     Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
                     if (ref != null && ref instanceof ScopeCleanupAction) { 
                         Object markerKey = ((ScopeCleanupAction)ref).getId();
-                        ScopeCleanupAction cleanupAction;
-                        // synchronized to avoid conflict with close() method below
-                        synchronized(scopedCleanupActions) {
-                            cleanupAction = scopedCleanupActions.remove(markerKey);
-                        }
+                        ScopeCleanupAction cleanupAction = scopedCleanupActions.remove(markerKey);
                         if (cleanupAction != null) {
                             cleanupAction.call();
                         }
@@ -84,14 +78,7 @@ public class PreDestroyMonitor implements AutoCloseable {
         }
     }
     private static final Key<ScopeCleanupMarker> MARKER_KEY = Key.get(ScopeCleanupMarker.class);
-    private Deque<Callable<Void>> cleanupActions = new ConcurrentLinkedDeque<>();
-    
-    private ConcurrentMap<Object, ScopeCleanupAction> scopedCleanupActions = new ConcurrentHashMap<>(1<<14);
-    private Map<Class<? extends Annotation>, Scope> scopeBindings;
-    private ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
-    private final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("predestroy-monitor-%d").build());
-    private final AtomicBoolean running= new AtomicBoolean(true);
-    
+
     final static class ScopeCleanupMarkerProvider implements Provider<ScopeCleanupMarker> {
         final static ScopeCleanupMarkerProvider instance = new ScopeCleanupMarkerProvider();
         @Override
@@ -101,6 +88,13 @@ public class PreDestroyMonitor implements AutoCloseable {
     }
     
     private final ScopeCleanupMarker singletonMarker = new ScopeCleanupMarker();
+    private Deque<Callable<Void>> cleanupActions = new ConcurrentLinkedDeque<>();
+    
+    ConcurrentMap<Object, ScopeCleanupAction> scopedCleanupActions = new ConcurrentHashMap<>(1<<14);
+    Map<Class<? extends Annotation>, Scope> scopeBindings;
+    ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
+    final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("predestroy-monitor-%d").build());
+    final AtomicBoolean running= new AtomicBoolean(true);
     
     public PreDestroyMonitor(Map<Class<? extends Annotation>, Scope> scopeBindings) {
         this.scopeBindings = new HashMap<>(scopeBindings);
@@ -137,15 +131,14 @@ public class PreDestroyMonitor implements AutoCloseable {
         if (running.compareAndSet(true, false)) { // executor thread to exit processing loop
             LOGGER.info("closing PreDestroyMonitor...");
             reqQueueExecutor.shutdown(); // executor to stop 
-            synchronized(scopedCleanupActions) { 
-                // process any remaining scoped cleanup actions
-                List<ScopeCleanupAction> values = new ArrayList<>(scopedCleanupActions.values());
-                Collections.sort(values);
-                for (Callable<Void> actions : values) {
-                    actions.call();
-                }
-                scopedCleanupActions.clear();
+            // process any remaining scoped cleanup actions
+            List<ScopeCleanupAction> values = new ArrayList<>(scopedCleanupActions.values());
+            Collections.sort(values);
+            for (Callable<Void> actions : values) {
+                actions.call();
             }
+            scopedCleanupActions.clear();
+            
             // make sure executor thread really ended
             if (!reqQueueExecutor.awaitTermination(90, TimeUnit.SECONDS)) {
                 LOGGER.error("internal executor still active; shutting down now");
@@ -258,8 +251,7 @@ public class PreDestroyMonitor implements AutoCloseable {
          private volatile static long instanceCounter = 0;
          private final Object id;
          private final long ordinal;
-         private List<Callable<Void>> delegates;
-         private Set<Provider<ScopeCleanupMarker>> scopeProviders ;
+         private Deque<Object[]> delegates = new ConcurrentLinkedDeque<>();
          private final AtomicBoolean complete = new AtomicBoolean(false);
          
          public ScopeCleanupAction(ScopeCleanupMarker marker, ReferenceQueue<ScopeCleanupMarker> refQueue) {
@@ -272,29 +264,23 @@ public class PreDestroyMonitor implements AutoCloseable {
              return id;
          }
          
-         public synchronized void add(Provider<ScopeCleanupMarker> scopeProvider, Callable<Void> action) {
+         public void add(Provider<ScopeCleanupMarker> scopeProvider, Callable<Void> action) {
              if (!complete.get()) {
-                 if (delegates == null) {
-                     delegates = new ArrayList<>();
-                     scopeProviders = new HashSet<>();
-                 }
-                 delegates.add(0, action);  // add first
-                 scopeProviders.add(scopeProvider); // hang onto reference
+                 delegates.push(new Object[] {action, scopeProvider});  // add first
              }
          }
     
          @Override
-         public synchronized Void call() {
+         public Void call() {
              if (complete.compareAndSet(false, true) && delegates != null) {
-                 for (Callable<Void> r : delegates) {
+                 for (Object[] r : delegates) {
                      try {
-                        r.call();
+                        ((Callable<Void>)r[0]).call();
                     } catch (Exception e) {
                         LOGGER.error("PreDestroy call failed for " + r, e);
                     }
                  }
                  delegates.clear();
-                 scopeProviders.clear();
                  clear();
              }
              return null;
