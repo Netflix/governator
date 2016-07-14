@@ -60,7 +60,7 @@ public class SimpleProvisionMetrics implements ProvisionMetrics {
         public long getDuration(TimeUnit units) {
             long childDuration = 0;
             for (Entry child : children) {
-                childDuration += child.getDuration(units);
+                childDuration += child.getTotalDuration(units);
             }
             return getTotalDuration(units) - childDuration;
         }
