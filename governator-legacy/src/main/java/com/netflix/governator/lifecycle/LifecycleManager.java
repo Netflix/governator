@@ -17,7 +17,6 @@
 package com.netflix.governator.lifecycle;
 
 import java.io.Closeable;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +31,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import javax.validation.groups.Default;
 
 import org.slf4j.Logger;
@@ -77,7 +75,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private final ConfigurationMapper configurationMapper;
     private final ResourceMapper resourceMapper;
     final Collection<LifecycleListener> listeners;
-    private final Validator factory;
+    private final Validator validator;
     private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
@@ -104,7 +102,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         newLifecycleManager = arguments.getLifecycleManager();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
         resourceMapper = new ResourceMapper(injector, ImmutableSet.copyOf(arguments.getResourceLocators()));
-        factory = Validation.buildDefaultValidatorFactory().getValidator();
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
         configurationDocumentation = arguments.getConfigurationDocumentation();
         configurationProvider = arguments.getConfigurationProvider();
     }
@@ -281,7 +279,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     public void validate() throws ValidationException
     {
         ValidationException exception = null;
-        Validator validator = factory;
         for ( Object managedInstance : objectStates.keySet() )
         {
             if (managedInstance != null) {
@@ -303,14 +300,13 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public void validate(Object obj) throws ValidationException
     {
-        Validator validator = factory;
         ValidationException exception = internalValidateObject(null, obj, validator);
         if ( exception != null )
         {
             throw exception;
         }
     }
-    
+        
     class LifecycleStateWrapper {
         volatile LifecycleState state;
 
