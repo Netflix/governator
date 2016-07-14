@@ -16,14 +16,10 @@
 
 package com.netflix.governator.lifecycle;
 
-import java.beans.Introspector;
 import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.annotation.Resources;
-import javax.naming.NamingException;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
@@ -82,10 +75,9 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationMapper configurationMapper;
+    private final ResourceMapper resourceMapper;
     final Collection<LifecycleListener> listeners;
-    private final Collection<ResourceLocator> resourceLocators;
-    private final ValidatorFactory factory;
-    private Injector injector;
+    private final Validator factory;
     private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
@@ -102,7 +94,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     @Inject
     public LifecycleManager(LifecycleManagerArguments arguments, Injector injector)
     {
-        this.injector = injector;
         if (injector != null) {
             preDestroyMonitor =  new PreDestroyMonitor(injector.getScopeBindings());
         }
@@ -112,8 +103,8 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         configurationMapper = arguments.getConfigurationMapper();
         newLifecycleManager = arguments.getLifecycleManager();
         listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
-        resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
-        factory = Validation.buildDefaultValidatorFactory();
+        resourceMapper = new ResourceMapper(injector, ImmutableSet.copyOf(arguments.getResourceLocators()));
+        factory = Validation.buildDefaultValidatorFactory().getValidator();
         configurationDocumentation = arguments.getConfigurationDocumentation();
         configurationProvider = arguments.getConfigurationProvider();
     }
@@ -166,14 +157,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     @Deprecated
     public void add(Object obj, LifecycleMethods methods) throws Exception
     {
-        Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
-
-        startInstance(obj, null, methods);
-
-        if ( hasStarted() )
-        {
-            initializeObjectPostStart(obj);
-        }
+        add(obj, null, methods);
     }
     
     /**
@@ -186,14 +170,17 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public <T> void add(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
     {
-        Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
-
-        startInstance(obj, binding, methods);
-
-        if ( hasStarted() )
-        {
-            initializeObjectPostStart(obj);
-        }
+       State managerState = state.get();
+       if (managerState != State.CLOSED) {     
+           startInstance(obj, binding, methods);
+           if ( managerState == State.STARTED )
+           {
+               initializeObjectPostStart(obj);
+           }
+       }
+       else {
+           throw new IllegalStateException("LifecycleManager is closed");
+       }
     }
     
 
@@ -220,7 +207,9 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         {
             return hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
         }
-        return lifecycleState.get();
+        else {
+            return lifecycleState.get();
+        }
     }
 
     /**
@@ -292,7 +281,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     public void validate() throws ValidationException
     {
         ValidationException exception = null;
-        Validator validator = factory.getValidator();
+        Validator validator = factory;
         for ( Object managedInstance : objectStates.keySet() )
         {
             if (managedInstance != null) {
@@ -314,7 +303,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public void validate(Object obj) throws ValidationException
     {
-        Validator validator = factory.getValidator();
+        Validator validator = factory;
         ValidationException exception = internalValidateObject(null, obj, validator);
         if ( exception != null )
         {
@@ -388,7 +377,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
 
         lifecycleState.set(obj, LifecycleState.SETTING_RESOURCES);
-        setResources(obj, methods);
+        resourceMapper.map(obj, methods);
 
         lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
         methods.methodInvoke(PostConstruct.class, obj);
@@ -425,201 +414,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             }
         }
 
-    }
-
-    private void setResources(Object obj, LifecycleMethods methods) throws Exception
-    {
-        if (methods.hasResources()) {        
-            Collection<Field> fieldResources = methods.fieldsFor(Resources.class);
-            if (!fieldResources.isEmpty()) {
-                for ( Field field : fieldResources )
-                {
-                    Resources resources = field.getAnnotation(Resources.class);
-                    for ( Resource resource : resources.value() )
-                    {
-                        setFieldResource(obj, field, resource);
-                    }
-                }
-            }
-    
-            Collection<Field> fieldResource = methods.fieldsFor(Resource.class);
-            if (!fieldResource.isEmpty()) {
-                for ( Field field : fieldResource )
-                {
-                    Resource resource = field.getAnnotation(Resource.class);
-                    setFieldResource(obj, field, resource);
-                }
-            }
-    
-            Collection<Method> methodResources = methods.methodsFor(Resources.class);
-            if (!methodResources.isEmpty()) {
-                for ( Method method : methodResources )
-                {
-                    Resources resources = method.getAnnotation(Resources.class);
-                    for ( Resource resource : resources.value() )
-                    {
-                        setMethodResource(obj, method, resource);
-                    }
-                }
-            }
-    
-            Collection<Method> methodResource = methods.methodsFor(Resource.class);
-            if (!methodResource.isEmpty()) {
-                for ( Method method : methodResource )
-                {
-                    Resource resource = method.getAnnotation(Resource.class);
-                    setMethodResource(obj, method, resource);
-                }
-            }
-    
-            Collection<Resources> classResources = methods.classAnnotationsFor(Resources.class);
-            if (!classResources.isEmpty()) {
-                for ( Resources resources : classResources )
-                {
-                    for ( Resource resource : resources.value() )
-                    {
-                        loadClassResource(resource);
-                    }
-                }
-            }
-    
-            Collection<Resource> classResource = methods.classAnnotationsFor(Resource.class);            
-            if (!classResource.isEmpty()) {
-                for ( Resource resource : classResource )
-                {
-                    loadClassResource(resource);
-                }
-            }
-        }
-    }
-
-    private void loadClassResource(Resource resource) throws Exception
-    {
-        if ( (resource.name().isEmpty()) || (resource.type() == Object.class) )
-        {
-            throw new Exception("Class resources must have both name() and type(): " + resource);
-        }
-        findResource(resource);
-    }
-
-    private void setMethodResource(Object obj, Method method, Resource resource) throws Exception
-    {
-        if ( (method.getParameterTypes().length != 1) || (method.getReturnType() != Void.TYPE) )
-        {
-            throw new Exception(String.format("%s.%s() is not a proper JavaBean setter.", obj.getClass().getName(), method.getName()));
-        }
-
-        String beanName = method.getName();
-        if ( beanName.toLowerCase().startsWith("set") )
-        {
-            beanName = beanName.substring("set".length());
-        }
-        beanName = Introspector.decapitalize(beanName);
-
-        String siteName = obj.getClass().getName() + "/" + beanName;
-        resource = adjustResource(resource, method.getParameterTypes()[0], siteName);
-        Object resourceObj = findResource(resource);
-        method.setAccessible(true);
-        method.invoke(obj, resourceObj);
-    }
-
-    private void setFieldResource(Object obj, Field field, Resource resource) throws Exception
-    {
-        String siteName = obj.getClass().getName() + "/" + field.getName();
-        Object resourceObj = findResource(adjustResource(resource, field.getType(), siteName));
-        field.setAccessible(true);
-        field.set(obj, resourceObj);
-    }
-
-    private Resource adjustResource(final Resource resource, final Class<?> siteType, final String siteName)
-    {
-        return new Resource()
-        {
-            @Override
-            public String name()
-            {
-                return (resource.name().length() == 0) ? siteName : resource.name();
-            }
-
-            /**
-             * Method needed for eventual java7 compatibility
-             */
-            public String lookup()
-            {
-                return name();
-            }
-
-            @Override
-            public Class<?> type()
-            {
-                return (resource.type() == Object.class) ? siteType : resource.type();
-            }
-
-            @Override
-            public AuthenticationType authenticationType()
-            {
-                return resource.authenticationType();
-            }
-
-            @Override
-            public boolean shareable()
-            {
-                return resource.shareable();
-            }
-
-            @Override
-            public String mappedName()
-            {
-                return resource.mappedName();
-            }
-
-            @Override
-            public String description()
-            {
-                return resource.description();
-            }
-
-            @Override
-            public Class<? extends Annotation> annotationType()
-            {
-                return resource.annotationType();
-            }
-        };
-    }
-
-    private Object findResource(Resource resource) throws Exception
-    {
-        if ( !resourceLocators.isEmpty() )
-        {
-            final Iterator<ResourceLocator> iterator = resourceLocators.iterator();
-            ResourceLocator locator = iterator.next();
-            ResourceLocator nextInChain = new ResourceLocator()
-            {
-                @Override
-                public Object locate(Resource resource, ResourceLocator nextInChain) throws Exception
-                {
-                    if ( iterator.hasNext() )
-                    {
-                        return iterator.next().locate(resource, this);
-                    }
-                    return defaultFindResource(resource);
-                }
-            };
-            return locator.locate(resource, nextInChain);
-        }
-        return defaultFindResource(resource);
-    }
-
-    private Object defaultFindResource(Resource resource) throws Exception
-    {
-        if ( injector == null )
-        {
-            throw new NamingException("Could not find resource: " + resource);
-        }
-
-        //noinspection unchecked     
-        log.debug("defaultFindResource using injector {}", System.identityHashCode(injector));
-        return injector.getInstance(resource.type());
     }
 
     private void stopInstances() throws Exception
@@ -659,7 +453,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
 
     @Override
     public void call(Injector injector) {
-        this.injector = injector;
-        preDestroyMonitor.addScopeBindings(injector.getScopeBindings());
-    }   
+        this.resourceMapper.setInjector(injector);
+        this.preDestroyMonitor.addScopeBindings(injector.getScopeBindings());
+    }
 }

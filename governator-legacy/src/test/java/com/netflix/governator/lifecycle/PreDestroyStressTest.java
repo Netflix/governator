@@ -22,13 +22,13 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
-import com.netflix.governator.LifecycleManager;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.guice.LifecycleInjectorBuilder;
 import com.netflix.governator.guice.LifecycleInjectorMode;
@@ -38,8 +38,9 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 @RunWith(DataProviderRunner.class)
 public class PreDestroyStressTest {
-    private static final int TEST_TIME_IN_SECONDS = 60;  // run the stress test for this many seconds
-    private static final int CONCURRENCY_LEVEL = 200; // run the stress test with this many threads
+    static final Key<LifecycleSubject> LIFECYCLE_SUBJECT_KEY = Key.get(LifecycleSubject.class);
+    private static final int TEST_TIME_IN_SECONDS = 10;  // run the stress test for this many seconds
+    private static final int CONCURRENCY_LEVEL = 20; // run the stress test with this many threads
 
     private final class ScopingModule extends AbstractModule {
         LocalScope localScope = new LocalScope();
@@ -59,22 +60,21 @@ public class PreDestroyStressTest {
 
 
     static class LifecycleSubject {
+        private static AtomicInteger instanceCounter = new AtomicInteger(0);
+        private static AtomicInteger preDestroyCounter = new AtomicInteger(0);
+        private static AtomicInteger postConstructCounter = new AtomicInteger(0);
+        private static Logger logger = LoggerFactory.getLogger(LifecycleSubject.class);
         private static byte[] bulkTemplate;
         static {
             bulkTemplate = new byte[1024*100]; 
             Arrays.fill(bulkTemplate, (byte)0);        
-
         }
-        private static Logger logger = LoggerFactory.getLogger(LifecycleSubject.class);
+
         private String name;
         private volatile boolean postConstructed = false;
         private volatile boolean preDestroyed = false;
         private byte[] bulk;
-        private final String toString = "LifecycleSubject@" + System.identityHashCode(this) + '[' + name + ']';
-
-        private static AtomicInteger instanceCounter = new AtomicInteger(0);
-        private static AtomicInteger preDestroyCounter = new AtomicInteger(0);
-        private static AtomicInteger postConstructCounter = new AtomicInteger(0);
+        private final String toString;
 
         public LifecycleSubject() {
             this("anonymous");
@@ -83,8 +83,16 @@ public class PreDestroyStressTest {
         public LifecycleSubject(String name) {
             this.name = name;
             this.bulk = bulkTemplate.clone(); 
-            logger.info("created instance {} {}", toString, instanceCounter.incrementAndGet());
+            int instanceId = instanceCounter.incrementAndGet();
+            this.toString = "LifecycleSubject@" + instanceId + '[' + name + ']';
+            logger.info("created instance {} {}", toString, instanceId);
             
+        }
+        
+        public static void clear() {
+            instanceCounter.set(0);
+            postConstructCounter.set(0);
+            preDestroyCounter.set(0);
         }
 
         @PostConstruct
@@ -119,7 +127,7 @@ public class PreDestroyStressTest {
     @Test
     @UseDataProvider("builders")
     public void testInParallel(String name, LifecycleInjectorBuilder lifecycleInjectorBuilder) throws Exception {
-
+        LifecycleSubject.clear();
         ScopingModule scopingModule = new ScopingModule();
         final LocalScope localScope = scopingModule.localScope;
         LifecycleInjector lifecycleInjector = LifecycleInjector.builder()
@@ -129,7 +137,6 @@ public class PreDestroyStressTest {
         try (com.netflix.governator.lifecycle.LifecycleManager legacyLifecycleManager = lifecycleInjector.getLifecycleManager()) {
             org.apache.log4j.Logger.getLogger("com.netflix.governator").setLevel(Level.WARN);
             final Injector injector = lifecycleInjector.createInjector(); 
-            injector.getInstance(LifecycleManager.class);
             legacyLifecycleManager.start();
                     
             thing1 = injector.getInstance(Key.get(LifecycleSubject.class, Names.named("thing1")));
@@ -157,7 +164,7 @@ public class PreDestroyStressTest {
 
     void runInParallel(int concurrency, final Callable<Void> task, int duration, TimeUnit timeUnits) throws InterruptedException {
 
-        ExecutorService es = Executors.newFixedThreadPool(concurrency);
+        ExecutorService es = Executors.newFixedThreadPool(concurrency, new ThreadFactoryBuilder().setNameFormat("predestroy-stress-test-%d").build());
         final AtomicBoolean running = new AtomicBoolean(true);
         try {
             List<Callable<Void>> tasks = new ArrayList<>();
@@ -193,7 +200,7 @@ public class PreDestroyStressTest {
             public Void call() throws InterruptedException {
                 localScope.enter();
                 try {
-                    LifecycleSubject anonymous = injector.getInstance(LifecycleSubject.class);
+                    LifecycleSubject anonymous = injector.getInstance(LIFECYCLE_SUBJECT_KEY);
                     Thread.sleep(random.nextInt(500));
                     Assert.assertTrue(anonymous.isPostConstructed());
                     Assert.assertFalse(anonymous.isPreDestroyed());
@@ -219,4 +226,6 @@ public class PreDestroyStressTest {
             new Object[] { "childInjector", LifecycleInjector.builder() }
         };
     }
+    
+    
 }

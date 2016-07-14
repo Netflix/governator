@@ -123,6 +123,12 @@ public class DelegatingLifecycleInjectorBuilder implements LifecycleInjectorBuil
     }
 
     @Override
+    public LifecycleInjectorBuilder requiringExplicitBindings() {
+        this.delegate = delegate.requiringExplicitBindings();
+        return this;
+    }
+
+    @Override
     public LifecycleInjectorBuilder usingBasePackages(String... basePackages) {
         this.delegate = delegate.usingBasePackages(basePackages);
         return this;

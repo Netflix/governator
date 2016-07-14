@@ -35,6 +35,7 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     private Collection<Class<?>> ignoreClasses = Lists.newArrayList();
     private Collection<String> basePackages = Lists.newArrayList();
     private boolean disableAutoBinding = false;
+    private boolean requireExplicitBindings = false;
     private List<BootstrapModule> bootstrapModules = Lists.newArrayList();
     private ClasspathScanner scanner = null;
     private Stage stage = Stage.PRODUCTION;
@@ -203,6 +204,13 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
     }
 
     @Override
+    public LifecycleInjectorBuilder requiringExplicitBindings()
+    {
+        this.requireExplicitBindings = true;
+        return this;
+    }
+
+    @Override
     public LifecycleInjectorBuilder usingBasePackages(String... basePackages)
     {
         return usingBasePackages(Arrays.asList(basePackages));
@@ -357,6 +365,10 @@ class LifecycleInjectorBuilderImpl implements LifecycleInjectorBuilder
 
     boolean isDisableAutoBinding() {
         return this.disableAutoBinding;
+    }
+
+    boolean isRequireExplicitBindings() {
+        return this.requireExplicitBindings;
     }
 
 }

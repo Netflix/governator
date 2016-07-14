@@ -233,6 +233,14 @@ public interface LifecycleInjectorBuilder
      * @return this
      */
     public LifecycleInjectorBuilder ignoringAllAutoBindClasses();
+    
+    
+    /**
+     * Do not use implicit bindings
+     *
+     * @return this
+     */
+    public LifecycleInjectorBuilder requiringExplicitBindings();
 
     /**
      * Specify the base packages for CLASSPATH scanning. Packages are recursively scanned

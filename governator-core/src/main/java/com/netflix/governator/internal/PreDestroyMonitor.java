@@ -44,72 +44,114 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PreDestroyMonitor implements AutoCloseable {
     private static Logger LOGGER = LoggerFactory.getLogger(PreDestroyMonitor.class);
     
-    /**
-     * Processes unreferenced markers from the referenceQueue, until
-     * the 'running' flag is false or interrupted
-     * 
-     */
-    private final class ScopedCleanupWorker implements Runnable {
-        public void run() {
-            try {
-                while (running.get()) {
-                    Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
-                    if (ref != null && ref instanceof ScopeCleanupAction) { 
-                        Object markerKey = ((ScopeCleanupAction)ref).getId();
-                        ScopeCleanupAction cleanupAction = scopedCleanupActions.remove(markerKey);
-                        if (cleanupAction != null) {
-                            cleanupAction.call();
-                        }
-                    }
-                }
-                LOGGER.info("PreDestroyMonitor.ScopedCleanupWorker is exiting");
-            } 
-            catch (InterruptedException e) {
-                LOGGER.info("PreDestroyMonitor.ScopedCleanupWorker is exiting due to thread interrupt");
-            }                
-        }
-    }
-
     private static class ScopeCleanupMarker {
+        static final Key<ScopeCleanupMarker> MARKER_KEY = Key.get(ScopeCleanupMarker.class);
         // simple id uses identity equality
         private final Object id = new Object();
+        private final ScopeCleanupAction cleanupAction;
+        
+        public ScopeCleanupMarker(ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue) {
+            this.cleanupAction = new ScopeCleanupAction(this, markerReferenceQueue);
+        }
         Object getId() {
             return id;
         }
-    }
-    private static final Key<ScopeCleanupMarker> MARKER_KEY = Key.get(ScopeCleanupMarker.class);
-
-    final static class ScopeCleanupMarkerProvider implements Provider<ScopeCleanupMarker> {
-        final static ScopeCleanupMarkerProvider instance = new ScopeCleanupMarkerProvider();
-        @Override
-        public ScopeCleanupMarker get() {
-            return new ScopeCleanupMarker();
+        public ScopeCleanupAction getCleanupAction() {
+            return cleanupAction;
         }
     }
+
+    static final class ScopeCleaner implements Provider<ScopeCleanupMarker> {
+        ConcurrentMap<Object, ScopeCleanupAction> scopedCleanupActions = new ConcurrentHashMap<>(1<<14);
+        ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
+        final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("predestroy-monitor-%d").build());
+        final AtomicBoolean running= new AtomicBoolean(true);
+        final ScopeCleanupMarker singletonMarker = get();
+        
+        
+        {
+            this.reqQueueExecutor.submit(new ScopedCleanupWorker());
+        }
+        
+        @Override
+        public ScopeCleanupMarker get() {
+            ScopeCleanupMarker marker = new ScopeCleanupMarker(markerReferenceQueue);
+            scopedCleanupActions.put(marker.getId(), marker.getCleanupAction());
+            return marker;
+        }
+        
+        public boolean isRunning() {
+            return running.get();
+        }
+        
+        public boolean close() throws Exception {
+            boolean rv = running.compareAndSet(true, false);
+            if (rv) {
+                reqQueueExecutor.shutdown(); // executor to stop 
+                // process any remaining scoped cleanup actions
+                List<ScopeCleanupAction> values = new ArrayList<>(scopedCleanupActions.values());
+                scopedCleanupActions.clear();
+                Collections.sort(values);
+                for (Callable<Void> actions : values) {
+                    actions.call();
+                }
+
+                // make sure executor thread really ended
+                if (!reqQueueExecutor.awaitTermination(90, TimeUnit.SECONDS)) {
+                    LOGGER.error("internal executor still active; shutting down now");
+                    reqQueueExecutor.shutdownNow();
+                }
+                markerReferenceQueue = null;
+            }
+            return rv;
+        }
+        
+        /**
+         * Processes unreferenced markers from the referenceQueue, until
+         * the 'running' flag is false or interrupted
+         * 
+         */
+        final class ScopedCleanupWorker implements Runnable {
+            public void run() {
+                try {
+                    while (running.get()) {
+                            Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
+                            if (ref != null && ref instanceof ScopeCleanupAction) { 
+                                Object markerKey = ((ScopeCleanupAction)ref).getId();
+                                ScopeCleanupAction cleanupAction = scopedCleanupActions.remove(markerKey);
+                                if (cleanupAction != null) {
+                                    cleanupAction.call();
+                                }
+                            }
+                    }
+                    LOGGER.info("PreDestroyMonitor.ScopedCleanupWorker is exiting");
+                } 
+                catch (InterruptedException e) {
+                    LOGGER.info("PreDestroyMonitor.ScopedCleanupWorker is exiting due to thread interrupt");
+                }                
+            }
+        }
+        
+    }
     
-    private final ScopeCleanupMarker singletonMarker = new ScopeCleanupMarker();
     private Deque<Callable<Void>> cleanupActions = new ConcurrentLinkedDeque<>();
+    private ScopeCleaner scopeCleaner = new ScopeCleaner();
     
-    ConcurrentMap<Object, ScopeCleanupAction> scopedCleanupActions = new ConcurrentHashMap<>(1<<14);
     Map<Class<? extends Annotation>, Scope> scopeBindings;
-    ReferenceQueue<ScopeCleanupMarker> markerReferenceQueue = new ReferenceQueue<>();
-    final ExecutorService reqQueueExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("predestroy-monitor-%d").build());
-    final AtomicBoolean running= new AtomicBoolean(true);
     
     public PreDestroyMonitor(Map<Class<? extends Annotation>, Scope> scopeBindings) {
         this.scopeBindings = new HashMap<>(scopeBindings);
-        this.reqQueueExecutor.submit(new ScopedCleanupWorker());
     }
     
     public <T> boolean register(T destroyableInstance, Binding<T> binding, Iterable<LifecycleAction> action) {
-        return (running.get()) ? binding.acceptScopingVisitor(new ManagedInstanceScopingVisitor(destroyableInstance, binding.getSource(), action)) : false;
+        return scopeCleaner.isRunning() ? binding.acceptScopingVisitor(new ManagedInstanceScopingVisitor(destroyableInstance, binding.getSource(), action)) : false;
     }
     
     /*
      * compatibility-mode - scope is assumed to be eager singleton
      */
     public <T> boolean register(T destroyableInstance, Object context, Iterable<LifecycleAction> action) {
-        return (running.get()) ? new ManagedInstanceScopingVisitor(destroyableInstance, context, action).visitEagerSingleton() : false;
+        return scopeCleaner.isRunning() ? new ManagedInstanceScopingVisitor(destroyableInstance, context, action).visitEagerSingleton() : false;
     }
 
     /**
@@ -118,7 +160,7 @@ public class PreDestroyMonitor implements AutoCloseable {
      * @param bindings additional annotation-to-scope bindings to add
      */
     public void addScopeBindings(Map<Class<? extends Annotation>, Scope> bindings) {
-        if (running.get()) {
+        if (scopeCleaner.isRunning()) {
             scopeBindings.putAll(bindings);
         }
     }
@@ -128,28 +170,13 @@ public class PreDestroyMonitor implements AutoCloseable {
      */
     @Override
     public void close() throws Exception {
-        if (running.compareAndSet(true, false)) { // executor thread to exit processing loop
+        if (scopeCleaner.close()) { // executor thread to exit processing loop
             LOGGER.info("closing PreDestroyMonitor...");
-            reqQueueExecutor.shutdown(); // executor to stop 
-            // process any remaining scoped cleanup actions
-            List<ScopeCleanupAction> values = new ArrayList<>(scopedCleanupActions.values());
-            Collections.sort(values);
-            for (Callable<Void> actions : values) {
-                actions.call();
-            }
-            scopedCleanupActions.clear();
-            
-            // make sure executor thread really ended
-            if (!reqQueueExecutor.awaitTermination(90, TimeUnit.SECONDS)) {
-                LOGGER.error("internal executor still active; shutting down now");
-                reqQueueExecutor.shutdownNow();
-            }
             
             for (Callable<Void> action : cleanupActions) {
                 action.call();
             }     
             cleanupActions.clear();
-            markerReferenceQueue = null;
             scopeBindings.clear();
             scopeBindings = Collections.emptyMap();
         }
@@ -193,23 +220,12 @@ public class PreDestroyMonitor implements AutoCloseable {
         public Boolean visitScope(Scope scope) {
             final Provider<ScopeCleanupMarker> scopedMarkerProvider;
             if (scope.equals(Scopes.SINGLETON) || (scope instanceof AbstractScope && ((AbstractScope)scope).isSingletonScope())) {
-                scopedMarkerProvider = Providers.of(singletonMarker);
+                scopedMarkerProvider = Providers.of(scopeCleaner.singletonMarker);
             } else {
-                scopedMarkerProvider = scope.scope(MARKER_KEY, ScopeCleanupMarkerProvider.instance);                
+                scopedMarkerProvider = scope.scope(ScopeCleanupMarker.MARKER_KEY, scopeCleaner);                
             }
             ScopeCleanupMarker marker = scopedMarkerProvider.get();
-            Object markerKey = marker.getId();
-
-            synchronized (markerKey) {
-                ManagedInstanceAction instanceAction = new ManagedInstanceAction(injectee, lifecycleActions);
-                ScopeCleanupAction newSca = new ScopeCleanupAction(marker, markerReferenceQueue);
-                if (scopedCleanupActions.putIfAbsent(markerKey, newSca) == null) {
-                    newSca.add(scopedMarkerProvider, instanceAction);
-                }
-                else {
-                    scopedCleanupActions.get(markerKey).add(scopedMarkerProvider, instanceAction);
-                }
-            }
+            marker.getCleanupAction().add(scopedMarkerProvider, new ManagedInstanceAction(injectee, lifecycleActions));
             return true;
         }
 
@@ -266,7 +282,7 @@ public class PreDestroyMonitor implements AutoCloseable {
          
          public void add(Provider<ScopeCleanupMarker> scopeProvider, Callable<Void> action) {
              if (!complete.get()) {
-                 delegates.push(new Object[] {action, scopeProvider});  // add first
+                 delegates.addFirst(new Object[] {action, scopeProvider});  // add first
              }
          }
     

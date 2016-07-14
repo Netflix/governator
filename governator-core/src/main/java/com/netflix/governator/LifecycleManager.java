@@ -3,12 +3,9 @@ package com.netflix.governator;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -123,17 +120,18 @@ public final class LifecycleManager {
     }
     
     public synchronized void notifyShutdown() {
+        if (running.compareAndSet(true, false)) {
+            reqQueueExecutor.shutdown();            
+        }
         if (state.compareAndSet(State.Started, State.Stopped)) {
             LOG.info("Stopping '{}'", this);
             Iterator<SafeLifecycleListener> shutdownIter = new LinkedList<>(listeners).descendingIterator();
-            running.set(false);
-            reqQueueExecutor.shutdown();
             while (shutdownIter.hasNext()) {
                 shutdownIter.next().onStopped(null);
             }
-            state.set(State.Done);
             listeners.clear();
         }
+        state.set(State.Done);
     }
     
     public State getState() {

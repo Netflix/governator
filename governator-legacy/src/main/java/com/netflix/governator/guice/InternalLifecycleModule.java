@@ -27,6 +27,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
+import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.ProvisionListener;
@@ -66,34 +67,32 @@ class InternalLifecycleModule extends AbstractModule implements ProvisionListene
         T instance = provision.provision();
         if (instance != null) {
             Binding<T> binding = provision.getBinding();
-            LOGGER.trace("provisioning instance of {}", binding.getKey());
-            processInjectedObject(instance, binding);
-        }
-    }
 
-    private <T> void processInjectedObject(T instance, Binding<T> binding){
-        LifecycleManager manager = lifecycleManager.get();
-        if ( manager != null ) {
-            TypeLiteral<T> bindingType = binding.getKey().getTypeLiteral();
-            for ( LifecycleListener listener : manager.getListeners() ) {
-                listener.objectInjected(bindingType, instance);
-            }
-
-            try {
-                LifecycleMethods methods = lifecycleMethods.get(instance.getClass());
-                if ( methods.hasLifecycleAnnotations() ) {
-                        manager.add(instance, binding, methods);
+            LifecycleManager manager = lifecycleManager.get();
+            if ( manager != null ) {
+                Key<T> bindingKey = binding.getKey();
+                LOGGER.trace("provisioning instance of {}", bindingKey);
+                TypeLiteral<T> bindingType = bindingKey.getTypeLiteral();
+                for ( LifecycleListener listener : manager.getListeners() ) {
+                    listener.objectInjected(bindingType, instance);
                 }
+    
+                try {
+                    LifecycleMethods methods = lifecycleMethods.get(instance.getClass());
+                    if ( methods.hasLifecycleAnnotations() ) {
+                            manager.add(instance, binding, methods);
+                    }
+                }
+                catch ( ExecutionException e ) {
+                    // caching problem
+                    throw new RuntimeException(e);
+                }
+                catch ( Throwable e ) {
+                    // unknown problem will abort injector start up
+                    throw new Error(e);
+                }
+                
             }
-            catch ( ExecutionException e ) {
-                // caching problem
-                throw new RuntimeException(e);
-            }
-            catch ( Throwable e ) {
-                // unknown problem will abort injector start up
-                throw new Error(e);
-            }
-            
         }
     }    
 
