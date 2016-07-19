@@ -19,6 +19,7 @@ import com.google.inject.Binding;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.TypeLiteral;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.name.Names;
@@ -64,13 +65,17 @@ public class AnnotationBasedTestInjectorManager {
         injector.injectMembers(testFixture);
     }
 
-    public void cleanupMocks() {
+    public void cleanUpMocks() {
         for (Object mock : mocksToReset) {
             Mockito.reset(mock);
         }
     }
+    
+    public void cleanUpMethodLevelConfig() {
+        testCompositeConfig.resetForTest();
+    }
 
-    public void cleanupInjector() {
+    public void cleanUpInjector() {
         injector.close();
     }
 
@@ -90,9 +95,15 @@ public class AnnotationBasedTestInjectorManager {
                 modulesForTestClass.add(moduleClass.newInstance());
             } catch (InstantiationException | IllegalAccessException e) {
                 try {
-                    Constructor<?> constructor = moduleClass.getDeclaredConstructors()[0];
-                    constructor.setAccessible(true);
-                    modulesForTestClass.add((Module) constructor.newInstance());
+                    Constructor<?>[] declaredConstructors = moduleClass.getDeclaredConstructors();
+                    for(int i=0; i < declaredConstructors.length; i++) {
+                        if(declaredConstructors[i].getParameterCount() == 0) {
+                            Constructor<?> zeroArgConstructor = declaredConstructors[i];
+                            zeroArgConstructor.setAccessible(true);
+                            modulesForTestClass.add((Module) zeroArgConstructor.newInstance());
+                            break;
+                        }
+                    }        
                 } catch (Exception ex) {
                     throw new RuntimeException("Error instantiating module " + moduleClass
                             + ". Please ensure that the module is public and has a no-arg constructor", e);
@@ -141,22 +152,24 @@ public class AnnotationBasedTestInjectorManager {
                 @Override
                 public <T> Void visit(Binding<T> binding) {
                     final Binding<T> finalBinding = binding;
+                    final Key<T> bindingKey = finalBinding.getKey();
+                    final TypeLiteral<T> bindingType = bindingKey.getTypeLiteral();
                     if (spyTargets.contains(binding.getKey())) {
                         AbstractModule spyModule = new AbstractModule() {
                             protected void configure() {
                                 final String finalBindingName = "Spied "
-                                        + (finalBinding.getKey().getAnnotation() != null
-                                                ? finalBinding.getKey().getAnnotation().toString() : "")
-                                        + finalBinding.getKey().getTypeLiteral();
-                                final Key<T> newUniqueKey = Key.get(finalBinding.getKey().getTypeLiteral(),
-                                        Names.named(finalBindingName));
+                                        + (bindingKey.getAnnotation() != null
+                                                ? bindingKey.getAnnotation().toString() : "")
+                                        + bindingType;
+                                final Key<T> newUniqueKey = Key.get(bindingType, Names.named(finalBindingName));
                                 finalBinding.acceptTargetVisitor(new CopyBindingTargetVisitor<>(binder().bind(newUniqueKey)));
                                 bind(finalBinding.getKey()).toProvider(new SingletonProvider<T>() {
                                     @Inject
                                     Injector injector;
 
+                                    @Override
                                     protected T create() {
-                                        T t = (T) injector.getInstance(newUniqueKey);
+                                        T t = injector.getInstance(newUniqueKey);
                                         return Mockito.spy(t);
                                     };
                                 });
@@ -178,9 +191,6 @@ public class AnnotationBasedTestInjectorManager {
         methodLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testMethod.getAnnotation(TestPropertyOverride.class)));                    
     }
     
-    public void cleanUpMethodLevelConfig() {
-        testCompositeConfig.resetForTest();
-    }
     private List<Class<?>> getAllSuperClassesInReverseOrder(Class<?> clazz) {
         List<Class<?>> allSuperclasses = ClassUtils.getAllSuperclasses(clazz);
         Collections.reverse(allSuperclasses);
@@ -208,7 +218,7 @@ public class AnnotationBasedTestInjectorManager {
         }
     }
     
-    private class ArchaiusTestConfigOverrideModule extends AbstractModule {
+    private static class ArchaiusTestConfigOverrideModule extends AbstractModule {
         private TestCompositeConfig config;
 
         public ArchaiusTestConfigOverrideModule(TestCompositeConfig config) {

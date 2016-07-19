@@ -54,7 +54,7 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
             public void evaluate() throws Throwable {
                 super.evaluate();
                 annotationBasedTestInjectorManager.cleanUpMethodLevelConfig();
-                annotationBasedTestInjectorManager.cleanupMocks();
+                annotationBasedTestInjectorManager.cleanUpMocks();
             }
         };
     }
@@ -66,7 +66,7 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
             @Override
             public void evaluate() throws Throwable {
                 super.evaluate();
-                annotationBasedTestInjectorManager.cleanupInjector();
+                annotationBasedTestInjectorManager.cleanUpInjector();
             }
         };
     }
