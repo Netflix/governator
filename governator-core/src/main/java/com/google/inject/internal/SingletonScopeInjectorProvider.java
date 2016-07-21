@@ -8,9 +8,9 @@ import com.google.inject.Injector;
  * A hack to provide a reference to the Injector to the {@link SingletonScope} for some
  * edge cases in which it was not properly being initialized. 
  */
-public class SingletonScopeInjectorProvider {
+public final class SingletonScopeInjectorProvider {
     
-    public static void setCurrentInjector(Injector injector) {
+    public static void setCurrentInjectorIfAbsent(Injector injector) {
         if(injector != null && SingletonScope.currentInjector.get() == null && injector instanceof InjectorImpl ) {
             SingletonScope.currentInjector.set(new WeakReference<InjectorImpl>((InjectorImpl) injector));
         }

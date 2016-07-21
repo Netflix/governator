@@ -52,7 +52,7 @@ public final class LifecycleListenerModule extends AbstractModule {
 
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
-            SingletonScopeInjectorProvider.setCurrentInjector(this.injector);
+            SingletonScopeInjectorProvider.setCurrentInjectorIfAbsent(this.injector);
             final T injectee = provision.provision();
             if (injectee == null) {
                 return;
