@@ -7,6 +7,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.internal.SingletonScopeInjectorProvider;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
@@ -31,10 +33,12 @@ public final class LifecycleListenerModule extends AbstractModule {
     static class LifecycleListenerProvisionListener implements ProvisionListener {
         private LifecycleManager manager;
         private List<LifecycleListener> pendingLifecycleListeners = new ArrayList<>();
+        private Injector injector;
         
         @Inject
-        public static void initialize(LifecycleManager manager, LifecycleListenerProvisionListener provisionListener) {
+        public static void initialize(LifecycleManager manager, LifecycleListenerProvisionListener provisionListener, Injector injector) {
             provisionListener.manager = manager;
+            provisionListener.injector = injector;
             for (LifecycleListener l : provisionListener.pendingLifecycleListeners) {
                 manager.addListener(l);
             }
@@ -48,6 +52,7 @@ public final class LifecycleListenerModule extends AbstractModule {
 
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
+            SingletonScopeInjectorProvider.setCurrentInjector(this.injector);
             final T injectee = provision.provision();
             if (injectee == null) {
                 return;
