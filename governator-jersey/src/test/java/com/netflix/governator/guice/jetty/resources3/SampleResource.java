@@ -1,4 +1,4 @@
-package com.netflix.governator.guice.jetty;
+package com.netflix.governator.guice.jetty.resources3;
 
 import com.netflix.governator.LifecycleShutdownSignal;
 

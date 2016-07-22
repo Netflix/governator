@@ -20,15 +20,18 @@ import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
+import com.netflix.governator.internal.AbstractScope;
 
 /**
  * A Guice {@link Scope} that enables lazy singletons
  */
-final class LazySingletonScopeImpl implements Scope
-{
+final class LazySingletonScopeImpl extends AbstractScope {
     @Override
-    public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped)
-    {
+    public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
         return Scopes.SINGLETON.scope(key, unscoped);
+    }
+    
+    public boolean isSingletonScope() {
+        return true;
     }
 }

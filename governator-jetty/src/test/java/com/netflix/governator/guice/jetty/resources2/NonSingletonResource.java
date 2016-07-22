@@ -1,5 +1,7 @@
 package com.netflix.governator.guice.jetty.resources2;
 
+import com.netflix.governator.guice.jetty.SomeFineGrainedLazySingleton;
+import com.netflix.governator.guice.jetty.SomeLazySingleton;
 import com.netflix.governator.guice.jetty.SomeSingleton;
 
 import org.slf4j.Logger;
@@ -17,7 +19,7 @@ public class NonSingletonResource {
     private static final Logger LOG = LoggerFactory.getLogger(NonSingletonResource.class);
     
     @Inject
-    public NonSingletonResource(SomeSingleton singleton) {
+    public NonSingletonResource(SomeLazySingleton lazySingleton, SomeSingleton singleton, SomeFineGrainedLazySingleton fglSingleton) {
         LOG.info("NonSingletonResource()");
     }
     

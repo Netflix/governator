@@ -10,8 +10,6 @@ import com.google.inject.spi.BindingScopingVisitor;
 import com.google.inject.util.Providers;
 import com.netflix.governator.LifecycleAction;
 import com.netflix.governator.ManagedInstanceAction;
-import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
-import com.netflix.governator.guice.lazy.LazySingletonScope;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,8 +192,11 @@ public class PreDestroyMonitor implements AutoCloseable {
          */
         @Override
         public Boolean visitScope(Scope scope) {
+            // Special case Singleton scopes since a thread local for singleton scopes will not 
+            // have been properly initialized if being created lazily from another scope
+            // as part of another scope (such as RequestScope).
             final Provider<ScopeCleanupMarker> scopedMarkerProvider;
-            if (scope.equals(Scopes.SINGLETON) || scope.equals(LazySingletonScope.get()) || scope.equals(FineGrainedLazySingletonScope.get())) {
+            if (scope.equals(Scopes.SINGLETON) || (scope instanceof AbstractScope && ((AbstractScope)scope).isSingletonScope())) {
                 scopedMarkerProvider = Providers.of(singletonMarker);
             } else {
                 scopedMarkerProvider = scope.scope(MARKER_KEY, markerProvider);                
