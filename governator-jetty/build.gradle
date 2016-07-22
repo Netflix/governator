@@ -2,7 +2,7 @@ apply plugin: 'java'
 
 dependencies {
     compile project(':governator-core')
-    compile 'com.google.inject.extensions:guice-servlet:4.0'
+    compile "com.google.inject.extensions:guice-servlet:${guice_version}"
     compile 'com.sun.jersey:jersey-server:1.19'
     compile 'org.eclipse.jetty:jetty-servlet:9.2.12.v20150709'
     compile 'org.eclipse.jetty:jetty-webapp:9.2.12.v20150709'
