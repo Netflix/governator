@@ -22,6 +22,7 @@ import com.netflix.governator.ShutdownHookModule;
 import com.netflix.governator.guice.jetty.DefaultJettyConfig;
 import com.netflix.governator.guice.jetty.JettyConfig;
 import com.netflix.governator.guice.jetty.JettyModule;
+import com.netflix.governator.guice.jetty.resources1.SampleResource;
 
 public class JettyServerTest {
     static class Foo {

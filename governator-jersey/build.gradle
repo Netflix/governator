@@ -3,7 +3,7 @@ apply plugin: 'java'
 dependencies {
     compile project(':governator-core')
 
-    compile 'com.google.inject.extensions:guice-servlet:4.0'
+    compile "com.google.inject.extensions:guice-servlet:${guice_version}"
 
     compile 'com.sun.jersey:jersey-server:1.19'
     compile 'com.sun.jersey.contribs:jersey-guice:1.19'

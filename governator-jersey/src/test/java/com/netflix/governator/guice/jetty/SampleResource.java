@@ -1,16 +1,16 @@
 package com.netflix.governator.guice.jetty;
 
+import com.netflix.governator.LifecycleShutdownSignal;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.netflix.governator.LifecycleShutdownSignal;
 
 @Path("/")
 @Singleton

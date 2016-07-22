@@ -17,6 +17,7 @@ import com.google.inject.util.Modules;
 import com.netflix.governator.InjectorBuilder;
 import com.netflix.governator.LifecycleInjector;
 import com.netflix.governator.ShutdownHookModule;
+import com.netflix.governator.guice.jetty.resources1.SampleResource;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.JerseyServletModule;
