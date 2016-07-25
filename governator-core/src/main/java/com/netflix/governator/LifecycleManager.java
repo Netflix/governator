@@ -108,8 +108,9 @@ public final class LifecycleManager {
         // State.Started added here to allow for failure  when LifecycleListener.onStarted() is called, post-injector creation
         if (state.compareAndSet(State.Starting, State.Stopped) || state.compareAndSet(State.Started, State.Stopped)) {
             LOG.info("Failed start of '{}'", this);
-            running.set(false);
-            reqQueueExecutor.shutdown();
+            if (running.compareAndSet(true, false)) {
+                reqQueueExecutor.shutdown();            
+            }
             this.failureReason = t;
             Iterator<SafeLifecycleListener> shutdownIter = new LinkedList<>(listeners).descendingIterator();
             while (shutdownIter.hasNext()) {
@@ -117,6 +118,7 @@ public final class LifecycleManager {
             }
             listeners.clear();
         }
+        state.set(State.Done);        
     }
     
     public synchronized void notifyShutdown() {

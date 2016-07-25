@@ -20,6 +20,7 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
+import com.netflix.governator.internal.BinaryConstant;
 import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 import com.netflix.governator.internal.PostConstructLifecycleFeature;
@@ -63,7 +64,7 @@ public final class LifecycleModule extends AbstractModule {
     @Singleton
     @SuppressLifecycleUninitialized
     static class LifecycleProvisionListener extends AbstractLifecycleListener implements ProvisionListener {
-        private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>(1<<12);
+        private final ConcurrentMap<Class<?>, TypeLifecycleActions> cache = new ConcurrentHashMap<>(BinaryConstant.I12_4096);
         private Set<LifecycleFeature> features;
         private final AtomicBoolean isShutdown = new AtomicBoolean();
         private PostConstructLifecycleFeature postConstructFeature;

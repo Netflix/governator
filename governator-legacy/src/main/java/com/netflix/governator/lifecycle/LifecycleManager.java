@@ -18,6 +18,7 @@ package com.netflix.governator.lifecycle;
 
 import java.io.Closeable;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -57,6 +58,7 @@ import com.netflix.governator.guice.PostInjectorAction;
 import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 import com.netflix.governator.internal.PreDestroyLifecycleFeature;
 import com.netflix.governator.internal.PreDestroyMonitor;
+import static com.netflix.governator.internal.BinaryConstant.*;
 
 /**
  * Main instance management container
@@ -64,17 +66,25 @@ import com.netflix.governator.internal.PreDestroyMonitor;
 @Singleton
 public class LifecycleManager implements Closeable, PostInjectorAction
 {
+    private enum State
+    {
+        LATENT,
+        STARTING,
+        STARTED,
+        CLOSED
+    }
+
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final ConcurrentMap<Object, LifecycleStateWrapper> objectStates = new MapMaker().weakKeys().initialCapacity(1<<15).concurrencyLevel(1<<10).makeMap();
+    private final ConcurrentMap<Object, LifecycleStateWrapper> objectStates = new MapMaker().weakKeys().initialCapacity(I16_65536).concurrencyLevel(I10_1024).makeMap();
     private final PreDestroyLifecycleFeature preDestroyLifecycleFeature = new PreDestroyLifecycleFeature(ValidationMode.LAX);
-    private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(1<<15);
+    private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(I15_32768);
 
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationMapper configurationMapper;
     private final ResourceMapper resourceMapper;
-    final Collection<LifecycleListener> listeners;
+    final LifecycleListener[] listeners;
     private final Validator validator;
     private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
@@ -100,7 +110,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         }
         configurationMapper = arguments.getConfigurationMapper();
         newLifecycleManager = arguments.getLifecycleManager();
-        listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
+        listeners = arguments.getLifecycleListeners().toArray(new LifecycleListener[0]);
         resourceMapper = new ResourceMapper(injector, ImmutableSet.copyOf(arguments.getResourceLocators()));
         validator = Validation.buildDefaultValidatorFactory().getValidator();
         configurationDocumentation = arguments.getConfigurationDocumentation();
@@ -114,7 +124,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public Collection<LifecycleListener> getListeners()
     {
-        return listeners;
+        return Arrays.asList(listeners);
     }
 
     /**
@@ -206,7 +216,9 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             return hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
         }
         else {
-            return lifecycleState.get();
+            synchronized(lifecycleState) {
+                return lifecycleState.get();
+            }
         }
     }
 
@@ -218,7 +230,15 @@ public class LifecycleManager implements Closeable, PostInjectorAction
      */
     public void start() throws Exception
     {
-        start(0, null);
+        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
+
+        validate();
+
+        new ConfigurationColumnWriter(configurationDocumentation).output(log);
+        if (newLifecycleManager != null) {
+            newLifecycleManager.notifyStarted();
+        }
+        state.set(State.STARTED);    
     }
 
     /**
@@ -233,19 +253,93 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     @Deprecated
     public boolean start(long maxWait, TimeUnit unit) throws Exception
     {
-        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
-
-        validate();
-
-        new ConfigurationColumnWriter(configurationDocumentation).output(log);
-        if (newLifecycleManager != null) {
-            newLifecycleManager.notifyStarted();
-        }
-        state.set(State.STARTED);
-
+        start();
         return true;
     }
 
+    @SuppressWarnings("deprecation")
+    private <T> void startInstance(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
+    {
+        final Class<?> instanceType = obj.getClass();
+        log.debug("Starting {}", instanceType.getName());
+
+        final LifecycleStateWrapper lifecycleState = initState(obj, LifecycleState.PRE_CONFIGURATION);
+        methods.methodInvoke(PreConfiguration.class, obj);
+
+        lifecycleState.set(obj, LifecycleState.SETTING_CONFIGURATION);
+        configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
+
+        lifecycleState.set(obj, LifecycleState.SETTING_RESOURCES);
+        resourceMapper.map(obj, methods);
+
+        lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
+        methods.methodInvoke(PostConstruct.class, obj);
+        
+        Method[] warmUpMethods = methods.methodsFor(WarmUp.class);
+        if (warmUpMethods.length > 0) {
+            Method[] postConstructMethods = methods.methodsFor(PostConstruct.class);
+            for ( Method warmupMethod : warmUpMethods)
+            {
+                boolean skipWarmup = false;
+                // assuming very few methods in both WarmUp and PostConstruct
+                for (Method postConstruct :  postConstructMethods) {
+                    if (postConstruct == warmupMethod) {
+                        skipWarmup = true;
+                        break;
+                    }
+                }
+                if (!skipWarmup) {
+                    log.debug("\t{}()", warmupMethod.getName());
+                    LifecycleMethods.methodInvoke(warmupMethod, obj);
+                }
+            }
+        }
+
+        List<LifecycleAction> preDestroyActions;
+        if (preDestroyActionCache.containsKey(instanceType)) {
+            preDestroyActions = preDestroyActionCache.get(instanceType);
+        }
+        else {
+            preDestroyActions = preDestroyLifecycleFeature.getActionsForType(instanceType);
+            preDestroyActionCache.put(instanceType, preDestroyActions);
+        }
+        
+        if ( !preDestroyActions.isEmpty() )
+        {
+            if (binding != null) {
+                preDestroyMonitor.register(obj, binding, preDestroyActions);
+            }
+            else {
+                preDestroyMonitor.register(obj, "legacy", preDestroyActions);
+            }
+        }
+
+    }
+
+    class LifecycleStateWrapper {
+        LifecycleState state;
+
+        public void set(Object managedInstance, LifecycleState state) {
+            this.state = state;
+            for ( LifecycleListener listener : listeners )
+            {
+                listener.stateChanged(managedInstance, state);
+            }            
+        }
+        
+        public LifecycleState get() {
+            return state;
+        }
+    }
+
+    private LifecycleStateWrapper initState(Object obj, LifecycleState state) {
+        LifecycleStateWrapper stateWrapper = new LifecycleStateWrapper();
+        objectStates.put(obj, stateWrapper);
+        stateWrapper.set(obj, state);
+        return stateWrapper;
+    }
+
+    
     @Override
     public synchronized void close()
     {
@@ -256,7 +350,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
                 if (newLifecycleManager != null) {
                     newLifecycleManager.notifyShutdown();
                 }
-                stopInstances();
+                preDestroyMonitor.close();
             }
             catch ( Exception e )
             {
@@ -268,6 +362,11 @@ public class LifecycleManager implements Closeable, PostInjectorAction
                 preDestroyActionCache.clear();
             }
         }
+    }
+
+    private void initializeObjectPostStart(Object obj) throws ValidationException
+    {
+        validate(obj);
     }
 
     /**
@@ -307,38 +406,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         }
     }
         
-    class LifecycleStateWrapper {
-        volatile LifecycleState state;
-
-        public LifecycleStateWrapper(LifecycleState state) {
-            super();
-            this.state = state;
-        }
-
-        public void set(Object managedInstance, LifecycleState state) {
-            this.state = state;
-            for ( LifecycleListener listener : listeners )
-            {
-                listener.stateChanged(managedInstance, state);
-            }            
-        }
-        
-        public LifecycleState get() {
-            return state;
-        }
-    }
-
-    private LifecycleStateWrapper setState(Object obj, LifecycleState state)
-    {
-        LifecycleStateWrapper stateWrapper = objectStates.get(obj);
-        if (stateWrapper == null) {
-            stateWrapper = new LifecycleStateWrapper(state);
-            objectStates.put(obj, stateWrapper);
-        }
-        stateWrapper.set(obj, state);
-        return stateWrapper;
-    }
-
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
     {
         Set<ConstraintViolation<Object>> violations = validator.validate(obj, Default.class);
@@ -359,64 +426,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         }
         return exception;
     }
-
-    @SuppressWarnings("deprecation")
-    private <T> void startInstance(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
-    {
-        final Class<?> instanceType = obj.getClass();
-        log.debug("Starting {}", instanceType.getName());
-
-        final LifecycleStateWrapper lifecycleState = setState(obj, LifecycleState.PRE_CONFIGURATION);
-        methods.methodInvoke(PreConfiguration.class, obj);
-
-        lifecycleState.set(obj, LifecycleState.SETTING_CONFIGURATION);
-        configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
-
-        lifecycleState.set(obj, LifecycleState.SETTING_RESOURCES);
-        resourceMapper.map(obj, methods);
-
-        lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
-        methods.methodInvoke(PostConstruct.class, obj);
-        
-        Collection<Method> warmUpMethods = methods.methodsFor(WarmUp.class);
-        if (!warmUpMethods.isEmpty()) {
-            Collection<Method> postConstructMethods = methods.methodsFor(PostConstruct.class);
-            for ( Method warmupMethod : warmUpMethods)
-            {
-                // assuming very few methods in both WarmUp and PostConstruct
-                if (!postConstructMethods.contains(warmupMethod)) {
-                    log.debug("\t{}()", warmupMethod.getName());
-                    LifecycleMethods.methodInvoke(warmupMethod, obj);
-                }
-            }
-        }
-
-        List<LifecycleAction> preDestroyActions;
-        if (preDestroyActionCache.containsKey(instanceType)) {
-            preDestroyActions = preDestroyActionCache.get(instanceType);
-        }
-        else {
-            preDestroyActions = preDestroyLifecycleFeature.getActionsForType(instanceType);
-            preDestroyActionCache.put(instanceType, preDestroyActions);
-        }
-        
-        if ( !preDestroyActions.isEmpty() )
-        {
-            if (binding != null) {
-                preDestroyMonitor.register(obj, binding, preDestroyActions);
-            }
-            else {
-                preDestroyMonitor.register(obj, "legacy", preDestroyActions);
-            }
-        }
-
-    }
-
-    private void stopInstances() throws Exception
-    {
-        preDestroyMonitor.close();
-    }
-
+    
     private String getPath(ConstraintViolation<Object> violation)
     {
         Iterable<String> transformed = Iterables.transform
@@ -433,20 +443,7 @@ public class LifecycleManager implements Closeable, PostInjectorAction
             );
         return Joiner.on(".").join(transformed);
     }
-
-    private void initializeObjectPostStart(Object obj) throws ValidationException
-    {
-        validate(obj);
-    }
-
-    private enum State
-    {
-        LATENT,
-        STARTING,
-        STARTED,
-        CLOSED
-    }
-
+    
     @Override
     public void call(Injector injector) {
         this.resourceMapper.setInjector(injector);

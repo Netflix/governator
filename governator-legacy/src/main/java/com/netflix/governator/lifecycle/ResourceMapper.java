@@ -20,97 +20,65 @@ class ResourceMapper {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private Injector injector;
     private final Collection<ResourceLocator> resourceLocators;
-    
+
     ResourceMapper(Injector injector, Collection<ResourceLocator> resourceLocators) {
         this.injector = injector;
         this.resourceLocators = resourceLocators;
     }
-    
-    public void map(Object obj, LifecycleMethods methods) throws Exception
-    {
-        if (methods.hasResources()) {        
-            Collection<Field> fieldResources = methods.fieldsFor(Resources.class);
-            if (!fieldResources.isEmpty()) {
-                for ( Field field : fieldResources )
-                {
-                    Resources resources = field.getAnnotation(Resources.class);
-                    for ( Resource resource : resources.value() )
-                    {
-                        setFieldResource(obj, field, resource);
-                    }
-                }
-            }
-    
-            Collection<Field> fieldResource = methods.fieldsFor(Resource.class);
-            if (!fieldResource.isEmpty()) {
-                for ( Field field : fieldResource )
-                {
-                    Resource resource = field.getAnnotation(Resource.class);
+
+    public void map(Object obj, LifecycleMethods methods) throws Exception {
+        if (methods.hasResources()) {
+            for (Field field : methods.fieldsFor(Resources.class)) {
+                Resources resources = field.getAnnotation(Resources.class);
+                for (Resource resource : resources.value()) {
                     setFieldResource(obj, field, resource);
                 }
             }
-    
-            Collection<Method> methodResources = methods.methodsFor(Resources.class);
-            if (!methodResources.isEmpty()) {
-                for ( Method method : methodResources )
-                {
-                    Resources resources = method.getAnnotation(Resources.class);
-                    for ( Resource resource : resources.value() )
-                    {
-                        setMethodResource(obj, method, resource);
-                    }
-                }
+
+            for (Field field : methods.fieldsFor(Resource.class)) {
+                Resource resource = field.getAnnotation(Resource.class);
+                setFieldResource(obj, field, resource);
             }
-    
-            Collection<Method> methodResource = methods.methodsFor(Resource.class);
-            if (!methodResource.isEmpty()) {
-                for ( Method method : methodResource )
-                {
-                    Resource resource = method.getAnnotation(Resource.class);
+
+            for (Method method : methods.methodsFor(Resources.class)) {
+                Resources resources = method.getAnnotation(Resources.class);
+                for (Resource resource : resources.value()) {
                     setMethodResource(obj, method, resource);
                 }
             }
-    
-            Collection<Resources> classResources = methods.classAnnotationsFor(Resources.class);
-            if (!classResources.isEmpty()) {
-                for ( Resources resources : classResources )
-                {
-                    for ( Resource resource : resources.value() )
-                    {
-                        loadClassResource(resource);
-                    }
-                }
+
+            for (Method method : methods.methodsFor(Resource.class)) {
+                Resource resource = method.getAnnotation(Resource.class);
+                setMethodResource(obj, method, resource);
             }
-    
-            Collection<Resource> classResource = methods.classAnnotationsFor(Resource.class);            
-            if (!classResource.isEmpty()) {
-                for ( Resource resource : classResource )
-                {
+
+            for (Resources resources : methods.classAnnotationsFor(Resources.class)) {
+                for (Resource resource : resources.value()) {
                     loadClassResource(resource);
                 }
+            }
+
+            for (Resource resource : methods.classAnnotationsFor(Resource.class)) {
+                loadClassResource(resource);
             }
         }
     }
 
-    private void loadClassResource(Resource resource) throws Exception
-    {
-        if ( (resource.name().isEmpty()) || (resource.type() == Object.class) )
-        {
+    private void loadClassResource(Resource resource) throws Exception {
+        if ((resource.name().isEmpty()) || (resource.type() == Object.class)) {
             throw new Exception("Class resources must have both name() and type(): " + resource);
         }
         findResource(resource);
     }
 
-    private void setMethodResource(Object obj, Method method, Resource resource) throws Exception
-    {
-        if ( (method.getParameterTypes().length != 1) || (method.getReturnType() != Void.TYPE) )
-        {
-            throw new Exception(String.format("%s.%s() is not a proper JavaBean setter.", obj.getClass().getName(), method.getName()));
+    private void setMethodResource(Object obj, Method method, Resource resource) throws Exception {
+        if ((method.getParameterTypes().length != 1) || (method.getReturnType() != Void.TYPE)) {
+            throw new Exception(String.format("%s.%s() is not a proper JavaBean setter.", obj.getClass().getName(),
+                    method.getName()));
         }
 
         String beanName = method.getName();
-        if ( beanName.toLowerCase().startsWith("set") )
-        {
+        if (beanName.toLowerCase().startsWith("set")) {
             beanName = beanName.substring("set".length());
         }
         beanName = Introspector.decapitalize(beanName);
@@ -122,83 +90,67 @@ class ResourceMapper {
         method.invoke(obj, resourceObj);
     }
 
-    private void setFieldResource(Object obj, Field field, Resource resource) throws Exception
-    {
+    private void setFieldResource(Object obj, Field field, Resource resource) throws Exception {
         String siteName = obj.getClass().getName() + "/" + field.getName();
         Object resourceObj = findResource(adjustResource(resource, field.getType(), siteName));
         field.setAccessible(true);
         field.set(obj, resourceObj);
     }
 
-    private Resource adjustResource(final Resource resource, final Class<?> siteType, final String siteName)
-    {
-        return new Resource()
-        {
+    private Resource adjustResource(final Resource resource, final Class<?> siteType, final String siteName) {
+        return new Resource() {
             @Override
-            public String name()
-            {
+            public String name() {
                 return (resource.name().length() == 0) ? siteName : resource.name();
             }
 
             /**
              * Method needed for eventual java7 compatibility
              */
-            public String lookup()
-            {
+            public String lookup() {
                 return name();
             }
 
             @Override
-            public Class<?> type()
-            {
+            public Class<?> type() {
                 return (resource.type() == Object.class) ? siteType : resource.type();
             }
 
             @Override
-            public AuthenticationType authenticationType()
-            {
+            public AuthenticationType authenticationType() {
                 return resource.authenticationType();
             }
 
             @Override
-            public boolean shareable()
-            {
+            public boolean shareable() {
                 return resource.shareable();
             }
 
             @Override
-            public String mappedName()
-            {
+            public String mappedName() {
                 return resource.mappedName();
             }
 
             @Override
-            public String description()
-            {
+            public String description() {
                 return resource.description();
             }
 
             @Override
-            public Class<? extends Annotation> annotationType()
-            {
+            public Class<? extends Annotation> annotationType() {
                 return resource.annotationType();
             }
         };
     }
 
-    private Object findResource(Resource resource) throws Exception
-    {
-        if ( !resourceLocators.isEmpty() )
-        {
+    private Object findResource(Resource resource) throws Exception {
+        if (!resourceLocators.isEmpty()) {
             final Iterator<ResourceLocator> iterator = resourceLocators.iterator();
             ResourceLocator locator = iterator.next();
-            ResourceLocator nextInChain = new ResourceLocator()
-            {
+            ResourceLocator nextInChain = new ResourceLocator() {
                 @Override
-                public Object locate(Resource resource, ResourceLocator nextInChain) throws Exception
-                {
-                    if ( iterator.hasNext() )
-                    {
+                public Object locate(Resource resource, ResourceLocator nextInChain) throws Exception {
+                    if (iterator.hasNext()) {
                         return iterator.next().locate(resource, this);
                     }
                     return defaultFindResource(resource);
@@ -209,14 +161,12 @@ class ResourceMapper {
         return defaultFindResource(resource);
     }
 
-    private Object defaultFindResource(Resource resource) throws Exception
-    {
-        if ( injector == null )
-        {
+    private Object defaultFindResource(Resource resource) throws Exception {
+        if (injector == null) {
             throw new NamingException("Could not find resource: " + resource);
         }
 
-        //noinspection unchecked     
+        // noinspection unchecked
         log.debug("defaultFindResource using injector {}", System.identityHashCode(injector));
         return injector.getInstance(resource.type());
     }

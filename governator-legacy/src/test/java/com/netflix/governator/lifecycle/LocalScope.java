@@ -16,13 +16,13 @@ public class LocalScope implements Scope {
     final ThreadLocal<Map<Key<?>, Object>> content = new ThreadLocal<Map<Key<?>, Object>>();
 
     public void enter() {
-        checkState(content.get() == null, "LocalScope already exists in thread {}", Thread.currentThread());
+        checkState(content.get() == null, "LocalScope already exists in thread %s", Thread.currentThread());
         content.set(Maps.<Key<?>, Object> newHashMap());           
     }
 
     public void exit() {
         Map<Key<?>, Object> scopeContents = content.get();
-        checkState(scopeContents != null, "No LocalScope found in thread {}", Thread.currentThread());
+        checkState(scopeContents != null, "No LocalScope found in thread %s", Thread.currentThread());
         scopeContents.clear();
         content.remove();
     }
