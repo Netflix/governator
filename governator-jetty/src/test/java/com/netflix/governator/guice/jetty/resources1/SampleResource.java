@@ -1,4 +1,4 @@
-package com.netflix.governator.guice.jetty;
+package com.netflix.governator.guice.jetty.resources1;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

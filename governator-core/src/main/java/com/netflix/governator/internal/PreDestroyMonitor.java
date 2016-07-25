@@ -1,5 +1,19 @@
 package com.netflix.governator.internal;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Binding;
+import com.google.inject.Key;
+import com.google.inject.Provider;
+import com.google.inject.Scope;
+import com.google.inject.Scopes;
+import com.google.inject.spi.BindingScopingVisitor;
+import com.google.inject.util.Providers;
+import com.netflix.governator.LifecycleAction;
+import com.netflix.governator.ManagedInstanceAction;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.annotation.Annotation;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -20,18 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Binding;
-import com.google.inject.Key;
-import com.google.inject.Provider;
-import com.google.inject.Scope;
-import com.google.inject.spi.BindingScopingVisitor;
-import com.netflix.governator.LifecycleAction;
-import com.netflix.governator.ManagedInstanceAction;
-
 /**
  * Monitors managed instances and invokes cleanup actions when they
  * become unreferenced
@@ -51,17 +53,17 @@ public class PreDestroyMonitor implements AutoCloseable {
         public void run() {
             try {
                 while (running.get()) {
-                        Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
-                        if (ref != null && ref instanceof ScopeCleanupAction) { 
-                            UUID markerKey = ((ScopeCleanupAction)ref).getId();
-                            ScopeCleanupAction cleanupAction;
-                            synchronized(scopedCleanupActions) {
-                                cleanupAction = scopedCleanupActions.remove(markerKey);
-                            }
-                            if (cleanupAction != null) {
-                                cleanupAction.call();
-                            }
+                    Reference<? extends ScopeCleanupMarker> ref = markerReferenceQueue.remove(1000);
+                    if (ref != null && ref instanceof ScopeCleanupAction) { 
+                        UUID markerKey = ((ScopeCleanupAction)ref).getId();
+                        ScopeCleanupAction cleanupAction;
+                        synchronized(scopedCleanupActions) {
+                            cleanupAction = scopedCleanupActions.remove(markerKey);
                         }
+                        if (cleanupAction != null) {
+                            cleanupAction.call();
+                        }
+                    }
                 }
                 LOGGER.info("PreDestroyMonitor.ScopedCleanupWorker is exiting");
             } 
@@ -92,6 +94,8 @@ public class PreDestroyMonitor implements AutoCloseable {
             return new ScopeCleanupMarker();
         }
     };
+    
+    private final ScopeCleanupMarker singletonMarker = new ScopeCleanupMarker();
     
     public PreDestroyMonitor(Map<Class<? extends Annotation>, Scope> scopeBindings) {
         this.scopeBindings = new HashMap<>(scopeBindings);
@@ -188,7 +192,16 @@ public class PreDestroyMonitor implements AutoCloseable {
          */
         @Override
         public Boolean visitScope(Scope scope) {
-            Provider<ScopeCleanupMarker> scopedMarkerProvider = scope.scope(MARKER_KEY, markerProvider);
+            // Special case Singleton scopes since a thread local for singleton scopes will not 
+            // have been properly initialized if being created lazily from another scope
+            // as part of another scope (such as RequestScope).
+            final Provider<ScopeCleanupMarker> scopedMarkerProvider;
+            if (scope.equals(Scopes.SINGLETON) || (scope instanceof AbstractScope && ((AbstractScope)scope).isSingletonScope())) {
+                scopedMarkerProvider = Providers.of(singletonMarker);
+            } else {
+                scopedMarkerProvider = scope.scope(MARKER_KEY, markerProvider);                
+            }
+                    
             ScopeCleanupMarker marker = scopedMarkerProvider.get();                
             UUID markerKey = marker.getId();
             synchronized (markerKey) {
