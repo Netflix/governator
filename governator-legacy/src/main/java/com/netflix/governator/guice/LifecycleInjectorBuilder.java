@@ -21,6 +21,7 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+
 import java.util.Collection;
 
 /**
@@ -96,6 +97,9 @@ public interface LifecycleInjectorBuilder
      *
      * @param mainModule root application module
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
     @Deprecated
     public LifecycleInjectorBuilder withRootModule(Class<?> mainModule);
@@ -108,7 +112,11 @@ public interface LifecycleInjectorBuilder
      *
      * @param module root application module
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withModuleClass(Class<? extends Module> module);
 
     /**
@@ -121,7 +129,11 @@ public interface LifecycleInjectorBuilder
      *
      * @param modules root application modules
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withModuleClasses(Iterable<Class<? extends Module>> modules);
 
     /**
@@ -134,7 +146,11 @@ public interface LifecycleInjectorBuilder
      *
      * @param modules root application modules
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withModuleClasses(Class<?> ... modules);
 
     /**
@@ -146,7 +162,11 @@ public interface LifecycleInjectorBuilder
      * Note that any existing modules that were added will be removed by this call
      * @param modules root application modules
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Iterable<Class<? extends Module>> modules);
 
     /**
@@ -157,7 +177,11 @@ public interface LifecycleInjectorBuilder
      *
      * @param modules root application modules
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withAdditionalModuleClasses(Class<?> ... modules);
     
     /**
@@ -165,21 +189,33 @@ public interface LifecycleInjectorBuilder
      * 
      * @param modules to exclude
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withoutModuleClasses(Iterable<Class<? extends Module>> modules);
     
     /**
      * When using module dependencies ignore the specified classes
      * @param modules to exclude
      * @return this
+     * 
+     * @deprecated This method of adding modules has been deemed an anti-pattern as it detracts from
+     * Guice's reliance on module instances and deduping via hashCode() and equals().
      */
+    @Deprecated
     public LifecycleInjectorBuilder withoutModuleClasses(Class<? extends Module> ... modules);
     
     /**
      * When using module dependencies ignore the specified class
      * @param module to exclude
      * @return this
+     * 
+     * @deprecated 2016-07-19 This method of adding modules has been deemed an anti-pattern.  Use
+     * module instances with hashCode() and equals() for deduping.
      */
+    @Deprecated
     public LifecycleInjectorBuilder withoutModuleClass(Class<? extends Module> module);
     
     /**
