@@ -16,12 +16,12 @@ import java.util.function.Predicate;
 import javax.inject.Provider;
 
 import com.google.common.reflect.TypeToken;
-import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Binding;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.matcher.AbstractMatcher;
@@ -36,9 +36,13 @@ import com.google.inject.spi.Toolable;
 import com.netflix.governator.annotations.binding.BuilderAdvice;
 import com.netflix.governator.annotations.binding.ProvidesBuilder;
 
-public final class BuilderProvisioning {
-
-    private BuilderProvisioning() {
+public abstract class BuilderProvisioning<X> {
+    protected Binder externalBinder;
+    protected String builderName;
+    
+    private BuilderProvisioning(Binder externalBinder, String builderName) {
+        this.externalBinder = externalBinder;
+        this.builderName = builderName;
     }
 
     /**
@@ -51,13 +55,13 @@ public final class BuilderProvisioning {
         private Provider<X> delegateProvider;
         private final TypeToken<?> providedTypeToken;
         private final Set<Dependency<?>> dependencies = new HashSet<>();
-        private final Set<Binding<Consumer<X>>> consumerBindings = new LinkedHashSet<>();
-        private final Predicate<Binding<Consumer<X>>> consumerBindingFilter;
+        private final Set<Binding<Consumer<? super X>>> consumerBindings = new LinkedHashSet<>();
+        private final Predicate<Binding<Consumer<? super X>>> consumerBindingFilter;
         private final ConsumerTypeMatcher consumerMatcher = new ConsumerTypeMatcher();
 
 
         public BuilderProvider(String name, TypeLiteral<X> providedType, Provider<X> delegate,
-                Predicate<Binding<Consumer<X>>> consumerBindingFilter) {
+                Predicate<Binding<Consumer<? super X>>> consumerBindingFilter) {
             this.name = name;
             this.delegateProvider = delegate;
             this.providedTypeToken = TypeToken.of(providedType.getType());
@@ -66,7 +70,7 @@ public final class BuilderProvisioning {
         }
 
         public BuilderProvider(String name, TypeLiteral<X> providedType, Key<X> delegateKey,
-                Predicate<Binding<Consumer<X>>> consumerBindingFilter) {
+                Predicate<Binding<Consumer<? super X>>> consumerBindingFilter) {
             this.name = name;
             this.providedTypeToken = TypeToken.of(providedType.getType());
             this.delegateKey = delegateKey;
@@ -76,7 +80,7 @@ public final class BuilderProvisioning {
         @Override
         public X get() {
             X provided = delegateProvider.get();
-            for (Binding<Consumer<X>> advisorBinding : consumerBindings) {
+            for (Binding<Consumer<? super X>> advisorBinding : consumerBindings) {
                 advisorBinding.getProvider().get().accept(provided);
             }
             return provided;
@@ -97,7 +101,7 @@ public final class BuilderProvisioning {
                     if (builderElement.type() == BuilderElement.Type.CONSUMER
                             && builderElement.builderName().equals(name)) {
                         if (consumerMatcher.matches(binding)) {
-                            Binding<Consumer<X>> consumerBinding = (Binding<Consumer<X>>) binding;
+                            Binding<Consumer<? super X>> consumerBinding = (Binding<Consumer<? super X>>) binding;
                             if (consumerBindingFilter.test(consumerBinding)) {
                                 consumerBindings.add(consumerBinding);
                                 dependencies.add(Dependency.get(bindingKey));
@@ -129,10 +133,8 @@ public final class BuilderProvisioning {
         }
 
         /**
-         * matches TypeLiterals of type Consumer<X>
+         * matches bindings of type Consumer<? super X>
          * 
-         * @author tcellucci
-         *
          */
         final class ConsumerTypeMatcher extends AbstractMatcher<Binding<?>> {
             @Override
@@ -146,11 +148,10 @@ public final class BuilderProvisioning {
     }
 
     /**
-     * scans injector for module methods annotated with @ProvidesBuilder
+     * scans bindings for module methods annotated with @ProvidesBuilder or @BuilderAdvice
      *
      */
     private static class ProvidesBuilderScanner extends ModuleAnnotatedMethodScanner {
-        private static final Type CONSUMED_TYPE = Consumer.class.getTypeParameters()[0];
 
         @Override
         public <X> Key<X> prepareMethod(Binder binder, Annotation annotation, Key<X> key,
@@ -166,7 +167,6 @@ public final class BuilderProvisioning {
                 return newKey;
             }
             else if (annotation instanceof BuilderAdvice) {                
-                TypeLiteral<Consumer<?>> consumerTypeLiteral = (TypeLiteral<Consumer<?>>) key.getTypeLiteral();
                 String builderName = ((BuilderAdvice) annotation).value();
                 Key<X> newKey = Key.get(key.getTypeLiteral(),
                         new _BuildElement(builderName, BuilderElement.Type.CONSUMER));
@@ -253,47 +253,48 @@ public final class BuilderProvisioning {
         Type type();
     }
 
-    public static <X> LinkedBindingBuilder<X> bindBuilder(Binder binder, String builderName, Key<X> providerKey) {
-        return bindBuilder(binder, builderName, providerKey, null);
+    public static <X> BuilderProvisioning<X> install(Binder binder, String builderName, TypeLiteral<X> builderType) {
+        return new BuilderProvisioningModule<X>(binder, builderName);
     }
 
-    public static void bind(Binder binder) {
-        binder.install(new BuilderProvisioningModule());
+    public LinkedBindingBuilder<X> bindBuilder(Key<X> providerKey) {
+        return bindBuilder(providerKey, null);
     }
 
-    public static <X> LinkedBindingBuilder<X> bindBuilder(Binder binder, String builderName, Key<X> providerKey,
-            Predicate<Binding<Consumer<X>>> consumerBindingFilter) {
-        bind(binder);
+    public LinkedBindingBuilder<X> bindBuilder(Key<X> providerKey, Predicate<Binding<Consumer<? super X>>> consumerBindingFilter) {
         Key<X> newKey = Key.get(providerKey.getTypeLiteral(),
                 new ProvidesBuilderScanner._BuildElement(builderName, BuilderElement.Type.PROVIDER));
         BuilderProvider<X> provider = new BuilderProvider<>(builderName, providerKey.getTypeLiteral(), newKey,
                 consumerBindingFilter);
-        binder.bind(providerKey).toProvider(provider);
-        return binder.bind(newKey);
+        externalBinder.bind(providerKey).toProvider(provider);
+        return externalBinder.bind(newKey);
     }
 
-    public static <X> LinkedBindingBuilder<Consumer<X>> bindAdvice(Binder binder, String builderName, Key<Consumer<X>> providerKey) {
-        bind(binder);
-        Key<Consumer<X>> newKey = Key.get(providerKey.getTypeLiteral(),
+    public <C extends Consumer<? super X>> LinkedBindingBuilder<C> bindAdvice(Key<C> providerKey) {
+        Key<C> newKey = Key.get(providerKey.getTypeLiteral(),
                 new ProvidesBuilderScanner._BuildElement(builderName, BuilderElement.Type.CONSUMER));
-        return binder.bind(newKey);
+        return externalBinder.bind(newKey);
     }
 
-    private final static class BuilderProvisioningModule extends AbstractModule {
+    private final static class BuilderProvisioningModule<X> extends BuilderProvisioning<X> implements Module {
+        private BuilderProvisioningModule(Binder externalBinder, String builderName) {
+            super(externalBinder, builderName);
+            externalBinder.install(this);
+        };
 
         @Override
-        public void configure() {
-            binder().scanModulesForAnnotatedMethods(new ProvidesBuilderScanner());
+        public void configure(Binder moduleBinder) {
+            moduleBinder.scanModulesForAnnotatedMethods(new ProvidesBuilderScanner());
         }
 
         @Override
         public int hashCode() {
-            return getClass().hashCode();
+            return builderName.hashCode();
         }
 
         @Override
         public boolean equals(Object obj) {
-            return obj != null && getClass() == obj.getClass();
+            return obj != null && getClass() == obj.getClass() && builderName.equals(((BuilderProvisioningModule)obj).builderName);
         }
     }
 

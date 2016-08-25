@@ -22,12 +22,12 @@ import com.netflix.governator.providers.BuilderProvisioning;
 
 public class BuilderProvisioningTest {
     private final static TypeLiteral<ListBuilder> LIST_BUILDER_TYPE = new TypeLiteral<ListBuilder>() {};
-    
+
     @Test
     public void testMultipleModulesBuilder() {
         Injector injector = Guice.createInjector(new ProvidesBuilderModule(), new ConsumesBuilderModule());
         Provider<ListBuilder> listBuilder = injector.getProvider(ProvidesBuilderModule.BUILDER_KEY);
-        
+
         List<String> list = listBuilder.get().build();
         Assert.assertTrue(list.contains("consumer1"));
         Assert.assertTrue(list.contains("four"));
@@ -65,9 +65,14 @@ public class BuilderProvisioningTest {
         Injector injector = Guice.createInjector(new ConsumesBuilderModule() {
             public void configure() {
                 super.configure();
-                BuilderProvisioning.bindBuilder(binder(), "listBuilder", functionalBuilderKey).toProvider(() -> {
-                    return new ListBuilder("1", "2", "3");
-                });
+                BuilderProvisioning<ListBuilder> builderProvisioning = BuilderProvisioning.install(binder(),
+                        "listBuilder", LIST_BUILDER_TYPE);
+
+                builderProvisioning.bindBuilder(functionalBuilderKey).toProvider(
+                        () -> {
+                            return new ListBuilder("1", "2", "3");
+                        });
+                
             }
         });
 
@@ -80,7 +85,7 @@ public class BuilderProvisioningTest {
         Assert.assertTrue(list.contains("consumer2"));
         Assert.assertTrue(list.contains("nine"));
     }
-    
+
     @Test
     public void testInjectedBuilder() {
         Key<ListBuilder> listBuilderKey = Key.get(LIST_BUILDER_TYPE, Names.named(InjectedBean.BUILDER_NAME));
@@ -89,9 +94,11 @@ public class BuilderProvisioningTest {
             public void configure() {
                 super.configure();
                 bind(InjectedBean.class);
-                BuilderProvisioning.bindBuilder(binder(), "listBuilder", listBuilderKey).toProvider(() -> {
-                    return new ListBuilder("1", "2", "3");
-                });
+
+                BuilderProvisioning.install(binder(), "listBuilder", LIST_BUILDER_TYPE).bindBuilder(listBuilderKey)
+                        .toProvider(() -> {
+                            return new ListBuilder("1", "2", "3");
+                        });
             }
         });
 
@@ -103,19 +110,19 @@ public class BuilderProvisioningTest {
         Assert.assertTrue(list.contains("five"));
         Assert.assertTrue(list.contains("consumer2"));
         Assert.assertTrue(list.contains("nine"));
-    }    
-    
+    }
+
     @Test
     public void testProgrammaticBuilderAdvice() {
-        Key<Consumer<ListBuilder>> consumerKey = Key.get(new TypeLiteral<Consumer<ListBuilder>>(){});
-        
+        Key<Consumer<ListBuilder>> consumerKey = Key.get(new TypeLiteral<Consumer<ListBuilder>>() {});
         Injector injector = Guice.createInjector(new ProvidesBuilderModule(), new AbstractModule() {
-            
             @Override
             protected void configure() {
-                BuilderProvisioning.bindAdvice(binder(), ProvidesBuilderModule.BUILDER_NAME, consumerKey).toInstance(builder->builder.add("programmaticConsumer1"));
-                BuilderProvisioning.bindAdvice(binder(), ProvidesBuilderModule.BUILDER_NAME, consumerKey).toInstance(builder->builder.add("programmaticConsumer2"));
-                
+                BuilderProvisioning<ListBuilder> builderProvisioning = BuilderProvisioning.install(binder(),
+                        ProvidesBuilderModule.BUILDER_NAME, LIST_BUILDER_TYPE);
+                builderProvisioning.bindAdvice(consumerKey).toInstance(builder -> builder.add("programmaticConsumer1"));
+                builderProvisioning.bindAdvice(consumerKey).toInstance(builder -> builder.add("programmaticConsumer2"));
+
             }
         });
 
@@ -124,22 +131,22 @@ public class BuilderProvisioningTest {
         Assert.assertTrue(list.contains("programmaticConsumer2"));
     }
 
-    
-
     private static final class ProgrammaticBuilderTestModule extends AbstractModule {
-        static final Key<ListBuilder> PROGRAMMATIC_BUILDER_KEY = Key.get(LIST_BUILDER_TYPE, Names.named("programmaticBuilder"));
-        static final Key<ListBuilder> ANNOTATED_BUILDER_KEY = Key.get(LIST_BUILDER_TYPE, Names.named("annotatedBuilder"));
+        static final Key<ListBuilder> PROGRAMMATIC_BUILDER_KEY = Key.get(LIST_BUILDER_TYPE,
+                Names.named("programmaticBuilder"));
+        static final Key<ListBuilder> ANNOTATED_BUILDER_KEY = Key.get(LIST_BUILDER_TYPE,
+                Names.named("annotatedBuilder"));
 
-        
         public void configure() {
-            BuilderProvisioning.bindBuilder(binder(), "programmaticBuilder", PROGRAMMATIC_BUILDER_KEY).toProvider(
+            BuilderProvisioning<ListBuilder> builderProvisioning = BuilderProvisioning.install(binder(),
+                    "programmaticBuilder", LIST_BUILDER_TYPE);
+            builderProvisioning.bindBuilder(PROGRAMMATIC_BUILDER_KEY).toProvider(
                     new Provider<ListBuilder>() {
                         @Override
                         public ListBuilder get() {
                             return new ListBuilder("one", "two", "three");
                         }
-                    }                        
-            );
+                    });
         }
 
         @Named("annotatedBuilder")
@@ -148,7 +155,7 @@ public class BuilderProvisioningTest {
             return new ListBuilder("1", "2", "3");
         }
 
-        @BuilderAdvice       
+        @BuilderAdvice
         public Consumer<ListBuilder> nineAdvice() {
             return list -> {
                 list.add("consumer2");
@@ -156,7 +163,7 @@ public class BuilderProvisioningTest {
             };
         }
 
-        @BuilderAdvice        
+        @BuilderAdvice
         public Consumer<ListBuilder> fourAndFiveAdvice() {
             return list -> {
                 list.add("consumer1");
@@ -165,7 +172,7 @@ public class BuilderProvisioningTest {
             };
         }
 
-        @BuilderAdvice("programmaticBuilder")     
+        @BuilderAdvice("programmaticBuilder")
         public Consumer<ListBuilder> pbAdvice1() {
             return list -> {
                 list.add("pbAdvice1");
@@ -173,7 +180,7 @@ public class BuilderProvisioningTest {
             };
         }
 
-        @BuilderAdvice("programmaticBuilder")        
+        @BuilderAdvice("programmaticBuilder")
         public Consumer<ListBuilder> pbAdvice2() {
             return list -> {
                 list.add("pbAdvice2");
@@ -192,7 +199,7 @@ public class BuilderProvisioningTest {
         protected void configure() {
         }
 
-        @BuilderAdvice(ProvidesBuilderModule.BUILDER_NAME)        
+        @BuilderAdvice(ProvidesBuilderModule.BUILDER_NAME)
         public Consumer<ListBuilder> nineAdvice() {
             return list -> {
                 list.add("consumer2");
@@ -200,7 +207,7 @@ public class BuilderProvisioningTest {
             };
         }
 
-        @BuilderAdvice(ProvidesBuilderModule.BUILDER_NAME)        
+        @BuilderAdvice(ProvidesBuilderModule.BUILDER_NAME)
         public Consumer<ListBuilder> fourAndFiveAdvice() {
             return list -> {
                 list.add("consumer1");
@@ -216,12 +223,12 @@ public class BuilderProvisioningTest {
      *
      */
     private static final class ProvidesBuilderModule extends AbstractModule {
-        final static String BUILDER_NAME="listBuilder";
+        final static String BUILDER_NAME = "listBuilder";
         final static Key<ListBuilder> BUILDER_KEY = Key.get(LIST_BUILDER_TYPE);
-        
+
         @Override
         protected void configure() {
-            BuilderProvisioning.bind(binder());
+            BuilderProvisioning.install(binder(), BUILDER_NAME, LIST_BUILDER_TYPE);
         }
 
         @ProvidesBuilder(BUILDER_NAME)
@@ -230,15 +237,16 @@ public class BuilderProvisioningTest {
         }
 
     }
-    
-    private static class InjectedBean {        
-        final static String BUILDER_NAME="listBuilder";
+
+    private static class InjectedBean {
+        final static String BUILDER_NAME = "listBuilder";
         private List<String> myList;
+
         @Inject
         public InjectedBean(@Named(BUILDER_NAME) ListBuilder listBuilder) {
             this.myList = listBuilder.build();
         }
-        
+
         public List<String> getMyList() {
             return myList;
         }
