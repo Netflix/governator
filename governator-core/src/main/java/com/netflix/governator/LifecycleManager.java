@@ -2,6 +2,7 @@ package com.netflix.governator;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -101,7 +102,7 @@ public final class LifecycleManager {
     public synchronized void notifyStarted() {
         if (state.compareAndSet(State.Starting, State.Started)) {
             LOG.info("Started '{}'", this);
-            for (LifecycleListener listener : listeners) {
+            for (LifecycleListener listener : new ArrayList<>(listeners)) {
                 listener.onStarted();
             }
         }
