@@ -30,6 +30,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,7 +124,7 @@ public class LifecycleMethods {
             for (Class<? extends Annotation> annotationClass : classAnnotations) {
                 if (clazz.isAnnotationPresent(annotationClass)) {
                     classMap.put(annotationClass, clazz.getAnnotation(annotationClass));
-                }
+                }                
             }
 
             for (Field field : getDeclaredFields(clazz)) {
@@ -243,16 +244,20 @@ public class LifecycleMethods {
         this.hasValidations = builder.hasValidations;
         methodMap = new HashMap<>();
         for (Map.Entry<Class<? extends Annotation>, Collection<Method>> entry : builder.methodMap.asMap().entrySet()) {
-            methodMap.put(entry.getKey(), entry.getValue().toArray(new Method[0]));
+            methodMap.put(entry.getKey(), entry.getValue().toArray(EMPTY_METHODS));
         }
         fieldMap = new HashMap<>();
         for (Map.Entry<Class<? extends Annotation>, Collection<Field>> entry : builder.fieldMap.asMap().entrySet()) {
-            fieldMap.put(entry.getKey(), entry.getValue().toArray(new Field[0]));
+            fieldMap.put(entry.getKey(), entry.getValue().toArray(EMPTY_FIELDS));
         }
         classMap = new HashMap<>();
-        for (Map.Entry<Class<? extends Annotation>, Collection<Annotation>> entry : builder.classMap.asMap().entrySet()) {
-            
-            classMap.put(entry.getKey(), entry.getValue().toArray((Annotation[])Array.newInstance(entry.getKey().getClass(), 0)));
+        for (Class<? extends Annotation> annotationClass : LifecycleMethodsBuilder.classAnnotations) {            
+            Annotation[] annotationsArray = (Annotation[])Array.newInstance(annotationClass, 0);
+            Collection<Annotation> annotations = builder.classMap.get(annotationClass);
+            if (annotations != null) {
+                annotationsArray = annotations.toArray(annotationsArray);
+            }            
+            classMap.put(annotationClass, annotationsArray);
         }
 
     }
@@ -277,7 +282,8 @@ public class LifecycleMethods {
 
     @SuppressWarnings("unchecked")
     public <T extends Annotation> T[] classAnnotationsFor(Class<T> annotation) {
-        return (T[])classMap.get(annotation);
+        Annotation[] annotations = classMap.get(annotation);
+        return (annotations != null) ? (T[])annotations : (T[])Array.newInstance(annotation, 0);
     }
 
     
