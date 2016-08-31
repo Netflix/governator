@@ -39,8 +39,8 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 @RunWith(DataProviderRunner.class)
 public class PreDestroyStressTest {
     static final Key<LifecycleSubject> LIFECYCLE_SUBJECT_KEY = Key.get(LifecycleSubject.class);
-    private static final int TEST_TIME_IN_SECONDS = 60;  // run the stress test for this many seconds
-    private static final int CONCURRENCY_LEVEL = 200; // run the stress test with this many threads
+    private static final int TEST_TIME_IN_SECONDS = 10;  // run the stress test for this many seconds
+    private static final int CONCURRENCY_LEVEL = 20; // run the stress test with this many threads
 
     private final class ScopingModule extends AbstractModule {
         LocalScope localScope = new LocalScope();
