@@ -1,7 +1,6 @@
 package com.netflix.governator;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
@@ -21,7 +20,7 @@ public class AutoBindSingletonTest {
     @Test
     public void confirmBindingsCreatedForAutoBindSinglton() {
         final Set<Class> created = new HashSet<>();
-        Injector injector = InjectorBuilder.fromModules(
+        try (LifecycleInjector injector = InjectorBuilder.fromModules(
             new ScanningModuleBuilder()
                 .forPackages("com.netflix.governator.package1")
                 .scanForAnnotatedClasses(new AutoBindSingletonAnnotatedClassScanner())
@@ -40,27 +39,28 @@ public class AutoBindSingletonTest {
                     });
                 }
             })
-        .createInjector();
-        
-        Assert.assertTrue(created.contains(AutoBindSingletonConcrete.class));
-        
-        injector.getInstance(Key.get(new TypeLiteral<Set<AutoBindSingletonInterface>>() {}));
-        injector.getInstance(Key.get(AutoBindSingletonInterface.class));
-        
-        Assert.assertTrue(created.contains(AutoBindSingletonMultiBinding.class));
-        Assert.assertTrue(created.contains(AutoBindSingletonWithInterface.class));
+        .createInjector()) {
+            Assert.assertTrue(created.contains(AutoBindSingletonConcrete.class));
+            
+            injector.getInstance(Key.get(new TypeLiteral<Set<AutoBindSingletonInterface>>() {}));
+            injector.getInstance(Key.get(AutoBindSingletonInterface.class));
+            
+            Assert.assertTrue(created.contains(AutoBindSingletonMultiBinding.class));
+            Assert.assertTrue(created.contains(AutoBindSingletonWithInterface.class));
+            Assert.assertEquals(injector.getInstance(String.class), "AutoBound");
+        }
     }
     
     @Test
     public void confirmNoBindingsForExcludedClass() {
-        Injector injector = InjectorBuilder.fromModules(
+        try (LifecycleInjector injector = InjectorBuilder.fromModules(
             new ScanningModuleBuilder()
                 .forPackages("com.netflix.governator.package1")
                 .scanForAnnotatedClasses(new AutoBindSingletonAnnotatedClassScanner())
                 .excludeClasses(AutoBindSingletonConcrete.class.getName())
                 .build())
-        .createInjector();
-        
-        Assert.assertNull(injector.getExistingBinding(Key.get(AutoBindSingletonConcrete.class)));
+        .createInjector()) {
+            Assert.assertNull(injector.getExistingBinding(Key.get(AutoBindSingletonConcrete.class)));
+        }
     }
 }

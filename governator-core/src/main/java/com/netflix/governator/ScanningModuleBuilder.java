@@ -8,6 +8,7 @@ import com.google.common.base.Predicates;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.spi.Elements;
 import com.netflix.governator.internal.scanner.ClasspathUrlDecoder;
 import com.netflix.governator.internal.scanner.DirectoryClassFilter;
 import com.netflix.governator.spi.AnnotatedClassScanner;
@@ -132,11 +133,11 @@ public class ScanningModuleBuilder {
     }
     
     public Module build() {
-        return build(classLoader, new ArrayList<>(scanners), new ArrayList<>(packages), Predicates.not(excludeRule));
-    }
-    
-    private Module build(final ClassLoader classLoader, final List<AnnotatedClassScanner> scanners, final List<String> packages, final Predicate<String> includeRule) {
-        return new AbstractModule() {
+        final Predicate<String> includeRule = Predicates.not(excludeRule);
+        // Generate the list of elements here and immediately create a module from them.  This ensures
+        // that the class path is canned only once as a Module's configure method may be called multiple
+        // times by Guice.
+        return Elements.getModule(Elements.getElements(new AbstractModule() {
             @Override
             public void configure() {
                 for ( String basePackage : packages )  {
@@ -225,6 +226,6 @@ public class ScanningModuleBuilder {
                     }
                 }, SKIP_CODE);
             }
-        };
+        }));
     };
 }
