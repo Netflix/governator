@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.netflix.governator.lifecycle;
+package com.netflix.governator.internal.scanner;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -27,11 +27,11 @@ import java.util.List;
 /**
  * Locates files within a directory-based classpath resource that are contained with a particular base package.
  */
-class DirectoryClassFilter
+public class DirectoryClassFilter
 {
     private final ClassLoader loader;
 
-    DirectoryClassFilter(ClassLoader loader) {
+    public DirectoryClassFilter(ClassLoader loader) {
         this.loader = loader;
     }
 

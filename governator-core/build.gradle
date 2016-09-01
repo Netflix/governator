@@ -7,6 +7,7 @@ dependencies {
     compile     "com.google.inject:guice:${guice_version}"
     compile     "com.google.inject.extensions:guice-multibindings:${guice_version}"
     compile     "com.google.inject.extensions:guice-grapher:${guice_version}"    // should be provided - only if you want graphing
+    compile     "org.ow2.asm:asm:5.0.4"
 
     testCompile "org.hamcrest:hamcrest-core:${hamcrest_version}"
     testCompile "org.hamcrest:hamcrest-library:${hamcrest_version}"

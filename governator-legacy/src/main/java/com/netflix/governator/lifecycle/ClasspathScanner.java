@@ -18,6 +18,16 @@ package com.netflix.governator.lifecycle;
 
 import static org.objectweb.asm.ClassReader.SKIP_CODE;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.netflix.governator.internal.scanner.ClasspathUrlDecoder;
+import com.netflix.governator.internal.scanner.DirectoryClassFilter;
+
+import org.objectweb.asm.ClassReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -29,14 +39,6 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import org.objectweb.asm.ClassReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 /**
  * Utility to find annotated classes
