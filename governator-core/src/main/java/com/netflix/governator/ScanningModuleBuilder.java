@@ -1,22 +1,37 @@
 package com.netflix.governator;
 
+import static org.objectweb.asm.ClassReader.SKIP_CODE;
+import static org.objectweb.asm.Type.getType;
+
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.reflect.ClassPath;
-import com.google.common.reflect.ClassPath.ClassInfo;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.spi.Elements;
+import com.netflix.governator.internal.scanner.ClasspathUrlDecoder;
+import com.netflix.governator.internal.scanner.DirectoryClassFilter;
 import com.netflix.governator.spi.AnnotatedClassScanner;
 
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * When installed this module will scan for annotated classes and creating appropriate bindings.  
@@ -119,18 +134,6 @@ public class ScanningModuleBuilder {
         });
     }
     
-    private boolean isInTargetPackages(String pkgName) {
-        if (packages.isEmpty()) {
-            return true;
-        }
-        for ( String pkg : packages )  {
-            if (pkgName.startsWith(pkg)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     public Module build() {
         final Predicate<String> includeRule = Predicates.not(excludeRule);
         // Generate the list of elements here and immediately create a module from them.  This ensures
@@ -139,31 +142,91 @@ public class ScanningModuleBuilder {
         return Elements.getModule(Elements.getElements(new AbstractModule() {
             @Override
             public void configure() {
-                final ClassPath classPath;
-                try {
-                    classPath = ClassPath.from(classLoader);
-                } catch (IOException e) {
-                    this.addError(e);
-                    return;
-                }
-                
-                for (ClassInfo classInfo : classPath.getAllClasses()) {
-                    if (!isInTargetPackages(classInfo.getPackageName()) || !includeRule.apply(classInfo.getName())) {
-                        continue;
-                    }
-                    
-                    for (AnnotatedClassScanner scanner : scanners) {
-                        Class<?> cls = classInfo.load();
-                        if (cls.isAnnotationPresent(scanner.annotationClass())) {
+                for ( String basePackage : packages )  {
+                    try {
+                        String basePackageWithSlashes = basePackage.replace(".", "/");
+                        for (URL url : Collections.list(classLoader.getResources(basePackageWithSlashes))) {
                             try {
-                                scanner.applyTo(binder(), cls.getAnnotation(scanner.annotationClass()), Key.get(cls));
+                                if ( isJarURL(url)) {
+                                    String jarPath = url.getFile();
+                                    if ( jarPath.contains("!") ) {
+                                        jarPath = jarPath.substring(0, jarPath.indexOf("!"));
+                                        url = new URL(jarPath);
+                                    }
+                                    File file = ClasspathUrlDecoder.toFile(url);
+                                    try (JarFile jar = new JarFile(file)) {
+                                        for (JarEntry entry : Collections.list(jar.entries())) {
+                                            try {
+                                                if ( entry.getName().endsWith(".class") && entry.getName().startsWith(basePackageWithSlashes)) {
+                                                    try (InputStream is = jar.getInputStream(entry)) {
+                                                        handleClass(is);
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                addError("Unable to scan JarEntry '%s' in '%s'. %s", entry.getName(), file.getCanonicalPath(), e.getMessage());
+                                                addError(e);
+                                            }
+                                        }
+                                    } catch (Exception e ) {
+                                        addError("Unable to scan '%s'. %s", file.getCanonicalPath(), e.getMessage());
+                                        addError(e);
+                                    }
+                                } else {
+                                    DirectoryClassFilter filter = new DirectoryClassFilter(classLoader);
+                                    for ( String className : filter.filesInPackage(url, basePackage) ) {
+                                        try (InputStream is = filter.bytecodeOf(className)) {
+                                            handleClass(is);
+                                        }
+                                    }
+                                }
                             } catch (Exception e) {
-                                binder().addError("Failed process scanned class %s", classInfo.getName());
-                                binder().addError(e);
+                                addError("Unable to scan jar '%s'. %s ", url, e.getMessage());
+                                addError(e);
                             }
                         }
+                    } catch ( Exception e ) {
+                        addError("Classpath scanning failed for package \'" + basePackage + "\'");
+                        addError(e);
                     }
                 }
+            }
+            
+            private boolean isJarURL(URL url) {
+                String protocol = url.getProtocol();
+                return "zip".equals(protocol) || "jar".equals(protocol) ||
+                        ("file".equals(protocol) && url.getPath().endsWith(".jar"));
+            }
+            
+            private void handleClass(InputStream inputStream) throws IOException {
+                new ClassReader(inputStream).accept(new ClassVisitor(Opcodes.ASM5) {
+                    private String className;
+                    
+                    @Override
+                    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                        className = name.replace('/', '.');
+                        super.visit(version, access, name, signature, superName, interfaces);
+                    }
+                    
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                        Type type = getType(desc);
+                        if (includeRule.apply(className)) {
+                            for (AnnotatedClassScanner scanner : scanners) {
+                                if (getType(scanner.annotationClass()).equals(type)) {
+                                    try {
+                                        Class<?> cls = Class.forName(className, false, classLoader);
+                                        scanner.applyTo(binder(), cls.getAnnotation(scanner.annotationClass()), Key.get(cls));
+                                    } catch (ClassNotFoundException e) {
+                                        binder().addError(e);
+                                        binder().addError("Failed process scanned class %s", className);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        return super.visitAnnotation(desc, visible);
+                    }
+                }, SKIP_CODE);
             }
         }));
     };
