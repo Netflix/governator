@@ -23,7 +23,7 @@ public class AutoBindSingletonTest {
         try (LifecycleInjector injector = InjectorBuilder.fromModules(
             new ScanningModuleBuilder()
                 .forPackages("com.netflix.governator.package1")
-                .scanForAnnotatedClasses(new AutoBindSingletonAnnotatedClassScanner())
+                .addScanner(new AutoBindSingletonAnnotatedClassScanner())
                 .build(),
             new AbstractModule() {
                 @Override
@@ -56,7 +56,7 @@ public class AutoBindSingletonTest {
         try (LifecycleInjector injector = InjectorBuilder.fromModules(
             new ScanningModuleBuilder()
                 .forPackages("com.netflix.governator.package1")
-                .scanForAnnotatedClasses(new AutoBindSingletonAnnotatedClassScanner())
+                .addScanner(new AutoBindSingletonAnnotatedClassScanner())
                 .excludeClasses(AutoBindSingletonConcrete.class.getName())
                 .build())
         .createInjector()) {

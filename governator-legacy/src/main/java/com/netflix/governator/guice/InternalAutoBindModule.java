@@ -16,20 +16,6 @@
 
 package com.netflix.governator.guice;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Set;
-
-import javax.inject.Singleton;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -48,6 +34,20 @@ import com.netflix.governator.annotations.AutoBind;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Set;
+
+import javax.inject.Singleton;
 
 class InternalAutoBindModule extends AbstractModule
 {
@@ -165,8 +165,8 @@ class InternalAutoBindModule extends AbstractModule
             AutoBindSingleton annotation = clazz.getAnnotation(AutoBindSingleton.class);
             if ( javax.inject.Provider.class.isAssignableFrom(clazz) )
             {
-                Preconditions.checkState(annotation.value() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Providers");
-                Preconditions.checkState(annotation.baseClass() == AutoBindSingleton.class, "@AutoBindSingleton value cannot be set for Providers");
+                Preconditions.checkState(annotation.value() == Void.class, "@AutoBindSingleton value cannot be set for Providers");
+                Preconditions.checkState(annotation.baseClass() == Void.class, "@AutoBindSingleton value cannot be set for Providers");
                 Preconditions.checkState(!annotation.multiple(), "@AutoBindSingleton(multiple=true) value cannot be set for Providers");
 
                 LOG.info("Installing @AutoBindSingleton " + clazz.getName());
@@ -195,7 +195,7 @@ class InternalAutoBindModule extends AbstractModule
             LOG.info("***** {} should also be annotated with @Singleton to ensure singleton behavior", clazz.getName());
         }
         Class<?> annotationBaseClass = getAnnotationBaseClass(annotation);
-        if ( annotationBaseClass != AutoBindSingleton.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
+        if ( annotationBaseClass != Void.class )    // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
         {
             Object foundBindingClass = searchForBaseClass(clazz, annotationBaseClass, Sets.newHashSet());
             if ( foundBindingClass == null )
@@ -298,9 +298,9 @@ class InternalAutoBindModule extends AbstractModule
     {
         Class<?> annotationValue = annotation.value();
         Class<?> annotationBaseClass = annotation.baseClass();
-        Preconditions.checkState((annotationValue == AutoBindSingleton.class) || (annotationBaseClass == AutoBindSingleton.class), "@AutoBindSingleton cannot have both value and baseClass set");
+        Preconditions.checkState((annotationValue == Void.class) || (annotationBaseClass == Void.class), "@AutoBindSingleton cannot have both value and baseClass set");
 
-        return (annotationBaseClass != AutoBindSingleton.class) ? annotationBaseClass : annotationValue;
+        return (annotationBaseClass != Void.class) ? annotationBaseClass : annotationValue;
     }
 
     private Object searchForBaseClass(Class<?> clazz, Class<?> annotationBaseClass, Set<Object> usedSet)

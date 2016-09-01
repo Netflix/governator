@@ -39,7 +39,7 @@ public @interface AutoBindSingleton
      *
      * @return base class/interface to bind to
      */
-    Class<?>  value() default AutoBindSingleton.class;
+    Class<?>  value() default Void.class;
 
     /**
      * This is a synonym for {@link #value()}. It exists to make the annotation
@@ -48,7 +48,7 @@ public @interface AutoBindSingleton
      *
      * @return base class/interface to bind to
      */
-    Class<?>  baseClass() default AutoBindSingleton.class;
+    Class<?>  baseClass() default Void.class;
 
     /**
      * If true, instances are gathered into a Set using Guice's Multibinder. You must

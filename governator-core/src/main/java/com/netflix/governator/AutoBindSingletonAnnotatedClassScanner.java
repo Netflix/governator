@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Set;
 
+import javax.inject.Scope;
 import javax.inject.Singleton;
 
 public class AutoBindSingletonAnnotatedClassScanner implements AnnotatedClassScanner {
@@ -59,8 +60,8 @@ public class AutoBindSingletonAnnotatedClassScanner implements AnnotatedClassSca
         
         Class<?> annotationBaseClass = getAnnotationBaseClass(annotation);
         
-        // AutoBindSingleton.class is used as a marker to mean "default" because annotation defaults cannot be null
-        if ( annotationBaseClass != AutoBindSingleton.class ) {
+        // Void.class is used as a marker to mean "default" because annotation defaults cannot be null
+        if ( annotationBaseClass != Void.class ) {
             Object foundBindingClass = searchForBaseClass(clazz, annotationBaseClass, Sets.newHashSet());
             Preconditions.checkArgument(foundBindingClass != null, String.format("AutoBindSingleton class %s does not implement or extend %s", clazz.getName(), annotationBaseClass.getName()));
 
@@ -126,7 +127,7 @@ public class AutoBindSingletonAnnotatedClassScanner implements AnnotatedClassSca
     private boolean hasScopeAnnotation(Class<?> clazz) {
         Annotation scopeAnnotation = null;
         for (Annotation annot : clazz.getAnnotations()) {
-            if (annot.annotationType().isAnnotationPresent(ScopeAnnotation.class)) {
+            if (annot.annotationType().isAnnotationPresent(ScopeAnnotation.class) || annot.annotationType().isAnnotationPresent(Scope.class)) {
                 Preconditions.checkState(scopeAnnotation == null, "Multiple scopes not allowed");
                 scopeAnnotation = annot;
             }
@@ -137,9 +138,9 @@ public class AutoBindSingletonAnnotatedClassScanner implements AnnotatedClassSca
     private Class<?> getAnnotationBaseClass(AutoBindSingleton annotation) {
         Class<?> annotationValue = annotation.value();
         Class<?> annotationBaseClass = annotation.baseClass();
-        Preconditions.checkState((annotationValue == AutoBindSingleton.class) || (annotationBaseClass == AutoBindSingleton.class), "@AutoBindSingleton cannot have both value and baseClass set");
+        Preconditions.checkState((annotationValue == Void.class) || (annotationBaseClass == Void.class), "@AutoBindSingleton cannot have both value and baseClass set");
 
-        return (annotationBaseClass != AutoBindSingleton.class) ? annotationBaseClass : annotationValue;
+        return (annotationBaseClass != Void.class) ? annotationBaseClass : annotationValue;
     }
 
     private Object searchForBaseClass(Class<?> clazz, Class<?> annotationBaseClass, Set<Object> usedSet) {

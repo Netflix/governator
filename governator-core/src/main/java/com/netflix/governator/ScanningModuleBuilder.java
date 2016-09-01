@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -43,13 +44,13 @@ import java.util.jar.JarFile;
  * {@code 
  * install(new ScanningModuleBuilder().
  *      .forPackages("org.example")
- *      .scanForAnnotatedClasses(new AutoBindSingletonAnnotatedClassScanner())
+ *      .addScanner(new AutoBindSingletonAnnotatedClassScanner())
  *      .build()
  * }
  * </pre>
  */
 public class ScanningModuleBuilder {
-    private List<String> packages = new ArrayList<>();
+    private Set<String> packages = new HashSet<>();
     private List<AnnotatedClassScanner> scanners = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private Predicate<String> excludeRule = Predicates.alwaysFalse();
@@ -83,7 +84,7 @@ public class ScanningModuleBuilder {
      * @return Builder for chaining
      */
     public ScanningModuleBuilder forPackages(Collection<String> packages) {
-        this.packages = new ArrayList<>(packages);
+        this.packages = new HashSet<>(packages);
         return this;
     }
     
@@ -93,24 +94,25 @@ public class ScanningModuleBuilder {
      * @param packages
      * @return Builder for chaining
      */
-    public ScanningModuleBuilder scanForAnnotatedClasses(AnnotatedClassScanner scanner) {
+    public ScanningModuleBuilder addScanner(AnnotatedClassScanner scanner) {
         scanners.add(scanner);
         return this;
     }
     
     /**
-     * Exclude bindings for any class matching the specified predicate.
-     * @param classes
+     * Exclude bindings for any class matching the specified predicate.  Use this when implementing
+     * custom exclude logic such as a regex match.
+     * @param predicate Predicate that gets the fully qualified classname.
      * @return Builder for chaining
      */
-    public ScanningModuleBuilder excludeClasses(Predicate<String> predicate) {
+    public ScanningModuleBuilder excludeClassesPredicate(Predicate<String> predicate) {
         excludeRule = Predicates.or(excludeRule, predicate);
         return this;
     }
 
     /**
      * Exclude specific classes from the classpath scanning.
-     * @param classes
+     * @param classes Fully qualified classname to exclude
      * @return Builder for chaining
      */
     public ScanningModuleBuilder excludeClasses(String... classes) {
@@ -119,12 +121,12 @@ public class ScanningModuleBuilder {
     
     /**
      * Exclude specific classes from the classpath scanning.
-     * @param classes
+     * @param classes Fully qualified classname to exclude
      * @return Builder for chaining
      */
     public ScanningModuleBuilder excludeClasses(Collection<String> classes) {
         final Collection<String> toTest = new HashSet<>(classes);
-        return excludeClasses(new Predicate<String>() {
+        return excludeClassesPredicate(new Predicate<String>() {
            @Override
             public boolean apply(String className) {
                return toTest.contains(className);
