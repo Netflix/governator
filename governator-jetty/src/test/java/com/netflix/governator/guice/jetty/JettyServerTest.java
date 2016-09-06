@@ -117,6 +117,8 @@ public class JettyServerTest {
         // Do an SSL GET and verify the response is valid
         response = doGet(String.format("https://localhost:%d/", sslPort), keyStore);
         Assert.assertTrue(response.startsWith("hello "));
+
+        injector.close();
     }
 
     private static String doGet(String url, KeyStore sslTrustStore) throws Exception {
