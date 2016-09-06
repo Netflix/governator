@@ -1,6 +1,7 @@
 package com.netflix.governator.guice.jetty;
 
 import java.util.EnumSet;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -151,6 +152,7 @@ public final class JettyModule extends AbstractModule {
         bind(JettyRunner.class).asEagerSingleton();
         Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().to(JettyShutdown.class);
         bind(LifecycleShutdownSignal.class).to(JettyLifecycleShutdownSignal.class);
+        Multibinder.newSetBinder(binder(), JettyConnectorProvider.class);
     }
     
     @Provides
@@ -161,7 +163,7 @@ public final class JettyModule extends AbstractModule {
     
     @Provides
     @Singleton
-    private Server getServer(JettyConfig config) {
+    private Server getServer(JettyConfig config, Set<JettyConnectorProvider> jettyConnectors) {
         Server server = new Server(config.getPort());
         Resource staticResourceBase = Resource.newClassPathResource(config.getResourceBase());
         if (staticResourceBase != null) {
@@ -190,6 +192,13 @@ public final class JettyModule extends AbstractModule {
             servletContextHandler.addServlet(DefaultServlet.class, "/");
             servletContextHandler.setResourceBase("src/main/webapp");
         }
+
+        if (jettyConnectors != null) {
+            for (JettyConnectorProvider connectorProvider : jettyConnectors) {
+                server.addConnector(connectorProvider.getConnector(server));
+            }
+        }
+
         return server;
     }
     
