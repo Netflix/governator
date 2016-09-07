@@ -16,6 +16,9 @@
 
 package com.netflix.governator.internal.scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -27,8 +30,9 @@ import java.util.List;
 /**
  * Locates files within a directory-based classpath resource that are contained with a particular base package.
  */
-public class DirectoryClassFilter
-{
+public class DirectoryClassFilter {
+    private static final Logger LOG = LoggerFactory.getLogger(DirectoryClassFilter.class);
+    
     private final ClassLoader loader;
 
     public DirectoryClassFilter(ClassLoader loader) {
@@ -65,8 +69,8 @@ public class DirectoryClassFilter
         throw new IOException("Unable to open class with name " + className + " because the class loader was unable to locate it");
     }
 
-    @SuppressWarnings("ConstantConditions")
     private void scanDir(File dir, List<String> classNames, String packageName) {
+        LOG.info("Scanning dir {}", packageName);
         File[] files = dir.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {

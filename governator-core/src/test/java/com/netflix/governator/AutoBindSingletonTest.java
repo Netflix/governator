@@ -22,7 +22,7 @@ public class AutoBindSingletonTest {
         final Set<Class> created = new HashSet<>();
         try (LifecycleInjector injector = InjectorBuilder.fromModules(
             new ScanningModuleBuilder()
-                .forPackages("com.netflix.governator.package1")
+                .forPackages("com.netflix.governator.package1", "com.netflix")
                 .addScanner(new AutoBindSingletonAnnotatedClassScanner())
                 .build(),
             new AbstractModule() {
@@ -57,7 +57,7 @@ public class AutoBindSingletonTest {
             new ScanningModuleBuilder()
                 .forPackages("com.netflix.governator.package1")
                 .addScanner(new AutoBindSingletonAnnotatedClassScanner())
-                .excludeClasses(AutoBindSingletonConcrete.class.getName())
+                .excludeClassesIn(AutoBindSingletonConcrete.class.getName())
                 .build())
         .createInjector()) {
             Assert.assertNull(injector.getExistingBinding(Key.get(AutoBindSingletonConcrete.class)));
