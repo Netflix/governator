@@ -57,7 +57,7 @@ public class AutoBindSingletonTest {
             new ScanningModuleBuilder()
                 .forPackages("com.netflix.governator.package1")
                 .addScanner(new AutoBindSingletonAnnotatedClassScanner())
-                .excludeClassesIn(AutoBindSingletonConcrete.class.getName())
+                .excludeClasses(AutoBindSingletonConcrete.class)
                 .build())
         .createInjector()) {
             Assert.assertNull(injector.getExistingBinding(Key.get(AutoBindSingletonConcrete.class)));

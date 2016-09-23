@@ -1,7 +1,5 @@
 package com.netflix.governator;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -21,6 +19,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -46,7 +46,7 @@ public class ScanningModuleBuilder {
     private Set<String> packages = new HashSet<>();
     private List<AnnotatedClassScanner> scanners = new ArrayList<>();
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    private Predicate<String> excludeRule = Predicates.alwaysFalse();
+    private Predicate<Class<?>> excludeRule = (cls) -> false;
     
     /**
      * Specify a custom class loader to use.  If not specified Thread.currentThread().getContextClassLoader()
@@ -99,18 +99,34 @@ public class ScanningModuleBuilder {
      * @return Builder for chaining
      */
     // TODO: Make this public when switching to Java8 and use the JDK's predicate
-    private ScanningModuleBuilder excludeClassesWhen(Predicate<String> predicate) {
-        excludeRule = Predicates.or(excludeRule, predicate);
+    private ScanningModuleBuilder excludeClassesWhen(Predicate<Class<?>> predicate) {
+        excludeRule = excludeRule.or(predicate);
         return this;
     }
 
     /**
      * Exclude specific classes from the classpath scanning.
-     * @param classes Fully qualified classname to exclude
+     * @param classes Classes to exclude
      * @return Builder for chaining
      */
-    public ScanningModuleBuilder excludeClassesIn(String... classes) {
-        return excludeClassesIn(Arrays.asList(classes));
+    public ScanningModuleBuilder excludeClasses(Class<?>... classes) {
+        return excludeClasses(new HashSet<>(Arrays.asList(classes)));
+    }
+    
+    /**
+     * Exclude specific classes from the classpath scanning.
+     * @param packages Top packages to exclude
+     * @return Builder for chaining
+     */
+    public ScanningModuleBuilder excludePackages(String... packages) {
+        return excludeClassesWhen(cls -> {
+            for (String pkg : packages) {
+                if (cls.getPackage().getName().startsWith(pkg)) {
+                    return true;
+                };
+            }
+            return false;
+        });
     }
     
     /**
@@ -118,18 +134,13 @@ public class ScanningModuleBuilder {
      * @param classes Fully qualified classname to exclude
      * @return Builder for chaining
      */
-    public ScanningModuleBuilder excludeClassesIn(Collection<String> classes) {
-        final Collection<String> toTest = new HashSet<>(classes);
-        return excludeClassesWhen(new Predicate<String>() {
-           @Override
-            public boolean apply(String className) {
-               return toTest.contains(className);
-            }
-        });
+    public ScanningModuleBuilder excludeClasses(Set<Class<?>> classes) {
+        final Set<Class<?>> toTest = new HashSet<>(classes);
+        return excludeClassesWhen(cls -> toTest.contains(cls));
     }
     
     public Module build() {
-        final Predicate<String> includeRule = Predicates.not(excludeRule);
+        final Predicate<Class<?>> includeRule = excludeRule.negate();
         
         // Generate the list of elements here and immediately create a module from them.  This ensures
         // that the class path is canned only once as a Module's configure method may be called multiple
@@ -140,36 +151,26 @@ public class ScanningModuleBuilder {
                 ScannerContext scanner = new ScannerContext();
                 
                 for ( String basePackage : packages )  {
-                    try {
-                        scanner.doScan(basePackage, new Consumer<String>() {
-                            @Override
-                            public void accept(String className) {
-                                if (includeRule.apply(className)) {
+                    scanner.doScan(basePackage, new Consumer<String>() {
+                        @Override
+                        public void accept(String className) {
+                            try {
+                                Class<?> cls = Class.forName(className, false, classLoader);
+                                if (includeRule.test(cls)) {
                                     for (AnnotatedClassScanner scanner : scanners) {
-                                        try {
-                                            Class<?> cls = Class.forName(className, false, classLoader);
-                                            if (cls.isAnnotationPresent(scanner.annotationClass())) {
-                                                scanner.applyTo(binder(), cls.getAnnotation(scanner.annotationClass()), Key.get(cls));
-                                            }
-                                        } catch (ClassNotFoundException e) {
-                                            binder().addError(e);
-                                            binder().addError("Failed process scanned class %s", className);
+                                        if (cls.isAnnotationPresent(scanner.annotationClass())) {
+                                            scanner.applyTo(binder(), cls.getAnnotation(scanner.annotationClass()), Key.get(cls));
                                         }
                                     }
                                 }
+                            } catch (ClassNotFoundException ignore) {
+                                // This will never happen
                             }
-                        });
-                    } catch (Exception e) {
-                        binder().addError(e);
-                        binder().addError("Failed scan base package %s", basePackage);
-                    }
+                        }
+                    });
                 }
             }
         }));
-    }
-    
-    private interface Consumer<T> {
-        void accept(T cls);
     }
     
     private class ScannerContext {
@@ -183,7 +184,7 @@ public class ScanningModuleBuilder {
          * @param consumer
          * @throws Exception
          */
-        void doScan(String basePackage, Consumer<String> consumer) throws Exception {
+        void doScan(String basePackage, Consumer<String> consumer) {
             LOG.debug("Scanning package {}", basePackage);
             
             try {
@@ -227,7 +228,7 @@ public class ScanningModuleBuilder {
                     }
                 }
             } catch ( Exception e ) {
-                throw new Exception(String.format("Classpath scanning failed for package \'" + basePackage + "\'"));
+                LOG.error("Classpath scanning failed for package '{}'", basePackage, e);
             }
         }
         
