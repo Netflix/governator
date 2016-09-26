@@ -29,6 +29,9 @@ subprojects {
         jcenter()
     }
 
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    
     group = "com.netflix.governator"
 
     dependencies {
