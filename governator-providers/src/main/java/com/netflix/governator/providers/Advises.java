@@ -7,8 +7,12 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * @see ProvidesWithAdvice
+ */
 @Documented 
 @Target(METHOD) 
 @Retention(RUNTIME)
-public @interface Advice {
+public @interface Advises {
+    int order() default 1000;
 }

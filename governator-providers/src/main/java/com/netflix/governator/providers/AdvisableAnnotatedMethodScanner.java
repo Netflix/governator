@@ -27,9 +27,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.UnaryOperator;
 
 import javax.inject.Provider;
 
@@ -76,7 +76,7 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
 
     @Override
     public Set<? extends Class<? extends Annotation>> annotationClasses() {
-        return new HashSet<>(Arrays.asList(ProvidesWithAdvice.class, Advice.class));
+        return new HashSet<>(Arrays.asList(ProvidesWithAdvice.class, Advises.class));
     }
 
     @Override
@@ -84,14 +84,14 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         String elementName = key.hasAttributes() ? key.getAnnotation().toString() : "";
 
         if (annotation instanceof ProvidesWithAdvice) {
-            AdviceElement element = new AdviceElementImpl(elementName, AdviceElement.Type.SOURCE, injectionPoint);
+            AdviceElement element = new AdviceElementImpl(elementName, AdviceElement.Type.SOURCE, annotation);
             Key<T> uniqueKey = Key.get(key.getTypeLiteral(), element);
             binder.bind(key).toProvider(new AdvisedProvider<T>(element.name(), annotation, binder.getProvider(uniqueKey)));
             return uniqueKey;
-        } else if (annotation instanceof Advice) {
+        } else if (annotation instanceof Advises) {
             Method method = (Method) injectionPoint.getMember();
-            Preconditions.checkArgument(ProvisionAdvice.class.isAssignableFrom(method.getReturnType()), "Return type fo @Advice method must be ProvisionAdvice");
-            return Key.get(key.getTypeLiteral(), new AdviceElementImpl(elementName, AdviceElement.Type.ADVICE, injectionPoint));
+            Preconditions.checkArgument(UnaryOperator.class.isAssignableFrom(method.getReturnType()), "Return type fo @Advice method must be UnaryOperator");
+            return Key.get(key.getTypeLiteral(), new AdviceElementImpl(elementName, AdviceElement.Type.ADVICE, annotation));
         }
         return key;
     }
@@ -100,7 +100,7 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         private final Set<Dependency<?>> dependencies = new HashSet<>();
         private final String name;
         private final Provider<T> delegate;
-        private final List<ProvisionAdviceHolder<ProvisionAdvice<T>>> adviceBindings = new ArrayList<>();
+        private final List<ProvisionAdviceHolder<UnaryOperator<T>>> adviceBindings = new ArrayList<>();
         
         public AdvisedProvider(String name, Annotation annotation, Provider<T> delegate) {
             this.name = name;
@@ -138,7 +138,7 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
                     AdviceElementImpl adviceElement = (AdviceElementImpl) bindingKey.getAnnotation();
                     if (name.equals(adviceElement.name())) {
                         if (adviceElement.type() == AdviceElement.Type.ADVICE) {
-                            adviceBindings.add(new ProvisionAdviceHolder<ProvisionAdvice<T>>((Binding<ProvisionAdvice<T>>) binding, adviceElement));
+                            adviceBindings.add(new ProvisionAdviceHolder<UnaryOperator<T>>((Binding<UnaryOperator<T>>) binding, adviceElement));
                         }
                         dependencies.add(Dependency.get(bindingKey));
                     }
@@ -165,8 +165,7 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         int order;
         
         public ProvisionAdviceHolder(Binding<T> binding, AdviceElementImpl element) {
-            Method member = (Method)element.injectionPoint.getMember();
-            this.order = Optional.ofNullable(member.getAnnotation(Order.class)).map(order -> order.value()).orElse(1000);
+            this.order = ((Advises)(element.getQualifier())).order();
             this.binding = binding;
         }
     }
@@ -176,17 +175,21 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         private final int id = counter.incrementAndGet();
         private final String name;
         private final Type type;
-        private final InjectionPoint injectionPoint;
+        private final Annotation qualifier;
         
-        public AdviceElementImpl(String name, Type type, InjectionPoint injectionPoint) {
+        public AdviceElementImpl(String name, Type type, Annotation qualifier) {
             this.name = name;
             this.type = type;
-            this.injectionPoint = injectionPoint;
+            this.qualifier = qualifier;
         }
         
         @Override
         public Class<? extends Annotation> annotationType() {
             return AdviceElement.class;
+        }
+        
+        public Annotation getQualifier() {
+            return qualifier;
         }
 
         @Override
