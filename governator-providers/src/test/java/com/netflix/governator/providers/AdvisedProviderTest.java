@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
@@ -155,6 +156,6 @@ public class AdvisedProviderTest {
         
         List<String> noQualifier = injector.getInstance(Key.get(LIST_TYPE_LITERAL));
         
-        Assert.assertEquals(Arrays.asList("", "1", "2"),  noQualifier);
+        Assert.assertEquals(new HashSet<>(Arrays.asList("", "1", "2")),  new HashSet<>(noQualifier));
     }
 }
