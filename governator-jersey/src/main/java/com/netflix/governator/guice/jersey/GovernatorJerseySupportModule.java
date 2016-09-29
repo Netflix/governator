@@ -20,7 +20,8 @@ import javax.servlet.ServletContext;
  * less opinions, such as automatically adding any bound class with {@literal @}Path as a resources.
  * 
  * Applications are expected to customize {@link DefaultResourceConfig} to provide a whitelist of
- * root resources to expose.  This can be done by adding the following {@link @Advises} method.
+ * root resources to expose.  This can be done by adding the following {@link @Advises} method to any
+ * Guice module (normally an implementation of JerseyServletModule)
  * 
  * <pre>{@code
 @Advises
@@ -28,8 +29,12 @@ import javax.servlet.ServletContext;
 @Named("governator")
 UnaryOperator<DefaultResourceConfig> adviseWithMyApplicationResources() {
     return defaultResourceConfig -> {
-        defaultResourceConfig.getClasses()
-            .addAll(Arrays.asList(MyApplicationResource.class));
+        // All customizations on {@link DefaultResourceConfig} will be picked up
+        
+        // Specify list of @Path annotated resourcesto serve
+        defaultResourceConfig.getClasses().addAll(Arrays.asList(
+            MyApplicationResource.class
+        ));
         return defaultResourceConfig;
     };
 }
