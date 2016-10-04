@@ -49,11 +49,7 @@ public final class LifecycleListenerModule extends AbstractModule {
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
             final T injectee = provision.provision();
-            if (injectee == null) {
-                return;
-            }
-            
-            if (injectee instanceof LifecycleListener) {
+            if (injectee != null && injectee instanceof LifecycleListener) {
                 if (manager == null) {
                     pendingLifecycleListeners.add((LifecycleListener) injectee);
                 } else {
@@ -65,7 +61,7 @@ public final class LifecycleListenerModule extends AbstractModule {
 
     @Override
     public boolean equals(Object obj) {
-        return getClass().equals(obj.getClass());
+        return getClass()==obj.getClass();
     }
 
     @Override

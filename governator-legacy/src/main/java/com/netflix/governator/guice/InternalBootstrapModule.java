@@ -28,6 +28,7 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
+import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
@@ -36,6 +37,7 @@ import com.netflix.governator.guice.lazy.LazySingletonScope;
 import com.netflix.governator.lifecycle.ClasspathScanner;
 import com.netflix.governator.lifecycle.LifecycleConfigurationProviders;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.governator.lifecycle.LifecycleManagerArguments;
 
 class InternalBootstrapModule extends AbstractModule
 {
@@ -94,6 +96,8 @@ class InternalBootstrapModule extends AbstractModule
             }
         }
 
+        bind(com.netflix.governator.LifecycleManager.class).in(Scopes.SINGLETON);
+        binder().bind(LifecycleManagerArguments.class).in(Scopes.SINGLETON);
         binder().bind(LifecycleManager.class).asEagerSingleton();
         binder().bind(LifecycleConfigurationProviders.class).toProvider(LifecycleConfigurationProvidersProvider.class).asEagerSingleton();
         
