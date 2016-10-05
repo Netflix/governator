@@ -138,7 +138,7 @@ class ConfigurationProcessor
             }
             else
             {
-                defaultValue = String.valueOf(LifecycleMethods.fieldGet(field, obj));
+                defaultValue = String.valueOf((Object)LifecycleMethods.fieldGet(field, obj));
             }
 
             String documentationValue;

@@ -30,6 +30,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -311,7 +312,6 @@ public class LifecycleMethods {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T fieldGet(Field field, Object obj) throws InvocationTargetException, IllegalAccessException {
         MethodHandle[] fieldHandler = fieldHandlesMap.get(field);
         if (fieldHandler == null) {
@@ -319,14 +319,14 @@ public class LifecycleMethods {
         }
         if (fieldHandler != EMPTY_FIELD_HANDLES) {
             try {
-                return (T)fieldHandler[0].invoke(obj);
+                return Modifier.isStatic(field.getModifiers()) ? (T)fieldHandler[0].invoke() : (T)fieldHandler[0].bindTo(obj).invoke();
             } catch (Throwable e) {
-                throw new InvocationTargetException(e, "invokedynamic");
+                throw new InvocationTargetException(e, "invokedynamic: field=" + field + ", object=" + obj);
             }
         }
         else {
             return (T)field.get(obj);
-        }
+        }   
     }
 
     public static void fieldSet(Field field, Object object, Object value) throws InvocationTargetException, IllegalAccessException {
@@ -336,9 +336,14 @@ public class LifecycleMethods {
         }
         if (fieldHandler != EMPTY_FIELD_HANDLES) {
             try {
-                fieldHandler[1].invoke(object, value);
+                if (Modifier.isStatic(field.getModifiers())) {
+                    fieldHandler[1].invoke(value);
+                }
+                else {
+                    fieldHandler[1].bindTo(object).invoke(value);
+                }
             } catch (Throwable e) {
-                throw new InvocationTargetException(e, "invokedynamic");
+                throw new InvocationTargetException(e, "invokedynamic: field=" + field + ", object=" + object);
             }
         }
         else {
