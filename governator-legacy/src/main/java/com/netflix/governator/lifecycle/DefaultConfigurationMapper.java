@@ -22,14 +22,14 @@ public class DefaultConfigurationMapper implements ConfigurationMapper {
         /**
          * Map a configuration to any field with @Configuration annotation
          */
-        Field[] configurationFields = methods.fieldsFor(Configuration.class);
+        Field[] configurationFields = methods.annotatedFields(Configuration.class);
         if (configurationFields.length > 0) {
             /**
              * Any field annotated with @ConfigurationVariable will be available for replacement when generating
              * property names
              */
             final Map<String, String> overrides;
-            Field[] configurationVariableFields = methods.fieldsFor(ConfigurationVariable.class);
+            Field[] configurationVariableFields = methods.annotatedFields(ConfigurationVariable.class);
             if (configurationVariableFields.length > 0) {
                 overrides = Maps.newHashMap();
                 for (Field variableField : configurationVariableFields) {
