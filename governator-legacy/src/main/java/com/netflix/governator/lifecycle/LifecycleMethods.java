@@ -270,23 +270,37 @@ public class LifecycleMethods {
     public boolean hasResources() {
         return hasResources;
     }
+    
+    @Deprecated
+    public Collection<Method> methodsFor(Class<? extends Annotation> annotation) {
+        return Arrays.asList(annotatedMethods(annotation));
+    }
 
-    public Method[] methodsFor(Class<? extends Annotation> annotation) {
+    @Deprecated
+    public Collection<Field> fieldsFor(Class<? extends Annotation> annotation) {
+        return Arrays.asList(annotatedFields(annotation));
+    }
+
+    @Deprecated
+    public <T extends Annotation> Collection<T> classAnnotationsFor(Class<T> annotation) {
+        return Arrays.asList(classAnnotations(annotation));
+    }   
+
+    public Method[] annotatedMethods(Class<? extends Annotation> annotation) {
         Method[] methods = methodMap.get(annotation);
         return (methods != null) ? methods : EMPTY_METHODS;
     }
 
-    public Field[] fieldsFor(Class<? extends Annotation> annotation) {
+    public Field[] annotatedFields(Class<? extends Annotation> annotation) {
         Field[] fields = fieldMap.get(annotation);
         return (fields != null) ? fields : EMPTY_FIELDS;
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Annotation> T[] classAnnotationsFor(Class<T> annotation) {
+    public <T extends Annotation> T[] classAnnotations(Class<T> annotation) {
         Annotation[] annotations = classMap.get(annotation);
         return (annotations != null) ? (T[])annotations : (T[])Array.newInstance(annotation, 0);
     }
-
     
     public void methodInvoke(Class<? extends Annotation> annotation, Object obj) throws Exception {
         if  (methodMap.containsKey(annotation)) {
