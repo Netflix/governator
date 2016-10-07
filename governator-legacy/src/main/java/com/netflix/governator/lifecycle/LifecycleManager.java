@@ -275,9 +275,9 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
         methods.methodInvoke(PostConstruct.class, obj);
         
-        Method[] warmUpMethods = methods.methodsFor(WarmUp.class);
+        Method[] warmUpMethods = methods.annotatedMethods(WarmUp.class);
         if (warmUpMethods.length > 0) {
-            Method[] postConstructMethods = methods.methodsFor(PostConstruct.class);
+            Method[] postConstructMethods = methods.annotatedMethods(PostConstruct.class);
             for ( Method warmupMethod : warmUpMethods)
             {
                 boolean skipWarmup = false;
