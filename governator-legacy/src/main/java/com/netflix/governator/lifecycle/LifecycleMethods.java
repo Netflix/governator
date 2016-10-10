@@ -316,7 +316,7 @@ public class LifecycleMethods {
         if (handler != null) {
             try {
                 if (Modifier.isStatic(method.getModifiers())) {
-                    log.warn("static lifecycle method: " + method + ", target=" + target);
+                    log.warn("static lifecycle method: {}, target={}", method, target);
                     handler.invoke();
                 }
                 else {

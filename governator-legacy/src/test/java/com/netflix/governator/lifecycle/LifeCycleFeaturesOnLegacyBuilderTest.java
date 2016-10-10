@@ -97,6 +97,18 @@ public class LifeCycleFeaturesOnLegacyBuilderTest {
             this.preDestroyed.set(true);
         }
    }
+    
+    static interface LifecycleInterface {
+        @PostConstruct
+        public default void init() {
+            System.out.println("init() called");
+        }
+        @PreDestroy
+        public default void destroy() {
+            System.out.println("destroy() called");
+        }
+
+    }
 
     @Mock
     private TestListener listener;
@@ -235,6 +247,16 @@ public class LifeCycleFeaturesOnLegacyBuilderTest {
         Thread.sleep(500);
         Assert.assertTrue(nullableConsumerDestroyed.get());
     }       
+    
+    @Test
+    public void testLifecycleMethods() throws Exception {
+        LifecycleInterface instance = new LifecycleInterface() {};
+        Class<?> defaultMethodsClass = instance.getClass();
+        LifecycleMethods methods = new LifecycleMethods(defaultMethodsClass);
+        methods.methodInvoke(defaultMethodsClass.getMethod("init", (Class[])null), instance);
+        methods.methodInvoke(defaultMethodsClass.getMethod("destroy", (Class[])null), instance);
+    }
+    
     
     @DataProvider
     public static Object[][] builders()
