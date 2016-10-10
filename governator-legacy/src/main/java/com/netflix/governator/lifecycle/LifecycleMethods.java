@@ -315,9 +315,15 @@ public class LifecycleMethods {
         MethodHandle handler = methodHandlesMap.get(method);
         if (handler != null) {
             try {
-                handler.invoke(target);
+                if (Modifier.isStatic(method.getModifiers())) {
+                    log.warn("static lifecycle method: {}, target={}", method, target);
+                    handler.invoke();
+                }
+                else {
+                    handler.invoke(target);
+                }
             } catch (Throwable e) {
-                throw new InvocationTargetException(e, "invokedynamic");
+                throw new InvocationTargetException(e, "invokedynamic: method=" + method + ", target=" + target);
             }
         }
         else {
