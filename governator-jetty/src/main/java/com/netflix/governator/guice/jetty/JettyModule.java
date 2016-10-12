@@ -1,8 +1,11 @@
+
 package com.netflix.governator.guice.jetty;
 
 import java.util.EnumSet;
+import java.util.Set;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.DispatcherType;
 
@@ -11,6 +14,12 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.webapp.Configuration;
+import org.eclipse.jetty.webapp.FragmentConfiguration;
+import org.eclipse.jetty.webapp.MetaInfConfiguration;
+import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.webapp.WebInfConfiguration;
+import org.eclipse.jetty.webapp.WebXmlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,12 +91,16 @@ public final class JettyModule extends AbstractModule {
      */
     @Singleton
     public static class JettyRunner {
+        private final Server server;
+        private final int port;
+
         @Inject
         public JettyRunner(Server server, final LifecycleManager manager) {
+            this.server = server;
             LOG.info("Jetty server starting");
             try {
                 server.start();
-                int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
+                port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
                 LOG.info("Jetty server on port {} started", port);
             } catch (Exception e) {
                 try {
@@ -97,6 +110,25 @@ public final class JettyModule extends AbstractModule {
                 }
                 throw new ProvisionException("Jetty server failed to start", e);
             }
+        }
+        
+        public boolean isRunning() {
+            return server.isRunning();
+        }
+        
+        public int getLocalPort() {
+            return this.port;
+        }
+    }
+    
+    @Singleton
+    static class OptionalJettyConfig {
+        
+        @com.google.inject.Inject(optional=true)
+        private JettyConfig jettyConfig;
+        
+        public JettyConfig getJettyConfig() {
+           return jettyConfig != null ? jettyConfig : new DefaultJettyConfig();
         }
     }
     
@@ -144,23 +176,56 @@ public final class JettyModule extends AbstractModule {
         bind(JettyRunner.class).asEagerSingleton();
         Multibinder.newSetBinder(binder(), LifecycleListener.class).addBinding().to(JettyShutdown.class);
         bind(LifecycleShutdownSignal.class).to(JettyLifecycleShutdownSignal.class);
+        Multibinder.newSetBinder(binder(), JettyConnectorProvider.class);
     }
     
     @Provides
     @Singleton
-    private JettyConfig getDefaultConfig() {
-        return new DefaultJettyConfig();
-    }
-    
-    @Provides
-    @Singleton
-    private Server getServer(JettyConfig config) {
+    private Server getServer(OptionalJettyConfig optionalConfig, Set<JettyConnectorProvider> jettyConnectors) {
+        JettyConfig config = optionalConfig.getJettyConfig();
         Server server = new Server(config.getPort());
-        ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
-        servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
-        servletContextHandler.addServlet(DefaultServlet.class, "/");
-        servletContextHandler.setBaseResource(Resource.newClassPathResource("/META-INF/resources/"));
+        Resource staticResourceBase = Resource.newClassPathResource(config.getResourceBase());
+        if (staticResourceBase != null) {
+            // Set up a full web app since we have static content. We require the app to have its static content
+            // under src/main/webapp and any other static resources that are packaged into jars are expected under
+            // META-INF/resources.
+            WebAppContext webAppContext = new WebAppContext();
+            // We want to fail fast if we don't have any root resources defined or we have other issues starting up.
+            webAppContext.setThrowUnavailableOnStartupException(true);
+            webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+            webAppContext.addServlet(DefaultServlet.class, "/");
+            webAppContext.setResourceBase("src/main/webapp");
+            webAppContext.setContextPath("/");
+            webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
+            webAppContext.setConfigurations(new Configuration[]{
+                    new WebXmlConfiguration(),
+                    new WebInfConfiguration(),
+                    new MetaInfConfiguration(),
+                    new FragmentConfiguration(),
+            });
+            server.setHandler(webAppContext);
+        } else {
+            // We don't have static content so just set up servlets.
+            ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
+            servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+            servletContextHandler.addServlet(DefaultServlet.class, "/");
+            servletContextHandler.setResourceBase("src/main/webapp");
+        }
+
+        if (jettyConnectors != null) {
+            for (JettyConnectorProvider connectorProvider : jettyConnectors) {
+                server.addConnector(connectorProvider.getConnector(server));
+            }
+        }
+
         return server;
+    }
+    
+    @Provides
+    @Singleton
+    @Named("embeddedJettyPort")
+    public Integer jettyPort(JettyRunner runner) {
+        return runner.getLocalPort();
     }
     
     @Override

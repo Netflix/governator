@@ -47,36 +47,36 @@ public class TestStandaloneApplication {
         shutdownCalled.set(false);
     }
     
-    @Ignore @Test
-    public void shouldCreateSingletonAndExitAfter1Second() throws Exception {
-        Stopwatch sw = new Stopwatch().start();
-        
-        final TerminationEvent event = new SelfDestructingTerminationEvent(1, TimeUnit.SECONDS);
-        LifecycleInjector.builder()
-            // Example of a singleton that will be created
-            .withAdditionalModules(new AbstractModule() {
-                @Override
-                protected void configure() {
-                    bind(SomeSingleton.class).asEagerSingleton();
-                }
-            })
-            .withAdditionalBootstrapModules(
-                StandaloneRunnerModule.builder()
-                    .withTerminateEvent(event)
-                    .build())
-            .build()
-            .createInjector();
-        
-        event.await();
-        long elapsed = sw.elapsed(TimeUnit.MILLISECONDS);
-        LOG.info("Elapsed: " + elapsed);
-        Assert.assertTrue(initCalled.get());
-        Assert.assertTrue(shutdownCalled.get());
-        Assert.assertTrue(elapsed > 1000);
-        
-        LOG.info("Exit main");
-
-    }
+//    @Ignore @Test
+//    public void shouldCreateSingletonAndExitAfter1Second() throws Exception {
+//        Stopwatch sw = new Stopwatch().start();
+//        
+//        final TerminationEvent event = new SelfDestructingTerminationEvent(1, TimeUnit.SECONDS);
+//        LifecycleInjector.builder()
+//            // Example of a singleton that will be created
+//            .withAdditionalModules(new AbstractModule() {
+//                @Override
+//                protected void configure() {
+//                    bind(SomeSingleton.class).asEagerSingleton();
+//                }
+//            })
+//            .withAdditionalBootstrapModules(
+//                StandaloneRunnerModule.builder()
+//                    .withTerminateEvent(event)
+//                    .build())
+//            .build()
+//            .createInjector();
+//        
+//        event.await();
+//        long elapsed = sw.elapsed(TimeUnit.MILLISECONDS);
+//        LOG.info("Elapsed: " + elapsed);
+//        Assert.assertTrue(initCalled.get());
+//        Assert.assertTrue(shutdownCalled.get());
+//        Assert.assertTrue(elapsed > 1000);
+//        
+//        LOG.info("Exit main");
+//
+//    }
     
     public static void main(String args[]) {
         final TerminationEvent event = new SelfDestructingTerminationEvent(1, TimeUnit.SECONDS);

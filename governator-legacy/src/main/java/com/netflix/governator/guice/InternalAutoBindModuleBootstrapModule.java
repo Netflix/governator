@@ -53,10 +53,10 @@ public class InternalAutoBindModuleBootstrapModule implements BootstrapModule {
             AutoBindSingleton annotation = clazz.getAnnotation(AutoBindSingleton.class);
             if (Module.class.isAssignableFrom(clazz)) {
                 Preconditions.checkState(
-                        annotation.value() == AutoBindSingleton.class,
+                        annotation.value() == Void.class,
                         "@AutoBindSingleton value cannot be set for Modules");
                 Preconditions.checkState(
-                        annotation.baseClass() == AutoBindSingleton.class,
+                        annotation.baseClass() == Void.class,
                         "@AutoBindSingleton value cannot be set for Modules");
                 Preconditions.checkState(
                         !annotation.multiple(),

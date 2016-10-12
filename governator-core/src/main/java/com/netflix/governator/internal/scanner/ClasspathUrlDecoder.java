@@ -1,4 +1,4 @@
-package com.netflix.governator.lifecycle;
+package com.netflix.governator.internal.scanner;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

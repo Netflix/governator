@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,6 +53,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.netflix.governator.LifecycleListenerModule;
 import com.netflix.governator.annotations.AutoBindSingleton;
+import com.netflix.governator.configuration.ConfigurationMapper;
+import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.guice.annotations.Bootstrap;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingleton;
 import com.netflix.governator.guice.lazy.FineGrainedLazySingletonScope;
@@ -86,6 +89,7 @@ public class LifecycleInjector
     private final List<Module> modules;
     private final Collection<Class<?>> ignoreClasses;
     private final boolean ignoreAllClasses;
+    private boolean requireExplicitBindings;
     private final LifecycleManager lifecycleManager;
     private final Injector injector;
     private final Stage stage;
@@ -195,7 +199,7 @@ public class LifecycleInjector
                     	}
                     	// This is a bootstrap module
                     	if (!bootstrap.bootstrap().equals(Bootstrap.NullBootstrapModule.class)) {
-                    		Preconditions.checkState(added==false, bootstrap.annotationType().getName() + " already added as a LifecycleInjectorBuilderSuite");
+                    		Preconditions.checkState(added==false, "%s already added as a LifecycleInjectorBuilderSuite", bootstrap.annotationType().getName());
                     		added = true;
                             LOG.info("Adding BootstrapModule {}", bootstrap.bootstrap());
 	                        bootstrapModules
@@ -207,7 +211,7 @@ public class LifecycleInjector
                     	}
                     	// This is a plain guice module
                     	if (!bootstrap.module().equals(Bootstrap.NullModule.class)) {
-                    		Preconditions.checkState(added==false, bootstrap.annotationType().getName() + " already added as a BootstrapModule");
+                    		Preconditions.checkState(added==false, "%s already added as a BootstrapModule", bootstrap.annotationType().getName());
                     		added = true;
                             LOG.info("Adding Module {}", bootstrap.bootstrap());
 	                        builder.withAdditionalModuleClasses(bootstrap.module());
@@ -378,7 +382,15 @@ public class LifecycleInjector
         
         //Add the LifecycleListener module
         localModules.add(new LifecycleListenerModule());
-        
+        localModules.add(new AbstractModule() {
+            @Override
+            public void configure() {
+                if (requireExplicitBindings) {
+                    binder().requireExplicitBindings();
+                }                              
+            }
+        });
+       
         if ( additionalModules != null )
         {
             localModules.addAll(additionalModules);
@@ -419,6 +431,7 @@ public class LifecycleInjector
                 builder.getPostInjectorActions(),
                 builder.getModuleTransformers(),
                 builder.isDisableAutoBinding());
+        this.requireExplicitBindings = builder.isRequireExplicitBindings();
         
         injector = Guice.createInjector
         (
@@ -432,7 +445,7 @@ public class LifecycleInjector
         this.ignoreAllClasses = internalBootstrapModule.isDisableAutoBinding();
         this.ignoreClasses = ImmutableList.copyOf(builder.getIgnoreClasses());
         
-        this.actions = injector.getInstance(Key.get(new TypeLiteral<Set<PostInjectorAction>>() {}));
+        Set<PostInjectorAction> actions = injector.getInstance(Key.get(new TypeLiteral<Set<PostInjectorAction>>() {}));
         this.transformers = injector.getInstance(Key.get(new TypeLiteral<Set<ModuleTransformer>>() {}));
         
         try {
@@ -441,6 +454,9 @@ public class LifecycleInjector
             throw new ProvisionException("Unable to resolve list of modules", e);
         }
         lifecycleManager = injector.getInstance(LifecycleManager.class);
+        this.actions = new LinkedHashSet<>();
+        this.actions.add(lifecycleManager);
+        this.actions.addAll(actions);
         lifecycleManagerRef.set(lifecycleManager);
     }
 
@@ -468,7 +484,7 @@ public class LifecycleInjector
                     }
                     Provider provider = binding.getValue().getProvider();
                     bind(binding.getKey()).toProvider(provider);
-                }
+                }                
             }
         };
 

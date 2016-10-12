@@ -15,16 +15,61 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 
 public class PreDestroyTest {
-    private static class Foo {
-        @PreDestroy
-        public void shutdown() {
+    private static final int GC_SLEEP_TIME = 100;
 
+    private static class Foo {
+        private volatile boolean shutdown = false;
+        
+        Foo() {
+            System.out.println("Foo constructed: " + this);
+        }
+        
+        @PreDestroy
+        protected void shutdown() {
+            shutdown = true;
+        }
+        
+        public boolean isShutdown() {
+            return shutdown;
+        }
+
+        @Override
+        public String toString() {
+            return "Foo@" + System.identityHashCode(this);
         }
     }
 
+    @ThreadLocalScoped
+    private static class AnnotatedFoo {
+        private volatile boolean shutdown = false;
+        
+        @SuppressWarnings("unused")
+        AnnotatedFoo() {
+            System.out.println("AnnotatedFoo constructed: " + this);
+        }
+        
+        @PreDestroy
+        public void shutdown() {
+            this.shutdown = true;
+        }
+        
+        public boolean isShutdown() {
+            return shutdown;
+        }
+
+        @Override
+        public String toString() {
+            return "AnnotatedFoo@" + System.identityHashCode(this);
+        }
+    }    
+    
     private static class InvalidPreDestroys {
         @PreDestroy
         public String shutdownWithReturnValue() {
@@ -265,8 +310,6 @@ public class PreDestroyTest {
 
     @Test
     public void testLifecycleShutdownWithAtProvides() {
-        final Foo foo = Mockito.mock(Foo.class);
-
         InjectorBuilder builder = InjectorBuilder.fromModule(new AbstractModule() {
             @Override
             protected void configure() {
@@ -275,17 +318,148 @@ public class PreDestroyTest {
             @Provides
             @Singleton
             Foo getFoo() {
-                return foo;
+                return new Foo();
             }
         });
 
+        Foo managedFoo = null;
         try (LifecycleInjector injector = builder.createInjector()) {
-            Assert.assertNotNull(injector.getInstance(Foo.class));
-            Mockito.verify(foo, Mockito.never()).shutdown();
+            managedFoo = injector.getInstance(Foo.class);
+            Assert.assertNotNull(managedFoo);
+            Assert.assertFalse(managedFoo.isShutdown());
         }
-        Mockito.verify(foo, Mockito.times(1)).shutdown();
+        managedFoo = null;
+        builder = null;
+    }
+    
+    @Test
+    public void testLifecycleShutdownWithExplicitScope() throws Exception {
+        final ThreadLocalScope threadLocalScope = new ThreadLocalScope();
+        
+        InjectorBuilder builder = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().bind(Foo.class).in(threadLocalScope);
+            }
+        });
+
+        Foo managedFoo = null;
+        try (LifecycleInjector injector = builder.createInjector()) {
+            threadLocalScope.enter();
+            managedFoo = injector.getInstance(Foo.class);
+            Assert.assertNotNull(managedFoo);
+            Assert.assertFalse(managedFoo.isShutdown());
+            threadLocalScope.exit();
+            
+            System.gc();
+            Thread.sleep(GC_SLEEP_TIME);
+            Assert.assertTrue(managedFoo.isShutdown());
+        }
     }
 
+    @Test
+    public void testLifecycleShutdownWithAnnotatedExplicitScope() throws Exception {
+        final ThreadLocalScope threadLocalScope = new ThreadLocalScope();
+        
+        InjectorBuilder builder = InjectorBuilder.fromModules(new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().bind(Key.get(AnnotatedFoo.class));
+            }
+        },
+         new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().bindScope(ThreadLocalScoped.class, threadLocalScope);
+            }
+        });
+
+        AnnotatedFoo managedFoo = null;
+        try (LifecycleInjector injector = builder.createInjector()) {
+            threadLocalScope.enter();
+            managedFoo = injector.getInstance(AnnotatedFoo.class);
+            Assert.assertNotNull(managedFoo);
+            Assert.assertFalse(managedFoo.shutdown);
+            threadLocalScope.exit();
+            
+            System.gc();
+            Thread.sleep(GC_SLEEP_TIME);
+            synchronized(managedFoo) {
+            Assert.assertTrue(managedFoo.shutdown);
+            }
+        }
+    }
+    
+    
+    @Test
+    public void testLifecycleShutdownWithMultipleInScope() throws Exception {
+        final ThreadLocalScope scope = new ThreadLocalScope();
+        InjectorBuilder builder = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().bindScope(ThreadLocalScoped.class, scope);
+            }
+
+            @Provides
+            @ThreadLocalScoped
+            @Named("afoo1")
+            protected AnnotatedFoo afoo1() {
+                return new AnnotatedFoo();
+            }
+            
+            @Provides
+            @ThreadLocalScoped
+            @Named("afoo2")
+            protected AnnotatedFoo afoo2() {
+                return new AnnotatedFoo();
+            }
+        });
+
+        AnnotatedFoo managedFoo1 = null;
+        AnnotatedFoo managedFoo2 = null;
+        try (LifecycleInjector injector = builder.createInjector()) {
+            scope.enter();
+            managedFoo1 = injector.getInstance(Key.get(AnnotatedFoo.class, Names.named("afoo1")));
+            Assert.assertNotNull(managedFoo1);
+            Assert.assertFalse(managedFoo1.isShutdown());     
+
+            managedFoo2 = injector.getInstance(Key.get(AnnotatedFoo.class, Names.named("afoo2")));
+            Assert.assertNotNull(managedFoo2);
+            Assert.assertFalse(managedFoo2.isShutdown());
+            
+            scope.exit();
+            System.gc();
+            Thread.sleep(GC_SLEEP_TIME);
+            
+            Assert.assertTrue(managedFoo1.isShutdown());
+            Assert.assertTrue(managedFoo2.isShutdown());
+        }
+    }    
+    
+    
+    @Test
+    public void testLifecycleShutdownWithSingletonScope() throws Exception {
+        InjectorBuilder builder = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().bind(Foo.class).in(Scopes.SINGLETON);
+            }
+        });
+
+        Foo managedFoo = null;
+        try (LifecycleInjector injector = builder.createInjector()) {
+            managedFoo = injector.getInstance(Foo.class);
+            Assert.assertNotNull(managedFoo);
+            Assert.assertFalse(managedFoo.isShutdown());
+            
+        }
+        System.gc();
+        Thread.sleep(GC_SLEEP_TIME);
+        Assert.assertTrue(managedFoo.isShutdown());
+    }    
+
+
+    
     @Before
     public void printTestHeader() {
         System.out.println("\n=======================================================");

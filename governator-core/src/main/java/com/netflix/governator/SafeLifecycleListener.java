@@ -1,5 +1,8 @@
 package com.netflix.governator;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,50 +14,63 @@ import com.netflix.governator.spi.LifecycleListener;
  * 1.  Logging of events as INFO
  * 2.  Swallow any event handler exceptions during shutdown
  */
-final class SafeLifecycleListener implements LifecycleListener {
+final class SafeLifecycleListener extends WeakReference<LifecycleListener> implements LifecycleListener {
     private static final Logger LOG = LoggerFactory.getLogger(SafeLifecycleListener.class);
-
-    private final LifecycleListener delegate;
+    private final int delegateHash;
+    private final String asString;
 
     public static SafeLifecycleListener wrap(LifecycleListener listener) {
-        return new SafeLifecycleListener(listener);
+        Preconditions.checkNotNull(listener, "listener argument must be non-null");
+        return new SafeLifecycleListener(listener, null);
     }
     
-    private SafeLifecycleListener(LifecycleListener delegate) {
-        Preconditions.checkNotNull(delegate, "listener argument must be non-null");
-        this.delegate = delegate;
+    public static SafeLifecycleListener wrap(LifecycleListener listener, ReferenceQueue<LifecycleListener> refQueue) {
+        Preconditions.checkNotNull(listener, "listener argument must be non-null");
+        return new SafeLifecycleListener(listener, refQueue);
+    }
+        
+    private SafeLifecycleListener(LifecycleListener delegate, ReferenceQueue<LifecycleListener> refQueue) {
+        super(delegate, refQueue);
+        this.delegateHash = delegate.hashCode();
+        this.asString = "SafeLifecycleListener@" + System.identityHashCode(this) + " [" + delegate.toString() + "]";
     }
     
     @Override
     public void onStarted() {
-        LOG.info("Starting '{}'", delegate);
-        delegate.onStarted();
+        LifecycleListener delegate = get();
+        if (delegate != null) {
+            LOG.info("Starting '{}'", delegate);
+            delegate.onStarted();
+        }
     }
 
     @Override
     public void onStopped(Throwable t) {
-        if (t != null) {
-            LOG.info("Stopping '{}' due to '{}@{}'", delegate, t.getClass().getSimpleName(), System.identityHashCode(t));
-        }
-        else {
-            LOG.info("Stopping '{}'", delegate);            
-        }
-        try {
-            delegate.onStopped(t);
-        }
-        catch (Exception e) {
-            LOG.info("onStopped failed for {}", delegate, e);
+        LifecycleListener delegate = get();
+        if (delegate != null) {
+            if (t != null) {
+                LOG.info("Stopping '{}' due to '{}@{}'", delegate, t.getClass().getSimpleName(), System.identityHashCode(t));
+            }
+            else {
+                LOG.info("Stopping '{}'", delegate);            
+            }
+            try {
+                delegate.onStopped(t);
+            }
+            catch (Exception e) {
+                LOG.info("onStopped failed for {}", delegate, e);
+            }
         }
     }
 
     @Override
     public String toString() {
-        return "SafeLifecycleListener@" + System.identityHashCode(this) + " [" + delegate.toString() + "]";
+        return asString;
     }
 
     @Override
     public int hashCode() {
-        return delegate.hashCode();
+        return delegateHash;
     }
 
     @Override
@@ -65,9 +81,14 @@ final class SafeLifecycleListener implements LifecycleListener {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SafeLifecycleListener other = (SafeLifecycleListener) obj;
-        return delegate == other.delegate || delegate.equals(other.delegate);
+        LifecycleListener delegate = get();
+        if (delegate != null) {
+            LifecycleListener otherDelegate = ((SafeLifecycleListener)obj).get();    
+            return delegate == otherDelegate || delegate.equals(otherDelegate);
+        }
+        else {
+            return false;
+        }
     }
-    
 
 }

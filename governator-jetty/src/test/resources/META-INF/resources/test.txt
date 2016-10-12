@@ -1,0 +1,1 @@
+Dummy page so we test that the WebAppContext starts up fine in the JettyModule with the META-INF/resources default.

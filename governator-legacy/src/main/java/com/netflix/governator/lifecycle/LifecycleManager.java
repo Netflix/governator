@@ -16,32 +16,23 @@
 
 package com.netflix.governator.lifecycle;
 
-import java.beans.Introspector;
 import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.annotation.Resources;
-import javax.naming.NamingException;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import javax.validation.groups.Default;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,35 +42,51 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.MapMaker;
+import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.governator.LifecycleAction;
 import com.netflix.governator.annotations.PreConfiguration;
 import com.netflix.governator.annotations.WarmUp;
 import com.netflix.governator.configuration.ConfigurationColumnWriter;
 import com.netflix.governator.configuration.ConfigurationDocumentation;
 import com.netflix.governator.configuration.ConfigurationMapper;
 import com.netflix.governator.configuration.ConfigurationProvider;
+import com.netflix.governator.guice.PostInjectorAction;
+import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
+import com.netflix.governator.internal.PreDestroyLifecycleFeature;
+import com.netflix.governator.internal.PreDestroyMonitor;
+import static com.netflix.governator.internal.BinaryConstant.*;
 
 /**
  * Main instance management container
  */
 @Singleton
-public class LifecycleManager implements Closeable
+public class LifecycleManager implements Closeable, PostInjectorAction
 {
+    private enum State
+    {
+        LATENT,
+        STARTING,
+        STARTED,
+        CLOSED
+    }
+
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Map<StateKey, LifecycleState> objectStates = Maps.newConcurrentMap();
-    private final List<PreDestroyRecord> preDestroys = new CopyOnWriteArrayList<PreDestroyRecord>();
+    private final ConcurrentMap<Object, LifecycleStateWrapper> objectStates = new MapMaker().weakKeys().initialCapacity(I16_65536).concurrencyLevel(I10_1024).makeMap();
+    private final PreDestroyLifecycleFeature preDestroyLifecycleFeature = new PreDestroyLifecycleFeature(ValidationMode.LAX);
+    private final ConcurrentMap<Class<?>, List<LifecycleAction>> preDestroyActionCache = new ConcurrentHashMap<Class<?>, List<LifecycleAction>>(I15_32768);
+
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
     private final ConfigurationDocumentation configurationDocumentation;
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationMapper configurationMapper;
-    private final Collection<LifecycleListener> listeners;
-    private final Collection<ResourceLocator> resourceLocators;
-    private final ValidatorFactory factory;
-    private final Injector injector;
+    private final ResourceMapper resourceMapper;
+    final LifecycleListener[] listeners;
+    private final Validator validator;
+    private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
     public LifecycleManager()
@@ -95,12 +102,17 @@ public class LifecycleManager implements Closeable
     @Inject
     public LifecycleManager(LifecycleManagerArguments arguments, Injector injector)
     {
-        this.injector = injector;
+        if (injector != null) {
+            preDestroyMonitor =  new PreDestroyMonitor(injector.getScopeBindings());
+        }
+        else {
+            preDestroyMonitor = null;
+        }
         configurationMapper = arguments.getConfigurationMapper();
         newLifecycleManager = arguments.getLifecycleManager();
-        listeners = ImmutableSet.copyOf(arguments.getLifecycleListeners());
-        resourceLocators = ImmutableSet.copyOf(arguments.getResourceLocators());
-        factory = Validation.buildDefaultValidatorFactory();
+        listeners = arguments.getLifecycleListeners().toArray(new LifecycleListener[0]);
+        resourceMapper = new ResourceMapper(injector, ImmutableSet.copyOf(arguments.getResourceLocators()));
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
         configurationDocumentation = arguments.getConfigurationDocumentation();
         configurationProvider = arguments.getConfigurationProvider();
     }
@@ -112,7 +124,7 @@ public class LifecycleManager implements Closeable
      */
     public Collection<LifecycleListener> getListeners()
     {
-        return listeners;
+        return Arrays.asList(listeners);
     }
 
     /**
@@ -121,6 +133,7 @@ public class LifecycleManager implements Closeable
      * @param objects objects to add
      * @throws Exception errors
      */
+    @Deprecated
     public void add(Object... objects) throws Exception
     {
         for ( Object obj : objects )
@@ -135,9 +148,10 @@ public class LifecycleManager implements Closeable
      * @param obj object to add
      * @throws Exception errors
      */
+    @Deprecated
     public void add(Object obj) throws Exception
     {
-        add(obj, new LifecycleMethods(obj.getClass()));
+        add(obj, null, new LifecycleMethods(obj.getClass()));
     }
 
     /**
@@ -148,17 +162,35 @@ public class LifecycleManager implements Closeable
      * @param methods calculated lifecycle methods
      * @throws Exception errors
      */
+    @Deprecated
     public void add(Object obj, LifecycleMethods methods) throws Exception
     {
-        Preconditions.checkState(state.get() != State.CLOSED, "LifecycleManager is closed");
-
-        startInstance(obj, methods);
-
-        if ( hasStarted() )
-        {
-            initializeObjectPostStart(obj);
-        }
+        add(obj, null, methods);
     }
+    
+    /**
+     * Add the object to the container. Its assets will be loaded, post construct methods called, etc.
+     * This version helps performance when the lifecycle methods have already been calculated
+     *
+     * @param obj     object to add
+     * @param methods calculated lifecycle methods
+     * @throws Exception errors
+     */
+    public <T> void add(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
+    {
+       State managerState = state.get();
+       if (managerState != State.CLOSED) {     
+           startInstance(obj, binding, methods);
+           if ( managerState == State.STARTED )
+           {
+               initializeObjectPostStart(obj);
+           }
+       }
+       else {
+           throw new IllegalStateException("LifecycleManager is closed");
+       }
+    }
+    
 
     /**
      * Returns true if the lifecycle has started (i.e. {@link #start()} has been called).
@@ -178,12 +210,16 @@ public class LifecycleManager implements Closeable
      */
     public LifecycleState getState(Object obj)
     {
-        LifecycleState lifecycleState = objectStates.get(new StateKey(obj));
+        LifecycleStateWrapper lifecycleState = objectStates.get(obj);
         if ( lifecycleState == null )
         {
-            lifecycleState = hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
+            return hasStarted() ? LifecycleState.ACTIVE : LifecycleState.LATENT;
         }
-        return lifecycleState;
+        else {
+            synchronized(lifecycleState) {
+                return lifecycleState.get();
+            }
+        }
     }
 
     /**
@@ -194,7 +230,15 @@ public class LifecycleManager implements Closeable
      */
     public void start() throws Exception
     {
-        start(0, null);
+        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
+
+        validate();
+
+        new ConfigurationColumnWriter(configurationDocumentation).output(log);
+        if (newLifecycleManager != null) {
+            newLifecycleManager.notifyStarted();
+        }
+        state.set(State.STARTED);    
     }
 
     /**
@@ -209,19 +253,93 @@ public class LifecycleManager implements Closeable
     @Deprecated
     public boolean start(long maxWait, TimeUnit unit) throws Exception
     {
-        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
-
-        validate();
-
-        new ConfigurationColumnWriter(configurationDocumentation).output(log);
-        if (newLifecycleManager != null) {
-            newLifecycleManager.notifyStarted();
-        }
-        state.set(State.STARTED);
-
+        start();
         return true;
     }
 
+    @SuppressWarnings("deprecation")
+    private <T> void startInstance(T obj, Binding<T> binding, LifecycleMethods methods) throws Exception
+    {
+        final Class<?> instanceType = obj.getClass();
+        log.debug("Starting {}", instanceType.getName());
+
+        final LifecycleStateWrapper lifecycleState = initState(obj, LifecycleState.PRE_CONFIGURATION);
+        methods.methodInvoke(PreConfiguration.class, obj);
+
+        lifecycleState.set(obj, LifecycleState.SETTING_CONFIGURATION);
+        configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
+
+        lifecycleState.set(obj, LifecycleState.SETTING_RESOURCES);
+        resourceMapper.map(obj, methods);
+
+        lifecycleState.set(obj, LifecycleState.POST_CONSTRUCTING);
+        methods.methodInvoke(PostConstruct.class, obj);
+        
+        Method[] warmUpMethods = methods.annotatedMethods(WarmUp.class);
+        if (warmUpMethods.length > 0) {
+            Method[] postConstructMethods = methods.annotatedMethods(PostConstruct.class);
+            for ( Method warmupMethod : warmUpMethods)
+            {
+                boolean skipWarmup = false;
+                // assuming very few methods in both WarmUp and PostConstruct
+                for (Method postConstruct :  postConstructMethods) {
+                    if (postConstruct == warmupMethod) {
+                        skipWarmup = true;
+                        break;
+                    }
+                }
+                if (!skipWarmup) {
+                    log.debug("\t{}()", warmupMethod.getName());
+                    LifecycleMethods.methodInvoke(warmupMethod, obj);
+                }
+            }
+        }
+
+        List<LifecycleAction> preDestroyActions;
+        if (preDestroyActionCache.containsKey(instanceType)) {
+            preDestroyActions = preDestroyActionCache.get(instanceType);
+        }
+        else {
+            preDestroyActions = preDestroyLifecycleFeature.getActionsForType(instanceType);
+            preDestroyActionCache.put(instanceType, preDestroyActions);
+        }
+        
+        if ( !preDestroyActions.isEmpty() )
+        {
+            if (binding != null) {
+                preDestroyMonitor.register(obj, binding, preDestroyActions);
+            }
+            else {
+                preDestroyMonitor.register(obj, "legacy", preDestroyActions);
+            }
+        }
+
+    }
+
+    class LifecycleStateWrapper {
+        LifecycleState state;
+
+        public void set(Object managedInstance, LifecycleState state) {
+            this.state = state;
+            for ( LifecycleListener listener : listeners )
+            {
+                listener.stateChanged(managedInstance, state);
+            }            
+        }
+        
+        public LifecycleState get() {
+            return state;
+        }
+    }
+
+    private LifecycleStateWrapper initState(Object obj, LifecycleState state) {
+        LifecycleStateWrapper stateWrapper = new LifecycleStateWrapper();
+        objectStates.put(obj, stateWrapper);
+        stateWrapper.set(obj, state);
+        return stateWrapper;
+    }
+
+    
     @Override
     public synchronized void close()
     {
@@ -232,7 +350,7 @@ public class LifecycleManager implements Closeable
                 if (newLifecycleManager != null) {
                     newLifecycleManager.notifyShutdown();
                 }
-                stopInstances();
+                preDestroyMonitor.close();
             }
             catch ( Exception e )
             {
@@ -240,10 +358,15 @@ public class LifecycleManager implements Closeable
             }
             finally
             {
-                preDestroys.clear();
                 objectStates.clear();
+                preDestroyActionCache.clear();
             }
         }
+    }
+
+    private void initializeObjectPostStart(Object obj) throws ValidationException
+    {
+        validate(obj);
     }
 
     /**
@@ -255,11 +378,11 @@ public class LifecycleManager implements Closeable
     public void validate() throws ValidationException
     {
         ValidationException exception = null;
-        Validator validator = factory.getValidator();
-        for ( StateKey key : objectStates.keySet() )
+        for ( Object managedInstance : objectStates.keySet() )
         {
-            Object obj = key.obj;
-            exception = internalValidateObject(exception, obj, validator);
+            if (managedInstance != null) {
+                exception = internalValidateObject(exception, managedInstance, validator);
+            }
         }
 
         if ( exception != null )
@@ -276,281 +399,34 @@ public class LifecycleManager implements Closeable
      */
     public void validate(Object obj) throws ValidationException
     {
-        Validator validator = factory.getValidator();
         ValidationException exception = internalValidateObject(null, obj, validator);
         if ( exception != null )
         {
             throw exception;
         }
     }
-
-    private void setState(Object obj, LifecycleState state)
-    {
-        objectStates.put(new StateKey(obj), state);
-        for ( LifecycleListener listener : listeners )
-        {
-            listener.stateChanged(obj, state);
-        }
-    }
-
+        
     private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
     {
-        Set<ConstraintViolation<Object>> violations = validator.validate(obj);
-        for ( ConstraintViolation<Object> violation : violations )
-        {
-            String path = getPath(violation);
-            String message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
-            if ( exception == null )
+        Set<ConstraintViolation<Object>> violations = validator.validate(obj, Default.class);
+        if (!violations.isEmpty()) {
+            for ( ConstraintViolation<Object> violation : violations )
             {
-                exception = new ValidationException(message);
-            }
-            else
-            {
-                exception = new ValidationException(message, exception);
+                String path = getPath(violation);
+                String message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
+                if ( exception == null )
+                {
+                    exception = new ValidationException(message);
+                }
+                else
+                {
+                    exception = new ValidationException(message, exception);
+                }
             }
         }
         return exception;
     }
-
-    private void startInstance(Object obj, LifecycleMethods methods) throws Exception
-    {
-        log.debug(String.format("Starting %s", obj.getClass().getName()));
-
-        setState(obj, LifecycleState.PRE_CONFIGURATION);
-        for ( Method preConfiguration : methods.methodsFor(PreConfiguration.class) )
-        {
-            log.debug(String.format("\t%s()", preConfiguration.getName()));
-            preConfiguration.invoke(obj);
-        }
-
-        setState(obj, LifecycleState.SETTING_CONFIGURATION);
-        configurationMapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
-
-        setState(obj, LifecycleState.SETTING_RESOURCES);
-        setResources(obj, methods);
-
-        setState(obj, LifecycleState.POST_CONSTRUCTING);
-        LinkedHashSet<Method> postConstructs = new LinkedHashSet<>();
-        postConstructs.addAll(methods.methodsFor(PostConstruct.class));
-        postConstructs.addAll(methods.methodsFor(WarmUp.class));
-        for ( Method postConstruct : postConstructs )
-        {
-            log.debug(String.format("\t%s()", postConstruct.getName()));
-            postConstruct.invoke(obj);
-        }
-        
-        Collection<Method> preDestroyMethods = methods.methodsFor(PreDestroy.class);
-        if ( preDestroyMethods.size() > 0 )
-        {
-            preDestroys.add(new PreDestroyRecord(obj, preDestroyMethods));
-        }
-    }
-
-    private void setResources(Object obj, LifecycleMethods methods) throws Exception
-    {
-        for ( Field field : methods.fieldsFor(Resources.class) )
-        {
-            Resources resources = field.getAnnotation(Resources.class);
-            for ( Resource resource : resources.value() )
-            {
-                setFieldResource(obj, field, resource);
-            }
-        }
-
-        for ( Field field : methods.fieldsFor(Resource.class) )
-        {
-            Resource resource = field.getAnnotation(Resource.class);
-            setFieldResource(obj, field, resource);
-        }
-
-        for ( Method method : methods.methodsFor(Resources.class) )
-        {
-            Resources resources = method.getAnnotation(Resources.class);
-            for ( Resource resource : resources.value() )
-            {
-                setMethodResource(obj, method, resource);
-            }
-        }
-
-        for ( Method method : methods.methodsFor(Resource.class) )
-        {
-            Resource resource = method.getAnnotation(Resource.class);
-            setMethodResource(obj, method, resource);
-        }
-
-        for ( Resources resources : methods.classAnnotationsFor(Resources.class) )
-        {
-            for ( Resource resource : resources.value() )
-            {
-                loadClassResource(resource);
-            }
-        }
-
-        for ( Resource resource : methods.classAnnotationsFor(Resource.class) )
-        {
-            loadClassResource(resource);
-        }
-    }
-
-    private void loadClassResource(Resource resource) throws Exception
-    {
-        if ( (resource.name().length() == 0) || (resource.type() == Object.class) )
-        {
-            throw new Exception("Class resources must have both name() and type(): " + resource);
-        }
-        findResource(resource);
-    }
-
-    private void setMethodResource(Object obj, Method method, Resource resource) throws Exception
-    {
-        if ( (method.getParameterTypes().length != 1) || (method.getReturnType() != Void.TYPE) )
-        {
-            throw new Exception(String.format("%s.%s() is not a proper JavaBean setter.", obj.getClass().getName(), method.getName()));
-        }
-
-        String beanName = method.getName();
-        if ( beanName.toLowerCase().startsWith("set") )
-        {
-            beanName = beanName.substring("set".length());
-        }
-        beanName = Introspector.decapitalize(beanName);
-
-        String siteName = obj.getClass().getName() + "/" + beanName;
-        resource = adjustResource(resource, method.getParameterTypes()[0], siteName);
-        Object resourceObj = findResource(resource);
-        method.setAccessible(true);
-        method.invoke(obj, resourceObj);
-    }
-
-    private void setFieldResource(Object obj, Field field, Resource resource) throws Exception
-    {
-        String siteName = obj.getClass().getName() + "/" + field.getName();
-        Object resourceObj = findResource(adjustResource(resource, field.getType(), siteName));
-        field.setAccessible(true);
-        field.set(obj, resourceObj);
-    }
-
-    private Resource adjustResource(final Resource resource, final Class siteType, final String siteName)
-    {
-        return new Resource()
-        {
-            @Override
-            public String name()
-            {
-                return (resource.name().length() == 0) ? siteName : resource.name();
-            }
-
-            /**
-             * Method needed for eventual java7 compatibility
-             */
-            public String lookup()
-            {
-                return name();
-            }
-
-            @Override
-            public Class type()
-            {
-                return (resource.type() == Object.class) ? siteType : resource.type();
-            }
-
-            @Override
-            public AuthenticationType authenticationType()
-            {
-                return resource.authenticationType();
-            }
-
-            @Override
-            public boolean shareable()
-            {
-                return resource.shareable();
-            }
-
-            @Override
-            public String mappedName()
-            {
-                return resource.mappedName();
-            }
-
-            @Override
-            public String description()
-            {
-                return resource.description();
-            }
-
-            @Override
-            public Class<? extends Annotation> annotationType()
-            {
-                return resource.annotationType();
-            }
-        };
-    }
-
-    private Object findResource(Resource resource) throws Exception
-    {
-        if ( resourceLocators.size() > 0 )
-        {
-            final Iterator<ResourceLocator> iterator = resourceLocators.iterator();
-            ResourceLocator locator = iterator.next();
-            ResourceLocator nextInChain = new ResourceLocator()
-            {
-                @Override
-                public Object locate(Resource resource, ResourceLocator nextInChain) throws Exception
-                {
-                    if ( iterator.hasNext() )
-                    {
-                        return iterator.next().locate(resource, this);
-                    }
-                    return defaultFindResource(resource);
-                }
-            };
-            return locator.locate(resource, nextInChain);
-        }
-        return defaultFindResource(resource);
-    }
-
-    private Object defaultFindResource(Resource resource) throws Exception
-    {
-        if ( injector == null )
-        {
-            throw new NamingException("Could not find resource: " + resource);
-        }
-
-        //noinspection unchecked
-        return injector.getInstance(resource.type());
-    }
-
-    private void stopInstances() throws Exception
-    {
-        for ( PreDestroyRecord record : getReversed(preDestroys) )
-        {
-            log.debug(String.format("Stopping %s:%d", record.obj.getClass().getName(), System.identityHashCode(record.obj)));
-            setState(record.obj, LifecycleState.PRE_DESTROYING);
-
-            for ( Method preDestroy : record.preDestroyMethods )
-            {
-                log.debug(String.format("\t%s()", preDestroy.getName()));
-                try
-                {
-                    preDestroy.invoke(record.obj);
-                }
-                catch ( Throwable e )
-                {
-                    log.error("Couldn't stop lifecycle managed instance", e);
-                }
-            }
-
-            objectStates.remove(new StateKey(record.obj));
-        }
-    }
-
-    private List<PreDestroyRecord> getReversed(List<PreDestroyRecord> records)
-    {
-        List<PreDestroyRecord> reversed = Lists.newArrayList(records);
-        Collections.reverse(reversed);
-        return reversed;
-    }
-
+    
     private String getPath(ConstraintViolation<Object> violation)
     {
         Iterable<String> transformed = Iterables.transform
@@ -567,64 +443,10 @@ public class LifecycleManager implements Closeable
             );
         return Joiner.on(".").join(transformed);
     }
-
-    private void initializeObjectPostStart(Object obj) throws ValidationException
-    {
-        validate(obj);
-    }
-
-    private enum State
-    {
-        LATENT,
-        STARTING,
-        STARTED,
-        CLOSED
-    }
-
-    /**
-     * Lifecycle managed objects have to be referenced via Object identity not equals()
-     */
-    private static class StateKey
-    {
-        final Object obj;
-
-        private StateKey(Object obj)
-        {
-            this.obj = obj;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return System.identityHashCode(obj);
-        }
-
-        @SuppressWarnings("SimplifiableIfStatement")
-        @Override
-        public boolean equals(Object o)
-        {
-            if ( this == o )
-            {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() )
-            {
-                return false;
-            }
-
-            return hashCode() == o.hashCode();
-        }
-    }
-
-    private static class PreDestroyRecord
-    {
-        final Object obj;
-        final Collection<Method> preDestroyMethods;
-
-        private PreDestroyRecord(Object obj, Collection<Method> preDestroyMethods)
-        {
-            this.obj = obj;
-            this.preDestroyMethods = preDestroyMethods;
-        }
+    
+    @Override
+    public void call(Injector injector) {
+        this.resourceMapper.setInjector(injector);
+        this.preDestroyMonitor.addScopeBindings(injector.getScopeBindings());
     }
 }

@@ -1,17 +1,14 @@
 /*
  * Copyright 2012 Netflix, Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 
 package com.netflix.governator.guice;
@@ -19,29 +16,37 @@ package com.netflix.governator.guice;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binding;
+import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
-import com.google.inject.spi.InjectionListener;
-import com.google.inject.spi.TypeEncounter;
-import com.google.inject.spi.TypeListener;
+import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.lifecycle.LifecycleListener;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.governator.lifecycle.LifecycleMethods;
+import static com.netflix.governator.internal.BinaryConstant.*;
 
-class InternalLifecycleModule extends AbstractModule {
+class InternalLifecycleModule extends AbstractModule implements ProvisionListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InternalLifecycleModule.class);
     private final LoadingCache<Class<?>, LifecycleMethods> lifecycleMethods = CacheBuilder
-        .newBuilder()
-        .softValues()
-        .build(new CacheLoader<Class<?>, LifecycleMethods>(){
-            @Override
-            public LifecycleMethods load(Class<?> key) throws Exception {
-                return new LifecycleMethods(key);
-            }});
-    
+            .newBuilder()
+            .initialCapacity(I13_8192) // number of classes with metadata
+            .concurrencyLevel(I8_256)  // number of concurrent metadata producers (no locks for read)
+            .softValues()
+            .build(new CacheLoader<Class<?>, LifecycleMethods>() {
+                @Override
+                public LifecycleMethods load(Class<?> key) throws Exception {
+                    return new LifecycleMethods(key);
+                }
+            });
+
     private final AtomicReference<LifecycleManager> lifecycleManager;
 
     InternalLifecycleModule(AtomicReference<LifecycleManager> lifecycleManager) {
@@ -51,50 +56,40 @@ class InternalLifecycleModule extends AbstractModule {
     @Override
     public void configure() {
         bindListener(
-            Matchers.any(),
-            new TypeListener(){
-                @Override
-                public <T> void hear(final TypeLiteral<T> type, TypeEncounter<T> encounter) {
-                    encounter.register(
-                        new InjectionListener<T>() {
-                            @Override
-                            public void afterInjection(T obj) {
-                                processInjectedObject(obj, type);
-                            }
-                        }
-                    );
-                }
-            }
-        );
+                Matchers.any(),
+                this);
     }
 
-    private <T> void processInjectedObject(T obj, TypeLiteral<T> type){
-        LifecycleManager manager = lifecycleManager.get();
-        if ( manager != null ) {
-            for ( LifecycleListener listener : manager.getListeners() ) {
-                listener.objectInjected(type, obj);
-            }
+    @Override
+    public <T> void onProvision(ProvisionInvocation<T> provision) {
+        T instance = provision.provision();
+        if (instance != null) {
+            Binding<T> binding = provision.getBinding();
 
-            Class<?> clazz = obj.getClass();
-            LifecycleMethods methods = getLifecycleMethods(clazz);
-
-            if ( methods.hasLifecycleAnnotations() ) {
-                try {
-                    manager.add(obj, methods);
+            LifecycleManager manager = lifecycleManager.get();
+            if (manager != null) {
+                Key<T> bindingKey = binding.getKey();
+                LOGGER.trace("provisioning instance of {}", bindingKey);
+                TypeLiteral<T> bindingType = bindingKey.getTypeLiteral();
+                for (LifecycleListener listener : manager.getListeners()) {
+                    listener.objectInjected(bindingType, instance);
                 }
-                catch ( Exception e ) {
+
+                try {
+                    LifecycleMethods methods = lifecycleMethods.get(instance.getClass());
+                    if (methods.hasLifecycleAnnotations()) {
+                        manager.add(instance, binding, methods);
+                    }
+                } catch (ExecutionException e) {
+                    // caching problem
+                    throw new RuntimeException(e);
+                } catch (Throwable e) {
+                    // unknown problem will abort injector start up
                     throw new Error(e);
                 }
+
             }
         }
     }
 
-    private LifecycleMethods getLifecycleMethods(Class<?> clazz) {
-        try {
-            return lifecycleMethods.get(clazz);
-        }
-        catch ( ExecutionException e ) {
-            throw new RuntimeException(e);
-        }
-    }
 }

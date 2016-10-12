@@ -26,12 +26,6 @@ public final class LifecycleListenerModule extends AbstractModule {
         bindListener(Matchers.any(), provisionListener);
     }
     
-    static class TypeLifecycleActions {
-        final List<LifecycleAction> postConstructActions = new ArrayList<LifecycleAction>();
-        final List<LifecycleAction> preDestroyActions = new ArrayList<>();
-    }
-    
-    
     @Singleton
     @SuppressLifecycleUninitialized
     static class LifecycleListenerProvisionListener implements ProvisionListener {
@@ -55,11 +49,7 @@ public final class LifecycleListenerModule extends AbstractModule {
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
             final T injectee = provision.provision();
-            if (injectee == null) {
-                return;
-            }
-            
-            if (injectee instanceof LifecycleListener) {
+            if (injectee != null && injectee instanceof LifecycleListener) {
                 if (manager == null) {
                     pendingLifecycleListeners.add((LifecycleListener) injectee);
                 } else {
@@ -71,7 +61,7 @@ public final class LifecycleListenerModule extends AbstractModule {
 
     @Override
     public boolean equals(Object obj) {
-        return getClass().equals(obj.getClass());
+        return getClass()==obj.getClass();
     }
 
     @Override
