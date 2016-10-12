@@ -6,6 +6,8 @@ dependencies {
     compile 'com.sun.jersey:jersey-server:1.19'
     compile 'org.eclipse.jetty:jetty-servlet:9.2.12.v20150709'
     compile 'org.eclipse.jetty:jetty-webapp:9.2.12.v20150709'
+    compileOnly "com.netflix.archaius:archaius2-api:${archaius2_version}"
+    compileOnly "com.netflix.archaius:archaius2-core:${archaius2_version}"
     
     testCompile 'com.sun.jersey.contribs:jersey-guice:1.19'
 }
