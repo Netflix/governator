@@ -14,6 +14,7 @@ import org.junit.runners.model.Statement;
 import com.netflix.governator.guice.test.AnnotationBasedTestInjectorManager;
 import com.netflix.governator.guice.test.ModulesForTesting;
 import com.netflix.governator.guice.test.ReplaceWithMock;
+import com.netflix.governator.guice.test.TestInjectorCreationMode;
 import com.netflix.governator.guice.test.WrapWithSpy;
 
 /**
@@ -30,14 +31,15 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
 
     public GovernatorJunit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
-
     }
 
     @Override
     protected Statement classBlock(RunNotifier notifier) {
         annotationBasedTestInjectorManager = new AnnotationBasedTestInjectorManager(getTestClass().getJavaClass());
         annotationBasedTestInjectorManager.prepareConfigForTestClass(getDescription().getTestClass());
-        annotationBasedTestInjectorManager.createInjector();
+        if (TestInjectorCreationMode.BEFORE_CLASS == annotationBasedTestInjectorManager.getInjectorCreationMode()) {
+            annotationBasedTestInjectorManager.createInjector();
+        }
         return super.classBlock(notifier);
     }
 
@@ -51,6 +53,9 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         annotationBasedTestInjectorManager.prepareConfigForTestClass(getDescription().getTestClass(), method.getMethod());
+        if (TestInjectorCreationMode.BEFORE_EACH_TEST_METHOD == annotationBasedTestInjectorManager.getInjectorCreationMode()) {
+            annotationBasedTestInjectorManager.createInjector();
+        }
         return super.methodBlock(method);
     }
 
@@ -65,6 +70,10 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
                 } finally {
                     annotationBasedTestInjectorManager.cleanUpMethodLevelConfig();
                     annotationBasedTestInjectorManager.cleanUpMocks();
+                    if (TestInjectorCreationMode.BEFORE_EACH_TEST_METHOD == annotationBasedTestInjectorManager
+                            .getInjectorCreationMode()) {
+                        annotationBasedTestInjectorManager.cleanUpInjector();
+                    }
                 }
             }
         };

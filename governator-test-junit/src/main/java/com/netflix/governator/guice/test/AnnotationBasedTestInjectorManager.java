@@ -40,6 +40,7 @@ import com.netflix.governator.providers.SingletonProvider;
 public class AnnotationBasedTestInjectorManager {
 
     private LifecycleInjector injector;
+    private final TestInjectorCreationMode injectorCreationMode;
     private final List<Object> mocksToReset = new ArrayList<>();
     private final List<Module> modulesForTestClass = new ArrayList<>();
     private final List<Module> overrideModules = new ArrayList<>();
@@ -50,6 +51,7 @@ public class AnnotationBasedTestInjectorManager {
     private final TestCompositeConfig testCompositeConfig;
 
     public AnnotationBasedTestInjectorManager(Class<?> classUnderTest) {
+        this.injectorCreationMode = getInjectorCreationModeForAnnotatedClass(classUnderTest);
         inspectModulesForTestClass(classUnderTest);
         inspectMocksForTestClass(classUnderTest);
         inspectSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
@@ -82,6 +84,10 @@ public class AnnotationBasedTestInjectorManager {
     public void cleanUpInjector() {
         injector.close();
     }
+    
+    public TestInjectorCreationMode getInjectorCreationMode() {
+        return this.injectorCreationMode;
+    }
 
     protected LifecycleInjector createInjector(List<Module> modules, List<Module> overrides) {
         return InjectorBuilder.fromModules(modules).overrideWith(overrides).createInjector();
@@ -113,6 +119,15 @@ public class AnnotationBasedTestInjectorManager {
                             + ". Please ensure that the module is public and has a no-arg constructor", e);
                 }
             }
+        }
+    }
+    
+    private TestInjectorCreationMode getInjectorCreationModeForAnnotatedClass(Class<?> testClass) {
+        final Annotation annotation = testClass.getAnnotation(ModulesForTesting.class);
+        if (annotation != null) {
+            return ((ModulesForTesting) annotation).injectorCreation();
+        } else {
+            return TestInjectorCreationMode.BEFORE_CLASS;
         }
     }
 
