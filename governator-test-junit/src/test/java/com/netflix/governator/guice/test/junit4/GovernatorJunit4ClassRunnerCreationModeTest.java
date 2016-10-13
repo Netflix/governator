@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import com.netflix.governator.guice.test.ModulesForTesting;
-import com.netflix.governator.guice.test.TestInjectorCreationMode;
+import com.netflix.governator.guice.test.InjectorCreationMode;
 
 @RunWith(Enclosed.class)
 public class GovernatorJunit4ClassRunnerCreationModeTest {
@@ -41,7 +41,7 @@ public class GovernatorJunit4ClassRunnerCreationModeTest {
     
     @RunWith(GovernatorJunit4ClassRunner.class)
     @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-    @ModulesForTesting(injectorCreation=TestInjectorCreationMode.BEFORE_EACH_TEST_METHOD)
+    @ModulesForTesting(injectorCreation=InjectorCreationMode.BEFORE_EACH_TEST_METHOD)
     public static class MethodLevelTest {
         
         @Inject

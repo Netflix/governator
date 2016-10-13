@@ -44,6 +44,6 @@ public @interface ModulesForTesting {
     
     Class<? extends Module>[] value() default {};
     
-    TestInjectorCreationMode injectorCreation() default TestInjectorCreationMode.BEFORE_CLASS;
+    InjectorCreationMode injectorCreation() default InjectorCreationMode.BEFORE_TEST_CLASS;
 
 }

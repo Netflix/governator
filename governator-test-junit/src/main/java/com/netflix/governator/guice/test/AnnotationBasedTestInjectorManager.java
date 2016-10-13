@@ -40,7 +40,7 @@ import com.netflix.governator.providers.SingletonProvider;
 public class AnnotationBasedTestInjectorManager {
 
     private LifecycleInjector injector;
-    private final TestInjectorCreationMode injectorCreationMode;
+    private final InjectorCreationMode injectorCreationMode;
     private final List<Object> mocksToReset = new ArrayList<>();
     private final List<Module> modulesForTestClass = new ArrayList<>();
     private final List<Module> overrideModules = new ArrayList<>();
@@ -85,7 +85,7 @@ public class AnnotationBasedTestInjectorManager {
         injector.close();
     }
     
-    public TestInjectorCreationMode getInjectorCreationMode() {
+    public InjectorCreationMode getInjectorCreationMode() {
         return this.injectorCreationMode;
     }
 
@@ -105,15 +105,9 @@ public class AnnotationBasedTestInjectorManager {
                 modulesForTestClass.add(moduleClass.newInstance());
             } catch (InstantiationException | IllegalAccessException e) {
                 try {
-                    Constructor<?>[] declaredConstructors = moduleClass.getDeclaredConstructors();
-                    for(int i=0; i < declaredConstructors.length; i++) {
-                        if(declaredConstructors[i].getParameterCount() == 0) {
-                            Constructor<?> zeroArgConstructor = declaredConstructors[i];
-                            zeroArgConstructor.setAccessible(true);
-                            modulesForTestClass.add((Module) zeroArgConstructor.newInstance());
-                            break;
-                        }
-                    }        
+                    Constructor<?> zeroArgConstructor = moduleClass.getDeclaredConstructor();
+                    zeroArgConstructor.setAccessible(true);
+                    modulesForTestClass.add((Module) zeroArgConstructor.newInstance());
                 } catch (Exception ex) {
                     throw new RuntimeException("Error instantiating module " + moduleClass
                             + ". Please ensure that the module is public and has a no-arg constructor", e);
@@ -122,12 +116,12 @@ public class AnnotationBasedTestInjectorManager {
         }
     }
     
-    private TestInjectorCreationMode getInjectorCreationModeForAnnotatedClass(Class<?> testClass) {
+    private InjectorCreationMode getInjectorCreationModeForAnnotatedClass(Class<?> testClass) {
         final Annotation annotation = testClass.getAnnotation(ModulesForTesting.class);
         if (annotation != null) {
             return ((ModulesForTesting) annotation).injectorCreation();
         } else {
-            return TestInjectorCreationMode.BEFORE_CLASS;
+            return InjectorCreationMode.BEFORE_TEST_CLASS;
         }
     }
 
