@@ -70,7 +70,7 @@ public class DirectoryClassFilter {
     }
 
     private void scanDir(File dir, List<String> classNames, String packageName) {
-        LOG.info("Scanning dir {}", packageName);
+        LOG.debug("Scanning dir {}", packageName);
         File[] files = dir.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
