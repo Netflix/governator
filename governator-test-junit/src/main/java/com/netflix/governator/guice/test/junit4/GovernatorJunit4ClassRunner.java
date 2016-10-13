@@ -5,6 +5,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.internal.runners.statements.RunAfters;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -24,37 +25,47 @@ import com.netflix.governator.guice.test.WrapWithSpy;
  * {@link WrapWithSpy} for example usage.
  */
 public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
-    
-    private final AnnotationBasedTestInjectorManager annotationBasedTestInjectorManager;
+
+    private AnnotationBasedTestInjectorManager annotationBasedTestInjectorManager;
 
     public GovernatorJunit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
-        annotationBasedTestInjectorManager = new AnnotationBasedTestInjectorManager(klass);
+
+    }
+
+    @Override
+    protected Statement classBlock(RunNotifier notifier) {
+        annotationBasedTestInjectorManager = new AnnotationBasedTestInjectorManager(getTestClass().getJavaClass());
+        annotationBasedTestInjectorManager.prepareConfigForTestClass(getDescription().getTestClass());
+        annotationBasedTestInjectorManager.createInjector();
+        return super.classBlock(notifier);
     }
 
     @Override
     protected Object createTest() throws Exception {
         final Object testInstance = super.createTest();
-       
         annotationBasedTestInjectorManager.prepareTestFixture(testInstance);
         return testInstance;
     }
-    
+
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         annotationBasedTestInjectorManager.prepareConfigForTestClass(getDescription().getTestClass(), method.getMethod());
         return super.methodBlock(method);
     }
-        
+
     @Override
     protected Statement withAfters(FrameworkMethod method, Object target, Statement statement) {
         final List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
         return new RunAfters(statement, afters, target) {
             @Override
             public void evaluate() throws Throwable {
-                super.evaluate();
-                annotationBasedTestInjectorManager.cleanUpMethodLevelConfig();
-                annotationBasedTestInjectorManager.cleanUpMocks();
+                try {
+                    super.evaluate();
+                } finally {
+                    annotationBasedTestInjectorManager.cleanUpMethodLevelConfig();
+                    annotationBasedTestInjectorManager.cleanUpMocks();
+                }
             }
         };
     }
@@ -65,8 +76,11 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
         return new RunAfters(statement, afters, null) {
             @Override
             public void evaluate() throws Throwable {
-                super.evaluate();
-                annotationBasedTestInjectorManager.cleanUpInjector();
+                try {
+                    super.evaluate();
+                } finally {
+                    annotationBasedTestInjectorManager.cleanUpInjector();
+                }
             }
         };
     }

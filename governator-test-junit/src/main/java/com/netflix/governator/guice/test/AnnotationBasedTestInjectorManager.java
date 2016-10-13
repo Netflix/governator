@@ -39,7 +39,7 @@ import com.netflix.governator.providers.SingletonProvider;
 
 public class AnnotationBasedTestInjectorManager {
 
-    private final LifecycleInjector injector;
+    private LifecycleInjector injector;
     private final List<Object> mocksToReset = new ArrayList<>();
     private final List<Module> modulesForTestClass = new ArrayList<>();
     private final List<Module> overrideModules = new ArrayList<>();
@@ -47,7 +47,7 @@ public class AnnotationBasedTestInjectorManager {
     private final SettableConfig classLevelOverrides = new DefaultSettableConfig();
     private final SettableConfig methodLevelOverrides = new DefaultSettableConfig();
     private final TestPropertyOverrideAnnotationReader testPropertyOverrideAnnotationReader = new TestPropertyOverrideAnnotationReader();
-    private TestCompositeConfig testCompositeConfig;
+    private final TestCompositeConfig testCompositeConfig;
 
     public AnnotationBasedTestInjectorManager(Class<?> classUnderTest) {
         inspectModulesForTestClass(classUnderTest);
@@ -55,6 +55,10 @@ public class AnnotationBasedTestInjectorManager {
         inspectSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
         testCompositeConfig = new TestCompositeConfig(classLevelOverrides, methodLevelOverrides);
         overrideModules.add(new ArchaiusTestConfigOverrideModule(testCompositeConfig));
+        
+    }
+    
+    public void createInjector() {
         injector = createInjector(modulesForTestClass, overrideModules);
     }
 
@@ -183,11 +187,15 @@ public class AnnotationBasedTestInjectorManager {
         }
     }
     
-    public void prepareConfigForTestClass(Class<?> testClass, Method testMethod) {
+    public void prepareConfigForTestClass(Class<?> testClass) {
         for(Class<?> parentClass : getAllSuperClassesInReverseOrder(testClass)) {
             classLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(parentClass.getAnnotation(TestPropertyOverride.class)));
         }
         classLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testClass.getAnnotation(TestPropertyOverride.class)));
+    }
+    
+    public void prepareConfigForTestClass(Class<?> testClass, Method testMethod) {
+        prepareConfigForTestClass(testClass);
         methodLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testMethod.getAnnotation(TestPropertyOverride.class)));                    
     }
     
