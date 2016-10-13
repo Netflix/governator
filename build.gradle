@@ -45,4 +45,8 @@ subprojects {
             downloadJavadoc = true
         }
     }
+        
+    tasks.withType(Javadoc) {
+      options.addStringOption('Xdoclint:none', '-quiet')
+    }
 }
