@@ -43,5 +43,7 @@ import com.google.inject.Module;
 public @interface ModulesForTesting {
     
     Class<? extends Module>[] value() default {};
+    
+    InjectorCreationMode injectorCreation() default InjectorCreationMode.BEFORE_TEST_CLASS;
 
 }
