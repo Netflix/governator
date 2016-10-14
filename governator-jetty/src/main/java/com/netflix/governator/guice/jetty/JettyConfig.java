@@ -5,14 +5,28 @@ public interface JettyConfig {
     int getPort();
 
     /**
+     * @deprecated 2016-10-14 use {@link #getStaticResourceBase()} instead
+     *
      * @return The directory where the webapp has the static resources. It can just be a suffix since we'll scan the
      * classpath to find the exact directory name.
      */
-    String getResourceBase();
+    @Deprecated
+    default String getResourceBase() { return getStaticResourceBase(); };
 
     /**
-     * @return the context path for jetty.
+     * @return The directory where the webapp has the static resources. It can just be a suffix since we'll scan the
+     * classpath to find the exact directory name.
      */
-    default String getContextPath() { return "/"; }
+    String getStaticResourceBase();
+
+    /**
+     * @return the web app resource base
+     */
+    String getWebAppResourceBase();
+
+    /**
+     * @return the web app context path
+     */
+    default String getWebAppContextPath() { return "/"; }
     
 }
