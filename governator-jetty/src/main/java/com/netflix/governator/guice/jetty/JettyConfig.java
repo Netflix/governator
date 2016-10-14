@@ -11,13 +11,13 @@ public interface JettyConfig {
      * classpath to find the exact directory name.
      */
     @Deprecated
-    default String getResourceBase() { return getStaticResourceBase(); };
+    String getResourceBase();
 
     /**
      * @return The directory where the webapp has the static resources. It can just be a suffix since we'll scan the
      * classpath to find the exact directory name.
      */
-    String getStaticResourceBase();
+    default String getStaticResourceBase() { return getResourceBase(); };
 
     /**
      * @return the web app resource base
