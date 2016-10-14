@@ -16,4 +16,9 @@ public interface Archaius2JettyConfig extends JettyConfig {
     @DefaultValue("/META-INF/resources/")
     String getResourceBase();
 
+    /**
+     * @return the default context path for jetty
+     */
+    @DefaultValue("/")
+    String getContextPath();
 }

@@ -9,5 +9,10 @@ public interface JettyConfig {
      * classpath to find the exact directory name.
      */
     String getResourceBase();
+
+    /**
+     * @return the context path for jetty.
+     */
+    String getContextPath();
     
 }

@@ -195,7 +195,7 @@ public final class JettyModule extends AbstractModule {
             webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             webAppContext.addServlet(DefaultServlet.class, "/");
             webAppContext.setResourceBase("src/main/webapp");
-            webAppContext.setContextPath("/");
+            webAppContext.setContextPath(config.getContextPath());
             webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
             webAppContext.setConfigurations(new Configuration[]{
                     new WebXmlConfiguration(),

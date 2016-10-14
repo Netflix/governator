@@ -10,6 +10,8 @@ public class DefaultJettyConfig implements JettyConfig {
     // The default is to use resources supported by the servlet 3.0 spec.
     private String resourceBase = "/META-INF/resources/";
 
+    private String contextPath = "/";
+
     @Override
     public int getPort() {
         return port;
@@ -20,6 +22,11 @@ public class DefaultJettyConfig implements JettyConfig {
         return resourceBase;
     }
 
+    @Override
+    public String getContextPath() {
+        return contextPath;
+    }
+
     public DefaultJettyConfig setPort(int port) {
         this.port = port;
         return this;
@@ -27,6 +34,11 @@ public class DefaultJettyConfig implements JettyConfig {
 
     public DefaultJettyConfig setResourceBase(String resourceBase) {
         this.resourceBase = resourceBase;
+        return this;
+    }
+
+    public DefaultJettyConfig setContextPath(String contextPath) {
+        this.contextPath = contextPath;
         return this;
     }
 }
