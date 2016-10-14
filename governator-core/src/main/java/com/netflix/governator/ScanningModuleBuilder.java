@@ -163,8 +163,8 @@ public class ScanningModuleBuilder {
                                         }
                                     }
                                 }
-                            } catch (ClassNotFoundException ignore) {
-                                // This will never happen
+                            } catch (ClassNotFoundException|NoClassDefFoundError e) {
+                                LOG.debug("Error loading class {}", className, e);
                             }
                         }
                     });

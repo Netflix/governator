@@ -1,5 +1,7 @@
 package com.netflix.governator;
 
+import com.google.inject.Key;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -7,8 +9,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
-
-import com.google.inject.Key;
 
 @Singleton
 public class SimpleProvisionMetrics implements ProvisionMetrics {
@@ -84,8 +84,7 @@ public class SimpleProvisionMetrics implements ProvisionMetrics {
         
         if (data.stack.isEmpty()) {
             data.children.add(entry);
-        }
-        else {
+        } else {
             data.stack.peek().add(entry);
         }
         data.stack.push(entry);
@@ -93,15 +92,15 @@ public class SimpleProvisionMetrics implements ProvisionMetrics {
 
     @Override
     public void pop() {
-        Data data = context.get();
-        Entry entry = data.stack.pop();
-        entry.finish();
+        context.get()
+            .stack.pop()
+            .finish();
     }
     
     @Override
     public void accept(Visitor visitor) {
         for (Data data : threads) {
             data.accept(visitor);
-        };
+        }
     }
 }

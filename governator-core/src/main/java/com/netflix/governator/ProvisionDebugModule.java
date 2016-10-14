@@ -6,16 +6,16 @@ import javax.inject.Inject;
  * Install this module to log a Provision report after the Injector is created.
  */
 public final class ProvisionDebugModule extends SingletonModule {
-    public static class StaticInitializer {
-        @Inject
-        public static LoggingProvisionMetricsLifecycleListener listener;
+    @Inject
+    private static void initialize(LoggingProvisionMetricsLifecycleListener listener) {
     }
     
     @Override
     protected void configure() {
-        binder().requestStaticInjection(StaticInitializer.class);
+        // We do a static injection here to make sure the listener and registered early.  Otherwise,
+        // if the injector fails before it's instantiated no logging will be done
+        binder().requestStaticInjection(ProvisionDebugModule.class);
         
-        bind(LoggingProvisionMetricsLifecycleListener.class).asEagerSingleton();
         bind(ProvisionMetrics.class).to(SimpleProvisionMetrics.class);
     }
     
