@@ -62,7 +62,7 @@ public class ExampleTest {
 ```
 
 # Controlling Injector Creation
-You may choose whether the Injector will be created once per test class or once per test method by setting the injectorCreation attribute of [@ModulesForTesting](https://github.com/Netflix/governator/blob/master/governator-test-junit/src/main/java/com/netflix/governator/guice/test/ModulesForTesting.java). **By default, the injector is created once per test class.** This should only be modified if your Injector is in some way stateful and that state has been modified by one of your tests.
+You may choose whether the Injector will be created once per test class or once per test method by setting the injectorCreation attribute of [@ModulesForTesting](https://github.com/Netflix/governator/blob/master/governator-test-junit/src/main/java/com/netflix/governator/guice/test/ModulesForTesting.java). **By default, the injector is created once per test class.** This should only be modified if the state of your injector bound objects are mutable in some way and that state has been modified by one of your tests.
 ```java
 //Injector created once per test class
 @RunWith(GovernatorJunit4ClassRunner.class)
