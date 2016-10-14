@@ -9,6 +9,7 @@ import com.netflix.governator.package1.AutoBindSingletonConcrete;
 import com.netflix.governator.package1.AutoBindSingletonInterface;
 import com.netflix.governator.package1.AutoBindSingletonMultiBinding;
 import com.netflix.governator.package1.AutoBindSingletonWithInterface;
+import com.netflix.governator.package1.FooModule;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,6 +60,21 @@ public class AutoBindSingletonTest {
                 .addScanner(new AutoBindSingletonAnnotatedClassScanner())
                 .excludeClasses(AutoBindSingletonConcrete.class)
                 .build())
+        .createInjector()) {
+            Assert.assertNull(injector.getExistingBinding(Key.get(AutoBindSingletonConcrete.class)));
+        }
+    }
+    
+    @Test
+    public void confirmModuleDedupingWorksWithScannedClasse() {
+        try (LifecycleInjector injector = InjectorBuilder.fromModules(
+            new ScanningModuleBuilder()
+                .forPackages("com.netflix.governator.package1")
+                .addScanner(new AutoBindSingletonAnnotatedClassScanner())
+                .excludeClasses(AutoBindSingletonConcrete.class)
+                .build(),
+            new FooModule()
+            )
         .createInjector()) {
             Assert.assertNull(injector.getExistingBinding(Key.get(AutoBindSingletonConcrete.class)));
         }
