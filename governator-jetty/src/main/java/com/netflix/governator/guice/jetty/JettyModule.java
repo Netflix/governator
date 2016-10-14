@@ -184,7 +184,7 @@ public final class JettyModule extends AbstractModule {
     private Server getServer(OptionalJettyConfig optionalConfig, Set<JettyConnectorProvider> jettyConnectors) {
         JettyConfig config = optionalConfig.getJettyConfig();
         Server server = new Server(config.getPort());
-        Resource staticResourceBase = Resource.newClassPathResource(config.getResourceBase());
+        Resource staticResourceBase = Resource.newClassPathResource(config.getStaticResourceBase());
         if (staticResourceBase != null) {
             // Set up a full web app since we have static content. We require the app to have its static content
             // under src/main/webapp and any other static resources that are packaged into jars are expected under
@@ -194,8 +194,8 @@ public final class JettyModule extends AbstractModule {
             webAppContext.setThrowUnavailableOnStartupException(true);
             webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             webAppContext.addServlet(DefaultServlet.class, "/");
-            webAppContext.setResourceBase("src/main/webapp");
-            webAppContext.setContextPath("/");
+            webAppContext.setResourceBase(config.getWebAppResourceBase());
+            webAppContext.setContextPath(config.getWebAppContextPath());
             webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
             webAppContext.setConfigurations(new Configuration[]{
                     new WebXmlConfiguration(),

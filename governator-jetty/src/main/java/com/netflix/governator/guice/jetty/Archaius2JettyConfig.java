@@ -10,10 +10,28 @@ public interface Archaius2JettyConfig extends JettyConfig {
     int getPort();
 
     /**
+     * @deprecated 2016-10-14 use {@link #getStaticResourceBase()} instead
+     */
+    @Deprecated
+    @DefaultValue("/META-INF/resources/")
+    String getResourceBase();
+
+    /**
      * @return The directory where the webapp has the static resources. It can just be a suffix since we'll scan the
      * classpath to find the exact directory name.
      */
     @DefaultValue("/META-INF/resources/")
-    String getResourceBase();
+    String getStaticResourceBase();
 
+    /**
+     * @return web app base resource path
+     */
+    @DefaultValue("src/main/webapp")
+    String getWebAppResourceBase();
+
+    /**
+     * @return the default web app context path for jetty
+     */
+    @DefaultValue("/")
+    String getWebAppContextPath();
 }
