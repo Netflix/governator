@@ -13,6 +13,6 @@ public interface JettyConfig {
     /**
      * @return the context path for jetty.
      */
-    String getContextPath();
+    default String getContextPath() { return "/"; }
     
 }
