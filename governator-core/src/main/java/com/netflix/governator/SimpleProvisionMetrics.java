@@ -5,24 +5,35 @@ import com.google.inject.Key;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
 
 @Singleton
-public class SimpleProvisionMetrics implements ProvisionMetrics {
-    private final ThreadLocal<Data> context = new ThreadLocal<Data>();
-    private final CopyOnWriteArraySet<Data> threads = new CopyOnWriteArraySet<>();
+public final class SimpleProvisionMetrics implements ProvisionMetrics {
+    private final ConcurrentMap<Long, Data> threads = new ConcurrentHashMap<>();
     
     public static class Data {
         List<Entry> children = new ArrayList<>();
         Stack<Entry> stack = new Stack<>();
         
-        void accept(Visitor visit) {
-            for (Entry entry : children) {
-                visit.visit(entry);
+        void accept(Visitor visitor) {
+            children.forEach(entry -> visitor.visit(entry));
+        }
+        
+        void push(Entry entry) {
+            if (stack.isEmpty()) {
+                children.add(entry);
+            } else {
+                stack.peek().add(entry);
             }
+            stack.push(entry);
+        }
+        
+        void pop() {
+            stack.pop().finish();            
         }
     }
     
@@ -71,36 +82,22 @@ public class SimpleProvisionMetrics implements ProvisionMetrics {
         }
     }
     
+    private Data currentThreadData() {
+        return threads.computeIfAbsent(Thread.currentThread().getId(), id -> new Data());
+    }
+    
     @Override
-    public void push(Key<?> type) {
-        Data data = context.get();
-        if (data == null) {
-            data = new Data();
-            context.set(data);
-            threads.add(data);
-        }
-        
-        Entry entry = new Entry(type);
-        
-        if (data.stack.isEmpty()) {
-            data.children.add(entry);
-        } else {
-            data.stack.peek().add(entry);
-        }
-        data.stack.push(entry);
+    public void push(Key<?> key) {
+        currentThreadData().push(new Entry(key));
     }
 
     @Override
     public void pop() {
-        context.get()
-            .stack.pop()
-            .finish();
+        currentThreadData().pop();
     }
     
     @Override
     public void accept(Visitor visitor) {
-        for (Data data : threads) {
-            data.accept(visitor);
-        }
+        threads.forEach((id, data) -> data.accept(visitor));
     }
 }
