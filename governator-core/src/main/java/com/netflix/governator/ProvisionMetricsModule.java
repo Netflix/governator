@@ -11,20 +11,18 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
-public class ProvisionMetricsModule extends AbstractModule {
+public final class ProvisionMetricsModule extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(ProvisionMetricsModule.class);
     
     @Singleton
     private static class MetricsProvisionListener implements ProvisionListener, com.netflix.governator.spi.LifecycleListener {
+        @Inject
         private ProvisionMetrics metrics;
+        
         private boolean doneLoading = false;
         
         @Inject
-        public static void initialize(
-                MetricsProvisionListener listener, 
-                ProvisionMetrics metrics) {
-            listener.metrics = metrics;
-        }
+        public static void initialize(MetricsProvisionListener listener)  {}
         
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
@@ -68,5 +66,20 @@ public class ProvisionMetricsModule extends AbstractModule {
         this.bindListener(Matchers.any(), listener);
         requestStaticInjection(MetricsProvisionListener.class);
         bind(MetricsProvisionListener.class).toInstance(listener);
+    }
+    
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+    
+    @Override
+    public String toString() {
+        return "ProvisionMetricsModule[]";
     }
 }
