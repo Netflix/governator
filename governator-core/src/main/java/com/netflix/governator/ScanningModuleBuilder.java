@@ -1,9 +1,8 @@
 package com.netflix.governator;
 
-import com.google.inject.AbstractModule;
+import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.spi.Elements;
 import com.netflix.governator.internal.scanner.ClasspathUrlDecoder;
 import com.netflix.governator.spi.AnnotatedClassScanner;
 
@@ -141,36 +140,34 @@ public class ScanningModuleBuilder {
     
     public Module build() {
         final Predicate<Class<?>> includeRule = excludeRule.negate();
+
+        List<Consumer<Binder>> consumers = new ArrayList<>();
+        
+        ScannerContext scanner = new ScannerContext();
+        for ( String basePackage : packages )  {
+            scanner.doScan(basePackage, new Consumer<String>() {
+                @Override
+                public void accept(String className) {
+                    try {
+                        Class<?> cls = Class.forName(className, false, classLoader);
+                        if (includeRule.test(cls)) {
+                            for (AnnotatedClassScanner scanner : scanners) {
+                                if (cls.isAnnotationPresent(scanner.annotationClass())) {
+                                    consumers.add(binder -> scanner.applyTo(binder, cls.getAnnotation(scanner.annotationClass()), Key.get(cls)));
+                                }
+                            }
+                        }
+                    } catch (ClassNotFoundException|NoClassDefFoundError e) {
+                        LOG.debug("Error scanning class {}", className, e);
+                    }
+                }
+            });
+        }
         
         // Generate the list of elements here and immediately create a module from them.  This ensures
         // that the class path is canned only once as a Module's configure method may be called multiple
         // times by Guice.
-        return Elements.getModule(Elements.getElements(new AbstractModule() {
-            @Override
-            public void configure() {
-                ScannerContext scanner = new ScannerContext();
-                
-                for ( String basePackage : packages )  {
-                    scanner.doScan(basePackage, new Consumer<String>() {
-                        @Override
-                        public void accept(String className) {
-                            try {
-                                Class<?> cls = Class.forName(className, false, classLoader);
-                                if (includeRule.test(cls)) {
-                                    for (AnnotatedClassScanner scanner : scanners) {
-                                        if (cls.isAnnotationPresent(scanner.annotationClass())) {
-                                            scanner.applyTo(binder(), cls.getAnnotation(scanner.annotationClass()), Key.get(cls));
-                                        }
-                                    }
-                                }
-                            } catch (ClassNotFoundException|NoClassDefFoundError e) {
-                                LOG.debug("Error loading class {}", className, e);
-                            }
-                        }
-                    });
-                }
-            }
-        }));
+        return binder -> consumers.forEach(consumer -> consumer.accept(binder));
     }
     
     private class ScannerContext {

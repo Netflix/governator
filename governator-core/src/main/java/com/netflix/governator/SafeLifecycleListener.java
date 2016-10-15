@@ -17,7 +17,7 @@ import com.netflix.governator.spi.LifecycleListener;
 final class SafeLifecycleListener extends WeakReference<LifecycleListener> implements LifecycleListener {
     private static final Logger LOG = LoggerFactory.getLogger(SafeLifecycleListener.class);
     private final int delegateHash;
-    private final String delegateString;
+    private final String asString;
 
     public static SafeLifecycleListener wrap(LifecycleListener listener) {
         Preconditions.checkNotNull(listener, "listener argument must be non-null");
@@ -32,7 +32,7 @@ final class SafeLifecycleListener extends WeakReference<LifecycleListener> imple
     private SafeLifecycleListener(LifecycleListener delegate, ReferenceQueue<LifecycleListener> refQueue) {
         super(delegate, refQueue);
         this.delegateHash = delegate.hashCode();
-        this.delegateString = delegate.toString();
+        this.asString = "SafeLifecycleListener@" + System.identityHashCode(this) + " [" + delegate.toString() + "]";
     }
     
     @Override
@@ -65,7 +65,7 @@ final class SafeLifecycleListener extends WeakReference<LifecycleListener> imple
 
     @Override
     public String toString() {
-        return "SafeLifecycleListener@" + System.identityHashCode(this) + " [" + delegateString + "]";
+        return asString;
     }
 
     @Override

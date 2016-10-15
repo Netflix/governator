@@ -1,9 +1,11 @@
+
 package com.netflix.governator.guice.jetty;
 
 import java.util.EnumSet;
 import java.util.Set;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.DispatcherType;
 
@@ -17,7 +19,6 @@ import org.eclipse.jetty.webapp.FragmentConfiguration;
 import org.eclipse.jetty.webapp.MetaInfConfiguration;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.webapp.WebInfConfiguration;
-
 import org.eclipse.jetty.webapp.WebXmlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,12 +91,16 @@ public final class JettyModule extends AbstractModule {
      */
     @Singleton
     public static class JettyRunner {
+        private final Server server;
+        private final int port;
+
         @Inject
         public JettyRunner(Server server, final LifecycleManager manager) {
+            this.server = server;
             LOG.info("Jetty server starting");
             try {
                 server.start();
-                int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
+                port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
                 LOG.info("Jetty server on port {} started", port);
             } catch (Exception e) {
                 try {
@@ -105,6 +110,25 @@ public final class JettyModule extends AbstractModule {
                 }
                 throw new ProvisionException("Jetty server failed to start", e);
             }
+        }
+        
+        public boolean isRunning() {
+            return server.isRunning();
+        }
+        
+        public int getLocalPort() {
+            return this.port;
+        }
+    }
+    
+    @Singleton
+    static class OptionalJettyConfig {
+        
+        @com.google.inject.Inject(optional=true)
+        private JettyConfig jettyConfig;
+        
+        public JettyConfig getJettyConfig() {
+           return jettyConfig != null ? jettyConfig : new DefaultJettyConfig();
         }
     }
     
@@ -157,15 +181,10 @@ public final class JettyModule extends AbstractModule {
     
     @Provides
     @Singleton
-    private JettyConfig getDefaultConfig() {
-        return new DefaultJettyConfig();
-    }
-    
-    @Provides
-    @Singleton
-    private Server getServer(JettyConfig config, Set<JettyConnectorProvider> jettyConnectors) {
+    private Server getServer(OptionalJettyConfig optionalConfig, Set<JettyConnectorProvider> jettyConnectors) {
+        JettyConfig config = optionalConfig.getJettyConfig();
         Server server = new Server(config.getPort());
-        Resource staticResourceBase = Resource.newClassPathResource(config.getResourceBase());
+        Resource staticResourceBase = Resource.newClassPathResource(config.getStaticResourceBase());
         if (staticResourceBase != null) {
             // Set up a full web app since we have static content. We require the app to have its static content
             // under src/main/webapp and any other static resources that are packaged into jars are expected under
@@ -175,8 +194,8 @@ public final class JettyModule extends AbstractModule {
             webAppContext.setThrowUnavailableOnStartupException(true);
             webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             webAppContext.addServlet(DefaultServlet.class, "/");
-            webAppContext.setResourceBase("src/main/webapp");
-            webAppContext.setContextPath("/");
+            webAppContext.setResourceBase(config.getWebAppResourceBase());
+            webAppContext.setContextPath(config.getWebAppContextPath());
             webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
             webAppContext.setConfigurations(new Configuration[]{
                     new WebXmlConfiguration(),
@@ -200,6 +219,13 @@ public final class JettyModule extends AbstractModule {
         }
 
         return server;
+    }
+    
+    @Provides
+    @Singleton
+    @Named("embeddedJettyPort")
+    public Integer jettyPort(JettyRunner runner) {
+        return runner.getLocalPort();
     }
     
     @Override

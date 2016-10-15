@@ -37,7 +37,7 @@ import com.netflix.governator.configuration.Property;
 
 class ConfigurationProcessor
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final static Logger log = LoggerFactory.getLogger(ConfigurationProcessor.class);
     private final ConfigurationProvider configurationProvider;
     private final ConfigurationDocumentation configurationDocumentation;
 
@@ -73,7 +73,7 @@ class ConfigurationProcessor
                         throw new UnsupportedOperationException("Supplier parameter type " + actualType
                                 + " not supported (" + field.getName() + ")");
                     }
-                    Supplier<?> current = (Supplier<?>)field.get(obj);
+                    Supplier<?> current = LifecycleMethods.fieldGet(field, obj);
                     value = getConfigurationSupplier(field, key, actualClass, current);
                     if ( value == null )
                     {
@@ -94,7 +94,7 @@ class ConfigurationProcessor
                         throw new UnsupportedOperationException("Supplier parameter type " + actualType
                                 + " not supported (" + field.getName() + ")");
                     }
-                    Property<?> current = (Property<?>)field.get(obj);
+                    Property<?> current = LifecycleMethods.fieldGet(field, obj);
                     value = getConfigurationProperty(field, key, actualClass, current);
                     if ( value == null )
                     {
@@ -104,7 +104,7 @@ class ConfigurationProcessor
                 }
                 else
                 {
-                    Supplier<?> supplier = getConfigurationSupplier(field, key, field.getType(), Suppliers.ofInstance(field.get(obj)));
+                    Supplier<?> supplier = getConfigurationSupplier(field, key, field.getType(), Suppliers.ofInstance(LifecycleMethods.fieldGet(field, obj)));
                     if ( supplier == null )
                     {
                         log.error("Field type not supported: " + field.getType() + " (" + field.getName() + ")");
@@ -133,17 +133,18 @@ class ConfigurationProcessor
             String defaultValue;
             if ( Supplier.class.isAssignableFrom(field.getType()) )
             {
-                defaultValue = String.valueOf(((Supplier<?>)field.get(obj)).get());
+                Supplier<?> supplier = LifecycleMethods.fieldGet(field, obj);
+                defaultValue = String.valueOf(supplier.get());
             }
             else
             {
-                defaultValue = String.valueOf(field.get(obj));
+                defaultValue = String.valueOf((Object)LifecycleMethods.fieldGet(field, obj));
             }
 
             String documentationValue;
             if ( has )
             {
-                field.set(obj, value);
+                LifecycleMethods.fieldSet(field, obj, value);
 
                 documentationValue = String.valueOf(value);
                 if ( Supplier.class.isAssignableFrom(field.getType()) )

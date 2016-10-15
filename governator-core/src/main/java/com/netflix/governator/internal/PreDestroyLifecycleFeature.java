@@ -38,7 +38,7 @@ public final class PreDestroyLifecycleFeature implements LifecycleFeature {
     
     @Override
     public List<LifecycleAction> getActionsForType(final Class<?> type) {
-        return TypeInspector.accept(type, new PreDestroyVisitor());
+       return TypeInspector.accept(type, new PreDestroyVisitor());
     }
 
     @Override

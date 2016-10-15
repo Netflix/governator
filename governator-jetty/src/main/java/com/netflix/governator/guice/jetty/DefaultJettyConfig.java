@@ -8,7 +8,11 @@ public class DefaultJettyConfig implements JettyConfig {
 
     // Where static files live. We pass this to Jetty for class path scanning to find the exact directory.
     // The default is to use resources supported by the servlet 3.0 spec.
-    private String resourceBase = "/META-INF/resources/";
+    private String staticResourceBase = "/META-INF/resources/";
+
+    private String webAppResourceBase = "src/main/webapp";
+
+    private String webAppContextPath = "/";
 
     @Override
     public int getPort() {
@@ -17,7 +21,22 @@ public class DefaultJettyConfig implements JettyConfig {
 
     @Override
     public String getResourceBase() {
-        return resourceBase;
+        return staticResourceBase;
+    }
+
+    @Override
+    public String getStaticResourceBase() {
+        return staticResourceBase;
+    }
+
+    @Override
+    public String getWebAppResourceBase() {
+        return webAppResourceBase;
+    }
+
+    @Override
+    public String getWebAppContextPath() {
+        return webAppContextPath;
     }
 
     public DefaultJettyConfig setPort(int port) {
@@ -25,8 +44,27 @@ public class DefaultJettyConfig implements JettyConfig {
         return this;
     }
 
-    public DefaultJettyConfig setResourceBase(String resourceBase) {
-        this.resourceBase = resourceBase;
+    /**
+     * @deprecated 2016-10-14 use {@link #setStaticResourceBase(String)} instead
+     */
+    @Deprecated
+    public DefaultJettyConfig setResourceBase(String staticResourceBase) {
+        this.staticResourceBase = staticResourceBase;
+        return this;
+    }
+
+    public DefaultJettyConfig setStaticResourceBase(String staticResourceBase) {
+        this.staticResourceBase = staticResourceBase;
+        return this;
+    }
+
+    public DefaultJettyConfig setWebAppResourceBase(String webAppResourceBase) {
+        this.webAppResourceBase = webAppResourceBase;
+        return this;
+    }
+
+    public DefaultJettyConfig setWebAppContextPath(String webAppContextPath) {
+        this.webAppContextPath = webAppContextPath;
         return this;
     }
 }

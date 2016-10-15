@@ -50,7 +50,7 @@ public class ConfigurationLifecycleFeature implements LifecycleFeature {
     @Override
     public List<LifecycleAction> getActionsForType(final Class<?> type) {
         final LifecycleMethods methods = new LifecycleMethods(type);
-        if (!methods.fieldsFor(Configuration.class).isEmpty()) {
+        if (methods.annotatedFields(Configuration.class).length > 0) {
             return Arrays.<LifecycleAction>asList(new LifecycleAction() {
                 @Override
                 public void call(Object obj) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
