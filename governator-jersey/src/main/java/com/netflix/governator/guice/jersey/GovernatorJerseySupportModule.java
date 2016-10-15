@@ -2,11 +2,9 @@ package com.netflix.governator.guice.jersey;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.netflix.governator.guice.jetty.GovernatorServletContainer;
 import com.netflix.governator.providers.AdvisableAnnotatedMethodScanner;
 import com.netflix.governator.providers.ProvidesWithAdvice;
 import com.sun.jersey.api.core.DefaultResourceConfig;
-import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
@@ -56,7 +54,7 @@ public final class GovernatorJerseySupportModule extends AbstractModule {
     @Singleton
     @Named("governator")
     DefaultResourceConfig getDefaultResourceConfigConfig() {
-        return new PackagesResourceConfig("com.sun.jersey");
+        return new DefaultResourceConfig();
     }
     
     @Singleton
