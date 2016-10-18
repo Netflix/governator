@@ -1,21 +1,24 @@
 package com.netflix.governator;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.inject.Inject;
+import com.google.inject.AbstractModule;
+import com.google.inject.spi.Element;
+import com.netflix.governator.visitors.BindingTracingVisitor;
+import com.netflix.governator.visitors.KeyTracingVisitor;
+import com.netflix.governator.visitors.ModuleSourceTracingVisitor;
+import com.netflix.governator.visitors.WarnOfToInstanceInjectionVisitor;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.mockito.Mockito;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.spi.Element;
-import com.netflix.governator.visitors.BindingTracingVisitor;
-import com.netflix.governator.visitors.KeyTracingVisitor;
-import com.netflix.governator.visitors.ModuleSourceTracingVisitor;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
+import javax.inject.Inject;
 
 public class InjectorBuilderTest {
  
@@ -69,6 +72,22 @@ public class InjectorBuilderTest {
             })
             .traceEachElement(new BindingTracingVisitor())
             .createInjector();
+    }
+    
+    @Test
+    public void testForEachBinding() {
+        Consumer<String> consumer = Mockito.mock(Consumer.class);
+        InjectorBuilder
+            .fromModule(new AbstractModule() {
+                @Override
+                protected void configure() {
+                    bind(String.class).toInstance("Hello world");
+                }
+            })
+            .forEachElement(new WarnOfToInstanceInjectionVisitor(), consumer)
+            .createInjector();
+        
+        Mockito.verify(consumer, Mockito.times(1)).accept(Mockito.anyString());
     }
     
     @Test

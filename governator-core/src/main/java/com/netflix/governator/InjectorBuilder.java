@@ -1,13 +1,5 @@
 package com.netflix.governator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -21,6 +13,16 @@ import com.netflix.governator.spi.ModuleTransformer;
 import com.netflix.governator.visitors.IsNotStaticInjectionVisitor;
 import com.netflix.governator.visitors.KeyTracingVisitor;
 import com.netflix.governator.visitors.WarnOfStaticInjectionVisitor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Simple DSL on top of Guice through which an injector may be created using a series
@@ -103,14 +105,38 @@ public final class InjectorBuilder {
      * Iterator through all elements of the current module and write the output of the
      * ElementVisitor to the logger at debug level.  'null' responses are ignored
      * @param visitor
+     * 
+     * @deprecated Use forEachElement(visitor, message -&gt; LOG.debug(message)); instead
      */
+    @Deprecated
     public InjectorBuilder traceEachElement(ElementVisitor<String> visitor) {
-        for (Element element : Elements.getElements(module)) {
-            String message = element.acceptVisitor(visitor);
-            if (message != null) {
-                LOG.debug(message);
-            }
-        }
+        return forEachElement(visitor, message -> LOG.debug(message));
+    }
+    
+    /**
+     * Iterate through all elements of the current module and pass the output of the
+     * ElementVisitor to the provided consumer.  'null' responses from the visitor are ignored.
+     * 
+     * This call will not modify any bindings
+     * @param visitor
+     */
+    public <T> InjectorBuilder forEachElement(ElementVisitor<T> visitor, Consumer<T> consumer) {
+        Elements
+            .getElements(module)
+            .forEach(element -> Optional.ofNullable(element.acceptVisitor(visitor)).ifPresent(consumer));
+        return this;
+    }
+
+    /**
+     * Call the provided visitor for all elements of the current module.
+     * 
+     * This call will not modify any bindings
+     * @param visitor
+     */
+    public <T> InjectorBuilder forEachElement(ElementVisitor<T> visitor) {
+        Elements
+            .getElements(module)
+            .forEach(element -> element.acceptVisitor(visitor));
         return this;
     }
 
@@ -119,7 +145,7 @@ public final class InjectorBuilder {
      * operation where the binding snapshot can be dumped to the log after an operation.
      */
     public InjectorBuilder traceEachKey() {
-        return traceEachElement(new KeyTracingVisitor());
+        return forEachElement(new KeyTracingVisitor(), message -> LOG.debug(message));
     }
     
     /**
@@ -127,7 +153,7 @@ public final class InjectorBuilder {
      * to alllow for backwards compatibility with non DI'd static code.
      */
     public InjectorBuilder warnOfStaticInjections() {
-        return traceEachElement(new WarnOfStaticInjectionVisitor());
+        return forEachElement(new WarnOfStaticInjectionVisitor(), message -> LOG.debug(message));
     }
     
     /**
