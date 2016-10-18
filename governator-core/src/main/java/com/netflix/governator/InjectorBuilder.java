@@ -1,13 +1,5 @@
 package com.netflix.governator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -21,6 +13,14 @@ import com.netflix.governator.spi.ModuleTransformer;
 import com.netflix.governator.visitors.IsNotStaticInjectionVisitor;
 import com.netflix.governator.visitors.KeyTracingVisitor;
 import com.netflix.governator.visitors.WarnOfStaticInjectionVisitor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Simple DSL on top of Guice through which an injector may be created using a series
@@ -109,6 +109,36 @@ public final class InjectorBuilder {
             String message = element.acceptVisitor(visitor);
             if (message != null) {
                 LOG.debug(message);
+            }
+        }
+        return this;
+    }
+    
+    /**
+     * Iterator through all elements of the current module and write the output of the
+     * ElementVisitor to the logger at info level.  'null' responses are ignored
+     * @param visitor
+     */
+    public InjectorBuilder infoEachElement(ElementVisitor<String> visitor) {
+        for (Element element : Elements.getElements(module)) {
+            String message = element.acceptVisitor(visitor);
+            if (message != null) {
+                LOG.info(message);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Iterator through all elements of the current module and write the output of the
+     * ElementVisitor to the logger at warn level.  'null' responses are ignored
+     * @param visitor
+     */
+    public InjectorBuilder warnEachElement(ElementVisitor<String> visitor) {
+        for (Element element : Elements.getElements(module)) {
+            String message = element.acceptVisitor(visitor);
+            if (message != null) {
+                LOG.warn(message);
             }
         }
         return this;
