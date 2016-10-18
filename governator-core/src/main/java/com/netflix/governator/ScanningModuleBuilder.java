@@ -159,6 +159,8 @@ public class ScanningModuleBuilder {
                         }
                     } catch (ClassNotFoundException|NoClassDefFoundError e) {
                         LOG.debug("Error scanning class {}", className, e);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error scanning class " + className, e);
                     }
                 }
             });
