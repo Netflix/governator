@@ -206,10 +206,11 @@ public final class JettyModule extends AbstractModule {
             server.setHandler(webAppContext);
         } else {
             // We don't have static content so just set up servlets.
-            ServletContextHandler servletContextHandler = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
+            ServletContextHandler servletContextHandler =
+                    new ServletContextHandler(server, config.getWebAppContextPath(), ServletContextHandler.SESSIONS);
             servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             servletContextHandler.addServlet(DefaultServlet.class, "/");
-            servletContextHandler.setResourceBase("src/main/webapp");
+            servletContextHandler.setResourceBase(config.getWebAppResourceBase());
         }
 
         if (jettyConnectors != null) {
