@@ -1,29 +1,28 @@
 package com.netflix.governator;
 
-import javax.inject.Inject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.ProvisionListener;
 
-public class ProvisionMetricsModule extends AbstractModule {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+
+public final class ProvisionMetricsModule extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(ProvisionMetricsModule.class);
     
     @Singleton
-    private static class MetricsProvisionListener implements ProvisionListener {
-        private ProvisionMetrics metrics;
-
+    private static class MetricsProvisionListener implements ProvisionListener, com.netflix.governator.spi.LifecycleListener {
         @Inject
-        public static void initialize(
-                MetricsProvisionListener listener, 
-                ProvisionMetrics metrics) {
-            listener.metrics = metrics;
-        }
+        private ProvisionMetrics metrics;
+        
+        private boolean doneLoading = false;
+        
+        @Inject
+        public static void initialize(MetricsProvisionListener listener)  {}
         
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
@@ -31,6 +30,10 @@ public class ProvisionMetricsModule extends AbstractModule {
             
             if (metrics == null) {
                 LOG.debug("LifecycleProvisionListener not initialized yet : {} source={}", key, provision.getBinding().getSource());
+                return;
+            }
+            
+            if (doneLoading) {
                 return;
             }
             
@@ -44,6 +47,16 @@ public class ProvisionMetricsModule extends AbstractModule {
                 metrics.pop();
             }
         }
+        
+        @Override
+        public void onStarted() {
+            doneLoading = true;
+        }
+
+        @Override
+        public void onStopped(Throwable error) {
+            doneLoading = true;
+        }
     }
     
     private MetricsProvisionListener listener = new MetricsProvisionListener();
@@ -53,7 +66,20 @@ public class ProvisionMetricsModule extends AbstractModule {
         this.bindListener(Matchers.any(), listener);
         requestStaticInjection(MetricsProvisionListener.class);
         bind(MetricsProvisionListener.class).toInstance(listener);
-        bind(ProvisionMetrics.class).to(SimpleProvisionMetrics.class);
+    }
+    
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return getClass().equals(obj.getClass());
+    }
+    
+    @Override
+    public String toString() {
+        return "ProvisionMetricsModule[]";
+    }
 }

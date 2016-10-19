@@ -1,16 +1,5 @@
 package com.netflix.governator;
 
-import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -25,6 +14,17 @@ import com.netflix.governator.internal.GovernatorFeatureSet;
 import com.netflix.governator.spi.InjectorCreator;
 import com.netflix.governator.spi.LifecycleListener;
 import com.netflix.governator.spi.PropertySource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Custom strategy for creating a Guice Injector that enables support for lifecycle annotations such 
@@ -95,6 +95,7 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                 stage, 
                 // This has to be first to make sure @PostConstruct support is added as early
                 // as possible
+                new ProvisionMetricsModule(), 
                 new LifecycleModule(),
                 new LifecycleListenerModule(),
                 new LegacyScopesModule(),

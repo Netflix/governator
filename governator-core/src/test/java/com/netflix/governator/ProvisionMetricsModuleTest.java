@@ -1,37 +1,88 @@
 package com.netflix.governator;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Key;
+import com.netflix.governator.ProvisionMetrics.Element;
+import com.netflix.governator.ProvisionMetrics.Visitor;
+import com.netflix.governator.visitors.ProvisionListenerTracingVisitor;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Singleton;
 
 public class ProvisionMetricsModuleTest {
     @Test
     public void defaultMetricsAreEmpty() {
-        LifecycleInjector injector = new Governator().run();
-        try {
+        try (LifecycleInjector injector = InjectorBuilder.fromModule(
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                    }
+                })
+            .traceEachElement(new ProvisionListenerTracingVisitor())
+            .createInjector()) {
+            
             ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
             LoggingProvisionMetricsVisitor visitor = new LoggingProvisionMetricsVisitor();
             metrics.accept(visitor);
             Assert.assertTrue(visitor.getElementCount() == 0);
         }
-        finally {
-            injector.shutdown();
+    }
+    
+    @Singleton
+    public static class Foo {
+        public Foo() throws InterruptedException {
+            TimeUnit.MILLISECONDS.sleep(200);
+        }
+        
+        @PostConstruct
+        public void init() throws InterruptedException {
+            TimeUnit.MILLISECONDS.sleep(200);
         }
     }
     
-    @Test
-    public void installedMetricsHaveData() {
-        LifecycleInjector injector = new Governator()
-            .addModules(new ProvisionMetricsModule())
-            .run();
+    public class KeyTrackingVisitor implements Visitor {
+        private Element element;
+        private Key key;
         
-        try {
-            ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
-            LoggingProvisionMetricsVisitor visitor = new LoggingProvisionMetricsVisitor();
-            metrics.accept(visitor);
-            Assert.assertTrue(visitor.getElementCount() > 0);
+        KeyTrackingVisitor(Key key) {
+            this.key = key;
         }
-        finally {
-            injector.shutdown();
+
+        @Override
+        public void visit(Element element) {
+            if (element.getKey().equals(key)) {
+                this.element = element;
+            }
+        }
+        
+        Element getElement() {
+            return element;
+        }
+    }
+    @Test
+    public void confirmMetricsIncludePostConstruct() {
+        try (LifecycleInjector injector = InjectorBuilder.fromModules(
+                new ProvisionDebugModule(), 
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(Foo.class).asEagerSingleton();
+                    }
+                })
+            .traceEachElement(new ProvisionListenerTracingVisitor())
+            .createInjector()) {
+            
+            ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
+            KeyTrackingVisitor keyTracker = new KeyTrackingVisitor(Key.get(Foo.class));
+            metrics.accept(keyTracker);
+            
+            Assert.assertNotNull(keyTracker.getElement());
+            Assert.assertTrue(keyTracker.getElement().getTotalDuration(TimeUnit.MILLISECONDS) > 300);
         }
     }
 }
