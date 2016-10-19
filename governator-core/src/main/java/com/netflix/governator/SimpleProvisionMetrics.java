@@ -13,9 +13,9 @@ import javax.inject.Singleton;
 
 @Singleton
 public final class SimpleProvisionMetrics implements ProvisionMetrics {
-    private final ConcurrentMap<Long, Data> threads = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, Node> threads = new ConcurrentHashMap<>();
     
-    public static class Data {
+    private static class Node {
         List<Entry> children = new ArrayList<>();
         Stack<Entry> stack = new Stack<>();
         
@@ -82,18 +82,18 @@ public final class SimpleProvisionMetrics implements ProvisionMetrics {
         }
     }
     
-    private Data currentThreadData() {
-        return threads.computeIfAbsent(Thread.currentThread().getId(), id -> new Data());
+    private Node currentNode() {
+        return threads.computeIfAbsent(Thread.currentThread().getId(), id -> new Node());
     }
     
     @Override
     public void push(Key<?> key) {
-        currentThreadData().push(new Entry(key));
+        currentNode().push(new Entry(key));
     }
 
     @Override
     public void pop() {
-        currentThreadData().pop();
+        currentNode().pop();
     }
     
     @Override
