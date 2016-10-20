@@ -2,6 +2,7 @@ package com.netflix.governator;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.ProvisionListener;
@@ -63,9 +64,14 @@ public final class ProvisionMetricsModule extends AbstractModule {
     
     @Override
     protected void configure() {
-        this.bindListener(Matchers.any(), listener);
+        bindListener(Matchers.any(), listener);
         requestStaticInjection(MetricsProvisionListener.class);
-        bind(MetricsProvisionListener.class).toInstance(listener);
+    }
+    
+    @Provides
+    @Singleton
+    MetricsProvisionListener getMetricsProvisionListener() {
+        return listener;
     }
     
     @Override
