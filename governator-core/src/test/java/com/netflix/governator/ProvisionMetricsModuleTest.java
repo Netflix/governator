@@ -21,6 +21,13 @@ public class ProvisionMetricsModuleTest {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
+                        install(new ProvisionMetricsModule());
+                    }
+                })
+                // Confirm that installing ProvisionMetricsModule twice isn't broken with overrides
+                .overrideWith(new AbstractModule() {
+                    @Override
+                    protected void configure() {
                     }
                 })
             .traceEachElement(new ProvisionListenerTracingVisitor())
