@@ -17,13 +17,14 @@ public final class ProvisionMetricsModule extends AbstractModule {
     
     @Singleton
     private static class MetricsProvisionListener implements ProvisionListener, com.netflix.governator.spi.LifecycleListener {
-        @Inject
         private ProvisionMetrics metrics;
         
         private boolean doneLoading = false;
         
         @Inject
-        public static void initialize(MetricsProvisionListener listener)  {}
+        public static void initialize(MetricsProvisionListener listener, ProvisionMetrics metrics)  {
+            listener.metrics = metrics;
+        }
         
         @Override
         public <T> void onProvision(ProvisionInvocation<T> provision) {
