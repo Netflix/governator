@@ -12,15 +12,12 @@ import com.google.inject.Key;
  * for the first initialization of all objects.  Note that no call
  * will be made for singletons that are being injected but have 
  * already been instantiated.
- * 
- * @author elandau
  */
-@ImplementedBy(NullProvisionMetrics.class)
+@ImplementedBy(SimpleProvisionMetrics.class)
 public interface ProvisionMetrics {
     
     /**
      * Node used to track metrics for an object that has been provisioned
-     * @author elandau
      */
     public static interface Element {
         public Key<?> getKey();
@@ -34,8 +31,6 @@ public interface ProvisionMetrics {
     
     /**
      * Visitor API for traversing nodes
-     * @author elandau
-     *
      */
     public static interface Visitor {
         void visit(Element element);

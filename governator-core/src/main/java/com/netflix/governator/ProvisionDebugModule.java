@@ -15,8 +15,6 @@ public final class ProvisionDebugModule extends SingletonModule {
         // We do a static injection here to make sure the listener gets registered early.  Otherwise,
         // if the injector fails before it's instantiated no logging will be done
         binder().requestStaticInjection(ProvisionDebugModule.class);
-        
-        bind(ProvisionMetrics.class).to(SimpleProvisionMetrics.class);
     }
     
     @Override
