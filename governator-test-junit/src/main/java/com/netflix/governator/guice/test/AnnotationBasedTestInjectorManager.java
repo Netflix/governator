@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.apache.commons.lang3.ClassUtils;
 import org.mockito.Mockito;
@@ -19,6 +20,7 @@ import com.google.inject.Binding;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
@@ -28,6 +30,7 @@ import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.netflix.archaius.api.config.CompositeConfig;
 import com.netflix.archaius.api.config.SettableConfig;
+import com.netflix.archaius.api.inject.RuntimeLayer;
 import com.netflix.archaius.config.DefaultSettableConfig;
 import com.netflix.archaius.guice.Raw;
 import com.netflix.archaius.test.TestCompositeConfig;
@@ -48,20 +51,19 @@ public class AnnotationBasedTestInjectorManager {
     private final SettableConfig classLevelOverrides = new DefaultSettableConfig();
     private final SettableConfig methodLevelOverrides = new DefaultSettableConfig();
     private final TestPropertyOverrideAnnotationReader testPropertyOverrideAnnotationReader = new TestPropertyOverrideAnnotationReader();
-    private final TestCompositeConfig testCompositeConfig;
+    private TestCompositeConfig testCompositeConfig;
 
     public AnnotationBasedTestInjectorManager(Class<?> classUnderTest) {
         this.injectorCreationMode = getInjectorCreationModeForAnnotatedClass(classUnderTest);
         inspectModulesForTestClass(classUnderTest);
         inspectMocksForTestClass(classUnderTest);
         inspectSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
-        testCompositeConfig = new TestCompositeConfig(classLevelOverrides, methodLevelOverrides);
-        overrideModules.add(new ArchaiusTestConfigOverrideModule(testCompositeConfig));
-        
+        overrideModules.add(new ArchaiusTestConfigOverrideModule(classLevelOverrides, methodLevelOverrides));
     }
-    
+
     public void createInjector() {
         injector = createInjector(modulesForTestClass, overrideModules);
+        this.testCompositeConfig = injector.getInstance(TestCompositeConfig.class);
     }
 
     /**
@@ -76,7 +78,7 @@ public class AnnotationBasedTestInjectorManager {
             Mockito.reset(mock);
         }
     }
-    
+
     public void cleanUpMethodLevelConfig() {
         testCompositeConfig.resetForTest();
     }
@@ -84,7 +86,7 @@ public class AnnotationBasedTestInjectorManager {
     public void cleanUpInjector() {
         injector.close();
     }
-    
+
     public InjectorCreationMode getInjectorCreationMode() {
         return this.injectorCreationMode;
     }
@@ -115,7 +117,7 @@ public class AnnotationBasedTestInjectorManager {
             }
         }
     }
-    
+
     private InjectorCreationMode getInjectorCreationModeForAnnotatedClass(Class<?> testClass) {
         final Annotation annotation = testClass.getAnnotation(ModulesForTesting.class);
         if (annotation != null) {
@@ -151,8 +153,7 @@ public class AnnotationBasedTestInjectorManager {
                 WrapWithSpy spyAnnotation = field.getAnnotation(WrapWithSpy.class);
                 if (spyAnnotation.name().isEmpty()) {
                     spyTargets.add(Key.get(field.getType()));
-                }
-                else {
+                } else {
                     spyTargets.add(Key.get(field.getType(), Names.named(spyAnnotation.name())));
                 }
             }
@@ -171,8 +172,7 @@ public class AnnotationBasedTestInjectorManager {
                         AbstractModule spyModule = new AbstractModule() {
                             protected void configure() {
                                 final String finalBindingName = "Spied "
-                                        + (bindingKey.getAnnotation() != null
-                                                ? bindingKey.getAnnotation().toString() : "")
+                                        + (bindingKey.getAnnotation() != null ? bindingKey.getAnnotation().toString() : "")
                                         + bindingType;
                                 final Key<T> newUniqueKey = Key.get(bindingType, Names.named(finalBindingName));
                                 finalBinding.acceptTargetVisitor(new CopyBindingTargetVisitor<>(binder().bind(newUniqueKey)));
@@ -195,19 +195,19 @@ public class AnnotationBasedTestInjectorManager {
             });
         }
     }
-    
+
     public void prepareConfigForTestClass(Class<?> testClass) {
-        for(Class<?> parentClass : getAllSuperClassesInReverseOrder(testClass)) {
+        for (Class<?> parentClass : getAllSuperClassesInReverseOrder(testClass)) {
             classLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(parentClass.getAnnotation(TestPropertyOverride.class)));
         }
         classLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testClass.getAnnotation(TestPropertyOverride.class)));
     }
-    
+
     public void prepareConfigForTestClass(Class<?> testClass, Method testMethod) {
         prepareConfigForTestClass(testClass);
-        methodLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testMethod.getAnnotation(TestPropertyOverride.class)));                    
+        methodLevelOverrides.setProperties(testPropertyOverrideAnnotationReader.getPropertiesForAnnotation(testMethod.getAnnotation(TestPropertyOverride.class)));
     }
-    
+
     private List<Class<?>> getAllSuperClassesInReverseOrder(Class<?> clazz) {
         List<Class<?>> allSuperclasses = ClassUtils.getAllSuperclasses(clazz);
         Collections.reverse(allSuperclasses);
@@ -234,17 +234,48 @@ public class AnnotationBasedTestInjectorManager {
             bindingBuilder.toInstance(mock);
         }
     }
-    
-    private static class ArchaiusTestConfigOverrideModule extends AbstractModule {
-        private TestCompositeConfig config;
 
-        public ArchaiusTestConfigOverrideModule(TestCompositeConfig config) {
-            this.config = config;
+    private static class ArchaiusTestConfigOverrideModule extends AbstractModule {
+
+        private SettableConfig classLevelOverrides;
+        private SettableConfig methodLevelOverrides;
+
+        public ArchaiusTestConfigOverrideModule(SettableConfig classLevelOverrides, SettableConfig methodLevelOverrides) {
+            this.classLevelOverrides = classLevelOverrides;
+            this.methodLevelOverrides = methodLevelOverrides;
+        }
+
+        @Singleton
+        private static class OptionalConfigHolder {
+
+            @com.google.inject.Inject(optional = true)
+            @RuntimeLayer
+            private SettableConfig runtime;
+
+            public SettableConfig get() {
+                if (runtime != null) {
+                    return runtime;
+                } else {
+                    return new DefaultSettableConfig();
+                }
+            }
         }
 
         @Override
         protected void configure() {
-            bind(CompositeConfig.class).annotatedWith(Raw.class).toInstance(config);
+        }
+
+        @Provides
+        @Singleton
+        public TestCompositeConfig compositeConfig(OptionalConfigHolder config) {
+            return new TestCompositeConfig(config.get(), classLevelOverrides, methodLevelOverrides);
+        }
+
+        @Provides
+        @Singleton
+        @Raw
+        public CompositeConfig compositeConfig(TestCompositeConfig config) {
+            return config;
         }
     }
 }
