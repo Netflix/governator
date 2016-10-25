@@ -16,7 +16,25 @@ import javax.inject.Singleton;
 
 public class ProvisionMetricsModuleTest {
     @Test
-    public void defaultMetricsAreEmpty() {
+    public void disableMetrics() {
+        try (LifecycleInjector injector = InjectorBuilder.fromModule(
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(ProvisionMetrics.class).to(NullProvisionMetrics.class);
+                    }
+                })
+            .createInjector()) {
+            
+            ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
+            LoggingProvisionMetricsVisitor visitor = new LoggingProvisionMetricsVisitor();
+            metrics.accept(visitor);
+            Assert.assertTrue(visitor.getElementCount() == 0);
+        }
+    }
+    
+    @Test
+    public void confirmDedupWorksWithOverride() {
         try (LifecycleInjector injector = InjectorBuilder.fromModule(
                 new AbstractModule() {
                     @Override
@@ -30,13 +48,12 @@ public class ProvisionMetricsModuleTest {
                     protected void configure() {
                     }
                 })
-            .traceEachElement(new ProvisionListenerTracingVisitor())
             .createInjector()) {
             
             ProvisionMetrics metrics = injector.getInstance(ProvisionMetrics.class);
             LoggingProvisionMetricsVisitor visitor = new LoggingProvisionMetricsVisitor();
             metrics.accept(visitor);
-            Assert.assertTrue(visitor.getElementCount() == 0);
+            Assert.assertTrue(visitor.getElementCount() != 0);
         }
     }
     
