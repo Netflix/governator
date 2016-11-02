@@ -10,6 +10,7 @@ import com.google.inject.BindingAnnotation;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.TypeLiteral;
 import com.google.inject.spi.BindingTargetVisitor;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.HasDependencies;
@@ -18,6 +19,7 @@ import com.google.inject.spi.ModuleAnnotatedMethodScanner;
 import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderWithExtensionVisitor;
 import com.google.inject.spi.Toolable;
+import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
@@ -86,7 +88,7 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         if (annotation instanceof ProvidesWithAdvice) {
             AdviceElement element = new AdviceElementImpl(elementName, AdviceElement.Type.SOURCE, annotation);
             Key<T> uniqueKey = Key.get(key.getTypeLiteral(), element);
-            binder.bind(key).toProvider(new AdvisedProvider<T>(element.name(), annotation, binder.getProvider(uniqueKey)));
+            binder.bind(key).toProvider(new AdvisedProvider<T>(key.getTypeLiteral(), element.name(), annotation, binder.getProvider(uniqueKey)));
             return uniqueKey;
         } else if (annotation instanceof Advises) {
             Method method = (Method) injectionPoint.getMember();
@@ -101,10 +103,12 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         private final String name;
         private final Provider<T> delegate;
         private final List<ProvisionAdviceHolder<UnaryOperator<T>>> adviceBindings = new ArrayList<>();
+        private final TypeLiteral<UnaryOperator<T>> advisesType;
         
-        public AdvisedProvider(String name, Annotation annotation, Provider<T> delegate) {
+        public AdvisedProvider(TypeLiteral<T> typeLiteral, String name, Annotation annotation, Provider<T> delegate) {
             this.name = name;
             this.delegate = delegate;
+            this.advisesType = (TypeLiteral<UnaryOperator<T>>) TypeLiteral.get(Types.newParameterizedType(UnaryOperator.class, typeLiteral.getType()));
         }
         
         @Override
@@ -132,7 +136,7 @@ public final class AdvisableAnnotatedMethodScanner extends ModuleAnnotatedMethod
         @Toolable
         @javax.inject.Inject
         protected void initialize(Injector injector) {
-            for (Binding<?> binding : injector.getAllBindings().values()) {
+            for (Binding<?> binding : injector.findBindingsByType(advisesType)) {
                 Key<?> bindingKey = binding.getKey();
                 if (bindingKey.hasAttributes() && AdviceElement.class.isAssignableFrom(bindingKey.getAnnotationType())) {
                     AdviceElementImpl adviceElement = (AdviceElementImpl) bindingKey.getAnnotation();

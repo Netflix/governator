@@ -48,6 +48,12 @@ public class AdvisedProviderTest {
             
             @ProvidesWithAdvice
             @Singleton
+            String getStringBuilder() {
+                return "0";
+            }
+            
+            @ProvidesWithAdvice
+            @Singleton
             @Named("foo")
             List<String> getListWithStringQualifier() {
                 return new ArrayList<>(Arrays.asList("foo"));
@@ -74,6 +80,16 @@ public class AdvisedProviderTest {
                     list.add("2"); 
                     return list;
                 };
+            }
+
+            @Advises(order=1)
+            UnaryOperator<String> adviseNoQualifierStringBuilder1() {
+                return str -> str + "1";
+            }
+            
+            @Advises(order=2)
+            UnaryOperator<String> adviseNoQualifierStringBuilder2() {
+                return str -> str + "2";
             }
 
             @Advises(order=1)
@@ -113,10 +129,12 @@ public class AdvisedProviderTest {
             }
         });        
         
+        String noQualifierString = injector.getInstance(String.class);
         List<String> noQualifier = injector.getInstance(Key.get(LIST_TYPE_LITERAL));
         List<String> nameQualifier = injector.getInstance(Key.get(LIST_TYPE_LITERAL, Names.named("foo")));
         Bar bar = injector.getInstance(Bar.class);
         
+        Assert.assertEquals("012",  noQualifierString);
         Assert.assertEquals(Arrays.asList("", "1", "2"),  noQualifier);
         Assert.assertEquals(Arrays.asList("foo", "foo1", "foo2"),  nameQualifier);
         Assert.assertEquals(Arrays.asList("bar", "bar1", "bar2"),  bar.list);
