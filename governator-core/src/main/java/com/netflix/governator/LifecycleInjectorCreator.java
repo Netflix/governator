@@ -3,9 +3,10 @@ package com.netflix.governator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Stage;
-import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.Multibinder;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.annotations.binding.Arguments;
 import com.netflix.governator.annotations.binding.Profiles;
@@ -104,7 +105,8 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
                     protected void configure() {
                         bind(GovernatorFeatureSet.class).toInstance(featureSet);
                         bind(LifecycleManager.class).toInstance(manager);
-                        bind(new TypeLiteral<Set<String>>() {}).annotatedWith(Profiles.class).toInstance(profiles);
+                        Multibinder<String> profilesBinder = Multibinder.newSetBinder(binder(), Key.get(String.class, Profiles.class)).permitDuplicates();
+                        profiles.forEach(profile -> profilesBinder.addBinding().toInstance(profile));
                         bind(String[].class).annotatedWith(Arguments.class).toInstance(args);
                         requestInjection(LifecycleInjectorCreator.this);
                     }
