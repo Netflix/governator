@@ -1,5 +1,17 @@
 package com.netflix.governator.guice.jersey;
 
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ws.rs.WebApplicationException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.ConfigurationException;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -16,19 +28,6 @@ import com.sun.jersey.core.spi.component.ioc.IoCComponentProviderFactory;
 import com.sun.jersey.core.spi.component.ioc.IoCInstantiatedComponentProvider;
 import com.sun.jersey.core.spi.component.ioc.IoCManagedComponentProvider;
 import com.sun.jersey.core.spi.component.ioc.IoCProxiedComponentProvider;
-import com.sun.jersey.guice.spi.container.GuiceComponentProviderFactory;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ws.rs.WebApplicationException;
 
 /**
  * Alternative to Guice's GuiceComponentProviderFactory that does NOT copy Guice bindings into the
@@ -36,7 +35,7 @@ import javax.ws.rs.WebApplicationException;
  */
 final class GovernatorComponentProviderFactory implements IoCComponentProviderFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GuiceComponentProviderFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GovernatorComponentProviderFactory.class);
     
     private final Map<Scope, ComponentScope> scopeMap = createScopeMap();
     
@@ -64,7 +63,7 @@ final class GovernatorComponentProviderFactory implements IoCComponentProviderFa
 
     @Override
     public IoCComponentProvider getComponentProvider(ComponentContext cc, Class<?> clazz) {
-        LOGGER.info("getComponentProvider({0})", clazz.getName());
+        LOGGER.info("getComponentProvider({})", clazz.getName());
 
         Key<?> key = Key.get(clazz);
         Injector i = findInjector(key);
@@ -75,7 +74,7 @@ final class GovernatorComponentProviderFactory implements IoCComponentProviderFa
                 try {
                     // If a binding is possible
                     if (injector.getBinding(key) != null) {
-                        LOGGER.info("Binding {0} to GuiceInstantiatedComponentProvider", clazz.getName());
+                        LOGGER.info("Binding {} to GuiceInstantiatedComponentProvider", clazz.getName());
                         return new GuiceInstantiatedComponentProvider(injector, clazz);
                     }
                 } catch (ConfigurationException e) {
@@ -89,7 +88,7 @@ final class GovernatorComponentProviderFactory implements IoCComponentProviderFa
                 }
                 // If @Inject is declared on field or method
             } else if (isGuiceFieldOrMethodInjected(clazz)) {
-                LOGGER.info("Binding {0} to GuiceInjectedComponentProvider", clazz.getName());
+                LOGGER.info("Binding {} to GuiceInjectedComponentProvider", clazz.getName());
                 return new GuiceInjectedComponentProvider(injector);
             } else {
                 return null;
@@ -97,7 +96,7 @@ final class GovernatorComponentProviderFactory implements IoCComponentProviderFa
         }
 
         ComponentScope componentScope = getComponentScope(key, i);
-        LOGGER.info("Binding {0} to GuiceManagedComponentProvider with the scope \"{1}\"",
+        LOGGER.info("Binding {} to GuiceManagedComponentProvider with the scope \"{}\"",
                 new Object[]{clazz.getName(), componentScope});
         return new GuiceManagedComponentProvider(i, componentScope, clazz);
     }

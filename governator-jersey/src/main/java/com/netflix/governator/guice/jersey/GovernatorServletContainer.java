@@ -1,11 +1,5 @@
 package com.netflix.governator.guice.jersey;
 
-import com.google.inject.Injector;
-import com.sun.jersey.api.core.ResourceConfig;
-import com.sun.jersey.spi.container.WebApplication;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
-import com.sun.jersey.spi.container.servlet.WebConfig;
-
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -13,13 +7,23 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.ServletException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.Injector;
+import com.sun.jersey.api.core.ResourceConfig;
+import com.sun.jersey.spi.container.WebApplication;
+import com.sun.jersey.spi.container.servlet.ServletContainer;
+import com.sun.jersey.spi.container.servlet.WebConfig;
+
 /**
  * @see GovernatorJerseySupportModule
  */
 @Singleton
 public class GovernatorServletContainer extends ServletContainer {
     private static final long serialVersionUID = -1350697205980976818L;
-
+    private static final Logger LOG = LoggerFactory.getLogger(GovernatorServletContainer.class);
+    
     private final ResourceConfig resourceConfig;
     private final Injector injector;
 
@@ -41,7 +45,20 @@ public class GovernatorServletContainer extends ServletContainer {
     @Override
     protected void initiate(ResourceConfig config, WebApplication webapp) {
         this.webapp = webapp;
-        webapp.initiate(config, new GovernatorComponentProviderFactory(config, injector));
+        
+        GovernatorComponentProviderFactory factory = new GovernatorComponentProviderFactory(config, injector);
+        webapp.initiate(config, factory);
+        
+        // Make sure all root resources are created eagerly so they're fully initialized 
+        // by the time the injector was created, instead of being created lazily at the
+        // first request.
+        LOG.info("Creating resources : {}", config.getRootResourceClasses());
+        for (Class<?> resource : config.getRootResourceClasses()) {
+        	if (resource.isAnnotationPresent(com.google.inject.Singleton.class) 
+    			|| resource.isAnnotationPresent(javax.inject.Singleton.class)) {
+        		factory.getComponentProvider(resource).getInstance();
+        	}
+        }
     }
 
     public WebApplication getWebApplication() {
