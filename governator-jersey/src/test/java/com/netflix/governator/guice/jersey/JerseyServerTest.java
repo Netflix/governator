@@ -289,8 +289,6 @@ public class JerseyServerTest {
                         }))
                         .createInjector()) {
             
-            Assert.assertEquals(0, FieldInjectionResource.createCount);
-            
             // Determine the emphermal port from jetty
             Server server = injector.getInstance(Server.class);
             int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
@@ -315,4 +313,5 @@ public class JerseyServerTest {
             Assert.fail(e.getMessage());
         }
     }
+
 }
