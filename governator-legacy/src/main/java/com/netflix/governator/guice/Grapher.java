@@ -150,7 +150,7 @@ public class Grapher
         GraphvizGrapher renderer = localInjector.getInstance(GraphvizGrapher.class);
         renderer.setOut(out);
         renderer.setRankdir("TB");
-        if (roots != null) {
+        if (!roots.isEmpty()) {
             renderer.graph(injector, roots);
         }
         renderer.graph(injector);
