@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import com.google.inject.ProvisionException;
@@ -32,15 +33,15 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 @Singleton
 public class ConfigurationLifecycleFeature implements LifecycleFeature {
     
-    private ConfigurationMapper mapper;
-    private ConfigurationProvider configurationProvider;
-    private ConfigurationDocumentation configurationDocumentation;
+    private Provider<ConfigurationMapper> mapper;
+    private Provider<ConfigurationProvider> configurationProvider;
+    private Provider<ConfigurationDocumentation> configurationDocumentation;
 
     @Inject
     public void initialize(
-            ConfigurationMapper mapper, 
-            ConfigurationProvider configurationProvider, 
-            ConfigurationDocumentation configurationDocumentation
+            Provider<ConfigurationMapper> mapper, 
+            Provider<ConfigurationProvider> configurationProvider, 
+            Provider<ConfigurationDocumentation> configurationDocumentation
             ) {
         this.mapper = mapper;
         this.configurationDocumentation = configurationDocumentation;
@@ -58,7 +59,7 @@ public class ConfigurationLifecycleFeature implements LifecycleFeature {
                         throw new ProvisionException("Trying to map fields of type " + type.getName() + " before ConfigurationLifecycleFeature was fully initialized by the injector");
                     }
                     try {
-                        mapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
+                        mapper.get().mapConfiguration(configurationProvider.get(), configurationDocumentation.get(), obj, methods);
                     } catch (Exception e) {
                         throw new ProvisionException("Failed to map configuration for type " + type.getName(), e);
                     }
