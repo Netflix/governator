@@ -1,11 +1,11 @@
 package com.netflix.governator;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import com.google.inject.ProvisionException;
@@ -32,19 +32,29 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 @Singleton
 public class ConfigurationLifecycleFeature implements LifecycleFeature {
     
-    private ConfigurationMapper mapper;
-    private ConfigurationProvider configurationProvider;
-    private ConfigurationDocumentation configurationDocumentation;
-
+    public static class Mapper {
+        private ConfigurationMapper mapper;
+        private ConfigurationProvider configurationProvider;
+        private ConfigurationDocumentation configurationDocumentation;
+        
+        Mapper(ConfigurationMapper mapper, 
+              ConfigurationProvider configurationProvider, 
+              ConfigurationDocumentation configurationDocumentation) {
+            this.mapper = mapper;
+            this.configurationProvider = configurationProvider;
+            this.configurationDocumentation = configurationDocumentation;
+        }
+        
+        private void mapConfiguration(Object obj, LifecycleMethods methods) throws Exception {
+            mapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
+        }
+    }
+    
+    private volatile Provider<Mapper> mapper;
+    
     @Inject
-    public void initialize(
-            ConfigurationMapper mapper, 
-            ConfigurationProvider configurationProvider, 
-            ConfigurationDocumentation configurationDocumentation
-            ) {
-        this.mapper = mapper;
-        this.configurationDocumentation = configurationDocumentation;
-        this.configurationProvider = configurationProvider;
+    public void initialize(Provider<Mapper> state) {
+        this.mapper = state;
     }
     
     @Override
@@ -53,12 +63,13 @@ public class ConfigurationLifecycleFeature implements LifecycleFeature {
         if (methods.annotatedFields(Configuration.class).length > 0) {
             return Arrays.<LifecycleAction>asList(new LifecycleAction() {
                 @Override
-                public void call(Object obj) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+                public void call(Object obj) throws Exception {
                     if (mapper == null) {
                         throw new ProvisionException("Trying to map fields of type " + type.getName() + " before ConfigurationLifecycleFeature was fully initialized by the injector");
                     }
+                    
                     try {
-                        mapper.mapConfiguration(configurationProvider, configurationDocumentation, obj, methods);
+                        mapper.get().mapConfiguration(obj, methods);
                     } catch (Exception e) {
                         throw new ProvisionException("Failed to map configuration for type " + type.getName(), e);
                     }
@@ -72,7 +83,7 @@ public class ConfigurationLifecycleFeature implements LifecycleFeature {
     
     @Override
     public String toString() {
-        return "Configuration";
+        return "ConfigurationLifecycleFeature[]";
     }
 
 }
