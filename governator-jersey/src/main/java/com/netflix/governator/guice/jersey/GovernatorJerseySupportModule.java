@@ -46,7 +46,7 @@ UnaryOperator<DefaultResourceConfig> adviseWithMyApplicationResources() {
 public final class GovernatorJerseySupportModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(GovernatorServletContainer.class).asEagerSingleton();
+        bind(GuiceContainer.class).to(GovernatorServletContainer.class).asEagerSingleton();
         install(AdvisableAnnotatedMethodScanner.asModule());
     }
     

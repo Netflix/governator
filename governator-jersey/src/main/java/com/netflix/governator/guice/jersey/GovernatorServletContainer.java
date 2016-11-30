@@ -12,15 +12,15 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Injector;
 import com.sun.jersey.api.core.ResourceConfig;
+import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.WebApplication;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
 import com.sun.jersey.spi.container.servlet.WebConfig;
 
 /**
  * @see GovernatorJerseySupportModule
  */
 @Singleton
-public class GovernatorServletContainer extends ServletContainer {
+public class GovernatorServletContainer extends GuiceContainer {
     private static final long serialVersionUID = -1350697205980976818L;
     private static final Logger LOG = LoggerFactory.getLogger(GovernatorServletContainer.class);
     
@@ -31,6 +31,7 @@ public class GovernatorServletContainer extends ServletContainer {
     
     @Inject
     protected GovernatorServletContainer(Injector injector, @Named("governator") ResourceConfig resourceConfig) {
+        super(injector);
         this.resourceConfig = resourceConfig;
         this.injector = injector;
     }
@@ -39,6 +40,9 @@ public class GovernatorServletContainer extends ServletContainer {
     protected ResourceConfig getDefaultResourceConfig(
             Map<String, Object> props,
             WebConfig webConfig) throws ServletException {
+        if (!props.isEmpty()) {
+            throw new IllegalArgumentException("Passing properties via serve() is no longer supported.  ResourceConfig properties should be set by the binding for ResourceConfig");
+        }
         return this.resourceConfig;
     }
     
