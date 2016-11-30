@@ -32,11 +32,12 @@ import com.netflix.governator.lifecycle.LifecycleMethods;
 @Singleton
 public class ConfigurationLifecycleFeature implements LifecycleFeature {
     
-    public static class Mapper {
+    private static class Mapper {
         private ConfigurationMapper mapper;
         private ConfigurationProvider configurationProvider;
         private ConfigurationDocumentation configurationDocumentation;
         
+        @Inject
         Mapper(ConfigurationMapper mapper, 
               ConfigurationProvider configurationProvider, 
               ConfigurationDocumentation configurationDocumentation) {
