@@ -18,6 +18,7 @@ import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.multibindings.MultibindingsScanner;
 import com.google.inject.spi.ProvisionListener;
 import com.netflix.governator.annotations.SuppressLifecycleUninitialized;
 import com.netflix.governator.internal.BinaryConstant;
@@ -53,8 +54,6 @@ public final class LifecycleModule extends AbstractModule {
 
     /**
      * Holder of actions for a specific type.
-     * 
-     * @author elandau
      */
     static class TypeLifecycleActions {
         final List<LifecycleAction> postConstructActions = new ArrayList<LifecycleAction>();
@@ -191,6 +190,8 @@ public final class LifecycleModule extends AbstractModule {
         bind(LifecycleProvisionListener.class).toInstance(provisionListener);
         bindListener(Matchers.any(), provisionListener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
+        
+        install(MultibindingsScanner.asModule());
     }
     
     @Override
