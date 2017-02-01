@@ -206,13 +206,12 @@ public class PreDestroyMonitor implements AutoCloseable {
         }
 
         /*
-         * add a hard-reference ManagedInstanceAction to cleanupActions. Cleanup is triggered only at injector shutdown.
+         * handle eager singletons same as singletons for cleanup purposes.
          * 
          */
         @Override
-        public Boolean visitEagerSingleton() {
-            cleanupActions.addFirst(new ManagedInstanceAction(injectee, lifecycleActions)); 
-            return true;
+        public Boolean visitEagerSingleton() {                    
+            return visitScope(Scopes.SINGLETON);
         }
 
         /*
