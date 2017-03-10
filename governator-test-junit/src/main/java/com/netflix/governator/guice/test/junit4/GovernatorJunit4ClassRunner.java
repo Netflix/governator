@@ -16,6 +16,7 @@ import com.netflix.governator.guice.test.ModulesForTesting;
 import com.netflix.governator.guice.test.ReplaceWithMock;
 import com.netflix.governator.guice.test.InjectorCreationMode;
 import com.netflix.governator.guice.test.WrapWithSpy;
+import com.netflix.governator.guice.test.mocks.mockito.MockitoMockHandler;
 
 /**
  * An extended {@link BlockJUnit4ClassRunner} which creates a Governator-Guice
@@ -35,7 +36,7 @@ public class GovernatorJunit4ClassRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected Statement classBlock(RunNotifier notifier) {
-        annotationBasedTestInjectorManager = new AnnotationBasedTestInjectorManager(getTestClass().getJavaClass());
+        annotationBasedTestInjectorManager = new AnnotationBasedTestInjectorManager(getTestClass().getJavaClass(), MockitoMockHandler.class);
         annotationBasedTestInjectorManager.prepareConfigForTestClass(getDescription().getTestClass());
         if (InjectorCreationMode.BEFORE_TEST_CLASS == annotationBasedTestInjectorManager.getInjectorCreationMode()) {
             annotationBasedTestInjectorManager.createInjector();

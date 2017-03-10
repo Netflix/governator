@@ -13,7 +13,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
@@ -38,12 +37,14 @@ import com.netflix.archaius.test.TestPropertyOverride;
 import com.netflix.archaius.test.TestPropertyOverrideAnnotationReader;
 import com.netflix.governator.InjectorBuilder;
 import com.netflix.governator.LifecycleInjector;
+import com.netflix.governator.guice.test.mocks.MockHandler;
 import com.netflix.governator.providers.SingletonProvider;
 
 public class AnnotationBasedTestInjectorManager {
 
     private LifecycleInjector injector;
     private final InjectorCreationMode injectorCreationMode;
+    private final MockHandler mockHandler;
     private final List<Object> mocksToReset = new ArrayList<>();
     private final List<Module> modulesForTestClass = new ArrayList<>();
     private final List<Module> overrideModules = new ArrayList<>();
@@ -53,8 +54,9 @@ public class AnnotationBasedTestInjectorManager {
     private final TestPropertyOverrideAnnotationReader testPropertyOverrideAnnotationReader = new TestPropertyOverrideAnnotationReader();
     private TestCompositeConfig testCompositeConfig;
 
-    public AnnotationBasedTestInjectorManager(Class<?> classUnderTest) {
+    public AnnotationBasedTestInjectorManager(Class<?> classUnderTest, Class<? extends MockHandler> defaultMockHandlerClass) {
         this.injectorCreationMode = getInjectorCreationModeForAnnotatedClass(classUnderTest);
+        this.mockHandler = createMockHandlerForTestClass(classUnderTest, defaultMockHandlerClass);
         inspectModulesForTestClass(classUnderTest);
         inspectMocksForTestClass(classUnderTest);
         inspectSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
@@ -62,20 +64,20 @@ public class AnnotationBasedTestInjectorManager {
     }
 
     public void createInjector() {
-        injector = createInjector(modulesForTestClass, overrideModules);
-        this.testCompositeConfig = injector.getInstance(TestCompositeConfig.class);
+        this.injector = createInjector(modulesForTestClass, overrideModules);
+        this.testCompositeConfig = getInjector().getInstance(TestCompositeConfig.class);
     }
 
     /**
      * Injects dependencies into the provided test object.
      */
     public void prepareTestFixture(Object testFixture) {
-        injector.injectMembers(testFixture);
+        getInjector().injectMembers(testFixture);
     }
 
     public void cleanUpMocks() {
         for (Object mock : mocksToReset) {
-            Mockito.reset(mock);
+            getMockHandler().resetMock(mock);
         }
     }
 
@@ -84,7 +86,7 @@ public class AnnotationBasedTestInjectorManager {
     }
 
     public void cleanUpInjector() {
-        injector.close();
+        getInjector().close();
     }
 
     public InjectorCreationMode getInjectorCreationMode() {
@@ -93,6 +95,20 @@ public class AnnotationBasedTestInjectorManager {
 
     protected LifecycleInjector createInjector(List<Module> modules, List<Module> overrides) {
         return InjectorBuilder.fromModules(modules).overrideWith(overrides).createInjector();
+    }
+    
+    protected MockHandler createMockHandlerForTestClass(Class<?> testClass, Class<? extends MockHandler> defaultMockHandler) {
+        final Annotation annotation = testClass.getAnnotation(ModulesForTesting.class);
+        if (annotation != null) {
+            Class<? extends MockHandler> mockHandlerClass = ((ModulesForTesting) annotation).mockHandler();
+            try {
+                return mockHandlerClass != MockHandler.class ? mockHandlerClass.newInstance() : defaultMockHandler.newInstance();
+            } catch (SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+               throw new IllegalArgumentException("Failed to instantiate MockHandler " + mockHandlerClass.getName() + ". Ensure that is has an accessible no-arg constructor.", e);
+            }
+        } else {
+            throw new IllegalStateException("No MockHandler specified!");
+        }
     }
 
     private void inspectModulesForTestClass(Class<?> testClass) {
@@ -126,7 +142,7 @@ public class AnnotationBasedTestInjectorManager {
             return InjectorCreationMode.BEFORE_TEST_CLASS;
         }
     }
-
+    
     private List<Class<? extends Module>> getModulesForAnnotatedClass(Class<?> testClass) {
         final Annotation annotation = testClass.getAnnotation(ModulesForTesting.class);
         if (annotation != null) {
@@ -183,7 +199,9 @@ public class AnnotationBasedTestInjectorManager {
                                     @Override
                                     protected T create() {
                                         T t = injector.getInstance(newUniqueKey);
-                                        return Mockito.spy(t);
+                                        T spied = getMockHandler().createSpy(t);
+                                        mocksToReset.add(spied);
+                                        return spied;
                                     };
                                 });
                             }
@@ -214,6 +232,14 @@ public class AnnotationBasedTestInjectorManager {
         return allSuperclasses;
     }
 
+    public MockHandler getMockHandler() {
+        return mockHandler;
+    }
+
+    public LifecycleInjector getInjector() {
+        return injector;
+    }
+
     private class MockitoOverrideModule<T> extends AbstractModule {
         private final ReplaceWithMock annotation;
         private final Class<T> classToBind;
@@ -225,7 +251,7 @@ public class AnnotationBasedTestInjectorManager {
 
         @Override
         protected void configure() {
-            final T mock = Mockito.mock(classToBind, annotation.answer().get());
+            final T mock = getMockHandler().createMock(classToBind, annotation.answer().get());
             mocksToReset.add(mock);
             LinkedBindingBuilder<T> bindingBuilder = bind(classToBind);
             if (!annotation.name().isEmpty()) {

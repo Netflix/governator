@@ -1,16 +1,17 @@
-package com.netflix.governator.guice.test.junit4;
+package com.netflix.governator.guice.test;
 
 import org.junit.Test;
 
 import com.google.inject.AbstractModule;
 import com.netflix.governator.guice.test.AnnotationBasedTestInjectorManager;
 import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.mocks.MockHandler;
 
 public class AnnotationBasedTestInjectionManagerTest {
     
     @Test(expected=RuntimeException.class)
     public void testExceptionThrownWhenModuleWithNoDefaultConstructorProvided() {
-        new AnnotationBasedTestInjectorManager(TestClassForModulesWithoutDefaultConstrutor.class);
+        new AnnotationBasedTestInjectorManager(TestClassForModulesWithoutDefaultConstrutor.class, MockHandler.class);
     }
 
 }
