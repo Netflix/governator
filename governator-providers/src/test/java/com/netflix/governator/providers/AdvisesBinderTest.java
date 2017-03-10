@@ -27,7 +27,7 @@ public class AdvisesBinderTest {
     }
     
     @Test
-    public void adviseWithoutAdvice() {
+    public void adviseWithAdvice() {
         TypeLiteral<List<String>> LIST_TYPE_LITERAL =  new TypeLiteral<List<String>>() {};
         
         Injector injector = Guice.createInjector(new AbstractModule() {
