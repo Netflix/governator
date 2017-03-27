@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 
 import javax.annotation.PreDestroy;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.junit.Assert;
@@ -169,6 +170,56 @@ public class PreDestroyTest {
         public void shutdown2() {
             System.out.println("shutdown2 invoked");
         }
+    }
+    
+    
+    private static class EagerBean {
+        volatile boolean shutdown = false;
+        SingletonBean singletonInstance;
+        @Inject
+        public EagerBean(SingletonBean singletonInstance) {
+            this.singletonInstance = singletonInstance;
+        }
+        
+        @PreDestroy
+        public void shutdown() {
+            System.out.println("eager bean shutdown invoked");
+            shutdown = true;
+            this.singletonInstance.eagerShutdown = true;
+        }       
+    }
+    
+    @Singleton
+    private static class SingletonBean {
+        volatile boolean eagerShutdown = false;
+        boolean shutdown = false;
+        
+        @PreDestroy
+        public void shutdown() {
+            System.out.println("singleton bean shutdown invoked");
+            shutdown = true;
+            Assert.assertTrue(eagerShutdown);
+        }       
+    }
+   
+    
+    @Test
+    public void testEagerSingletonShutdown() {
+        EagerBean eagerBean;
+        SingletonBean singletonBean;
+        try (LifecycleInjector injector = InjectorBuilder.fromModule(new AbstractModule() {            
+            @Override
+            protected void configure() {
+                bind(EagerBean.class).asEagerSingleton();
+                bind(SingletonBean.class).in(Scopes.SINGLETON);
+            }}).createInjector()) {
+            eagerBean = injector.getInstance(EagerBean.class);
+            singletonBean = injector.getInstance(SingletonBean.class);
+            Assert.assertFalse(eagerBean.shutdown);
+            Assert.assertFalse(singletonBean.shutdown);
+        }
+        Assert.assertTrue(eagerBean.shutdown);
+        Assert.assertTrue(singletonBean.shutdown);
     }
     
     
