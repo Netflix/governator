@@ -1,0 +1,16 @@
+apply plugin: 'groovy'
+
+repositories {
+    maven {
+        mavenCentral()
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
+}
+
+dependencies {
+    compile    project(':governator-test')
+    compile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
+    compile 'com.cyrusinnovation:mockito-groovy-support:1.3'
+    compile 'cglib:cglib-nodep:3.2.2'
+    
+}

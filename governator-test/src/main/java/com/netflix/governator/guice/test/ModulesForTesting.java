@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import com.google.inject.Module;
+import com.netflix.governator.guice.test.mocks.MockHandler;
 
 /**
  * Creates a Governator-Guice Injector using the provided modules for use in testing.
@@ -45,5 +46,7 @@ public @interface ModulesForTesting {
     Class<? extends Module>[] value() default {};
     
     InjectorCreationMode injectorCreation() default InjectorCreationMode.BEFORE_TEST_CLASS;
+    
+    Class<? extends MockHandler> mockHandler() default MockHandler.class;
 
 }

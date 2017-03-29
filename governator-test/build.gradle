@@ -1,0 +1,14 @@
+apply plugin: 'java'
+
+dependencies {
+    compile    project(':governator')
+    compile    project(':governator-api')
+    compile    project(':governator-core')
+    compile    "com.netflix.archaius:archaius2-guice:${archaius2_version}"
+    compile    ("com.netflix.archaius:archaius2-test:${archaius2_version}") {
+        exclude module: 'junit'
+    }
+    compile    'org.mockito:mockito-core:1.9.5'
+    testCompile 'junit:junit:4.12'
+    
+}
