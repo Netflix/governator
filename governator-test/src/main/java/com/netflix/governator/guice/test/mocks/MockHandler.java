@@ -8,7 +8,7 @@ public interface MockHandler {
 
     <T> T createMock(Class<T> classToMock);
 
-    <T> T createMock(Class<T> classToMock, Object args);
+    <T> T createMock(Class<T> classToMock, Object answerMode);
 
     <T> T createSpy(T objectToSpy);
 

@@ -98,9 +98,20 @@ public class AnnotationBasedTestInjectorManager {
     }
     
     protected MockHandler createMockHandlerForTestClass(Class<?> testClass, Class<? extends MockHandler> defaultMockHandler) {
-        final Annotation annotation = testClass.getAnnotation(ModulesForTesting.class);
-        if (annotation != null) {
-            Class<? extends MockHandler> mockHandlerClass = ((ModulesForTesting) annotation).mockHandler();
+        Class<? extends MockHandler> mockHandlerClass = defaultMockHandler;
+        for(Class<?> superClass : getAllSuperClassesInReverseOrder(testClass)) {
+            ModulesForTesting annotation = superClass.getAnnotation(ModulesForTesting.class);
+            if(annotation != null && !annotation.mockHandler().equals(MockHandler.class)) {
+                mockHandlerClass = annotation.mockHandler();
+            }
+        }
+        
+        ModulesForTesting annotation = testClass.getAnnotation(ModulesForTesting.class);
+        if(annotation != null && !annotation.mockHandler().equals(MockHandler.class)) {
+            mockHandlerClass = annotation.mockHandler();
+        }
+        
+        if (mockHandlerClass != null) {
             try {
                 return mockHandlerClass != MockHandler.class ? mockHandlerClass.newInstance() : defaultMockHandler.newInstance();
             } catch (SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException e) {

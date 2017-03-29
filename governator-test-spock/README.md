@@ -1,62 +1,63 @@
-# Testing Governator With JUnit
-To simplify integration testing of components wired together using Guice, you may use the [GovernatorJunit4ClassRunner](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/junit4/GovernatorJunit4ClassRunner.java) JUnit runner. 
+Testing Governator With Spock
+=============================
 
 # Features
 * Annotate your test with [@ModulesForTesting](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/ModulesForTesting.java) to specify which Guice modules should be included when building your Injector.
-* @Inject dependencies directly into your JUnit test class.
-* Annotate dependencies with [@ReplaceWithMock](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/ReplaceWithMock.java) to add an override binding for that dependency's type to a Mockito implementation. 
-* Annotate dependencies with [@WrapWithSpy](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/WrapWithSpy.java) to wrap any binding with a Mockito spy.
+* @Inject dependencies directly into your Specification class.
+* Annotate dependencies with [@ReplaceWithMock](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/ReplaceWithMock.java) to add an override binding for that dependency's type to a Spock Mock implementation. 
+* Annotate dependencies with [@WrapWithSpy](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/WrapWithSpy.java) to wrap any binding with a Spock Spy.
 * Annotate parent classes, test classes, and/or test methods with [@TestPropertyOverride](https://github.com/Netflix/archaius/blob/2.x/archaius2-test/src/main/java/com/netflix/archaius/test/TestPropertyOverride.java) to set [Archaius2](https://github.com/Netflix/archaius/tree/2.x) property overrides for your Injector **(Note: You must include [ArchaiusModule](https://github.com/Netflix/archaius/blob/2.x/archaius2-guice/src/main/java/com/netflix/archaius/guice/ArchaiusModule.java) yourself in @ModulesForTesting to use this feature.)**
 
 # Dependency
 Add the following to your build.gradle
 ```
-testCompile 'com.netflix.governator:governator-test-junit:latest.release'
+testCompile 'com.netflix.governator:governator-test-spock:latest.release'
 ```
+***Note: This framework requires at least Spock 1.1 to properly function!***
 
 # Example
 ```java
-@RunWith(GovernatorJunit4ClassRunner.class)                     //You must use the Runner for these features to work
 @ModulesForTesting({ MyModule.class, ArchaiusModule.class })    //Specify any Modules you wish to include in your test
-public class ExampleTest {
+public class ExampleTest extends Specification {
     
     @Inject
     @ReplaceWithMock                                            //Indicate that you wish this dependency to be Mocked
-    SomeDependency dependency;  
+    SomeDependency dependency  
     
     @Inject
     @WrapWithSpy                                                //Indicate that you wish to wrap this dependency with a Spy
-    SomeRealDependency realDependency;                      
+    SomeRealDependency realDependency                      
     
-    @Before
-    public void setup() {
-        Mockito.when(dependency.getValue()).thenReturn("Test"); //Specify desired behavior for your Mock
+    def setup() {
+        dependency.getValue() >> "Test"                         //Specify desired behavior for your Mock
     }
     
-    @Test
-    public void testMock() {
-        assertEquals("Test", dependency.getValue());            //Verify behavior of your Mock
+    def "Test a basic Mock"() {
+        expect:
+        dependency.value == "Test"                              //Verify behavior of your Mock
     }
     
-    @Test
-    public void testSpy() {
-        realDependency.getValue();
-        Mockito.verify(realDependency, Mockito.times(1)).getValue(); //Verify that this object was interacted with exactly once
+    def "Test Spying an object and checking what was called" {
+        when:
+        realDependency.getValue()
+        
+        then:
+        1 * realDependency.getValue()                           //Verify that the getValue method was invoked once
     }
     
     @Inject
-    Config config;
+    Config config
     
-    @Test
-    @TestPropertyOverride({"myProperty=test"})                    //Specify property values you wish to be set
-    public void testConfig() {
-        assertEquals("test", config.getString("myProperty"));    //Verify that your property was set as expected
+    @TestPropertyOverride({"myProperty=test"})                  //Specify property values you wish to be set
+    def "Test Config Overrides"() {
+        expect:
+        config.getString("myProperty") == "test"                //Verify that your property was set as expected
     }
     
-    @Test
     @TestPropertyOverride(propertyFiles={"testProps.properties"}) //Properties may also be loaded from a file
     public void testConfigFromFile() {
-        assertEquals("test", config.getString("myProperty"));   //Verify that your property was set as expected
+        expect:
+        config.getString("myProperty") == "test"                //Verify that your property was set as expected
     }
 }
 ```
@@ -65,17 +66,15 @@ public class ExampleTest {
 You may choose whether the Injector will be created once per test class or once per test method by setting the injectorCreation attribute of [@ModulesForTesting](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/ModulesForTesting.java). **By default, the injector is created once per test class.** This should only be modified if the state of your injector bound objects are mutable in some way and that state has been modified by one of your tests.
 ```java
 //Injector created once per test class
-@RunWith(GovernatorJunit4ClassRunner.class)
 @ModulesForTesting(injectorCreation=InjectorCreationMode.BEFORE_TEST_CLASS)  
-public class ExampleTest {
+public class ExampleTest extends Specification {
 ...
 }
 ```
 ```java
 //Injector created once per test method
-@RunWith(GovernatorJunit4ClassRunner.class)
 @ModulesForTesting(injectorCreation=InjectorCreationMode.BEFORE_EACH_TEST_METHOD)  
-public class ExampleTest {
+public class ExampleTest extends Specification {
 ...
 }
 ```
