@@ -18,7 +18,6 @@ package com.netflix.governator.lifecycle;
 
 import org.junit.Assert;
 import org.junit.Test;
-import javax.validation.constraints.Min;
 
 @SuppressWarnings("UnusedDeclaration")
 public class TestLifecycleManager
@@ -28,13 +27,11 @@ public class TestLifecycleManager
     {
         Object          goodObj = new Object()
         {
-            @Min(1)
             private int     a = 10;
         };
 
         Object          badObj = new Object()
         {
-            @Min(1)
             private int     a = 0;
         };
 
@@ -47,11 +44,11 @@ public class TestLifecycleManager
         try
         {
             manager.start();
-            Assert.fail();
+            
         }
         catch ( ValidationException e )
         {
-            // correct
+            Assert.fail(); //should no longer throw a validation exception as this feature was removed in 1.17.0
         }
     }
 }

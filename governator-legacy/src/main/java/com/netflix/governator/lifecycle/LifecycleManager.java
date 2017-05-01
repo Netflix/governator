@@ -16,32 +16,27 @@
 
 package com.netflix.governator.lifecycle;
 
+import static com.netflix.governator.internal.BinaryConstant.I10_1024;
+import static com.netflix.governator.internal.BinaryConstant.I15_32768;
+import static com.netflix.governator.internal.BinaryConstant.I16_65536;
+
 import java.io.Closeable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PostConstruct;
-import javax.validation.ConstraintViolation;
-import javax.validation.Path;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.groups.Default;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
 import com.google.inject.Binding;
 import com.google.inject.Inject;
@@ -58,7 +53,6 @@ import com.netflix.governator.guice.PostInjectorAction;
 import com.netflix.governator.internal.JSR250LifecycleAction.ValidationMode;
 import com.netflix.governator.internal.PreDestroyLifecycleFeature;
 import com.netflix.governator.internal.PreDestroyMonitor;
-import static com.netflix.governator.internal.BinaryConstant.*;
 
 /**
  * Main instance management container
@@ -85,7 +79,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     private final ConfigurationMapper configurationMapper;
     private final ResourceMapper resourceMapper;
     final LifecycleListener[] listeners;
-    private final Validator validator;
     private final PreDestroyMonitor preDestroyMonitor;
     private com.netflix.governator.LifecycleManager newLifecycleManager;
 
@@ -112,7 +105,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         newLifecycleManager = arguments.getLifecycleManager();
         listeners = arguments.getLifecycleListeners().toArray(new LifecycleListener[0]);
         resourceMapper = new ResourceMapper(injector, ImmutableSet.copyOf(arguments.getResourceLocators()));
-        validator = Validation.buildDefaultValidatorFactory().getValidator();
         configurationDocumentation = arguments.getConfigurationDocumentation();
         configurationProvider = arguments.getConfigurationProvider();
     }
@@ -231,8 +223,6 @@ public class LifecycleManager implements Closeable, PostInjectorAction
     public void start() throws Exception
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTING), "Already started");
-
-        validate();
 
         new ConfigurationColumnWriter(configurationDocumentation).output(log);
         if (newLifecycleManager != null) {
@@ -364,85 +354,11 @@ public class LifecycleManager implements Closeable, PostInjectorAction
         }
     }
 
-    private void initializeObjectPostStart(Object obj) throws ValidationException
+    private void initializeObjectPostStart(Object obj)
     {
-        validate(obj);
-    }
-
-    /**
-     * Run the validations on the managed objects. This is done automatically when {@link #start()} is called.
-     * But you can call this at any time you need.
-     *
-     * @throws ValidationException
-     */
-    public void validate() throws ValidationException
-    {
-        ValidationException exception = null;
-        for ( Object managedInstance : objectStates.keySet() )
-        {
-            if (managedInstance != null) {
-                exception = internalValidateObject(exception, managedInstance, validator);
-            }
-        }
-
-        if ( exception != null )
-        {
-            throw exception;
-        }
-    }
-
-    /**
-     * Run validations on the given object
-     *
-     * @param obj the object to validate
-     * @throws ValidationException
-     */
-    public void validate(Object obj) throws ValidationException
-    {
-        ValidationException exception = internalValidateObject(null, obj, validator);
-        if ( exception != null )
-        {
-            throw exception;
-        }
-    }
         
-    private ValidationException internalValidateObject(ValidationException exception, Object obj, Validator validator)
-    {
-        Set<ConstraintViolation<Object>> violations = validator.validate(obj, Default.class);
-        if (!violations.isEmpty()) {
-            for ( ConstraintViolation<Object> violation : violations )
-            {
-                String path = getPath(violation);
-                String message = String.format("%s - %s.%s = %s", violation.getMessage(), obj.getClass().getName(), path, String.valueOf(violation.getInvalidValue()));
-                if ( exception == null )
-                {
-                    exception = new ValidationException(message);
-                }
-                else
-                {
-                    exception = new ValidationException(message, exception);
-                }
-            }
-        }
-        return exception;
     }
-    
-    private String getPath(ConstraintViolation<Object> violation)
-    {
-        Iterable<String> transformed = Iterables.transform
-            (
-                violation.getPropertyPath(),
-                new Function<Path.Node, String>()
-                {
-                    @Override
-                    public String apply(Path.Node node)
-                    {
-                        return node.getName();
-                    }
-                }
-            );
-        return Joiner.on(".").join(transformed);
-    }
+
     
     @Override
     public void call(Injector injector) {

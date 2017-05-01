@@ -3,7 +3,6 @@ apply plugin: 'java'
 dependencies {
     compile    project(':governator-api')
     compile    project(':governator-core')
-    compile    'org.hibernate:hibernate-validator:4.1.0.Final'
     compile    'org.ow2.asm:asm:5.0.4'
     compile    'com.fasterxml.jackson.core:jackson-databind:2.4.3'
 
