@@ -16,11 +16,11 @@
 
 package com.netflix.governator.lifecycle;
 
-import static com.netflix.governator.internal.BinaryConstant.*;
+import static com.netflix.governator.internal.BinaryConstant.I15_32768;
+import static com.netflix.governator.internal.BinaryConstant.I2_4;
 import static com.netflix.governator.internal.BinaryConstant.I3_8;
 import static com.netflix.governator.internal.BinaryConstant.I4_16;
 import static com.netflix.governator.internal.BinaryConstant.I5_32;
-import static com.netflix.governator.internal.BinaryConstant.I9_512;
 
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
@@ -33,7 +33,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +41,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.Resources;
-import javax.validation.Constraint;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,10 +131,6 @@ public class LifecycleMethods {
                     continue;
                 }
 
-                if (!hasValidations) {
-                    checkForValidations(field);
-                }
-
                 for (Class<? extends Annotation> annotationClass : fieldAnnotations) {
                     processField(field, annotationClass, usedNames);
                 }
@@ -190,10 +184,6 @@ public class LifecycleMethods {
 
                 handleReflectionError(clazz, e.getCause());
             }
-        }
-
-        private void checkForValidations(Field field) {
-            this.hasValidations =field.getAnnotationsByType(Constraint.class).length > 0;
         }
 
         private void processField(Field field, Class<? extends Annotation> annotationClass,
