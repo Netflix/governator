@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
@@ -17,7 +18,7 @@ public class WarnAboutStaticInjections implements ModuleTransformer {
     
     @Override
     public Collection<Module> call(Collection<Module> modules) {
-        for(Element element : Elements.getElements(modules)) {
+        for(Element element : Elements.getElements(Stage.TOOL, modules)) {
             element.acceptVisitor(new DefaultElementVisitor<Void>() {
                 @Override 
                 public Void visit(StaticInjectionRequest request) {
