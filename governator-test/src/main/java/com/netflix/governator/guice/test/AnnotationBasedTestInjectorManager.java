@@ -20,6 +20,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
@@ -59,7 +60,7 @@ public class AnnotationBasedTestInjectorManager {
         this.mockHandler = createMockHandlerForTestClass(classUnderTest, defaultMockHandlerClass);
         inspectModulesForTestClass(classUnderTest);
         inspectMocksForTestClass(classUnderTest);
-        inspectSpiesForTargetKeys(Elements.getElements(modulesForTestClass));
+        inspectSpiesForTargetKeys(Elements.getElements(Stage.TOOL, modulesForTestClass));
         overrideModules.add(new ArchaiusTestConfigOverrideModule(classLevelOverrides, methodLevelOverrides));
     }
 

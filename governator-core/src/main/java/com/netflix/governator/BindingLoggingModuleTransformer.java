@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.netflix.governator.spi.ModuleListTransformer;
@@ -15,7 +16,7 @@ public class BindingLoggingModuleTransformer implements ModuleListTransformer {
     
     @Override
     public List<Module> transform(List<Module> modules) {
-        for (Element binding : Elements.getElements(modules)) {
+        for (Element binding : Elements.getElements(Stage.TOOL, modules)) {
             LOG.debug("Binding : {}", binding);
         }
         

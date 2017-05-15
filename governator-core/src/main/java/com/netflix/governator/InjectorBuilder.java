@@ -172,7 +172,7 @@ public final class InjectorBuilder {
      */
     public InjectorBuilder filter(ElementVisitor<Boolean> predicate) {
         List<Element> elements = new ArrayList<Element>();
-        for (Element element : Elements.getElements(module)) {
+        for (Element element : Elements.getElements(Stage.TOOL, module)) {
             if (element.acceptVisitor(predicate)) {
                 elements.add(element);
             }
@@ -192,7 +192,7 @@ public final class InjectorBuilder {
      * @return Return all elements in the managed module
      */
     public List<Element> getElements() {
-        return Elements.getElements(module);
+        return Elements.getElements(Stage.TOOL, module);
     }
     
     /**
