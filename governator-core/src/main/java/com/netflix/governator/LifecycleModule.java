@@ -161,6 +161,12 @@ public final class LifecycleModule extends AbstractModule {
                 return;
             }
             
+            //Ignore for Spring-managed bindings
+            Object source = provision.getBinding().getSource();
+            if(source != null && source.toString().contains("spring-guice")) {
+                return;
+            }
+            
             final TypeLifecycleActions actions = getOrCreateActions(injectee.getClass());
             
             // Call all postConstructActions for this injectee
