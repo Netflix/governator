@@ -11,9 +11,21 @@ import com.google.inject.AbstractModule;
  * be final.  This is done to prevent the use of inheritance for overriding
  * behavior in favor of using Modules.override().
  * 
- * @author elandau
- *
+ * @deprecated Extend AbstractModule directly and add the following equals and hashCode
+ * 
+ * {@code
+    @Override
+    public boolean equals(Object obj) {
+        return obj != null && getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+      return getClass().hashCode();
+    }
+    }
  */
+@Deprecated
 public abstract class SingletonModule extends AbstractModule {
     public SingletonModule() {
         if (!Modifier.isFinal(getClass().getModifiers())) {
@@ -27,7 +39,7 @@ public abstract class SingletonModule extends AbstractModule {
     
     @Override
     public boolean equals(Object obj) {
-        return getClass().equals(obj.getClass());
+        return obj != null && getClass().equals(obj.getClass());
     }
 
     @Override
