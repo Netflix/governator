@@ -113,7 +113,7 @@ public final class AnnotationFinder extends ClassVisitor {
                         annotatedFields.add(selfClass().getDeclaredField(name));
                         break;
                     } catch (NoSuchFieldException e) {
-                        throw new IllegalStateException("Error visiting field " + name, e);
+                        throw new IllegalStateException("Error visiting field " + name + " of class " + selfClass().getName(), e);
                     } catch (NoClassDefFoundError e) {
                         log.info("Unable to scan field '{}' of class '{}'", name, selfClass().getName(), e.getMessage());
                     }
