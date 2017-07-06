@@ -1,8 +1,17 @@
 package com.netflix.governator.lifecycle;
 
-import org.objectweb.asm.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.objectweb.asm.Type.ARRAY;
+import static org.objectweb.asm.Type.BOOLEAN;
+import static org.objectweb.asm.Type.BYTE;
+import static org.objectweb.asm.Type.CHAR;
+import static org.objectweb.asm.Type.DOUBLE;
+import static org.objectweb.asm.Type.FLOAT;
+import static org.objectweb.asm.Type.INT;
+import static org.objectweb.asm.Type.LONG;
+import static org.objectweb.asm.Type.OBJECT;
+import static org.objectweb.asm.Type.SHORT;
+import static org.objectweb.asm.Type.getArgumentTypes;
+import static org.objectweb.asm.Type.getType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -13,7 +22,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.objectweb.asm.Type.*;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class AnnotationFinder extends ClassVisitor {
 	private static Logger log = LoggerFactory.getLogger(AnnotationFinder.class);
@@ -30,7 +46,7 @@ public final class AnnotationFinder extends ClassVisitor {
     private ClassLoader classLoader;
 
     private Class<?> selfClass() {
-        if(clazz == null)
+        if (clazz == null)
             clazz = classFromInternalName(className);
         return clazz;
     }
@@ -38,9 +54,8 @@ public final class AnnotationFinder extends ClassVisitor {
     private Class<?> classFromInternalName(String name) {
         try {
             return Class.forName(name.replace('/', '.'), false, classLoader);
-        } 
-        catch (ClassNotFoundException e) {
-            throw new IllegalStateException(e);
+        }  catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Unable to find class " + name, e);
         }
     }
 
@@ -97,9 +112,10 @@ public final class AnnotationFinder extends ClassVisitor {
                     try {
                         annotatedFields.add(selfClass().getDeclaredField(name));
                         break;
-                    } 
-                    catch (NoSuchFieldException e) {
-                        throw new IllegalStateException(e);
+                    } catch (NoSuchFieldException e) {
+                        throw new IllegalStateException("Error visiting field " + name + " of class " + selfClass().getName(), e);
+                    } catch (NoClassDefFoundError e) {
+                        log.info("Unable to scan field '{}' of class '{}'", name, selfClass().getName(), e.getMessage());
                     }
                 }
             }
@@ -123,15 +139,15 @@ public final class AnnotationFinder extends ClassVisitor {
             Type type = getType(desc);
             for (Type annotationType : annotationTypes) {
                 if (annotationType.equals(type)) {
-                    Type[] args = methodDesc == null ? new Type[0]
+                    Type[] args = methodDesc == null 
+                            ? new Type[0]
                             : getArgumentTypes(methodDesc);
                     Class[] argClasses = new Class[args.length];
                     for (int i = 0; i < args.length; i++) {
                         switch (args[i].getSort()) {
                         case OBJECT:
                         case ARRAY:
-                            argClasses[i] = classFromInternalName(args[i]
-                                    .getInternalName());
+                            argClasses[i] = classFromInternalName(args[i].getInternalName());
                             break;
                         case BOOLEAN:
                             argClasses[i] = boolean.class;
@@ -167,11 +183,9 @@ public final class AnnotationFinder extends ClassVisitor {
                         else
                             annotatedMethods.add(selfClass().getDeclaredMethod(
                                     name, argClasses));
-                    } 
-                    catch (NoClassDefFoundError e) {
+                    } catch (NoClassDefFoundError e) {
                     	log.info("Unable to scan constructor of '{}' NoClassDefFoundError looking for '{}'", selfClass().getName(), e.getMessage());
-                    }
-                    catch (NoSuchMethodException e) {
+                    } catch (NoSuchMethodException e) {
                         throw new IllegalStateException(e);
                     }
 
