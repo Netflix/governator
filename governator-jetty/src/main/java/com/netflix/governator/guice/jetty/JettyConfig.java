@@ -2,9 +2,9 @@ package com.netflix.governator.guice.jetty;
 
 public interface JettyConfig {
 
-	String getHost();
+    String getHost();
 	
-	int getPort();
+    int getPort();
 
     /**
      * @deprecated 2016-10-14 use {@link #getStaticResourceBase()} instead
