@@ -6,6 +6,8 @@ import com.netflix.archaius.api.annotations.DefaultValue;
 @Configuration(prefix="governator.jetty.embedded")
 public interface Archaius2JettyConfig extends JettyConfig {
     
+    String getHost();
+
     @DefaultValue("8080")
     int getPort();
 
