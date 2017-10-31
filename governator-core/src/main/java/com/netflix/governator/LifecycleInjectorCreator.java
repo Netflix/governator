@@ -121,6 +121,7 @@ public class LifecycleInjectorCreator implements InjectorCreator<LifecycleInject
             manager.notifyStarted();
             LifecycleInjector lifecycleInjector = LifecycleInjector.wrapInjector(injector, manager);
             onSuccessfulInjectorCreate();
+            LOG.info("Injector created successfully ");
             return lifecycleInjector;
         }
         catch (Exception e) {
