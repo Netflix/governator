@@ -138,7 +138,7 @@ public class StartServer extends GovernatorServletContextListener
                     bind(MyResource.class).asEagerSingleton();
                 }
             }
-        );
+        ).createInjector();
     }
 }
 ```
