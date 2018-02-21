@@ -12,7 +12,7 @@ dependencies {
     compile 'com.sun.jersey:jersey-server:1.19'
     compile 'com.sun.jersey.contribs:jersey-guice:1.19'
 
-    provided 'javax.servlet:javax.servlet-api:3.0.1'
+    compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
 
     testCompile'org.eclipse.jetty:jetty-servlet:9.2.12.v20150709'
     testCompile project(':governator-jetty')

@@ -4,8 +4,9 @@ dependencies {
     compile     project(':governator-core')
     compile     "com.google.inject.extensions:guice-servlet:${guice_version}"
 
-    provided    'javax.servlet:javax.servlet-api:3.0.1'
+    compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
 
     testCompile "org.mockito:mockito-all:1.9.5"
     testCompile 'com.sun.jersey.contribs:jersey-guice:1.19'
+    testCompile 'javax.servlet:javax.servlet-api:3.0.1'
 }
