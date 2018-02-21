@@ -2,6 +2,8 @@ package com.netflix.governator.guice.jetty;
 
 public interface JettyConfig {
 
+    String getHost();
+	
     int getPort();
 
     /**

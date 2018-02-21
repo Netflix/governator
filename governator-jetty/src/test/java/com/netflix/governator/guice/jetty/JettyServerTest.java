@@ -120,6 +120,37 @@ public class JettyServerTest {
 
         injector.close();
     }
+    
+    @Test
+    public void testExplicitHostConnectorBinding() throws Exception {
+        LifecycleInjector injector = InjectorBuilder.fromModules(
+                new SampleServletModule(),
+                new ShutdownHookModule(),
+                Modules.override(new JettyModule())
+                        .with(new AbstractModule() {
+                            @Override
+                            protected void configure() {
+                            }
+
+                            @Provides
+                            JettyConfig getConfig() {
+                                // Use ephemeral ports
+                                return new DefaultJettyConfig().setPort(0).setHost("127.0.0.1");
+                            }
+                        })
+                ).createInjector();
+
+        Server server = injector.getInstance(Server.class);
+        Assert.assertEquals(1, server.getConnectors().length);
+
+        int port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
+
+        // Do a plaintext GET and verify that the default connector works
+        String response = doGet(String.format("http://127.0.0.1:%d/", port), null);
+        Assert.assertTrue(response.startsWith("hello "));
+
+        injector.close();
+    }    
 
     private static String doGet(String url, KeyStore sslTrustStore) throws Exception {
 

@@ -5,6 +5,8 @@ import javax.inject.Singleton;
 @Singleton
 public class DefaultJettyConfig implements JettyConfig {
     private int port = 8080;
+    
+    private String host;
 
     // Where static files live. We pass this to Jetty for class path scanning to find the exact directory.
     // The default is to use resources supported by the servlet 3.0 spec.
@@ -14,6 +16,11 @@ public class DefaultJettyConfig implements JettyConfig {
 
     private String webAppContextPath = "/";
 
+    @Override
+    public String getHost() {
+    		return host;
+    }
+    
     @Override
     public int getPort() {
         return port;
@@ -37,6 +44,11 @@ public class DefaultJettyConfig implements JettyConfig {
     @Override
     public String getWebAppContextPath() {
         return webAppContextPath;
+    }
+
+    public DefaultJettyConfig setHost(String host) {
+        this.host = host;
+        return this;
     }
 
     public DefaultJettyConfig setPort(int port) {

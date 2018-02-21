@@ -1,6 +1,8 @@
 
 package com.netflix.governator.guice.jetty;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -183,7 +185,12 @@ public final class JettyModule extends AbstractModule {
     @Singleton
     private Server getServer(OptionalJettyConfig optionalConfig, Set<JettyConnectorProvider> jettyConnectors) {
         JettyConfig config = optionalConfig.getJettyConfig();
-        Server server = new Server(config.getPort());
+        Server server;
+        if (config.getHost() != null) {
+    			server = new Server(new InetSocketAddress(config.getHost(), config.getPort()));
+        } else {
+        		server = new Server(config.getPort());
+        }
         Resource staticResourceBase = Resource.newClassPathResource(config.getStaticResourceBase());
         if (staticResourceBase != null) {
             // Set up a full web app since we have static content. We require the app to have its static content
