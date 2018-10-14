@@ -15,7 +15,7 @@ http://sourceforge.net/projects/javadiff
 
 To use the Ant task on your own project, see example.xml. More examples
 of using JDiff to compare the public APIs of J2SE1.3 and J2SE1.4 can
-be seen at http://www.jdiff.org
+be seen at http://www.jdiff.org(link is not working anymore)
 
 For an example with the source distribution, run "ant" and
 look at the HTML output in ./build/reports/example/changes.html 
@@ -56,4 +56,4 @@ much of this work.
 Footnote:
 
 If you are looking for a generalized diff tool for XML, try diffmk from
-http://wwws.sun.com/software/xml/developers/diffmk/
+http://wwws.sun.com/software/xml/developers/diffmk/(link is not working anymore)
