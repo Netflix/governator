@@ -1,5 +1,8 @@
 Governator
 =====
+
+[![NetflixOSS Lifecycle](https://img.shields.io/osslifecycle/Netflix/governator.svg)]()
+
 DESCRIPTION
 -----------
 
