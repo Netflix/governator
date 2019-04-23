@@ -250,15 +250,14 @@ public class PreDestroyMonitor implements AutoCloseable {
             return rv;
         }
 
-        /*
-         * add a soft-reference ManagedInstanceAction to cleanupActions deque. Cleanup triggered only at injector
-         * shutdown if referent has not yet been collected.
-         * 
+        /**
+         * Do nothing. When using OptionalBinder this will end up getting called each time the
+         * type is injected resulting in a memory leak if a cleanup action is added.
          */
         @Override
         public Boolean visitNoScoping() {
-            cleanupActions.addFirst(
-                    new ManagedInstanceAction(new SoftReference<Object>(injectee), context, lifecycleActions));
+            //cleanupActions.addFirst(
+            //        new ManagedInstanceAction(new SoftReference<Object>(injectee), context, lifecycleActions));
             return true;
         }
     }

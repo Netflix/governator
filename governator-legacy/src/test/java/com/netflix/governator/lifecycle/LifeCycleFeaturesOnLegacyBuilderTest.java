@@ -83,7 +83,8 @@ public class LifeCycleFeaturesOnLegacyBuilderTest {
             return "LifecycleSubject@" + System.identityHashCode(this) + '[' + name + ']';
         }
     }
-    
+
+    @Singleton
     static class UsesNullable {
         private AtomicBoolean preDestroyed = new AtomicBoolean(false);
         private LifecycleSubject subject;
