@@ -30,8 +30,8 @@ public class TestLifecycleInjector {
     LifecycleManager mgr = injector.getInstance(LifecycleManager.class);
     mgr.start();
 
-    Object[] obj = new Object[1000];
-    for (int i = 0; i < 1000; ++i) {
+    Object[] obj = new Object[25];
+    for (int i = 0; i < 25; ++i) {
       obj[i] = injector.getInstance(type);
     }
 
@@ -228,7 +228,7 @@ public class TestLifecycleInjector {
   }
 
   /**
-   * registers LinkedProviderBinding in 'No Scope' 1000 times
+   * registers LinkedProviderBinding in Singleton scope 1 time
    */
   @Test
   public void testSingletonOptionalPreDestroy() throws Exception {

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Monitors managed instances and invokes cleanup actions when they become
@@ -155,8 +157,9 @@ public class PreDestroyMonitor implements AutoCloseable {
                     .ofNullable(binding.acceptTargetVisitor(new DefaultBindingTargetVisitor<T, Boolean>() {
                         @Override
                         public Boolean visit(ProviderInstanceBinding<? extends T> providerInstanceBinding) {
-                            if (providerInstanceBinding.getDependencies().size() == 1) {
-                                Dependency<?> parentDep = providerInstanceBinding.getDependencies().iterator().next();
+                            Set<Dependency<?>> bindingDependencies = providerInstanceBinding.getDependencies();
+                            if (bindingDependencies.size() == 1) {
+                                Dependency<?> parentDep = bindingDependencies.iterator().next();
                                 if (parentDep.getParameterIndex() == -1) {
                                     if (parentDep.getKey().getTypeLiteral()
                                             .equals(providerInstanceBinding.getKey().getTypeLiteral())) {
@@ -206,13 +209,21 @@ public class PreDestroyMonitor implements AutoCloseable {
      */
     @Override
     public void close() throws Exception {
-        LOGGER.info("closing PreDestroyMonitor...");
         if (scopeCleaner.close()) { // executor thread to exit processing loop            
+            LOGGER.info("closing PreDestroyMonitor...");
             synchronized(cleanupActions) {
                 List<Map.Entry<Object, UnscopedCleanupAction>> actions = new ArrayList<>(cleanupActions.entrySet());
                 Collections.sort(actions, (a,b)->Long.compare(b.getValue().ordinal, a.getValue().ordinal));
                 for (Map.Entry<Object, UnscopedCleanupAction> action : actions) {
                     action.getValue().call(action.getKey());
+                }
+                if (actions.size() > 0) {
+                    LOGGER.warn("predestroy action invoked for {} unscoped instances", actions.size());
+                    Map<Object, Long> actionsBySource = actions.stream().map(Map.Entry::getValue).collect(
+                        Collectors.groupingBy(UnscopedCleanupAction::getContext, Collectors.counting()));
+                    for (Map.Entry<Object, Long> entry : actionsBySource.entrySet()) {
+                        LOGGER.warn("  including {} objects from source '{}'", entry.getValue(), entry.getKey());
+                    }
                 }
                 actions.clear();
                 cleanupActions.clear();
@@ -296,9 +307,8 @@ public class PreDestroyMonitor implements AutoCloseable {
         }
 
         /**
-         * Do nothing. When using OptionalBinder this will end up getting called each
-         * time the type is injected resulting in a memory leak if a cleanup action is
-         * added.
+         * handle unscoped instances here using a 'best effort' strategy to clean up these instances iff they
+         * still exist when the PreDestroyMonitor is closed.
          */
         @Override
         public Boolean visitNoScoping() {
@@ -338,6 +348,10 @@ public class PreDestroyMonitor implements AutoCloseable {
         @Override
         public int compareTo(UnscopedCleanupAction o) {
             return Long.compare(ordinal, o.ordinal);
+        }
+
+        public Object getContext() {
+            return context;
         }
     }
 
