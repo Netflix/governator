@@ -30,17 +30,17 @@ public class TestLifecycleInjector {
     LifecycleManager mgr = injector.getInstance(LifecycleManager.class);
     mgr.start();
 
-    Object[] obj = new Object[25];
+    Object[] objs = new Object[25];
     for (int i = 0; i < 25; ++i) {
-      obj[i] = injector.getInstance(type);
+      objs[i] = injector.getInstance(type);
     }
 
     mgr.close();
 
-    for (Object o : obj) {
+    for (Object o : objs) {
       T t = (T) o;
       Assert.assertTrue(t.isClosed());
-      int count = t.getCount();
+      int count = t.getPreDestroyCallCount();
       Assert.assertEquals("count equals " + count, 1, count);
     }
 
@@ -246,7 +246,7 @@ public class TestLifecycleInjector {
   private interface PreDestroyOnce {
     boolean isClosed();
 
-    int getCount();
+    int getPreDestroyCallCount();
   }
 
   private static class JavaxSingletonConsumer implements PreDestroyOnce {
@@ -261,8 +261,8 @@ public class TestLifecycleInjector {
       return delegate.isClosed();
     }
 
-    public int getCount() {
-      return delegate.getCount();
+    public int getPreDestroyCallCount() {
+      return delegate.getPreDestroyCallCount();
     }
   }
 
@@ -278,8 +278,8 @@ public class TestLifecycleInjector {
       return delegate.isClosed();
     }
 
-    public int getCount() {
-      return delegate.getCount();
+    public int getPreDestroyCallCount() {
+      return delegate.getPreDestroyCallCount();
     }
   }
 
@@ -301,7 +301,7 @@ public class TestLifecycleInjector {
     }
 
     @Override
-    public int getCount() {
+    public int getPreDestroyCallCount() {
       return counter;
     }
   }
@@ -323,7 +323,7 @@ public class TestLifecycleInjector {
     }
 
     @Override
-    public int getCount() {
+    public int getPreDestroyCallCount() {
       return counter;
     }
   }

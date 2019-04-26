@@ -154,29 +154,7 @@ public class PreDestroyMonitor implements AutoCloseable {
     public <T> boolean register(T destroyableInstance, Binding<T> binding, Iterable<LifecycleAction> action) {
         if (scopeCleaner.isRunning()) {
             boolean visitNoScope = Optional
-                    .ofNullable(binding.acceptTargetVisitor(new DefaultBindingTargetVisitor<T, Boolean>() {
-                        @Override
-                        public Boolean visit(ProviderInstanceBinding<? extends T> providerInstanceBinding) {
-                            Set<Dependency<?>> bindingDependencies = providerInstanceBinding.getDependencies();
-                            if (bindingDependencies.size() == 1) {
-                                Dependency<?> parentDep = bindingDependencies.iterator().next();
-                                if (parentDep.getParameterIndex() == -1) {
-                                    if (parentDep.getKey().getTypeLiteral()
-                                            .equals(providerInstanceBinding.getKey().getTypeLiteral())) {
-                                        /*
-                                         * this destroyableInstance was obtained from a Provider that _implicitly_
-                                         * depends only on another binding's destroyableInstance of the exact same type
-                                         * (i.e., dependency is not an injected parameter). Do not add new lifecycle
-                                         * method handler for this destroyableInstance if it is in 'no_scope'
-                                         */
-                                        return false;
-                                    }
-                                }
-                            }
-                            return true;
-
-                        }
-                    })).orElse(true);
+                    .ofNullable(binding.acceptTargetVisitor(new ProviderInstanceBindingVisitor<>())).orElse(true);
             return binding.acceptScopingVisitor(
                     new ManagedInstanceScopingVisitor(destroyableInstance, binding.getSource(), action, visitNoScope));
         }
@@ -213,18 +191,16 @@ public class PreDestroyMonitor implements AutoCloseable {
             LOGGER.info("closing PreDestroyMonitor...");
             synchronized(cleanupActions) {
                 List<Map.Entry<Object, UnscopedCleanupAction>> actions = new ArrayList<>(cleanupActions.entrySet());
-                Collections.sort(actions, (a,b)->Long.compare(b.getValue().ordinal, a.getValue().ordinal));
-                for (Map.Entry<Object, UnscopedCleanupAction> action : actions) {
-                    action.getValue().call(action.getKey());
-                }
                 if (actions.size() > 0) {
-                    LOGGER.warn("predestroy action invoked for {} unscoped instances", actions.size());
-                    Map<Object, Long> actionsBySource = actions.stream().map(Map.Entry::getValue).collect(
-                        Collectors.groupingBy(UnscopedCleanupAction::getContext, Collectors.counting()));
-                    for (Map.Entry<Object, Long> entry : actionsBySource.entrySet()) {
-                        LOGGER.warn("  including {} objects from source '{}'", entry.getValue(), entry.getKey());
-                    }
+                    LOGGER.warn("invoking predestroy action for {} unscoped instances", actions.size());
+                    actions.stream().map(Map.Entry::getValue).collect(
+                        Collectors.groupingBy(UnscopedCleanupAction::getContext, Collectors.counting())).forEach((source, count)->{
+                            LOGGER.warn("  including {} objects from source '{}'", count, source);
+                        });
                 }
+                actions.stream().sorted(Map.Entry.comparingByValue()).forEach(action->{
+                    Optional.ofNullable(action.getKey()).ifPresent(obj->action.getValue().call(obj));                    
+                });             
                 actions.clear();
                 cleanupActions.clear();
             }
@@ -347,7 +323,8 @@ public class PreDestroyMonitor implements AutoCloseable {
 
         @Override
         public int compareTo(UnscopedCleanupAction o) {
-            return Long.compare(ordinal, o.ordinal);
+            // invert so higher numbers are at the beginning of the list
+            return Long.compare(o.ordinal, ordinal);
         }
 
         public Object getContext() {
@@ -404,6 +381,30 @@ public class PreDestroyMonitor implements AutoCloseable {
         @Override
         public int compareTo(ScopeCleanupAction o) {
             return Long.compare(ordinal, o.ordinal);
+        }
+    }
+
+    private static class ProviderInstanceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Boolean> {
+        @Override
+        public Boolean visit(ProviderInstanceBinding<? extends T> providerInstanceBinding) {
+            Set<Dependency<?>> bindingDependencies = providerInstanceBinding.getDependencies();
+            if (bindingDependencies.size() == 1) {
+                Dependency<?> parentDep = bindingDependencies.iterator().next();
+                if (parentDep.getParameterIndex() == -1) {
+                    if (parentDep.getKey().getTypeLiteral()
+                            .equals(providerInstanceBinding.getKey().getTypeLiteral())) {
+                        /*
+                         * this destroyableInstance was obtained from a Provider that _implicitly_
+                         * depends only on another binding's destroyableInstance of the exact same type
+                         * (i.e., dependency is not an injected parameter). Do not add new lifecycle
+                         * method handler for this destroyableInstance if it is in 'no_scope'
+                         */
+                        return false;
+                    }
+                }
+            }
+            return true;
+
         }
     }
 }
