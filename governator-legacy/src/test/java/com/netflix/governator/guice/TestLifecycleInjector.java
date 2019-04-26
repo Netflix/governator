@@ -62,7 +62,7 @@ public class TestLifecycleInjector {
     }, PreDestroyOnce.class);
   }
 
-  /** registers ProviderInstanceBinding with 'no scope' 1000 times */
+  /** registers ProviderInstanceBinding with 'no scope' 25 times */
   @Test
   public void providedInstanceBindingUnscopedPreDestroy() throws Exception {
     checkCleanup(new AbstractModule() {
@@ -163,7 +163,7 @@ public class TestLifecycleInjector {
   }
 
   /**
-   * registers ConstructorBinding in 'No Scope' 1000 times
+   * registers ConstructorBinding in 'No Scope' 25 times
    * @throws Exception
    */
   @Test
@@ -195,7 +195,7 @@ public class TestLifecycleInjector {
   }
 
   /**
-   * registers ProviderMethodProviderInstanceBinding in 'No Scope' 1000 times
+   * registers ProviderMethodProviderInstanceBinding in 'No Scope' 25 times
    */
   @Test
   public void testUnscopedProviderPreDestroy() throws Exception {
@@ -213,7 +213,7 @@ public class TestLifecycleInjector {
   }
 
  /**
-   * registers LinkedProviderBinding in 'No Scope' 1000 times
+   * registers LinkedProviderBinding in 'No Scope' 25 times
    */
    @Test
   public void testOptionalPreDestroy() throws Exception {

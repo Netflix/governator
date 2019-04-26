@@ -1,5 +1,7 @@
 package com.netflix.governator.internal;
 
+import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Binding;
 import com.google.inject.Key;
@@ -143,7 +145,7 @@ public class PreDestroyMonitor implements AutoCloseable {
 
     }
 
-    private Map<Object, UnscopedCleanupAction> cleanupActions = new WeakHashMap<>();
+    private ConcurrentMap<Object, UnscopedCleanupAction> cleanupActions = new MapMaker().weakKeys().concurrencyLevel(256).makeMap();
     private ScopeCleaner scopeCleaner = new ScopeCleaner();
     private Map<Class<? extends Annotation>, Scope> scopeBindings;
 
@@ -189,21 +191,19 @@ public class PreDestroyMonitor implements AutoCloseable {
     public void close() throws Exception {
         if (scopeCleaner.close()) { // executor thread to exit processing loop            
             LOGGER.info("closing PreDestroyMonitor...");
-            synchronized(cleanupActions) {
-                List<Map.Entry<Object, UnscopedCleanupAction>> actions = new ArrayList<>(cleanupActions.entrySet());
-                if (actions.size() > 0) {
-                    LOGGER.warn("invoking predestroy action for {} unscoped instances", actions.size());
-                    actions.stream().map(Map.Entry::getValue).collect(
-                        Collectors.groupingBy(UnscopedCleanupAction::getContext, Collectors.counting())).forEach((source, count)->{
-                            LOGGER.warn("  including {} objects from source '{}'", count, source);
-                        });
-                }
-                actions.stream().sorted(Map.Entry.comparingByValue()).forEach(action->{
-                    Optional.ofNullable(action.getKey()).ifPresent(obj->action.getValue().call(obj));                    
-                });             
-                actions.clear();
-                cleanupActions.clear();
+            List<Map.Entry<Object, UnscopedCleanupAction>> actions = new ArrayList<>(cleanupActions.entrySet());
+            if (actions.size() > 0) {
+                LOGGER.warn("invoking predestroy action for {} unscoped instances", actions.size());
+                actions.stream().map(Map.Entry::getValue).collect(
+                    Collectors.groupingBy(UnscopedCleanupAction::getContext, Collectors.counting())).forEach((source, count)->{
+                        LOGGER.warn("  including {} objects from source '{}'", count, source);
+                    });
             }
+            actions.stream().sorted(Map.Entry.comparingByValue()).forEach(action->{
+                Optional.ofNullable(action.getKey()).ifPresent(obj->action.getValue().call(obj));                    
+            });             
+            actions.clear();
+            cleanupActions.clear();
             scopeBindings.clear();
             scopeBindings = Collections.emptyMap();
         } else {
@@ -289,10 +289,10 @@ public class PreDestroyMonitor implements AutoCloseable {
         @Override
         public Boolean visitNoScoping() {
             if (processNoScope) {
-                synchronized (cleanupActions) {
-                    cleanupActions.put(injectee, new UnscopedCleanupAction(context, lifecycleActions));
-                }
-                LOGGER.debug("predestroy action registered for unscoped instance {} from {}", injectee, context);
+                cleanupActions.computeIfAbsent(injectee, i->{
+                    LOGGER.debug("predestroy action registered for unscoped instance {} from {}", i, context);
+                    return new UnscopedCleanupAction(context, lifecycleActions);
+                });
             }
             return true;
         }
@@ -404,7 +404,6 @@ public class PreDestroyMonitor implements AutoCloseable {
                 }
             }
             return true;
-
         }
     }
 }
