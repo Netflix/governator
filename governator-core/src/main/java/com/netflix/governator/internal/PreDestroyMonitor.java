@@ -1,7 +1,6 @@
 package com.netflix.governator.internal;
 
 import com.google.common.collect.MapMaker;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Binding;
 import com.google.inject.Key;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -257,6 +255,8 @@ public class PreDestroyMonitor implements AutoCloseable {
             if (scope.equals(Scopes.SINGLETON)
                     || (scope instanceof AbstractScope && ((AbstractScope) scope).isSingletonScope())) {
                 scopedMarkerProvider = Providers.of(scopeCleaner.singletonMarker);
+            } else if (scope.equals(Scopes.NO_SCOPE)) {
+                return visitNoScoping();
             } else {
                 scopedMarkerProvider = scope.scope(ScopeCleanupMarker.MARKER_KEY, scopeCleaner);
             }
