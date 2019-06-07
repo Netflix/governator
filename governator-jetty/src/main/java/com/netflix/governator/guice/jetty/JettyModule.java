@@ -1,14 +1,19 @@
 
 package com.netflix.governator.guice.jetty;
 
-import java.util.EnumSet;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-import javax.servlet.DispatcherType;
-
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.ProvisionException;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.servlet.GuiceFilter;
+import com.netflix.governator.AbstractLifecycleListener;
+import com.netflix.governator.LifecycleManager;
+import com.netflix.governator.LifecycleShutdownSignal;
+import com.netflix.governator.spi.LifecycleListener;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -23,15 +28,12 @@ import org.eclipse.jetty.webapp.WebXmlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.ProvisionException;
-import com.google.inject.multibindings.Multibinder;
-import com.google.inject.servlet.GuiceFilter;
-import com.netflix.governator.AbstractLifecycleListener;
-import com.netflix.governator.LifecycleManager;
-import com.netflix.governator.LifecycleShutdownSignal;
-import com.netflix.governator.spi.LifecycleListener;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import javax.servlet.DispatcherType;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Installing JettyModule will create a Jetty web server within the context
@@ -82,6 +84,9 @@ import com.netflix.governator.spi.LifecycleListener;
  *
  */
 public final class JettyModule extends AbstractModule {
+
+    public static final String PLAINTEXT_CONNECTOR_NAME = "plaintext";
+
     private final static Logger LOG = LoggerFactory.getLogger(JettyModule.class);
     
     /**
@@ -100,7 +105,14 @@ public final class JettyModule extends AbstractModule {
             LOG.info("Jetty server starting");
             try {
                 server.start();
-                port = ((ServerConnector)server.getConnectors()[0]).getLocalPort();
+                int port = -1;
+                for (Connector connector : server.getConnectors()) {
+                    if (connector.getName().equals(PLAINTEXT_CONNECTOR_NAME)) {
+                        port = ((ServerConnector)connector).getLocalPort();
+                        break;
+                    }
+                }
+                this.port = port;
                 LOG.info("Jetty server on port {} started", port);
             } catch (Exception e) {
                 try {
@@ -183,7 +195,7 @@ public final class JettyModule extends AbstractModule {
     @Singleton
     private Server getServer(OptionalJettyConfig optionalConfig, Set<JettyConnectorProvider> jettyConnectors) {
         JettyConfig config = optionalConfig.getJettyConfig();
-        Server server = new Server(config.getPort());
+        Server server = new Server();
         Resource staticResourceBase = Resource.newClassPathResource(config.getStaticResourceBase());
         if (staticResourceBase != null) {
             // Set up a full web app since we have static content. We require the app to have its static content
@@ -194,7 +206,7 @@ public final class JettyModule extends AbstractModule {
             webAppContext.setThrowUnavailableOnStartupException(true);
             webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             webAppContext.addServlet(DefaultServlet.class, "/");
-            webAppContext.setResourceBase(config.getWebAppResourceBase());
+            webAppContext.setBaseResource(staticResourceBase);
             webAppContext.setContextPath(config.getWebAppContextPath());
             webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
             webAppContext.setConfigurations(new Configuration[]{
@@ -213,9 +225,24 @@ public final class JettyModule extends AbstractModule {
             servletContextHandler.setResourceBase(config.getWebAppResourceBase());
         }
 
+        if (config.isPlaintextSocketEnabled()) {
+            ServerConnector connector = new ServerConnector(server);
+            connector.setName(PLAINTEXT_CONNECTOR_NAME);
+            connector.setPort(config.getPort());
+            if (config.getBindToHost() != null && !config.getBindToHost().isEmpty()) {
+                connector.setHost(config.getBindToHost());
+            }
+            HttpConfiguration httpConfiguration = ((HttpConnectionFactory)connector.getConnectionFactory(HttpVersion.HTTP_1_1.asString())).getHttpConfiguration();
+            httpConfiguration.setRequestHeaderSize(config.getRequestHeaderSize());
+            server.addConnector(connector);
+        }
+
         if (jettyConnectors != null) {
             for (JettyConnectorProvider connectorProvider : jettyConnectors) {
-                server.addConnector(connectorProvider.getConnector(server));
+                Connector connector = connectorProvider.getConnector(server);
+                if (connector != null) {
+                    server.addConnector(connector);
+                }
             }
         }
 

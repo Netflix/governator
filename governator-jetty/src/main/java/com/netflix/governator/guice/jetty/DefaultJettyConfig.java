@@ -14,6 +14,12 @@ public class DefaultJettyConfig implements JettyConfig {
 
     private String webAppContextPath = "/";
 
+    private boolean plaintextSocketEnabled = true;
+
+    private int requestHeaderSize = 16384;
+
+    private String bindToHost = null;
+
     @Override
     public int getPort() {
         return port;
@@ -37,6 +43,21 @@ public class DefaultJettyConfig implements JettyConfig {
     @Override
     public String getWebAppContextPath() {
         return webAppContextPath;
+    }
+
+    @Override
+    public boolean isPlaintextSocketEnabled() {
+        return plaintextSocketEnabled;
+    }
+
+    @Override
+    public int getRequestHeaderSize() {
+        return requestHeaderSize;
+    }
+
+    @Override
+    public String getBindToHost() {
+        return bindToHost;
     }
 
     public DefaultJettyConfig setPort(int port) {
@@ -65,6 +86,21 @@ public class DefaultJettyConfig implements JettyConfig {
 
     public DefaultJettyConfig setWebAppContextPath(String webAppContextPath) {
         this.webAppContextPath = webAppContextPath;
+        return this;
+    }
+
+    public DefaultJettyConfig setPlaintextSocketEnabled(boolean plaintextSocketEnabled) {
+        this.plaintextSocketEnabled = plaintextSocketEnabled;
+        return this;
+    }
+
+    public DefaultJettyConfig setRequestHeaderSize(int requestHeaderSize) {
+        this.requestHeaderSize = requestHeaderSize;
+        return this;
+    }
+
+    public DefaultJettyConfig setBindToHost(String bindToHost) {
+        this.bindToHost = bindToHost;
         return this;
     }
 }

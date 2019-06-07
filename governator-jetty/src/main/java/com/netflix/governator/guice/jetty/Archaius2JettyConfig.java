@@ -34,4 +34,12 @@ public interface Archaius2JettyConfig extends JettyConfig {
      */
     @DefaultValue("/")
     String getWebAppContextPath();
+
+    @DefaultValue("true")
+    boolean isPlaintextSocketEnabled();
+
+    @DefaultValue("16384")
+    int getRequestHeaderSize();
+
+    String getBindToHost();
 }
