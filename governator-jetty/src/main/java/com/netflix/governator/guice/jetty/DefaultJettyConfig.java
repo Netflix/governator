@@ -14,9 +14,9 @@ public class DefaultJettyConfig implements JettyConfig {
 
     private String webAppContextPath = "/";
 
-    private boolean plaintextSocketEnabled = true;
+    private boolean unencryptedSocketEnabled = true;
 
-    private int requestHeaderSize = 16384;
+    private int requestHeaderSizeBytes = 16384;
 
     private String bindToHost = null;
 
@@ -46,13 +46,13 @@ public class DefaultJettyConfig implements JettyConfig {
     }
 
     @Override
-    public boolean isPlaintextSocketEnabled() {
-        return plaintextSocketEnabled;
+    public boolean isUnencryptedSocketEnabled() {
+        return unencryptedSocketEnabled;
     }
 
     @Override
-    public int getRequestHeaderSize() {
-        return requestHeaderSize;
+    public int getRequestHeaderSizeBytes() {
+        return requestHeaderSizeBytes;
     }
 
     @Override
@@ -89,13 +89,13 @@ public class DefaultJettyConfig implements JettyConfig {
         return this;
     }
 
-    public DefaultJettyConfig setPlaintextSocketEnabled(boolean plaintextSocketEnabled) {
-        this.plaintextSocketEnabled = plaintextSocketEnabled;
+    public DefaultJettyConfig setUnencryptedSocketEnabled(boolean unencryptedSocketEnabled) {
+        this.unencryptedSocketEnabled = unencryptedSocketEnabled;
         return this;
     }
 
-    public DefaultJettyConfig setRequestHeaderSize(int requestHeaderSize) {
-        this.requestHeaderSize = requestHeaderSize;
+    public DefaultJettyConfig setRequestHeaderSizeBytes(int requestHeaderSizeBytes) {
+        this.requestHeaderSizeBytes = requestHeaderSizeBytes;
         return this;
     }
 

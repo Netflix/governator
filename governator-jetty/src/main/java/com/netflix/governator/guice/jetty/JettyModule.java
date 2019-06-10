@@ -85,7 +85,7 @@ import java.util.Set;
  */
 public final class JettyModule extends AbstractModule {
 
-    public static final String PLAINTEXT_CONNECTOR_NAME = "plaintext";
+    public static final String UNENCRYPTED_CONNECTOR_NAME = "unencrypted";
 
     private final static Logger LOG = LoggerFactory.getLogger(JettyModule.class);
     
@@ -107,7 +107,7 @@ public final class JettyModule extends AbstractModule {
                 server.start();
                 int port = -1;
                 for (Connector connector : server.getConnectors()) {
-                    if (connector.getName().equals(PLAINTEXT_CONNECTOR_NAME)) {
+                    if (connector.getName().equals(UNENCRYPTED_CONNECTOR_NAME)) {
                         port = ((ServerConnector)connector).getLocalPort();
                         break;
                     }
@@ -225,15 +225,15 @@ public final class JettyModule extends AbstractModule {
             servletContextHandler.setResourceBase(config.getWebAppResourceBase());
         }
 
-        if (config.isPlaintextSocketEnabled()) {
+        if (config.isUnencryptedSocketEnabled()) {
             ServerConnector connector = new ServerConnector(server);
-            connector.setName(PLAINTEXT_CONNECTOR_NAME);
+            connector.setName(UNENCRYPTED_CONNECTOR_NAME);
             connector.setPort(config.getPort());
             if (config.getBindToHost() != null && !config.getBindToHost().isEmpty()) {
                 connector.setHost(config.getBindToHost());
             }
             HttpConfiguration httpConfiguration = ((HttpConnectionFactory)connector.getConnectionFactory(HttpVersion.HTTP_1_1.asString())).getHttpConfiguration();
-            httpConfiguration.setRequestHeaderSize(config.getRequestHeaderSize());
+            httpConfiguration.setRequestHeaderSize(config.getRequestHeaderSizeBytes());
             server.addConnector(connector);
         }
 
@@ -244,6 +244,10 @@ public final class JettyModule extends AbstractModule {
                     server.addConnector(connector);
                 }
             }
+        }
+
+        if (server.getConnectors().length == 0) {
+            throw new IllegalStateException("No connectors have been configured. Either set unencryptedSocketEnabled=true or bind a JettyConnectorProvider");
         }
 
         return server;
