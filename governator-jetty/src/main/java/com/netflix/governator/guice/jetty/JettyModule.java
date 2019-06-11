@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.DispatcherType;
+import java.net.MalformedURLException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -85,8 +86,9 @@ import java.util.Set;
  */
 public final class JettyModule extends AbstractModule {
 
-    public static final String UNENCRYPTED_CONNECTOR_NAME = "unencrypted";
+    public final static String UNENCRYPTED_CONNECTOR_NAME = "unencrypted";
 
+    private final static String CLASSPATH_RESOURCE_PREFIX = "classpath:";
     private final static Logger LOG = LoggerFactory.getLogger(JettyModule.class);
     
     /**
@@ -196,6 +198,20 @@ public final class JettyModule extends AbstractModule {
     private Server getServer(OptionalJettyConfig optionalConfig, Set<JettyConnectorProvider> jettyConnectors) {
         JettyConfig config = optionalConfig.getJettyConfig();
         Server server = new Server();
+
+        Resource webAppResourceBase = null;
+        if (config.getWebAppResourceBase() != null && !config.getWebAppResourceBase().isEmpty()) {
+            if (config.getWebAppResourceBase().startsWith(CLASSPATH_RESOURCE_PREFIX)) {
+                webAppResourceBase = Resource.newClassPathResource(config.getWebAppResourceBase().substring(CLASSPATH_RESOURCE_PREFIX.length()));
+            } else {
+                try {
+                    webAppResourceBase = Resource.newResource(config.getWebAppResourceBase());
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
         Resource staticResourceBase = Resource.newClassPathResource(config.getStaticResourceBase());
         if (staticResourceBase != null) {
             // Set up a full web app since we have static content. We require the app to have its static content
@@ -206,7 +222,7 @@ public final class JettyModule extends AbstractModule {
             webAppContext.setThrowUnavailableOnStartupException(true);
             webAppContext.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             webAppContext.addServlet(DefaultServlet.class, "/");
-            webAppContext.setBaseResource(staticResourceBase);
+            webAppContext.setBaseResource(webAppResourceBase);
             webAppContext.setContextPath(config.getWebAppContextPath());
             webAppContext.setAttribute(WebInfConfiguration.CONTAINER_JAR_PATTERN, ".*\\.jar$");
             webAppContext.setConfigurations(new Configuration[]{
@@ -222,7 +238,7 @@ public final class JettyModule extends AbstractModule {
                     new ServletContextHandler(server, config.getWebAppContextPath(), ServletContextHandler.SESSIONS);
             servletContextHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
             servletContextHandler.addServlet(DefaultServlet.class, "/");
-            servletContextHandler.setResourceBase(config.getWebAppResourceBase());
+            servletContextHandler.setBaseResource(webAppResourceBase);
         }
 
         if (config.isUnencryptedSocketEnabled()) {
