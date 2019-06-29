@@ -28,5 +28,10 @@ public interface JettyConfig {
      * @return the web app context path
      */
     default String getWebAppContextPath() { return "/"; }
-    
+
+    boolean isUnencryptedSocketEnabled();
+
+    int getRequestHeaderSizeBytes();
+
+    String getBindToHost();
 }

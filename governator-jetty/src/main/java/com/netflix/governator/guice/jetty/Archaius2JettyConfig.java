@@ -34,4 +34,12 @@ public interface Archaius2JettyConfig extends JettyConfig {
      */
     @DefaultValue("/")
     String getWebAppContextPath();
+
+    @DefaultValue("true")
+    boolean isUnencryptedSocketEnabled();
+
+    @DefaultValue("16384")
+    int getRequestHeaderSizeBytes();
+
+    String getBindToHost();
 }

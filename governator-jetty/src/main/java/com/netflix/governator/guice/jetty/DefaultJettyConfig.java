@@ -14,6 +14,12 @@ public class DefaultJettyConfig implements JettyConfig {
 
     private String webAppContextPath = "/";
 
+    private boolean unencryptedSocketEnabled = true;
+
+    private int requestHeaderSizeBytes = 16384;
+
+    private String bindToHost = null;
+
     @Override
     public int getPort() {
         return port;
@@ -37,6 +43,21 @@ public class DefaultJettyConfig implements JettyConfig {
     @Override
     public String getWebAppContextPath() {
         return webAppContextPath;
+    }
+
+    @Override
+    public boolean isUnencryptedSocketEnabled() {
+        return unencryptedSocketEnabled;
+    }
+
+    @Override
+    public int getRequestHeaderSizeBytes() {
+        return requestHeaderSizeBytes;
+    }
+
+    @Override
+    public String getBindToHost() {
+        return bindToHost;
     }
 
     public DefaultJettyConfig setPort(int port) {
@@ -65,6 +86,21 @@ public class DefaultJettyConfig implements JettyConfig {
 
     public DefaultJettyConfig setWebAppContextPath(String webAppContextPath) {
         this.webAppContextPath = webAppContextPath;
+        return this;
+    }
+
+    public DefaultJettyConfig setUnencryptedSocketEnabled(boolean unencryptedSocketEnabled) {
+        this.unencryptedSocketEnabled = unencryptedSocketEnabled;
+        return this;
+    }
+
+    public DefaultJettyConfig setRequestHeaderSizeBytes(int requestHeaderSizeBytes) {
+        this.requestHeaderSizeBytes = requestHeaderSizeBytes;
+        return this;
+    }
+
+    public DefaultJettyConfig setBindToHost(String bindToHost) {
+        this.bindToHost = bindToHost;
         return this;
     }
 }
