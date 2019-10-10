@@ -8,6 +8,10 @@ dependencies {
     compile 'org.eclipse.jetty:jetty-webapp:9.2.12.v20150709'
     compileOnly "com.netflix.archaius:archaius2-api:${archaius2_version}"
     compileOnly "com.netflix.archaius:archaius2-core:${archaius2_version}"
+
+    implementation "javax.xml.bind:jaxb-api:2.3.1"
+    runtime "com.sun.xml.bind:jaxb-core:2.3.0.1"
+    runtime "com.sun.xml.bind:jaxb-impl:2.3.2"
     
     testCompile 'com.sun.jersey.contribs:jersey-guice:1.19'
 }

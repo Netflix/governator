@@ -235,7 +235,7 @@ public class JavaClasspath
         final StringBuffer className = new StringBuffer();
 
         ClassReader cr = new ClassReader(classBytes);
-        cr.accept(new ClassVisitor(Opcodes.ASM5) {
+        cr.accept(new ClassVisitor(Opcodes.ASM7) {
             @Override
             public void visit(int version, int access, String name, String signature, String superName, String[] interfaces)
             {

@@ -14,6 +14,10 @@ dependencies {
 
     compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
 
+    implementation "javax.xml.bind:jaxb-api:2.3.1"
+    runtime "com.sun.xml.bind:jaxb-core:2.3.0.1"
+    runtime "com.sun.xml.bind:jaxb-impl:2.3.2"
+
     testCompile'org.eclipse.jetty:jetty-servlet:9.2.12.v20150709'
     testCompile project(':governator-jetty')
 }
