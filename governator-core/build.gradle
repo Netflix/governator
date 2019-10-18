@@ -4,6 +4,7 @@ dependencies {
     compile     project(':governator-api')
     compile     "javax.inject:javax.inject:1"
     compile     "org.slf4j:slf4j-api:${slf4j_version}"
+    compile     "jakarta.annotation:jakarta.annotation-api:1.3.5"
     compile     "com.google.inject:guice:${guice_version}"
     compile     "com.google.inject.extensions:guice-multibindings:${guice_version}"
     compile     "com.google.inject.extensions:guice-grapher:${guice_version}"    // should be provided - only if you want graphing
@@ -12,7 +13,7 @@ dependencies {
     testCompile "org.hamcrest:hamcrest-library:${hamcrest_version}"
     testCompile "org.mockito:mockito-all:1.9.5"
     testCompile "com.google.code.findbugs:jsr305:3.0.0"
-    
+
     test {
         useJUnit()
     }
