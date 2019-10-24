@@ -66,7 +66,7 @@ public final class AnnotationFinder extends ClassVisitor {
     }
 
     public AnnotationFinder(ClassLoader classLoader, Collection<Class<? extends Annotation>> annotations) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM7);
         annotationTypes = new HashSet<>();
         for (Class<?> annotation : annotations)
             annotationTypes.add(getType(annotation));
@@ -100,7 +100,7 @@ public final class AnnotationFinder extends ClassVisitor {
         String name;
 
         public AnnotationSeekingFieldVisitor(String name, FieldVisitor fv) {
-            super(Opcodes.ASM5, fv);
+            super(Opcodes.ASM7, fv);
             this.name = name;
         }
 
@@ -129,7 +129,7 @@ public final class AnnotationFinder extends ClassVisitor {
         String methodDesc;
 
         public AnnotationSeekingMethodVisitor(MethodVisitor mv, String name, String desc) {
-            super(Opcodes.ASM5, mv);
+            super(Opcodes.ASM7, mv);
             this.name = name;
             this.methodDesc = desc;
         }

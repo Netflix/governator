@@ -8,6 +8,7 @@ dependencies {
     compile project(':governator-providers')
 
     compile "com.google.inject.extensions:guice-servlet:${guice_version}"
+    compile "javax.xml.bind:jaxb-api:${jaxb_version}"
 
     compile 'com.sun.jersey:jersey-server:1.19'
     compile 'com.sun.jersey.contribs:jersey-guice:1.19'
