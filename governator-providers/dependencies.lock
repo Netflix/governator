@@ -1,0 +1,58 @@
+{
+    "compileClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "javax.inject:javax.inject": {
+            "locked": "1",
+            "requested": "1"
+        }
+    },
+    "runtimeClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "javax.inject:javax.inject": {
+            "locked": "1",
+            "requested": "1"
+        }
+    },
+    "testCompileClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "javax.inject:javax.inject": {
+            "locked": "1",
+            "requested": "1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "javax.inject:javax.inject": {
+            "locked": "1",
+            "requested": "1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    }
+}
