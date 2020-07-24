@@ -15,7 +15,7 @@
  */
 
 plugins {
-    id 'nebula.netflixoss' version '8.0.0'
+    id 'nebula.netflixoss' version '8.8.1'
 }
 
 subprojects {
@@ -29,7 +29,7 @@ subprojects {
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-    
+
     group = "com.netflix.governator"
 
     dependencies {
@@ -43,7 +43,7 @@ subprojects {
             downloadJavadoc = true
         }
     }
-        
+
     tasks.withType(Javadoc) {
       options.addStringOption('Xdoclint:none', '-quiet')
     }
