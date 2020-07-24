@@ -75,6 +75,10 @@
             ],
             "locked": "2.3.1"
         },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
         "org.apache.commons:commons-lang3": {
             "locked": "3.3.2",
             "requested": "3.3.2"
