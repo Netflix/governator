@@ -7,8 +7,8 @@ dependencies {
     compile "javax.xml.bind:jaxb-api:${jaxb_version}"
 
     compile 'com.sun.jersey:jersey-server:1.19'
-    compile 'org.eclipse.jetty:jetty-servlet:9.2.29.v20191105'
-    compile 'org.eclipse.jetty:jetty-webapp:9.2.29.v20191105'
+    compile 'org.eclipse.jetty:jetty-servlet:9.4.33.v20201020'
+    compile 'org.eclipse.jetty:jetty-webapp:9.4.33.v20201020'
     compileOnly "com.netflix.archaius:archaius2-api:${archaius2_version}"
     compileOnly "com.netflix.archaius:archaius2-core:${archaius2_version}"
     

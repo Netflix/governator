@@ -1,0 +1,178 @@
+{
+    "compileClasspath": {
+        "com.google.inject.extensions:guice-grapher": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "locked": "1.3.5",
+            "requested": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1",
+            "requested": "1"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    },
+    "runtimeClasspath": {
+        "com.google.inject.extensions:guice-grapher": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "locked": "1.3.5",
+            "requested": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1",
+            "requested": "1"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    },
+    "testCompileClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "locked": "3.0.0",
+            "requested": "3.0.0"
+        },
+        "com.google.inject.extensions:guice-grapher": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "locked": "1.3.5",
+            "requested": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1",
+            "requested": "1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.hamcrest:hamcrest-library": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mockito:mockito-all": {
+            "locked": "1.9.5",
+            "requested": "1.9.5"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "locked": "3.0.0",
+            "requested": "3.0.0"
+        },
+        "com.google.inject.extensions:guice-grapher": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "locked": "1.3.5",
+            "requested": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1",
+            "requested": "1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.hamcrest:hamcrest-library": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mockito:mockito-all": {
+            "locked": "1.9.5",
+            "requested": "1.9.5"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    }
+}
