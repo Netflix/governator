@@ -1,0 +1,62 @@
+{
+    "compileClasspath": {
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1"
+        }
+    },
+    "runtimeClasspath": {
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1"
+        }
+    },
+    "testCompileClasspath": {
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.netflix.governator:governator-api": {
+            "project": true
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api"
+            ],
+            "locked": "1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    }
+}

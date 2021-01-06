@@ -32,7 +32,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.DispatcherType;
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -206,7 +206,7 @@ public final class JettyModule extends AbstractModule {
             } else {
                 try {
                     webAppResourceBase = Resource.newResource(config.getWebAppResourceBase());
-                } catch (MalformedURLException e) {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }

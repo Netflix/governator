@@ -7,3 +7,5 @@ dependencies {
     compile 'cglib:cglib-nodep:3.2.2'
     
 }
+
+javadoc {options.encoding = "ISO-8859-1"}

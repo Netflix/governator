@@ -1,0 +1,354 @@
+{
+    "compileClasspath": {
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-servlet": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "project": true
+        },
+        "com.netflix.governator:governator-providers": {
+            "project": true
+        },
+        "com.sun.jersey.contribs:jersey-guice": {
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "com.sun.jersey:jersey-server": {
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "1"
+        },
+        "javax.servlet:javax.servlet-api": {
+            "locked": "3.0.1",
+            "requested": "3.0.1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "locked": "2.3.1",
+            "requested": "2.3.1"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        }
+    },
+    "runtimeClasspath": {
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-servlet": {
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "project": true
+        },
+        "com.netflix.governator:governator-providers": {
+            "project": true
+        },
+        "com.sun.jersey.contribs:jersey-guice": {
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "com.sun.jersey:jersey-server": {
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "locked": "2.3.1",
+            "requested": "2.3.1"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        }
+    },
+    "testCompileClasspath": {
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-servlet": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-jetty": {
+            "project": true
+        },
+        "com.netflix.governator:governator-providers": {
+            "project": true
+        },
+        "com.sun.jersey.contribs:jersey-guice": {
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "com.sun.jersey:jersey-server": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "2.3.1",
+            "requested": "2.3.1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.eclipse.jetty:jetty-servlet": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "9.4.33.v20201020",
+            "requested": "9.4.33.v20201020"
+        },
+        "org.eclipse.jetty:jetty-webapp": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "9.4.33.v20201020"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-servlet": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "4.1.0",
+            "requested": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-jetty": {
+            "project": true
+        },
+        "com.netflix.governator:governator-providers": {
+            "project": true
+        },
+        "com.sun.jersey.contribs:jersey-guice": {
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "com.sun.jersey:jersey-server": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "1.19",
+            "requested": "1.19"
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-providers"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "2.3.1",
+            "requested": "2.3.1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.eclipse.jetty:jetty-servlet": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "9.4.33.v20201020",
+            "requested": "9.4.33.v20201020"
+        },
+        "org.eclipse.jetty:jetty-webapp": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-jetty"
+            ],
+            "locked": "9.4.33.v20201020"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        }
+    }
+}

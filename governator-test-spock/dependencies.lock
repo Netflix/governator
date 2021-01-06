@@ -1,0 +1,534 @@
+{
+    "compileClasspath": {
+        "cglib:cglib-nodep": {
+            "locked": "3.2.2",
+            "requested": "3.2.2"
+        },
+        "com.cyrusinnovation:mockito-groovy-support": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "com.fasterxml.jackson.core:jackson-databind": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.4.3"
+        },
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.archaius:archaius2-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-test": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.governator:governator": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-test": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.3.1"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "3.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "1.9.5"
+        },
+        "org.ow2.asm:asm": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "7.2"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        },
+        "org.spockframework:spock-core": {
+            "locked": "1.1-groovy-2.4",
+            "requested": "1.1-groovy-2.4"
+        }
+    },
+    "runtimeClasspath": {
+        "cglib:cglib-nodep": {
+            "locked": "3.2.2",
+            "requested": "3.2.2"
+        },
+        "com.cyrusinnovation:mockito-groovy-support": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "com.fasterxml.jackson.core:jackson-databind": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.4.3"
+        },
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.archaius:archaius2-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-test": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.governator:governator": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-test": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.3.1"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "3.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "1.9.5"
+        },
+        "org.ow2.asm:asm": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "7.2"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        },
+        "org.spockframework:spock-core": {
+            "locked": "1.1-groovy-2.4",
+            "requested": "1.1-groovy-2.4"
+        }
+    },
+    "testCompileClasspath": {
+        "cglib:cglib-nodep": {
+            "locked": "3.2.2",
+            "requested": "3.2.2"
+        },
+        "com.cyrusinnovation:mockito-groovy-support": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "com.fasterxml.jackson.core:jackson-databind": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.4.3"
+        },
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.archaius:archaius2-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-test": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.governator:governator": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-test": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.3.1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "3.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "1.9.5"
+        },
+        "org.ow2.asm:asm": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "7.2"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        },
+        "org.spockframework:spock-core": {
+            "locked": "1.1-groovy-2.4",
+            "requested": "1.1-groovy-2.4"
+        }
+    },
+    "testRuntimeClasspath": {
+        "cglib:cglib-nodep": {
+            "locked": "3.2.2",
+            "requested": "3.2.2"
+        },
+        "com.cyrusinnovation:mockito-groovy-support": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "com.fasterxml.jackson.core:jackson-databind": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.4.3"
+        },
+        "com.google.inject.extensions:guice-grapher": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject.extensions:guice-multibindings": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.google.inject:guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "4.1.0"
+        },
+        "com.netflix.archaius:archaius2-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-guice": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.archaius:archaius2-test": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "2.1.10"
+        },
+        "com.netflix.governator:governator": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-core",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator",
+                "com.netflix.governator:governator-test"
+            ],
+            "project": true
+        },
+        "com.netflix.governator:governator-test": {
+            "project": true
+        },
+        "jakarta.annotation:jakarta.annotation-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.3.5"
+        },
+        "javax.inject:javax.inject": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-api",
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1"
+        },
+        "javax.xml.bind:jaxb-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "2.3.1"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.12"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "3.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-test"
+            ],
+            "locked": "1.9.5"
+        },
+        "org.ow2.asm:asm": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator"
+            ],
+            "locked": "7.2"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "com.netflix.governator:governator-core"
+            ],
+            "locked": "1.7.2"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.2",
+            "requested": "1.7.2"
+        },
+        "org.spockframework:spock-core": {
+            "locked": "1.1-groovy-2.4",
+            "requested": "1.1-groovy-2.4"
+        }
+    }
+}
