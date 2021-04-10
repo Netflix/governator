@@ -20,7 +20,6 @@ import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
-import com.google.inject.internal.CircularDependencyProxy;
 import com.netflix.governator.internal.AbstractScope;
 
 import java.util.Map;
@@ -34,6 +33,19 @@ class FineGrainedLazySingletonScopeImpl extends AbstractScope
 {
     private static final Object NULL = new Object();
     private static final Map<Key<?>, LockRecord> locks = Maps.newHashMap();
+
+    private static final Class<?> circularProxyClazz;
+
+    static {
+        Class<?> clz;
+        try {
+            clz = Class.forName("com.google.inject.internal.CircularDependencyProxy");
+        } catch (ClassNotFoundException e) {
+            clz = null;
+            // discard exception.
+        }
+        circularProxyClazz = clz;
+    }
 
     private static class LockRecord
     {
@@ -68,7 +80,8 @@ class FineGrainedLazySingletonScopeImpl extends AbstractScope
                                 T provided = creator.get();
 
                                 // don't remember proxies; these exist only to serve circular dependencies
-                                if ( provided instanceof CircularDependencyProxy )
+                                // Don't do an instanceof check to avoid referencing Guice internal classes.
+                                if (circularProxyClazz != null && circularProxyClazz.isInstance(provided))
                                 {
                                     return provided;
                                 }
