@@ -2,27 +2,27 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 // Add a new configuration 'bundle' for fine grain control on what artifacts to shadow.
 configurations {
     bundle
-    compile.extendsFrom bundle
+    api.extendsFrom bundle
 }
 
 dependencies {
-    compile    project(':governator-api')
-    compile    project(':governator-core')
-    compile    'com.fasterxml.jackson.core:jackson-databind:2.4.3'
-    compile    "javax.xml.bind:jaxb-api:${jaxb_version}"
+    api    project(':governator-api')
+    api    project(':governator-core')
+    api    'com.fasterxml.jackson.core:jackson-databind:2.4.3'
+    api    "javax.xml.bind:jaxb-api:${jaxb_version}"
 
     // ASM is being shaded
     bundle    'org.ow2.asm:asm:7.2'
 
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
-    testCompile 'com.tngtech.java:junit-dataprovider:1.11.0'
-    testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile "com.google.code.findbugs:jsr305:3.0.0"
+    testImplementation 'org.hamcrest:hamcrest-library:1.3'
+    testImplementation 'com.tngtech.java:junit-dataprovider:1.11.0'
+    testImplementation 'org.mockito:mockito-core:1.10.19'
+    testImplementation "com.google.code.findbugs:jsr305:3.0.0"
 }
 
 shadowJar {

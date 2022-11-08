@@ -1,5 +1,5 @@
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 dependencies {
-    compile     project(':governator-api')
+    api     project(':governator-api')
 }

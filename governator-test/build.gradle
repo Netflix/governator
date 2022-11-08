@@ -1,18 +1,18 @@
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 dependencies {
-    compile    project(':governator')
-    compile    project(':governator-api')
-    compile    project(':governator-core')
-    compile    "com.netflix.archaius:archaius2-guice:${archaius2_version}"
-    compile    ("com.netflix.archaius:archaius2-test:${archaius2_version}") {
+    api    project(':governator')
+    api    project(':governator-api')
+    api    project(':governator-core')
+    api    "com.netflix.archaius:archaius2-guice:${archaius2_version}"
+    api    ("com.netflix.archaius:archaius2-test:${archaius2_version}") {
         exclude module: 'junit'
     }
-    compile "com.netflix.archaius:archaius2-api:${archaius2_version}"
-    compile "com.netflix.archaius:archaius2-core:${archaius2_version}"
-    compile    'org.apache.commons:commons-lang3:3.3.2'
-    compile    'org.mockito:mockito-core:1.9.5'
+    api "com.netflix.archaius:archaius2-api:${archaius2_version}"
+    api "com.netflix.archaius:archaius2-core:${archaius2_version}"
+    api    'org.apache.commons:commons-lang3:3.3.2'
+    api    'org.mockito:mockito-core:1.9.5'
     compileOnly 'junit:junit:4.12'
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
     
 }
