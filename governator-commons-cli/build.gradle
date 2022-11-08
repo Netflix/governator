@@ -1,7 +1,7 @@
 // Establish version and status
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 dependencies {
-    compile     project(':governator')
-    compile     "commons-cli:commons-cli:1.2"
+    api     project(':governator')
+    api     "commons-cli:commons-cli:1.2"
 }

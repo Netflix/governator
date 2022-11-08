@@ -1,9 +1,9 @@
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
     
 dependencies {
-    compile     "javax.inject:javax.inject:1"
-    compile     "com.google.inject:guice:${guice_version}"
+    api     "javax.inject:javax.inject:1"
+    api     "com.google.inject:guice:${guice_version}"
 }

@@ -1,20 +1,20 @@
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile project(':governator-core')
-    compile project(':governator-providers')
+    api project(':governator-core')
+    api project(':governator-providers')
 
-    compile "com.google.inject.extensions:guice-servlet:${guice_version}"
-    compile "javax.xml.bind:jaxb-api:${jaxb_version}"
+    api "com.google.inject.extensions:guice-servlet:${guice_version}"
+    api "javax.xml.bind:jaxb-api:${jaxb_version}"
 
-    compile 'com.sun.jersey:jersey-server:1.19'
-    compile 'com.sun.jersey.contribs:jersey-guice:1.19'
+    api 'com.sun.jersey:jersey-server:1.19'
+    api 'com.sun.jersey.contribs:jersey-guice:1.19'
 
     compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
 
-    testCompile'org.eclipse.jetty:jetty-servlet:9.4.33.v20201020'
-    testCompile project(':governator-jetty')
+    testImplementation 'org.eclipse.jetty:jetty-servlet:9.4.33.v20201020'
+    testImplementation project(':governator-jetty')
 }
