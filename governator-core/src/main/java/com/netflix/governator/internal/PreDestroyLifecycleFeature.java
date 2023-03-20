@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import javax.annotation.PreDestroy;
 
@@ -53,7 +54,7 @@ public final class PreDestroyLifecycleFeature implements LifecycleFeature {
         @Override
         public boolean visit(final Class<?> clazz) {
             boolean continueVisit = !clazz.isInterface();
-            if (continueVisit && AutoCloseable.class.isAssignableFrom(clazz)) {
+            if (continueVisit && AutoCloseable.class.isAssignableFrom(clazz) && !ExecutorService.class.isAssignableFrom(clazz)) {
                 AutoCloseableLifecycleAction closeableAction = new AutoCloseableLifecycleAction(
                         clazz.asSubclass(AutoCloseable.class));
                 LOG.debug("adding action {}", closeableAction);
