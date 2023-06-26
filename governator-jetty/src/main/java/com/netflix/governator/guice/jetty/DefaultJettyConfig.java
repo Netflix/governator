@@ -18,7 +18,7 @@ public class DefaultJettyConfig implements JettyConfig {
 
     private int requestHeaderSizeBytes = 16384;
 
-    private String bindToHost = null;
+    private String bindToHost;
 
     @Override
     public int getPort() {

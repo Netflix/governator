@@ -5,7 +5,7 @@ import com.netflix.governator.ShutdownHookModule;
 import com.netflix.governator.guice.jetty.JettyModule;
 
 public class JettyGuiceContextListenerExample {
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         new Governator()
             .addModules(
                 new SampleServletModule(), 

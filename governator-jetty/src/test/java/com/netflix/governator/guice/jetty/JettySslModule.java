@@ -84,7 +84,7 @@ public class JettySslModule extends AbstractModule {
                 .toInstance(new SslJettyConnectorProvider(keyStore));
     }
 
-    private static class SslJettyConnectorProvider implements JettyConnectorProvider {
+    private static final class SslJettyConnectorProvider implements JettyConnectorProvider {
 
         private final KeyStore keyStore;
 

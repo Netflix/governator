@@ -86,10 +86,10 @@ import java.util.Set;
  */
 public final class JettyModule extends AbstractModule {
 
-    public final static String UNENCRYPTED_CONNECTOR_NAME = "unencrypted";
+    public static final String UNENCRYPTED_CONNECTOR_NAME = "unencrypted";
 
-    private final static String CLASSPATH_RESOURCE_PREFIX = "classpath:";
-    private final static Logger LOG = LoggerFactory.getLogger(JettyModule.class);
+    private static final String CLASSPATH_RESOURCE_PREFIX = "classpath:";
+    private static final Logger LOG = LoggerFactory.getLogger(JettyModule.class);
     
     /**
      * Eager singleton to start the Jetty Server
