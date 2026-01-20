@@ -8,6 +8,10 @@ To simplify integration testing of components wired together using Guice, you ma
 * Annotate dependencies with [@WrapWithSpy](https://github.com/Netflix/governator/blob/master/governator-test/src/main/java/com/netflix/governator/guice/test/WrapWithSpy.java) to wrap any binding with a Mockito spy.
 * Annotate parent classes, test classes, and/or test methods with [@TestPropertyOverride](https://github.com/Netflix/archaius/blob/2.x/archaius2-test/src/main/java/com/netflix/archaius/test/TestPropertyOverride.java) to set [Archaius2](https://github.com/Netflix/archaius/tree/2.x) property overrides for your Injector **(Note: You must include [ArchaiusModule](https://github.com/Netflix/archaius/blob/2.x/archaius2-guice/src/main/java/com/netflix/archaius/guice/ArchaiusModule.java) yourself in @ModulesForTesting to use this feature.)**
 
+# Tips and Tricks
+* The `Injector` is created only once for each test class, and shared between all the tests. Each test class has a separate `Injector`.
+* You can get hold of the `Injector` instance by `@Inject Injector`, though in general prefer to `@Inject` the actual object you want instead of the injector.
+
 # Dependency
 Add the following to your build.gradle
 ```
