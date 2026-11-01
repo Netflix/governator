@@ -14,9 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Binding;
 import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
-import com.google.inject.matcher.Matchers;
+import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.MultibindingsScanner;
 import com.google.inject.spi.ProvisionListener;
@@ -161,12 +162,6 @@ public final class LifecycleModule extends AbstractModule {
                 return;
             }
             
-            //Ignore for Spring-managed bindings
-            Object source = provision.getBinding().getSource();
-            if(source != null && source.toString().contains("spring-guice")) {
-                return;
-            }
-            
             final TypeLifecycleActions actions = getOrCreateActions(injectee.getClass());
             
             // Call all postConstructActions for this injectee
@@ -194,7 +189,14 @@ public final class LifecycleModule extends AbstractModule {
     protected void configure() {
         requestStaticInjection(LifecycleProvisionListener.class);
         bind(LifecycleProvisionListener.class).toInstance(provisionListener);
-        bindListener(Matchers.any(), provisionListener);
+        // Guice caches this match per binding, avoiding source formatting on every provision.
+        bindListener(new AbstractMatcher<Binding<?>>() {
+            @Override
+            public boolean matches(Binding<?> binding) {
+                Object source = binding.getSource();
+                return source == null || !source.toString().contains("spring-guice");
+            }
+        }, provisionListener);
         Multibinder.newSetBinder(binder(), LifecycleFeature.class);
         
         install(MultibindingsScanner.asModule());
