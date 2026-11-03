@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -23,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.CreationException;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.google.inject.Scopes;
 import com.netflix.governator.spi.LifecycleListener;
 
@@ -89,6 +92,62 @@ public class LifecycleModuleTest {
         public String toString() {
             return "TrackingLifecycleListener@" + name;
         }
+    }
+
+    static class CountingSource {
+        final AtomicInteger calls = new AtomicInteger();
+        final String description;
+
+        CountingSource(String description) {
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            calls.incrementAndGet();
+            return description;
+        }
+    }
+
+    @Test
+    public void checkBindingSourceOnceForRepeatedProvisions() {
+        final CountingSource source = new CountingSource("application binding");
+        try (LifecycleInjector injector = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().withSource(source).bind(Object.class).toProvider(Object::new);
+            }
+        }).createInjector()) {
+            for (int i = 0; i < 10; i++) {
+                injector.getInstance(Object.class);
+            }
+            Assert.assertEquals(1, source.calls.get());
+        }
+    }
+
+    @Test
+    public void leaveSpringManagedLifecycleToSpring() {
+        final TrackingLifecycleListener normal = new TrackingLifecycleListener("normal");
+        final TrackingLifecycleListener spring = new TrackingLifecycleListener("spring");
+        final Key<TrackingLifecycleListener> normalKey =
+                Key.get(TrackingLifecycleListener.class, Names.named("normal"));
+        final Key<TrackingLifecycleListener> springKey =
+                Key.get(TrackingLifecycleListener.class, Names.named("spring"));
+
+        try (LifecycleInjector injector = InjectorBuilder.fromModule(new AbstractModule() {
+            @Override
+            protected void configure() {
+                binder().withSource("application binding").bind(normalKey).toProvider(() -> normal);
+                binder().withSource("generated spring-guice binding").bind(springKey).toProvider(() -> spring);
+            }
+        }).createInjector()) {
+            injector.getInstance(normalKey);
+            injector.getInstance(springKey);
+            Assert.assertTrue(normal.events.contains(Events.Initialized));
+            Assert.assertFalse(spring.events.contains(Events.Initialized));
+        }
+        Assert.assertTrue(normal.events.contains(Events.Destroyed));
+        Assert.assertFalse(spring.events.contains(Events.Destroyed));
     }
 
     @Test
